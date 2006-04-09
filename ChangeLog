@@ -1,0 +1,13 @@
+rwsh v0.1 - proof of concept
+  *can run binaries, builtins and functions (but not scripts).
+  *variable map
+  *builtins: autofunction, echo, exit, false, function, importenv, ls, newline,
+      printenv, set, selection_set, true, which, version
+  *selection read
+  *internal functions: rwsh.init, rwsh.shutdown, rwsh.prompt, 
+      rwsh.before_command, rwsh.after_command, rwsh.autofunction,
+      rwsh.arguments_for_argfunction, rwsh.binary_not_found,
+      rwsh.executable_not_found, rwsh.excessive_nesting, rwsh.mismatched_brace,
+      rwsh.multiple_argfunctions, rwsh.selection_not_found
+  *one possibly nested argfunction allowed per command. (argfunction levels of
+      mapped through escaped.)
