@@ -35,6 +35,19 @@ int echo_bi(const Argv_t& argv) {
   std::cout.flush();
   return 0;}
 
+// run argfunction if IF_TEST is false and $* returns true
+int elif_bi(const Argv_t& argv) {
+  if (argv.size() < 2) return 1;
+  Argv_t lookup(argv.begin()+1, argv.end(), 0);
+  if (get_var("IF_TEST") == "true");
+  else if (get_var("IF_TEST") == "false") {
+    if (!executable_map[lookup](lookup)) {
+      set_var("IF_TEST", "");
+      (*argv.argfunction())(Argv_t());
+      set_var("IF_TEST", "true");}}
+  else std::cout <<"syntax error: elif without preceeding if\n";
+  return 0;}
+
 // exit the shell
 int exit_bi(const Argv_t& argv) {
   exit_requested = true;

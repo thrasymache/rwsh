@@ -2,6 +2,7 @@
 
 int autofunction_bi(const Argv_t& argv);
 int echo_bi(const Argv_t& argv);
+int elif_bi(const Argv_t& argv);
 int exit_bi(const Argv_t& argv);
 int false_bi(const Argv_t& argv);
 int function_bi(const Argv_t& argv);

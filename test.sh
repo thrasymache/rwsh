@@ -13,11 +13,10 @@
 %which rwsh.mapped_argfunction {{{{{{{{{{{}}}}}}}}}}}
 %function rwsh.before_command{echo $*0}
 
-# builtin tests
+# simple builtin tests
 %echo these are fixed strings
 %false
 %false 1 2 3 4 5
-# %function tested later
 %ls /bin /usr/
 %printenv
 %printenv TERM
@@ -90,6 +89,17 @@ b
 # a function redefining itself doesn't seg fault
 fn f {echo hi; fn f {echo there}; fn g {echo nothing here}; f}
 f
+
+# control flow
+%elif %true {echo not this one}
+%set IF_TEST false
+%elif %false {echo nor this}
+%elif %true {echo but this}
+%elif %true {echo this should be skipped}
+%elif %false {echo and certainly this}
+%set IF_TEST false
+%elif %true {%elif %true {echo nested syntax}; %set IF_TEST false; %elif %false {not to be printed}; %elif %true {echo nested elif}; %set IF_TEST false}
+%elif %true {echo testing if elif appropriately sets IF_TEST on exit}
 
 # internal functions 
 fn rwsh.executable_not_found

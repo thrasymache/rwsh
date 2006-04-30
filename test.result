@@ -7,12 +7,11 @@ rwsh v0.1
 1 $cannot specify arguments for rwsh.argfunction directly
 1 ${\ {\ {\ {\ {\ {\ {\ {\ {\ {\ {\}}}}}}}}}}}
 0 $0 $
-0 $# builtin tests
+0 $# simple builtin tests
 0 $%echo these are fixed strings
 these are fixed strings0 $%false
 1 $%false 1 2 3 4 5
-1 $# %function tested later
-0 $%ls /bin /usr/
+1 $%ls /bin /usr/
 /bin
 /usr/
 0 $%printenv
@@ -131,6 +130,21 @@ a
 0 $f
 hi
 there
+0 $
+0 $# control flow
+0 $%elif %true
+syntax error: elif without preceeding if
+0 $%set IF_TEST false
+0 $%elif %false
+0 $%elif %true
+but this
+0 $%elif %true
+0 $%elif %false
+0 $%set IF_TEST false
+0 $%elif %true
+syntax error: elif without preceeding if
+nested elif
+0 $%elif %true
 0 $
 0 $# internal functions
 0 $fn rwsh.executable_not_found
