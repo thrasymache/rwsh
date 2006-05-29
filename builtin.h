@@ -12,6 +12,7 @@ int newline_bi(const Argv_t& argv);
 int printenv_bi(const Argv_t& argv);
 int set_bi(const Argv_t& argv);
 int selection_set_bi(const Argv_t& argv);
+int source_bi(const Argv_t& argv);
 int true_bi(const Argv_t& argv);
 int which_bi(const Argv_t& argv);
 int version_bi(const Argv_t& argv);

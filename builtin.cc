@@ -4,6 +4,7 @@
 
 #include <dirent.h>
 #include <fcntl.h>
+#include <fstream>
 #include <iostream>
 #include <iterator>
 #include <map>
@@ -18,6 +19,7 @@ extern char** environ;
 #include "argv.h"
 #include "arg_script.h"
 #include "builtin.h"
+#include "command_stream.h"
 #include "executable.h"
 #include "executable_map.h"
 #include "function.h"
@@ -117,6 +119,26 @@ int set_bi(const Argv_t& argv) {
   set_var(argv[1], dest);
   return 0;}
 
+// run the specified argument as if it was a script
+int source_bi(const Argv_t& argv) {
+  std::ifstream src(argv[1].c_str(), std::ios_base::in);
+  Executable_map_t::iterator e = 
+    executable_map.find(Argv_t("rwsh.before_script"));
+  if (e != executable_map.end()) (*e->second)(argv);
+  Argv_t script_arg(argv.begin()+1, argv.end(), argv.argfunction());
+  Command_stream_t script(src);
+  Argv_t command;
+  int ret = -1;
+  while (script >> command) {
+    try {
+      Arg_script_t script(command);
+      command = script.interpret(script_arg);}
+    catch (Argv_t exception) {command = exception;}
+    ret = executable_map[command](command);}
+  e = executable_map.find(Argv_t("rwsh.after_script"));
+  if (e != executable_map.end()) (*e->second)(argv);
+  return ret;}
+
 // return success regardless of arguments
 int true_bi(const Argv_t& argv) {return 0;}
 
@@ -160,6 +182,6 @@ int autofunction_bi(const Argv_t& argv) {
 
 // write to standard output the version of rwsh
 int version_bi(const Argv_t& argv) {
-  std::cout <<"rwsh v0.1\n";
+  std::cout <<"rwsh v0.1+\n";
   return 0;}
 
