@@ -1,0 +1,70 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
+  <title>Built-in commands</title>
+</head>
+<body>
+<h3>%autofunction</h3>
+%autofunction searches for files in $PATH with the same name as its
+argument. If one is found, then it is inserted into the executable map
+with the remaining arguments as its argument script. This is a hack so
+that rwsh can be usable while I get around to implementing command
+substitution. There will be a much better way to do this once that is
+done.<br>
+<br>
+<h3>%echo</h3>
+The %echo command prints its arguments separated by a single space. It
+does not append a newline. An echo function that prints its arguments
+followed by a newline can easily be created from the %echo builtin and
+the %newline builtin.<br>
+<h3>%exit</h3>
+%exit causes the shell to exit before the next command is requested
+from the user. It does not terminate any function (i.e. commands after
+%exit in a function will be run). After any enclosing functions
+complete, rwsh.shutdown will be run before the shell actually
+terminates.<br>
+<h3>%false</h3>
+%false returns 1 regardless of its arguments.<br>
+<br>
+<h3>%function</h3>
+%function inserts its argument function into the executable map. The first argument is used as the name for the new function.<br>
+<h3>%importenv</h3>
+%importenv causes the environment that rwsh was run in to be imported into the variable map.<br>
+<h3>%ls</h3>
+As it currently stands, %ls is a very stripped-down version of the
+standard ls. Selection write and read work just as well with external
+commands as with built-ins, so feel free to define the function ls to
+use /bin/ls rather than %ls.<br>
+<h3>%newline</h3>
+%newline prints a newline character<br>
+<br>
+<h3>%printenv</h3>
+%printenv prints out the entire variable map if given no arguments. If
+it is given an argument, then it prints out the value of that variable.<br>
+<h3>%set</h3>
+%set writes a variable to the variable map. the first argument is the
+name of the variable, any additional arguments are the value of the
+variable.<br>
+<h3>%selection_set</h3>
+%selection_set is described in the selection document. Briefly, it is a
+variant of %set, that treats the current value of the variable as a
+path that should be modified by the second argument.<br>
+<h3>%true</h3>
+%true returns 0 regardless of its arguments<br>
+<br>
+<h3>%which</h3>
+%which prints the value stored in the executable map at the name given
+in its first argument. Functions are printed by giving the command that
+would create that function. Built-ins just print their name. Executable
+files are added to the executable map when they are run. If an
+executable file has been run, then %which will print the name of the
+file, otherwise it will inform you that it is not in the executable
+map, whether or not the file exists and is executable.
+rwsh.mapped_argfunction and rwsh.argfunction are both recognized as
+names for whatever argument function might have been passed to %which,
+and are printed with just their enclosing braces.<br>
+<h3>%version</h3>
+%version prints out the version of rwsh that is currently running
+</body>
+</html>

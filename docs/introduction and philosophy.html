@@ -1,0 +1,276 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+
+
+  
+  
+  <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
+
+
+  
+  
+  <title>introduction and philosophy</title>
+</head>
+
+
+<body>
+<h3>philosophy</h3>
+The first concrete idea that I had for the interface of rwsh, was that
+I wanted a shell that knew that after you'd done something with a few
+files, more than likely you'd want to do something else with a similar
+group of files. I also wanted it to be able to tell the difference
+between the regular expression I was grepping for, and the pattern that
+described the files I was looking in. A program can't be omniscient, so
+this was going to require a lot of configuration. In working out how
+that configuration might occur I remembered that the only good reason
+for anybody to learn all of the arcane trivia required to use a shell
+is how much more expressive a language can be than a set of toggles.
+Out of this grew a philosophy that the shell shouldn't do anything much
+more than provide you with a language to describe how you wanted it to
+act. So, at startup, there are no variables set, or functions in the
+executable_map, except the built-ins, which are all preceeded by a
+percent sign, and rwsh.init, which is responsible for finding the right
+startup script (or, in the absence of scripts for performing
+initialization itself.) No parsing is done of arguments before they are
+passed to rwsh.init.<br>
+
+<br>
+
+<br>
+<h3>exploring rwsh.init</h3>
+
+rwsh currently has more limitations that features, and amonst these are
+a lack of conditionals and the ability to run scripts. As a result,
+the&nbsp;test script must run on a shell that has been &nbsp;configured
+identically to the one that a user runs. (The&nbsp;test also requires
+another shell. Like I said, lots of limitations.) There are several
+things I really wanted to not be set at the start of the test, which
+gets run much more than any other command, so the only thing to do was
+to have a separate function which would perform these extra
+initializations. This will be fixed for version 0.2. This function is
+"interactive." It imports the environment, initializes the selection to
+$HOME/* and sets a basic rwsh.autofunction.<br>
+
+<br>
+
+rwsh v0.1<br>
+
+0 $interactive<br>
+
+0 $which rwsh.init<br>
+
+%function rwsh.init {%set MAX_NESTING 5; %function \ {%true $*};
+%function # {%true $*}; %function cat {%selection_set SELECT $1;
+/bin/cat @$SELECT}; %function cp {%selection_set SELECT $1; /bin/cp
+@$SELECT $2}; %function echo {%echo $*; %newline}; %function
+interactive {%importenv; %set SELECT $HOME; %function rwsh.autofunction
+{echo attempting to add $0 to executable map; %autofunction $0 \$*}};
+%function exit {%exit}; %function fn {%function $*
+{rwsh.escaped_argfunction}}; %function grep {%selection_set SELECT $2;
+/usr/bin/grep $1 @$SELECT}; %function ls {%selection_set SELECT $1; %ls
+@$SELECT}; %function less {%selection_set SELECT $1; /usr/bin/less
+@$SELECT}; %function printenv {%printenv $*}; %function set {%set $*};
+%function st {/bin/bash /usr/local/bin/test_rwsh}; %function rwsh
+{/usr/local/bin/rwsh $*}; %function rwsh.arguments_for_argfunction
+{echo cannot specify arguments for $1 directly; %false}; %function
+rwsh.binary_not_found {echo $1 : could not run binary; %false};
+%function rwsh.excessive_nesting {echo function exceeded MAX_NESTING (
+$MAX_NESTING ). call stack: $*}; %function rwsh.mismatched_brace {echo
+mismatched brace: $1; %false}; %function rwsh.multiple_argfunctions
+{echo multiple argfunctions not supported at this time; %false};
+%function rwsh.prompt {%echo $? \$}; %function rwsh.selection_not_found
+{echo no file matching pattern $1 for selection $2}; %function
+rwsh.shutdown {%newline}; %function vi {%selection_set SELECT $1;
+/usr/bin/vi @$SELECT}; %function which {%which $*
+{rwsh.escaped_argfunction}}; %version}<br>
+
+<br>
+
+No, I do not consider that a readable output, but, after some reformatting, some interesting things can be seen:<br>
+
+%function rwsh.init {<br>
+
+rwsh.init is a normal function in every way, except that it is set at
+startup, and it is run automatically at startup. &nbsp;You are free to
+run it again at any time with any set of arguments.<br>
+
+<br>
+
+&nbsp; &nbsp; &nbsp;%function \ {%true $*};
+<br>
+
+&nbsp; &nbsp; &nbsp;%function # {%true $*};<br>
+
+The backslash is actually escaping a blank space, which is what is run
+when you hit return on a blank line. This and the comment character
+must be defined to do nothing, otherwise you get an error about the
+executable not being found. (good luck finding an empty string that is
+executable in $PATH.) This might be taking the "do nothing but provide
+a means of configuration" philosophy too far, but you can come up with
+cases where redefining each of these would be useful. For example
+comments could be replaced with echo commands to provide debugging
+printouts. Note that if you do not leave a space after the pound sign,
+it will appear to the shell as a different command (e.g. "#this won't
+get ignored"). The fix for this is for rwsh to support wildcards in
+function names, so that #* is run whenever any command that begins with
+# is requested, and that particular executable is not in the executable
+map. &nbsp;I am not sure when I will get around to implementing that.<br>
+
+<br>
+
+&nbsp; &nbsp; &nbsp;%function cat {%selection_set SELECT $1;
+/bin/cat @$SELECT}; <br>
+
+&nbsp; &nbsp; &nbsp;%function cp {%selection_set SELECT $1; /bin/cp
+@$SELECT $2};<br>
+
+&nbsp; &nbsp; &nbsp;%function grep {%selection_set SELECT
+$2; /usr/bin/grep $1 @$SELECT}; <br>
+
+&nbsp; &nbsp; &nbsp;%function ls {%selection_set SELECT $1;
+%ls @$SELECT}; <br>
+
+&nbsp; &nbsp; &nbsp;%function less {%selection_set SELECT $1; /usr/bin/less
+@$SELECT};  <br>
+
+&nbsp; &nbsp; &nbsp;%function vi {%selection_set SELECT $1;
+/usr/bin/vi @$SELECT}; <br>
+
+Executables that want to make use of the selection must be defined to
+do so. Read more in the document, "the selection." It is currently not
+possible to use rwsh.autofunction to add new executables that use the
+selection. This will be fixed.<br>
+
+<br>
+
+&nbsp; &nbsp; &nbsp;%function echo {%echo $*; %newline};<br>
+
+The built-in echo does not print a newline. It does not handle "-n"
+specially. Thus you can pass arguments to it that were passed to you,
+and be sure that they will be printed the same, regardless of what they
+are. &nbsp;Since most of the time you do want the newline, the function
+echo is written to include that newline. <br>
+
+&nbsp;<br>
+
+&nbsp; &nbsp; &nbsp;%function interactive {%importenv; %set SELECT $HOME; %function
+rwsh.autofunction {echo attempting to add $0 to executable map;
+%autofunction $0 \$*}}; <br>
+
+This is the interactive function. Note that it prints a message in
+addition to searching $PATH for executables. Once command substitution
+is implemented it will be much more configurable.<br>
+
+<br>
+
+&nbsp; &nbsp; &nbsp;%function exit {%exit}; <br>
+
+&nbsp; &nbsp; &nbsp;%function fn {%function
+$* {rwsh.escaped_argfunction}}; <br>
+
+&nbsp; &nbsp; &nbsp;%function printenv {%printenv $*}; <br>
+
+&nbsp; &nbsp; &nbsp;%function set {%set $*};
+<br>
+
+&nbsp; &nbsp; &nbsp;%function which {%which $*
+{rwsh.escaped_argfunction}}; <br>
+In order to refer to built-ins without the %, they must be aliased by
+functions. All built-ins can currently be aliased by functions. (I have
+some built-ins planned that cannot be aliased by functions, but they
+are not useful on a command line, only within functions.) The built-ins
+themselves are described in the built-ins document.
+rwsh.escaped_argfunction and related contructs are described in the
+argument functions document.<br>
+
+<br>
+
+&nbsp; &nbsp; &nbsp;%function st {/bin/bash /usr/local/bin/test_rwsh}; <br>
+
+&nbsp; &nbsp; &nbsp;%function rwsh
+{/usr/local/bin/rwsh $*}; <br>
+
+I use these functions for testing.<br>
+
+<br>
+
+&nbsp; &nbsp; &nbsp;%function rwsh.arguments_for_argfunction
+{echo cannot specify arguments for $1 directly; %false}; <br>
+
+&nbsp; &nbsp; &nbsp;%function
+rwsh.binary_not_found {echo $1 : could not run binary; %false};
+<br>
+
+&nbsp; &nbsp; &nbsp;%set MAX_NESTING 5; <br>
+
+&nbsp; &nbsp; &nbsp;%function rwsh.excessive_nesting {echo function exceeded MAX_NESTING (
+$MAX_NESTING ). call stack: $*}; <br>
+
+&nbsp; &nbsp; &nbsp;%function rwsh.mismatched_brace {echo
+mismatched brace: $1; %false}; <br>
+
+&nbsp; &nbsp; &nbsp;%function rwsh.multiple_argfunctions
+{echo multiple argfunctions not supported at this time; %false};<br>
+
+&nbsp; &nbsp; &nbsp;%function rwsh.prompt {%echo $? \$}; <br>
+
+&nbsp; &nbsp; &nbsp;%function rwsh.selection_not_found
+{echo no file matching pattern $1 for selection $2}; <br>
+
+&nbsp; &nbsp; &nbsp;%function
+rwsh.shutdown {%newline}; <br>
+
+There are a number of other internal functions in addition to rwsh.init. They are documented in "internal functions."<br>
+
+<br>
+
+&nbsp; &nbsp; &nbsp;%version}<br>
+
+The version number printout is part of the initialization too.<br>
+<h3>a few words about what happens after you type a command</h3>
+Commands are divided by newline characters. The first thing that
+happens is that it is divided into tokens, separated by one or more
+spaces, and anything inside a pair of braces is interpretted as an
+argument function. An argument function, like a function in the
+executable map, consists of one or more commands divided by semicolons.
+If this fails (because the braces are mismatched or there is more than
+one argument function for a particular command), then the requested
+command is replaced by the appropriate internal function request. <br>
+<br>
+Next, the command is interpretted. Interpretting tokens involves
+replacing variables, performing selection reads, and handling escapes.
+Variable arguments begin with a $, they are looked up in the variable
+map. If a variable does not exist, then that argument is an empty
+string. The variable map can be&nbsp;queried using the %printenv
+built-in. Numbered variables (e.g. $0, $1, $2,...) are positional
+parameters. In a function, they correspond to the arguments with with
+the function was called, so $0 will be the name of the function, $1
+will be the first argument, and so on. In a command line, the
+positional parameters refer to the command line. Thus "echo $1 $0 $2"
+is interpretted to be "echo $1 echo $0". If the number is preceeded by
+a *, then the argument is replaced by that positional parameter and all
+of the others following it. As a special case, $* is treated as $*1.
+Thus "echo $*3 $* something static" is interpretted as
+"echo&nbsp;something static $*3 $* something static". Any argument that
+begins with an @ is interpreted by performing a selection read. This is
+explained in the document on the selection. If an argument begins with
+a backslash, it is interpretted as an escape. A backslash by itself is
+interpretted as an empty string. Otherwise the argument is whatever
+comes after the backslash. This is the way to pass an argument that
+begins with a $ or an @ (or a backslash for that matter). An argument
+function is interpretted by reducing argument function levels. See the
+argument functions document for an explanation.<br>
+<br>
+The first token on the command line (a.k.a. $0) is then looked up in
+the executable map. If it is not found and rwsh.autofunction exists,
+then it is run. The token is looked up again in the exeuctable map, and
+if if still isn't found, then rwsh.executable_not_found is run. If at
+some point $0 is found in the executable map, then that executable is
+run. If $0 begins with a forward slash, then the shell attempts to run
+the specified file. In any case the interpretted arguments are passed
+to the executable that is run.<br>
+
+
+</body>
+</html>
