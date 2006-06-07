@@ -4,12 +4,20 @@ class Executable_t {
  protected:
   int last_return;
   unsigned current_nesting;
+  static int global_nesting;
+  static bool in_excessive_nesting_handler;
+  static Argv_t call_stack;
 
  public:
   Executable_t(void) : current_nesting(0), del_on_term(false) {};
   int last_ret(void) const {return last_return;};
   bool is_running(void) const {return !!current_nesting;};
   bool del_on_term;
+
+  static bool excessive_nesting;
+  static bool increment_nesting(void);
+  static bool decrement_nesting(void);
+  static void excessive_nesting_handler(const Argv_t& src_argv);
 
   virtual int operator() (const Argv_t& argv) = 0;
   virtual std::string name(void) const = 0;

@@ -9,9 +9,54 @@
 #include <vector>
 
 #include "argv.h"
+#include "builtin.h"
 #include "executable.h"
 #include "executable_map.h"
 #include "variable_map.h"
+
+int Executable_t::global_nesting(0);
+bool Executable_t::excessive_nesting(false);
+bool Executable_t::in_excessive_nesting_handler(false);
+Argv_t Executable_t::call_stack("rwsh.excessive_nesting");
+
+bool Executable_t::increment_nesting(void) {
+  if (global_nesting > max_nesting) {
+    return excessive_nesting = true;}
+  else {
+    ++global_nesting;
+    return false;}}
+
+bool Executable_t::decrement_nesting(void) {
+  --global_nesting;
+  return excessive_nesting;}
+
+// code to call rwsh.excessive_nesting, separated out of operator() for clarity.
+void Executable_t::excessive_nesting_handler(const Argv_t& src_argv) {
+  if (global_nesting) {
+    call_stack.push_back(src_argv[0]);}
+  else {
+    excessive_nesting = false;
+    Argv_t call_stack_copy = call_stack;                     //need for a copy: 
+    call_stack.clear();
+    call_stack.push_back("rwsh.excessive_nesting");
+    if (in_excessive_nesting_handler) {
+      Argv_t blank;
+      echo_bi(Argv_t("echo rwsh.excessive_nesting itself "
+                     "exceeded MAX_NESTING:"));
+      newline_bi(blank);
+      echo_bi(call_stack_copy);
+      newline_bi(blank);
+      echo_bi(Argv_t("echo original call stack:"));
+      newline_bi(blank);
+      echo_bi(src_argv);
+      newline_bi(blank);}
+    else {
+      in_excessive_nesting_handler = true;
+      executable_map[call_stack_copy](call_stack_copy);
+      in_excessive_nesting_handler = false;}}}
+// need for a copy: if rwsh.excessive_nesting exceeds MAX_NESTING itself
+//     then it will unwind the stack and write to call_stack. To preserve the 
+//     original call stack, we need a copy of call_stack to be the argument.
 
 Binary_t::Binary_t(const std::string& impl) : implementation(impl) {}
 

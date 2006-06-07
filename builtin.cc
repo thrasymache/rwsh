@@ -40,9 +40,9 @@ int echo_bi(const Argv_t& argv) {
 // run argfunction if IF_TEST is false and $* returns true
 int elif_bi(const Argv_t& argv) {
   if (argv.size() < 2) return 1;
-  Argv_t lookup(argv.begin()+1, argv.end(), 0);
   if (get_var("IF_TEST") == "true");
   else if (get_var("IF_TEST") == "false") {
+    Argv_t lookup(argv.begin()+1, argv.end(), 0);
     if (!executable_map[lookup](lookup)) {
       set_var("IF_TEST", "");
       (*argv.argfunction())(Argv_t());
@@ -121,10 +121,17 @@ int set_bi(const Argv_t& argv) {
 
 // run the specified argument as if it was a script
 int source_bi(const Argv_t& argv) {
+  if (Executable_t::increment_nesting()) {
+    Executable_t::excessive_nesting_handler(argv);
+    return dollar_question;}
   std::ifstream src(argv[1].c_str(), std::ios_base::in);
   Executable_map_t::iterator e = 
     executable_map.find(Argv_t("rwsh.before_script"));
   if (e != executable_map.end()) (*e->second)(argv);
+  if (Executable_t::excessive_nesting) {
+    Executable_t::decrement_nesting();
+    Executable_t::excessive_nesting_handler(argv);
+    return dollar_question;}
   Argv_t script_arg(argv.begin()+1, argv.end(), argv.argfunction());
   Command_stream_t script(src);
   Argv_t command;
@@ -134,9 +141,14 @@ int source_bi(const Argv_t& argv) {
       Arg_script_t script(command);
       command = script.interpret(script_arg);}
     catch (Argv_t exception) {command = exception;}
-    ret = executable_map[command](command);}
+    ret = executable_map[command](command);
+    if (Executable_t::excessive_nesting) break;}
   e = executable_map.find(Argv_t("rwsh.after_script"));
-  if (e != executable_map.end()) (*e->second)(argv);
+  if (!Executable_t::excessive_nesting && e != executable_map.end()) 
+    (*e->second)(argv);
+  if (Executable_t::decrement_nesting()) {
+    Executable_t::excessive_nesting_handler(argv);
+    return dollar_question;}
   return ret;}
 
 // return success regardless of arguments

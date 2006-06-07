@@ -21,15 +21,16 @@
 // write the next command to dest. run rwsh.prompt as appropriate
 Command_stream_t& Command_stream_t::operator>> (Argv_t& dest) {
   if (exit_requested) return *this;
-  Argv_t temp;
-  Executable_map_t::iterator e = executable_map.find(Argv_t("rwsh.prompt"));
-  if (e != executable_map.end()) (*e->second)(temp);
+  Argv_t prompt("rwsh.prompt");
+  Executable_map_t::iterator e = executable_map.find(prompt);
+  if (e != executable_map.end()) (*e->second)(prompt);
   std::string line;
   getline(src, line);
-  e = executable_map.find(Argv_t("rwsh.raw_command"));
+  Argv_t raw("rwsh.raw_command");
+  e = executable_map.find(raw);
   if (e != executable_map.end()) {
-    temp.push_back(line);
-    (*e->second)(temp);}
+    raw.push_back(line);
+    (*e->second)(raw);}
   try {dest = Argv_t(line);}
   catch (Argv_t exception) {dest = exception;}
   return *this;}
