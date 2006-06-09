@@ -15,27 +15,33 @@
 #include "variable_map.h"
 
 int Executable_t::global_nesting(0);
-bool Executable_t::excessive_nesting(false);
+bool Executable_t::excessive_nesting_v(false);
 bool Executable_t::in_excessive_nesting_handler(false);
 Argv_t Executable_t::call_stack("rwsh.excessive_nesting");
 
-bool Executable_t::increment_nesting(void) {
+bool Executable_t::excessive_nesting(const Argv_t& argv) {
+  if (excessive_nesting_v) return decrement_nesting(argv);
+  else return false;}
+
+bool Executable_t::increment_nesting(const Argv_t& argv) {
   if (global_nesting > max_nesting) {
-    return excessive_nesting = true;}
+    excessive_nesting_handler(argv);
+    return excessive_nesting_v = true;}
   else {
     ++global_nesting;
     return false;}}
 
-bool Executable_t::decrement_nesting(void) {
+bool Executable_t::decrement_nesting(const Argv_t& argv) {
   --global_nesting;
-  return excessive_nesting;}
+  if (excessive_nesting_v) excessive_nesting_handler(argv);
+  return excessive_nesting_v;}
 
 // code to call rwsh.excessive_nesting, separated out of operator() for clarity.
 void Executable_t::excessive_nesting_handler(const Argv_t& src_argv) {
   if (global_nesting) {
     call_stack.push_back(src_argv[0]);}
   else {
-    excessive_nesting = false;
+    excessive_nesting_v = false;
     Argv_t call_stack_copy = call_stack;                     //need for a copy: 
     call_stack.clear();
     call_stack.push_back("rwsh.excessive_nesting");

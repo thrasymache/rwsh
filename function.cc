@@ -44,17 +44,13 @@ Function_t* Function_t::interpret(const Argv_t& argv) const {
 // run the given function
 int Function_t::operator() (const Argv_t& src_argv) {
   ++current_nesting;
-  if (increment_nesting()) {
-    excessive_nesting_handler(src_argv);
-    return dollar_question;}
+  if (increment_nesting(src_argv)) return dollar_question;
   for (std::vector<Arg_script_t>::const_iterator i = script.begin();
        i != script.end(); ++i) {
     Argv_t dest_argv = i->interpret(src_argv);
     last_return = (executable_map[dest_argv])(dest_argv);
-    if (excessive_nesting) break;}
-  if (decrement_nesting()) {
-    excessive_nesting_handler(src_argv);
-    return dollar_question;}
+    if (excessive_nesting_v) break;}
+  if (decrement_nesting(src_argv)) return dollar_question;
   int ret = last_return;
   --current_nesting;
   if (del_on_term && !current_nesting) delete this;

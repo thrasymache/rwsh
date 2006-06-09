@@ -6,6 +6,7 @@ class Executable_t {
   unsigned current_nesting;
   static int global_nesting;
   static bool in_excessive_nesting_handler;
+  static bool excessive_nesting_v;
   static Argv_t call_stack;
 
  public:
@@ -14,9 +15,9 @@ class Executable_t {
   bool is_running(void) const {return !!current_nesting;};
   bool del_on_term;
 
-  static bool excessive_nesting;
-  static bool increment_nesting(void);
-  static bool decrement_nesting(void);
+  static bool excessive_nesting(const Argv_t& argv);
+  static bool increment_nesting(const Argv_t& argv);
+  static bool decrement_nesting(const Argv_t& argv);
   static void excessive_nesting_handler(const Argv_t& src_argv);
 
   virtual int operator() (const Argv_t& argv) = 0;
