@@ -4,7 +4,7 @@ class Function_t : public Executable_t {
   std::string name_v;
   std::vector<Arg_script_t> script;
 
-  Function_t(const std::string& name_i) : name_v(name_i) {};
+  Function_t(const std::string& name_i) : name_v(name_i), script() {};
   Function_t(const std::string& name_i, const std::vector<Arg_script_t>& src) : 
     name_v(name_i), script(src) {};
  public:

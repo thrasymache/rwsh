@@ -20,27 +20,30 @@
 
 // write the next command to dest. run rwsh.prompt as appropriate
 Command_stream_t& Command_stream_t::operator>> (Argv_t& dest) {
-  if (exit_requested) return *this;
+  if (operator!()) return *this;
   Argv_t prompt("rwsh.prompt");
   Executable_map_t::iterator e = executable_map.find(prompt);
-  if (e != executable_map.end()) (*e->second)(prompt);
+  if (e != executable_map.end()) {
+    (*e->second)(prompt);
+    if (Executable_t::excessive_nesting()) return *this;}
   std::string line;
   getline(src, line);
   Argv_t raw("rwsh.raw_command");
   e = executable_map.find(raw);
   if (e != executable_map.end()) {
     raw.push_back(line);
-    (*e->second)(raw);}
+    (*e->second)(raw);
+    if (Executable_t::excessive_nesting()) return *this;}
   try {dest = Argv_t(line);}
   catch (Argv_t exception) {dest = exception;}
   return *this;}
 
 // returns non-zero if the last command was read successfully
 Command_stream_t::operator void* () const {
-  if (exit_requested) return 0;
+  if (exit_requested || Executable_t::excessive_nesting()) return 0;
   else return src.operator void*();}
 
 // returns true if the last command could not be read
 bool Command_stream_t::operator! () const {
-  return (exit_requested) || src.fail();} 
+  return (exit_requested) || Executable_t::excessive_nesting() || src.fail();} 
 

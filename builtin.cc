@@ -44,11 +44,12 @@ int elif_bi(const Argv_t& argv) {
   else if (get_var("IF_TEST") == "false") {
     Argv_t lookup(argv.begin()+1, argv.end(), 0);
     if (!executable_map[lookup](lookup)) {
+      if (Executable_t::excessive_nesting()) return dollar_question;
       set_var("IF_TEST", "");
       (*argv.argfunction())(Argv_t());
       set_var("IF_TEST", "true");}}
   else std::cout <<"syntax error: elif without preceeding if\n";
-  return 0;}
+  return dollar_question;}
 
 // exit the shell
 int exit_bi(const Argv_t& argv) {
@@ -121,12 +122,11 @@ int set_bi(const Argv_t& argv) {
 
 // run the specified argument as if it was a script
 int source_bi(const Argv_t& argv) {
-  if (Executable_t::increment_nesting(argv)) return dollar_question;
   std::ifstream src(argv[1].c_str(), std::ios_base::in);
   Executable_map_t::iterator e = 
     executable_map.find(Argv_t("rwsh.before_script"));
   if (e != executable_map.end()) (*e->second)(argv);
-  if (Executable_t::excessive_nesting(argv)) return dollar_question;
+  if (Executable_t::excessive_nesting()) return dollar_question;
   Argv_t script_arg(argv.begin()+1, argv.end(), argv.argfunction());
   Command_stream_t script(src);
   Argv_t command;
@@ -136,11 +136,10 @@ int source_bi(const Argv_t& argv) {
       Arg_script_t script(command);
       command = script.interpret(script_arg);}
     catch (Argv_t exception) {command = exception;}
-    ret = executable_map[command](command);
-    if (Executable_t::excessive_nesting(argv)) return dollar_question;}
+    ret = executable_map[command](command);}
+  if (Executable_t::excessive_nesting()) return dollar_question;
   e = executable_map.find(Argv_t("rwsh.after_script"));
   if (e != executable_map.end()) (*e->second)(argv);
-  if (Executable_t::decrement_nesting(argv)) return dollar_question;
   return ret;}
 
 // return success regardless of arguments

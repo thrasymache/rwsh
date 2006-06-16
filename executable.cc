@@ -19,47 +19,53 @@ bool Executable_t::excessive_nesting_v(false);
 bool Executable_t::in_excessive_nesting_handler(false);
 Argv_t Executable_t::call_stack("rwsh.excessive_nesting");
 
-bool Executable_t::excessive_nesting(const Argv_t& argv) {
-  if (excessive_nesting_v) return decrement_nesting(argv);
-  else return false;}
-
 bool Executable_t::increment_nesting(const Argv_t& argv) {
-  if (global_nesting > max_nesting) {
-    excessive_nesting_handler(argv);
-    return excessive_nesting_v = true;}
+  if (global_nesting > max_nesting+1) { return excessive_nesting_v = true;}
   else {
+    ++executable_nesting;
     ++global_nesting;
     return false;}}
 
 bool Executable_t::decrement_nesting(const Argv_t& argv) {
+  --executable_nesting;
   --global_nesting;
-  if (excessive_nesting_v) excessive_nesting_handler(argv);
+  if (excessive_nesting_v) 
+excessive_nesting_handler(argv);
   return excessive_nesting_v;}
 
 // code to call rwsh.excessive_nesting, separated out of operator() for clarity.
+// The requirements for excessive nesting handling to work properly are as 
+// follows: All things derived from Executable_t must call increment_nesting
+// on start and decrement_nesting before terminating.  If they run more 
+// than one other executable, then they must call excessive_nesting() in 
+// between each executable, which must be of a Executable_t rather than a 
+// direct call to the function that implements a builtin (the code below to 
+// handle recursively excessive nesting is the only exception to this rule).
+// main does not need to do this excessive_nesting handling, because anything 
+// that it calls directly will have an initial nesting of 0.
 void Executable_t::excessive_nesting_handler(const Argv_t& src_argv) {
-  if (global_nesting) {
-    call_stack.push_back(src_argv[0]);}
-  else {
+  if (in_excessive_nesting_handler) return;
+  call_stack.push_back(src_argv[0]);
+  if (!global_nesting) {
     excessive_nesting_v = false;
+    in_excessive_nesting_handler = true;
     Argv_t call_stack_copy = call_stack;                     //need for a copy: 
     call_stack.clear();
     call_stack.push_back("rwsh.excessive_nesting");
-    if (in_excessive_nesting_handler) {
+    executable_map[call_stack_copy](call_stack_copy);
+    if (excessive_nesting_v) {
       Argv_t blank;
       echo_bi(Argv_t("echo rwsh.excessive_nesting itself "
-                     "exceeded MAX_NESTING:"));
-      newline_bi(blank);
+                     "exceeded MAX_NESTING:\n"));
+      echo_bi(call_stack);
+      echo_bi(Argv_t("echo \noriginal call stack:\n"));
       echo_bi(call_stack_copy);
       newline_bi(blank);
-      echo_bi(Argv_t("echo original call stack:"));
-      newline_bi(blank);
-      echo_bi(src_argv);
-      newline_bi(blank);}
-    else {
-      in_excessive_nesting_handler = true;
-      executable_map[call_stack_copy](call_stack_copy);
-      in_excessive_nesting_handler = false;}}}
+      call_stack.clear();
+      call_stack.push_back("rwsh.excessive_nesting");
+      excessive_nesting_v = false;}
+    in_excessive_nesting_handler = false;
+    set_var("IF_TEST", "");}}
 // need for a copy: if rwsh.excessive_nesting exceeds MAX_NESTING itself
 //     then it will unwind the stack and write to call_stack. To preserve the 
 //     original call stack, we need a copy of call_stack to be the argument.
@@ -68,7 +74,7 @@ Binary_t::Binary_t(const std::string& impl) : implementation(impl) {}
 
 // run the given binary
 int Binary_t::operator() (const Argv_t& argv_i) {
-  ++current_nesting;
+  if (increment_nesting(argv_i)) return dollar_question;
   int ret;
   if (!fork()) {  
     Old_argv_t argv(argv_i);
@@ -78,9 +84,9 @@ int Binary_t::operator() (const Argv_t& argv_i) {
     executable_map[error_argv](error_argv);
     exit(ret);}
   else wait(&ret);
-  --current_nesting;
   dollar_question = last_return = ret;
-  if (del_on_term && !current_nesting) delete this;
+  if (decrement_nesting(argv_i)) ret = dollar_question;
+  if (del_on_term && !executable_nesting) delete this;
   return ret;}
 
 Built_in_t::Built_in_t(const std::string& name_i, 
@@ -89,10 +95,10 @@ Built_in_t::Built_in_t(const std::string& name_i,
 
 // run the given builtin
 int Built_in_t::operator() (const Argv_t& argv) {
-  ++current_nesting;
+  if (increment_nesting(argv)) return dollar_question;
   dollar_question = last_return = (*implementation)(argv);
-  --current_nesting;
   int ret = last_return;
-  if (del_on_term && !current_nesting) delete this;
+  if (decrement_nesting(argv)) ret = dollar_question;
+  if (del_on_term && !executable_nesting) delete this;
   return ret;}
 

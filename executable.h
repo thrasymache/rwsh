@@ -1,23 +1,25 @@
 // Copyright (C) 2005, 2006 Samuel Newbold
 
 class Executable_t {
- protected:
-  int last_return;
-  unsigned current_nesting;
+ private:
   static int global_nesting;
-  static bool in_excessive_nesting_handler;
   static bool excessive_nesting_v;
   static Argv_t call_stack;
+  static bool in_excessive_nesting_handler;
+
+ protected:
+  int last_return;
+  unsigned executable_nesting;
 
  public:
-  Executable_t(void) : current_nesting(0), del_on_term(false) {};
+  Executable_t(void) : executable_nesting(0), del_on_term(false) {};
   int last_ret(void) const {return last_return;};
-  bool is_running(void) const {return !!current_nesting;};
+  bool is_running(void) const {return !!executable_nesting;};
   bool del_on_term;
 
-  static bool excessive_nesting(const Argv_t& argv);
-  static bool increment_nesting(const Argv_t& argv);
-  static bool decrement_nesting(const Argv_t& argv);
+  bool increment_nesting(const Argv_t& argv);
+  bool decrement_nesting(const Argv_t& argv);
+  static bool excessive_nesting(void) {return excessive_nesting_v;}
   static void excessive_nesting_handler(const Argv_t& src_argv);
 
   virtual int operator() (const Argv_t& argv) = 0;
