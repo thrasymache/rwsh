@@ -28,6 +28,11 @@ extern char** environ;
 #include "tokenize.cc"
 #include "variable_map.h"
 
+// change the current directory to the one given
+int cd_bi(const Argv_t& argv) {
+  if (argv.size() != 2) return -2;
+  return chdir(argv[1].c_str());}
+
 // echo arguments to standard output
 int echo_bi(const Argv_t& argv) {
   if (argv.size() < 2) return 0;
@@ -46,7 +51,7 @@ int elif_bi(const Argv_t& argv) {
     if (!executable_map[lookup](lookup)) {
       if (Executable_t::excessive_nesting()) return dollar_question;
       set_var("IF_TEST", "");
-      (*argv.argfunction())(Argv_t());
+      (*argv.argfunction())(Argv_t("rwsh.mapped_argfunction"));
       set_var("IF_TEST", "true");}}
   else std::cout <<"syntax error: elif without preceeding if\n";
   return dollar_question;}
@@ -122,6 +127,10 @@ int set_bi(const Argv_t& argv) {
 
 // run the specified argument as if it was a script
 int source_bi(const Argv_t& argv) {
+  if (argv.size() < 2) return -3;
+  struct stat sb;
+  if (stat(argv[1].c_str(), &sb)) return -1;
+  if (!(sb.st_mode & S_IXUSR)) return -2;
   std::ifstream src(argv[1].c_str(), std::ios_base::in);
   Executable_map_t::iterator e = 
     executable_map.find(Argv_t("rwsh.before_script"));
@@ -136,7 +145,14 @@ int source_bi(const Argv_t& argv) {
       Arg_script_t script(command);
       command = script.interpret(script_arg);}
     catch (Argv_t exception) {command = exception;}
-    ret = executable_map[command](command);}
+    int run_command;
+    e = executable_map.find(Argv_t("rwsh.before_command"));
+    if (e != executable_map.end()) 
+      run_command = (*e->second)(command);
+    else run_command = 0;
+    if (!run_command) ret = executable_map[command](command);
+    e = executable_map.find(Argv_t("rwsh.after_command"));
+    if (e != executable_map.end()) (*e->second)(command);}
   if (Executable_t::excessive_nesting()) return dollar_question;
   e = executable_map.find(Argv_t("rwsh.after_script"));
   if (e != executable_map.end()) (*e->second)(argv);

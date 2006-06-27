@@ -2,55 +2,78 @@
 <html lang="en-us">
 <head>
 
+
+  
   
   <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
 
+
   
-  <title>argument functions</title>
+  
+  <title>the selection</title>
 </head>
 
 
 <body>
 
+
 Most of my time using a shell involves searching for some files and
 then doing something with them. As a somewhat contrived example:<br>
 
+
 <br>
+
 
 ls /usr/local<br>
 
+
 ls /usr/local/teTeX<br>
+
 
 ls /usr/local/teTeX/include<br>
 
+
 ls /usr/local/teTeX/include/kpathsea<br>
+
 
 ls /usr/local/teTeX/include/kpathsea/c-*<br>
 
+
 less /usr/local/teTeX/include/kpathsea/c-*<br>
 
+
 <br>
+
 
 One might repetitively use cd in order to keep the paths shorter, or
 use readline features to edit the previous command, but both distract
 from what you're trying to do. For contrast, the corresponding, normal
 rwsh sequence would be<br>
 
+
 <br>
+
 
 ls //usr/local/<br>
 
+
 ls teTeX/<br>
+
 
 ls include/<br>
 
+
 ls kpathsea/<br>
+
 
 ls c-*<br>
 
+
 less<br>
 
+
 <br>
+
 
 The argument to each command adds to the previous selection. (The //
 clears the previous selection.) Finally, since the desired files are
@@ -58,13 +81,18 @@ already selected, less does not need any arguments. This is
 accomplished by each command being a shell function using selection set
 and selection read. Both ls and less could be defined as follows:<br>
 
+
 <br>
+
 
 function ls {%selection_set SELECT $1;&nbsp;/bin/ls -d @$SELECT}<br>
 
+
 function less {%selection_set SELECT $1;&nbsp;/usr/bin/less @$SELECT}<br>
 
+
 <br>
+
 
 %selection_set takes a shell variable as its first argument, it uses
 the pattern in its second argument to augment the pattern held in the
@@ -75,7 +103,9 @@ followed by a text string or $ and a shell variable. There is nothing
 special about the variable SELECT, except that both of the functions
 use it as their selection variable.<br>
 
+
 <br>
+
 
 Since this accomplished using a normal shell variable, it is trivial to
 implement commands like ftp's lls to explore a second selection, while
@@ -83,7 +113,9 @@ leaving the first unchanged. Since the filename matching patterns are
 only treated specially by %selection_set and selection read, grep could
 be defined by<br>
 
+
 function grep {%selection_set SELECT $2; /usr/bin/grep $1 @$SELECT}<br>
+
 
 The first argument is neither used by %selection_set nor selection read
 and so it can contain the wildcards that are used in filename patterns,
@@ -93,22 +125,29 @@ issues that this does not permit passing options to grep and that it
 requires the selection to be defined by a single pattern will be fixed
 in future releases.<br>
 
+
 <br>
+
 
 @ (selection read)<br>
 
+
 <ul>
 
+
   <li>Steps in a filename pattern are text separated by forward slashes ("/").</li>
+
 
   <li>If a step consists of "..", the effect is to undo the previous
 step. ("." is not handled specially, but works normally because it is
 part of the file system. There is currently no way to refer to the file
 link in each directory named "..".)</li>
 
+
   <li>Otherwise a step may consist of any combination of text and star
 ("*") characters. Text matches itself, a star matches zero or more of
 any character in a filename. ("?" and other metacharacters are not supported at this time.)</li>
+
 
   <li>If there is an empty step (other than before the first slash or
 after the final slash), that is if there&nbsp;are two consecutive
@@ -116,15 +155,20 @@ forward slashes at any point in a filename pattern, the effect is to
 move to the root of the file system. Thus @/usr/local//bin is
 equivalent to @/bin.</li>
 
+
   <li>If the end of a patten is an empty step (i.e. the pattern ends
 with a forward slash), the pattern is read as if the final step was a
 star. Thus "@/usr/" is equivalent to "@/usr/*"</li>
 
+
 </ul>
+
 
 <br>
 
+
 %selection_set &lt;variable&gt; &lt;pattern&gt;<br>
+
 
 &lt;variable&gt;
 is converted into a filename pattern and then &lt;pattern&gt; is added
@@ -133,26 +177,34 @@ the first part of &lt;pattern&gt;, unless &lt;pattern&gt; begins with a
 /. As with selection read, a pattern that ends with a / is read as if
 it ended with /*. <br>
 
+
 <ul>
+
 
   <li>If &lt;variable&gt; contains "/usr/local", and
 &lt;pattern&gt; is "bin", the result is "/usr/bin".&nbsp;</li>
+
 
   <li>If &lt;variable&gt;
 instead contains "/usr/local/", it is read as "/usr/local/*", and the
 result is "/usr/local/bin".&nbsp;</li>
 
+
   <li>If &lt;variable&gt; again contains
 "/usr/local", but &lt;pattern&gt; is "/bin", then the result is
 "/usr/local/bin".&nbsp;</li>
+
 
   <li>If &lt;variable&gt; contains&nbsp;"/usr/local/bin" and
 &lt;pattern&gt; is "..", then the ".." replaces the "bin", and the
 effect of the ".." is to remove "local", resulting in "/usr".&nbsp;</li>
 
+
   <li>Similarly if &lt;variable&gt; contains "/usr/local/bin" and &lt;pattern&gt; is "../bin", the result is "/usr/bin".</li>
 
+
 </ul>
+
 
 </body>
 </html>

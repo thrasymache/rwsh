@@ -20,6 +20,7 @@
 
 # selection commands
 %function cat {%selection_set SELECT $1; /bin/cat @$SELECT}
+%function cd {%selection_set SELECT $1; %cd @$SELECT; %selection_set SELECT /}
 %function cp {%selection_set SELECT $1; /bin/cp @$SELECT $2}
 %function cvs {%selection_set SELECT $2; /usr/bin/cvs $1 @$SELECT}
 %function grep {%set REGEX $1; %selection_set SELECT $2; /usr/bin/grep $REGEX @$SELECT}

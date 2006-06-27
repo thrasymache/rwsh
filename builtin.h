@@ -1,6 +1,7 @@
 // Copyright (C) 2005, 2006 Samuel Newbold
 
 int autofunction_bi(const Argv_t& argv);
+int cd_bi(const Argv_t& argv);
 int echo_bi(const Argv_t& argv);
 int elif_bi(const Argv_t& argv);
 int exit_bi(const Argv_t& argv);

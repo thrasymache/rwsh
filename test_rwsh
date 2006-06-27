@@ -1,1 +1,1 @@
-/usr/local/bin/rwsh </usr/local/share/rwsh/test.sh | diff -c /usr/local/share/rwsh/test.result -
+/usr/local/bin/rwsh /usr/local/share/rwsh/test.sh | diff -c /usr/local/share/rwsh/test.result -

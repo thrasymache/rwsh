@@ -18,6 +18,7 @@
 
 Executable_map_t::Executable_map_t(void) {
   set(new Built_in_t("%autofunction", autofunction_bi));
+  set(new Built_in_t("%cd", cd_bi));
   set(new Built_in_t("%echo", echo_bi));
   set(new Built_in_t("%elif", elif_bi));
   set(new Built_in_t("%exit", exit_bi));

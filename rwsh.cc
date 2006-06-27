@@ -19,9 +19,11 @@
 Executable_map_t executable_map;
 
 namespace {std::string init_str =
-  "%function t {/bin/bash /usr/local/bin/test_rwsh};"
-  "%set MAX_NESTING 1;"
-  "%source /etc/rwshrc";}
+  "%set MAX_NESTING 4;"
+  "%set RC $1;"
+  "%set IF_TEST false;"
+  "%elif /bin/test $1 {%source $RC; %exit};"
+  "%elif %true {%source /etc/rwshrc}";}
 
 int main(int argc, char *argv[]) {
   Argv_t external_command_line(&argv[0], &argv[argc], 0);

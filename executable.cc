@@ -44,8 +44,8 @@ excessive_nesting_handler(argv);
 // main does not need to do this excessive_nesting handling, because anything 
 // that it calls directly will have an initial nesting of 0.
 void Executable_t::excessive_nesting_handler(const Argv_t& src_argv) {
-  if (in_excessive_nesting_handler) return;
   call_stack.push_back(src_argv[0]);
+  if (in_excessive_nesting_handler) return;
   if (!global_nesting) {
     excessive_nesting_v = false;
     in_excessive_nesting_handler = true;
