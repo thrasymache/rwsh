@@ -28,10 +28,11 @@ namespace {std::string init_str =
 int main(int argc, char *argv[]) {
   Argv_t external_command_line(&argv[0], &argv[argc], 0);
   Command_stream_t command_stream(std::cin);
-  Argv_t command;
   Executable_map_t::iterator e;
   executable_map.set(new Function_t("rwsh.init", init_str));
+  //external_command_line.push_front("rwsh.init");
   executable_map[Argv_t("rwsh.init")](external_command_line);
+  Argv_t command;
   while (command_stream >> command) {
     try {
       Arg_script_t script(command);
@@ -45,6 +46,7 @@ int main(int argc, char *argv[]) {
     if (!run_command) executable_map[command](command);
     e = executable_map.find(Argv_t("rwsh.after_command"));
     if (e != executable_map.end()) (*e->second)(command);}
+  //external_command_line[0] = "rwsh.shutdown";
   e = executable_map.find(Argv_t("rwsh.shutdown"));
   if (e != executable_map.end()) 
     (*e->second)(external_command_line);

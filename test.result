@@ -1,12 +1,40 @@
-rwsh v0.1+
-0 $0 $0 $0 $0 $1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 200 $ 1 20 $
-0 ${%true}
-0 $mismatched brace: %which rwsh.argfunction {
-1 $mismatched brace: %which rwsh.argfunction }
-1 $multiple argfunctions not supported at this time
-1 $cannot specify arguments for rwsh.argfunction directly
-1 ${\ {\ {\ {\ {\ {\ {\ {\ {\ {\ {\}}}}}}}}}}}
-0 $0 $
+%function rwsh.prompt{%echo $? \$}
+0 $%function #{%true}
+0 $%function \ {%true}
+0 $# argv tests
+0 $%true
+0 $     %true
+0 $%true 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+0 $%echo 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 200 $%newline
+
+0 $%echo  \    1                2       
+ 1 20 $%newline
+
+0 $%which rwsh.mapped_argfunction {%true}
+{%true}
+0 $%which rwsh.argfunction {
+rwsh.mismatched_brace : command not found ( rwsh.mismatched_brace %which rwsh.argfunction { )
+1 $%which rwsh.argfunction }
+rwsh.mismatched_brace : command not found ( rwsh.mismatched_brace %which rwsh.argfunction } )
+1 $%which rwsh.argfunction {}{}
+rwsh.multiple_argfunctions : command not found ( rwsh.multiple_argfunctions )
+1 $%which rwsh.argfunction {rwsh.argfunction{}}
+rwsh.arguments_for_argfunction : command not found ( rwsh.arguments_for_argfunction rwsh.argfunction )
+1 $%which rwsh.argfunction {{{{{{{{{{{}}}}}}}}}}}
+{\ {\ {\ {\ {\ {\ {\ {\ {\ {\ {\}}}}}}}}}}}
+0 $
+0 $# ability of functions to immitate built-ins
+0 $%function f {%function $1 {rwsh.argfunction}}
+0 $f w {%which $1 {rwsh.argfunction}}
+0 $f e {%echo $*; %newline}
+0 $w e
+%function e {%echo $*; %newline}
+0 $w {}
+%function  {%true}
+0 $e text that doesn't have a prompt appended
+text that doesn't have a prompt appended
+0 $
 0 $# simple builtin tests
 0 $%echo these are fixed strings
 these are fixed strings0 $%false
@@ -16,176 +44,168 @@ these are fixed strings0 $%false
 /usr/
 0 $%printenv
 ?=0
-MAX_NESTING=5
-0 $%printenv TERM
+IF_TEST=
+MAX_NESTING=8
+RC=/usr/local/share/rwsh/test.sh
+0 $%printenv SHELL
 
 0 $%importenv
-0 $%printenv TERM
-xterm-color
+0 $%set MAX_NESTING 8
+0 $%set IF_TEST
+0 $%printenv SHELL
+/bin/bash
 0 $%printenv A
 
 0 $%set A 1
 0 $%printenv A
 1
 0 $%selection_set A //usr
-0 $echo /usr
+0 $e $A
 /usr
 0 $%selection_set A /
-0 $echo /usr/*
+0 $e $A
 /usr/*
 0 $%selection_set A local/include
-0 $echo /usr/local/include
+0 $e $A
 /usr/local/include
 0 $%selection_set A ..
-0 $echo /usr
+0 $e $A
 /usr
-0 $%selection_set A 
-0 $echo /usr
+0 $%selection_set A \
+0 $e $A
 /usr
 0 $%selection_set A /local/../../bin
-0 $echo /bin
+0 $e $A
 /bin
 0 $%true
 0 $%true 1 2 3 4 5
 0 $%which a
 no a
 1 $%which #
-%function # {%true $*}
-0 $%which rwsh.mapped_argfunction
+%function # {%true}
+0 $%which rwsh.mapped_argfunction {%true 1 \ \$ \@ $A $0 $# $* $*2 @a @$a @$1 @$* @$*2}
 {%true 1 \ \$ \@ $A $0 $# $* $*2 @a @$a @$1 @$*0 @$*2}
-0 $%which rwsh.mapped_argfunction
+0 $%which rwsh.mapped_argfunction {rwsh.argfunction}
 {rwsh.argfunction}
 0 $
 0 $# binary test implicitly tests Old_argv_t
 0 $/bin/echo 1 2 3
 1 2 3
 0 $/bn/echo 1 2 3
-/bn/echo : could not run binary
+rwsh.binary_not_found : command not found ( rwsh.binary_not_found /bn/echo )
 65280 $
 0 $# arg_script tests
-0 $echo 5 4 3 2 1
+0 $e 5 4 3 2 1
 5 4 3 2 1
-0 $echo /bin echo /bin
-/bin echo /bin
-0 $echo 1 2 1 2 $* 3 4 3 4
-1 2 1 2 $* 3 4 3 4
-0 $echo 1 2 1 2
-1 2 1 2
-0 $echo /usr
+0 $e $A $0 @$A
+/bin /usr/local/share/rwsh/test.sh /bin
+0 $e 1 2 $* 3 4
+1 2 3 4
+0 $e $*2 1 2
+1 2
+0 $e @//usr
 /usr
-0 $no file matching pattern /*is* for selection /*is*
-echo
+0 $e @/*is*
+rwsh.selection_not_found : command not found ( rwsh.selection_not_found /*is* /*is* )
 
-0 $echo /bin
+0 $e @/bin
 /bin
-0 $echo /usr/bin /usr/sbin
+0 $e @/usr/*bin
 /usr/bin /usr/sbin
-0 $echo /usr/lib /usr/libexec
+0 $e @/usr/lib*
 /usr/lib /usr/libexec
-0 $echo /usr/share /usr/standalone
+0 $e @/usr/s*e
 /usr/share /usr/standalone
-0 $echo /usr/include /usr/standalone
+0 $e @/usr/*d*
 /usr/include /usr/standalone
 0 $%set FIGNORE include
-0 $echo /usr/standalone
+0 $e @/usr/*d*
 /usr/standalone
-0 $echo /usr/libexec
+0 $e @/usr/*l*i*b*x*e*
 /usr/libexec
 0 $
 0 $# function
-0 $%function a
+0 $%function a {%true}
 0 $%which a
 %function a {%true}
 0 $a 1 2 3
 0 $%function a
 0 $%which a
 no a
-1 $%function a
+1 $%function a {e 9 $A $1 @//usr}
 0 $%which a
-%function a {echo 9 $A $1 @//usr}
+%function a {e 9 $A $1 @//usr}
 0 $a
 9 /bin  /usr
 0 $a 1
 9 /bin 1 /usr
 0 $a 1 2
 9 /bin 1 /usr
-0 $%function a
+0 $%function a {e $*5 $* $*0}
 0 $a
 a
 0 $a 1
 1 a 1
 0 $a 1 2
 1 2 a 1 2
-0 $# first test of fn function rather than function builtin
-0 $fn e
-0 $e a
-0 $# first test of function which rather than builtin which
-0 $which a
-%function a {%function $1 {echo 3 2 1}}
+0 $f g {%function $1{%function $1{rwsh.argfunction}}}
+0 $g a {e 3 2 1}
+0 $w a
+%function a {%function $1 {e 3 2 1}}
 0 $a b
 0 $b
 3 2 1
 0 $# a function redefining itself doesn't seg fault
-0 $fn f
-0 $f
+0 $f g {e hi; f g {e there}; f h {e nothing here}; g}
+0 $g
 hi
 there
 0 $
 0 $# control flow
-0 $%elif %true
+0 $%elif %true {e not this one}
 syntax error: elif without preceeding if
 0 $%set IF_TEST false
-0 $%elif %false
-0 $%elif %true
+0 $%elif %false {e nor this}
+1 $%elif %true {e but this}
 but this
-0 $%elif %true
-0 $%elif %false
+0 $%elif %true {e this should be skipped}
+0 $%elif %false {e and certainly this}
 0 $%set IF_TEST false
-0 $%elif %true
+0 $%elif %true {%elif %true {e nested syntax}; %set IF_TEST false; %elif %false {not to be printed}; %elif %true {e nested elif}; %set IF_TEST false}
 syntax error: elif without preceeding if
 nested elif
-0 $%elif %true
+0 $%elif %true {e elif failed to appropriately set IF_TEST on exit}
 0 $
-0 $# internal functions
-0 $fn rwsh.executable_not_found
-1 $which rwsh.executable_not_found
+0 $# internal functions 
+0 $f rwsh.executable_not_found
+0 $w rwsh.executable_not_found
 no rwsh.executable_not_found
-1 $which x
+1 $w x
 no x
 1 $x
 x : command not found ( x )
-1 $which rwsh.executable_not_found
+1 $w rwsh.executable_not_found
 %function rwsh.executable_not_found {%echo $0 : command not found ( $*0 ); %newline; %false}
-0 $rwsh.mapped_argfunction 1 2 3
+0 $rwsh.mapped_argfunction 1 2 3 {e a $* a}
 a 1 2 3 a
 0 $rwsh.mapped_argfunction
 rwsh.mapped_argfunction : command not found ( rwsh.mapped_argfunction )
-1 $fn f
-0 $f
-{which rwsh.argfunction {\}; which rwsh.argfunction {rwsh.argfunction}; which rwsh.argfunction {rwsh.escaped_argfunction}}
+1 $f g {w rwsh.argfunction {rwsh.unescaped_argfunction}; w rwsh.argfunction {rwsh.argfunction}; w rwsh.argfunction {rwsh.escaped_argfunction}}
+0 $g {}
+no rwsh.argfunction
 {\}
 {rwsh.argfunction}
-0 $fn rwsh.autofunction
-0 $which false
+0 $f rwsh.autofunction{%autofunction $0 \$*}
+0 $w false
 no false
 1 $false
-256 $which false
+256 $w false
 %function false {/usr/bin/false $*}
-0 $fn rwsh.after_command
-after fn rwsh.after_command
-0 $fn rwsh.after_command
-0 $%set MAX_NESTING 5
-0 $fn f
-0 $fn g
-0 $f
-function exceeded MAX_NESTING ( 5 ). call stack: f g f g f g f
-0 $fn rwsh.excessive_nesting
-0 $f
-rwsh.excessive_nesting itself exceeded MAX_NESTING:
-f g f g f g rwsh.excessive_nesting
-original call stack:
-f g f g f g f
-0 $
-0 $# exiting
-0 $exit
-
+0 $f rwsh.after_command {e after $*0}
+after f rwsh.after_command
+0 $f rwsh.after_command
+0 $f g {h}
+0 $f h {g}
+0 $g
+rwsh.excessive_nesting : command not found ( rwsh.excessive_nesting h g h g h g %source rwsh.mapped_argfunction %elif /usr/local/bin/rwsh )
+1 $

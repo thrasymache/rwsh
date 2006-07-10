@@ -46,6 +46,7 @@ class Argv_t : private std::vector<std::string> {
   iterator erase(iterator first, iterator last) {
     return Base::erase(first, last);}
   void clear(void);
+  void push_front(const std::string& x) {Base::insert(Base::begin(), x);};
   void push_back(const std::string& x) {Base::push_back(x);};
   size_type size(void) const {return Base::size();};
   std::string& operator[] (int i) {return Base::operator[](i);};
