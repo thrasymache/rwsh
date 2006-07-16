@@ -6,6 +6,7 @@
 %importenv
 %set SELECT $HOME
 %selection_set SELECT /
+%set FIGNORE .*
 
 # alias builtins
 %function . {%source $*}

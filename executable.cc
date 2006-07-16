@@ -54,13 +54,14 @@ void Executable_t::excessive_nesting_handler(const Argv_t& src_argv) {
     call_stack.push_back("rwsh.excessive_nesting");
     executable_map[call_stack_copy](call_stack_copy);
     if (excessive_nesting_v) {
-      Argv_t blank;
-      echo_bi(Argv_t("echo rwsh.excessive_nesting itself "
+      echo_bi(Argv_t("%echo rwsh.excessive_nesting itself "
                      "exceeded MAX_NESTING:\n"));
+      call_stack[0] = "%echo";
       echo_bi(call_stack);
-      echo_bi(Argv_t("echo \noriginal call stack:\n"));
+      echo_bi(Argv_t("%echo \noriginal call stack:\n"));
+      call_stack_copy[0] = "%echo";
       echo_bi(call_stack_copy);
-      newline_bi(blank);
+      newline_bi(Argv_t("%newline"));
       call_stack.clear();
       call_stack.push_back("rwsh.excessive_nesting");
       excessive_nesting_v = false;}

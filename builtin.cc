@@ -132,11 +132,13 @@ int source_bi(const Argv_t& argv) {
   if (stat(argv[1].c_str(), &sb)) return -1;
   if (!(sb.st_mode & S_IXUSR)) return -2;
   std::ifstream src(argv[1].c_str(), std::ios_base::in);
+  Argv_t script_arg(argv);
+  script_arg[0] = "rwsh.before_script";
   Executable_map_t::iterator e = 
-    executable_map.find(Argv_t("rwsh.before_script"));
+    executable_map.find(script_arg);
   if (e != executable_map.end()) (*e->second)(argv);
   if (Executable_t::excessive_nesting()) return dollar_question;
-  Argv_t script_arg(argv.begin()+1, argv.end(), argv.argfunction());
+  script_arg.pop_front();
   Command_stream_t script(src);
   Argv_t command;
   int ret = -1;
@@ -146,16 +148,20 @@ int source_bi(const Argv_t& argv) {
       command = script.interpret(script_arg);}
     catch (Argv_t exception) {command = exception;}
     int run_command;
-    e = executable_map.find(Argv_t("rwsh.before_command"));
+    command.push_front("rwsh.before_command");
+    e = executable_map.find(command);
     if (e != executable_map.end()) 
       run_command = (*e->second)(command);
     else run_command = 0;
+    command.pop_front();
     if (!run_command) ret = executable_map[command](command);
-    e = executable_map.find(Argv_t("rwsh.after_command"));
+    command.push_front("rwsh.after_command");
+    e = executable_map.find(command);
     if (e != executable_map.end()) (*e->second)(command);}
   if (Executable_t::excessive_nesting()) return dollar_question;
-  e = executable_map.find(Argv_t("rwsh.after_script"));
-  if (e != executable_map.end()) (*e->second)(argv);
+  script_arg.push_front("rwsh.after_script");
+  e = executable_map.find(script_arg);
+  if (e != executable_map.end()) (*e->second)(script_arg);
   return ret;}
 
 // return success regardless of arguments

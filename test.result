@@ -202,10 +202,10 @@ no false
 256 $w false
 %function false {/usr/bin/false $*}
 0 $f rwsh.after_command {e after $*0}
-after f rwsh.after_command
+after rwsh.after_command f rwsh.after_command
 0 $f rwsh.after_command
 0 $f g {h}
 0 $f h {g}
 0 $g
-rwsh.excessive_nesting : command not found ( rwsh.excessive_nesting h g h g h g %source rwsh.mapped_argfunction %elif /usr/local/bin/rwsh )
+rwsh.excessive_nesting : command not found ( rwsh.excessive_nesting h g h g h g %source rwsh.mapped_argfunction %elif rwsh.init )
 1 $
