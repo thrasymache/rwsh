@@ -20,7 +20,8 @@ bool Executable_t::in_excessive_nesting_handler(false);
 Argv_t Executable_t::call_stack("rwsh.excessive_nesting");
 
 bool Executable_t::increment_nesting(const Argv_t& argv) {
-  if (global_nesting > max_nesting+1) { return excessive_nesting_v = true;}
+  if (excessive_nesting_v || global_nesting > max_nesting+1)
+    return excessive_nesting_v = true;
   else {
     ++executable_nesting;
     ++global_nesting;
