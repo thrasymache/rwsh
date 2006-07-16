@@ -32,7 +32,7 @@
 %function vi {%selection_set SELECT $1; /usr/bin/vi @$SELECT}
 
 # internal functions
-%function rwsh.autofunction {echo attempting to add $0 to executable map; %autofunction $0 \$*}
+%function rwsh.autofunction {%set X $1; if %autofunction $X \$* {echo added $X to executable map}}
 %function rwsh.arguments_for_argfunction {echo cannot specify arguments for $1 directly; %false}
 # rwsh.after_script is initialized after individual configuration file
 %function rwsh.before_script {%function rwsh.prompt}

@@ -185,7 +185,7 @@ no x
 1 $x
 x : command not found ( x )
 1 $w rwsh.executable_not_found
-%function rwsh.executable_not_found {%echo $0 : command not found ( $*0 ); %newline; %false}
+%function rwsh.executable_not_found {%echo $1 : command not found ( $* ); %newline; %false}
 0 $rwsh.mapped_argfunction 1 2 3 {e a $* a}
 a 1 2 3 a
 0 $rwsh.mapped_argfunction
@@ -195,7 +195,7 @@ rwsh.mapped_argfunction : command not found ( rwsh.mapped_argfunction )
 no rwsh.argfunction
 {\}
 {rwsh.argfunction}
-0 $f rwsh.autofunction{%autofunction $0 \$*}
+0 $f rwsh.autofunction{%autofunction $1 \$*}
 0 $w false
 no false
 1 $false

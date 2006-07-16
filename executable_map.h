@@ -13,7 +13,7 @@ class Executable_map_t : private std::map<std::string, Executable_t*> {
   void erase (iterator pos);
   size_type erase (const Argv_t& key);
   iterator find (const Argv_t& key);
-  Executable_t& operator[] (const Argv_t& key);
+  Executable_t& operator[] (Argv_t& key);
   // insert executable if not present, replace if executable already exists
   void set(Executable_t* target); 
 

@@ -124,7 +124,7 @@ rwsh.mapped_argfunction 1 2 3 {e a $* a}
 rwsh.mapped_argfunction
 f g {w rwsh.argfunction {rwsh.unescaped_argfunction}; w rwsh.argfunction {rwsh.argfunction}; w rwsh.argfunction {rwsh.escaped_argfunction}}
 g {}
-f rwsh.autofunction{%autofunction $0 \$*}
+f rwsh.autofunction{%autofunction $1 \$*}
 w false
 false
 w false

@@ -63,7 +63,7 @@ Executable_map_t::iterator Executable_map_t::find(const Argv_t& key) {
 // implementation is in the spirit of a map because operator[] is returning
 // a valid value regardless of the key requested. find() on the other hand
 // returns a failure condition, an invalid iterator.
-Executable_t& Executable_map_t::operator[] (const Argv_t& key) {
+Executable_t& Executable_map_t::operator[] (Argv_t& key) {
   iterator i = this->find(key);                         // first check for key
   if (i != end()) return *i->second;
   else if (key[0][0] == '/') {                          // insert a binary
@@ -71,13 +71,16 @@ Executable_t& Executable_map_t::operator[] (const Argv_t& key) {
     return *this->find(key)->second;}
   else if (key[0] == "rwsh.mapped_argfunction") {       // handle argfunction
     if (key.argfunction()) return *key.argfunction();}
-  i = Base::find("rwsh.autofunction");                  // try autofunction
+  key.push_front("rwsh.autofunction");                  // try autofunction
+  i = this->find(key);
   if (i != end()) (*i->second)(key);
+  key.pop_front();
   i = this->find(key);                                  // second check for key
   if (i != end()) return *i->second;
-  i = Base::find("rwsh.executable_not_found");          // executable_not_found
+  key.push_front("rwsh.executable_not_found");          // executable_not_found
+  i = this->find(key);
   if (i != end()) return *i->second;
   set(new Function_t("rwsh.executable_not_found", // reset executable_not_found
-                     "%echo $0 : command not found ( $*0 ); %newline; %false"));
-  return *(Base::find("rwsh.executable_not_found")->second);}
+                     "%echo $1 : command not found ( $* ); %newline; %false"));
+  return *(this->find(key)->second);}
 
