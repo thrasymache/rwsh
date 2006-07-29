@@ -28,10 +28,9 @@ bool Executable_t::increment_nesting(const Argv_t& argv) {
     return false;}}
 
 bool Executable_t::decrement_nesting(const Argv_t& argv) {
-  --executable_nesting;
   --global_nesting;
-  if (excessive_nesting_v) 
-excessive_nesting_handler(argv);
+  if (excessive_nesting_v) excessive_nesting_handler(argv);
+  --executable_nesting;
   return excessive_nesting_v;}
 
 // code to call rwsh.excessive_nesting, separated out of operator() for clarity.

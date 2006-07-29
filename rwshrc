@@ -37,7 +37,7 @@
 # rwsh.after_script is initialized after individual configuration file
 %function rwsh.before_script {%function rwsh.prompt}
 %function rwsh.binary_not_found {echo $1 : could not run binary; %false}
-%function rwsh.excessive_nesting {%newline; %echo function exceeded MAX_NESTING ( $MAX_NESTING ). call stack: $*; %newline; %function rwsh.prompt {%echo $? \$}}
+%function rwsh.excessive_nesting {%newline; %echo function exceeded MAX_NESTING ( $MAX_NESTING ). call stack: $*; %newline}
 %function rwsh.mismatched_brace {echo mismatched brace: $1; %false}
 %function rwsh.multiple_argfunctions {echo multiple argfunctions not supported at this time; %false}
 %function rwsh.selection_not_found{echo no file matching pattern $1 for selection $2}
@@ -46,9 +46,10 @@
 # final setup and individual configuration
 %function st {/bin/bash /usr/local/bin/test_rwsh}
 %function rwsh {/usr/local/bin/rwsh $*}
+%function test {/bin/test $*}
 %set rc $HOME
 %selection_set rc /.rwshrc
 %source $rc
 %set rc
-%function rwsh.after_script {%function rwsh.prompt {%echo $? \$}}
+%function rwsh.after_script {%function rwsh.prompt {%set X $?; if test $ERRNO {echo ERRNO is set to  $ERRNO}; %echo $X \$}}
 %version
