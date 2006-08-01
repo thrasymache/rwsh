@@ -28,6 +28,7 @@ Executable_map_t::Executable_map_t(void) {
   set(new Built_in_t("%ls", ls_bi));
   set(new Built_in_t("%newline", newline_bi));
   set(new Built_in_t("%printenv", printenv_bi));
+  set(new Built_in_t("%return", return_bi));
   set(new Built_in_t("%set", set_bi));
   set(new Built_in_t("%selection_set", selection_set_bi));
   set(new Built_in_t("%source", source_bi));

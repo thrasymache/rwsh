@@ -72,10 +72,10 @@ int function_bi(const Argv_t& argv) {
     return 2;}
   else if (argv[1][0] == '%') {
     std::cerr <<"cannot set builtins as functions\n"; 
-    return 2;}
+    return 3;}
   else if (is_argfunction_name(argv[1])) {
     std::cerr <<"cannot set rwsh.argfunction or variants in executable map\n";
-    return 2;}
+    return 4;}
   else if (!argv.argfunction()) {
     Argv_t lookup(argv.begin()+1, argv.end(), 0);
     return !executable_map.erase(lookup);}
@@ -105,6 +105,20 @@ int ls_bi(const Argv_t& argv) {
 
 // write a newline to the standard output
 int newline_bi(const Argv_t& argv) {std::cout <<std::endl; return 0;}
+
+// return the value given by the argument
+int return_bi(const Argv_t& argv) {
+  if (argv.size() != 2) {set_var("ERRNO", "ARGS"); return -1;}
+  const char* focus = argv[1].c_str();
+  char* endptr;
+  errno = 0;
+  long ret = strtol(focus, &endptr, 10);
+  if (!*focus || *endptr) {set_var("ERRNO", "NAN"); return -1;}
+  if (errno == ERANGE) set_var("ERRNO", "RANGE");
+  if (errno == EINVAL) {set_var("ERRNO", "INVAL"); return -7;}
+  else if (ret < INT_MIN) {set_var("ERRNO", "RANGE"); return INT_MIN;}
+  else if (ret > INT_MAX) {set_var("ERRNO", "RANGE"); return INT_MAX;}
+  else return ret;}
 
 // modify variable $1 as a selection according to $2
 int selection_set_bi(const Argv_t& argv) {
