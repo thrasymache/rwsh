@@ -4,8 +4,7 @@
 
 # set up environment
 %importenv
-%set SELECT $HOME
-%selection_set SELECT /
+%selection_set SELECT $HOME /
 %set FIGNORE .*
 
 # alias builtins
@@ -30,6 +29,8 @@
 %function less {%selection_set SELECT $1; /usr/bin/less @$SELECT}
 %function set {%set $*}
 %function vi {%selection_set SELECT $1; /usr/bin/vi @$SELECT}
+%function wc {%selection_set SELECT $1; /usr/bin/wc @$SELECT}
+%function unselect {%set SELECT $CWD; %selection_set SELECT /}
 
 # internal functions
 %function rwsh.autofunction {%set X $1; if %autofunction $X \$* {echo added $X to executable map}}
@@ -42,14 +43,14 @@
 %function rwsh.multiple_argfunctions {echo multiple argfunctions not supported at this time; %false}
 %function rwsh.selection_not_found{echo no file matching pattern $1 for selection $2}
 %function rwsh.shutdown {%newline}
+%function rwsh.vars {%internal_vars; echo HOME $HOME; echo REGEX $REGEX; echo SELECT $SELECT}
 
 # final setup and individual configuration
 %function ! {if $* {%return 1}; else {%return 0}}
 %function st {/bin/bash /usr/local/bin/test_rwsh}
 %function rwsh {/usr/local/bin/rwsh $*}
 %function test {/bin/test $*}
-%set rc $HOME
-%selection_set rc /.rwshrc
+%selection_set rc $HOME /.rwshrc
 %source $rc
 %set rc
 %function rwsh.after_script {%function rwsh.prompt {%set X $?; if test $ERRNO {echo ERRNO is set to  $ERRNO; %set OLD_ERRNO $ERRNO; %set ERRNO \ }; %echo $X \$}}

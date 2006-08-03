@@ -31,7 +31,14 @@ extern char** environ;
 // change the current directory to the one given
 int cd_bi(const Argv_t& argv) {
   if (argv.size() != 2) return -2;
-  return chdir(argv[1].c_str());}
+  errno = 0;
+  int ret = chdir(argv[1].c_str());
+  if (!ret) set_var("CWD", argv[1]);
+  else if (errno == ENOENT) set_var("ERRNO", "NOENT");
+  else if (errno == ENOTDIR) set_var("ERRNO", "NOTDIR"); 
+  else set_var("ERRNO", "ERROR"); 
+  errno = 0;
+  return ret;}
 
 // echo arguments to standard output
 int echo_bi(const Argv_t& argv) {
@@ -124,7 +131,8 @@ int return_bi(const Argv_t& argv) {
 int selection_set_bi(const Argv_t& argv) {
   if (argv.size() < 3) return 1;
   std::string dest(get_var(argv[1]));
-  selection_write(argv[2], dest);
+  for (Argv_t::const_iterator i = argv.begin()+2; i != argv.end(); ++i) 
+    selection_write(*i, dest);
   set_var(argv[1], dest);
   return 0;}
 
