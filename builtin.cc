@@ -49,7 +49,7 @@ int elif_bi(const Argv_t& argv) {
   else if (get_var("IF_TEST") == "false") {
     Argv_t lookup(argv.begin()+1, argv.end(), 0);
     if (!executable_map[lookup](lookup)) {
-      if (Executable_t::excessive_nesting()) return dollar_question;
+      if (Executable_t::unwind_stack()) return dollar_question;
       set_var("IF_TEST", "");
       (*argv.argfunction())(Argv_t("rwsh.mapped_argfunction"));
       set_var("IF_TEST", "true");}}
@@ -151,7 +151,7 @@ int source_bi(const Argv_t& argv) {
   Executable_map_t::iterator e = 
     executable_map.find(script_arg);
   if (e != executable_map.end()) (*e->second)(argv);
-  if (Executable_t::excessive_nesting()) return dollar_question;
+  if (Executable_t::unwind_stack()) return dollar_question;
   script_arg.pop_front();
   Command_stream_t script(src);
   Argv_t command;
@@ -172,7 +172,7 @@ int source_bi(const Argv_t& argv) {
     command.push_front("rwsh.after_command");
     e = executable_map.find(command);
     if (e != executable_map.end()) (*e->second)(command);}
-  if (Executable_t::excessive_nesting()) return dollar_question;
+  if (Executable_t::unwind_stack()) return dollar_question;
   script_arg.push_front("rwsh.after_script");
   e = executable_map.find(script_arg);
   if (e != executable_map.end()) (*e->second)(script_arg);

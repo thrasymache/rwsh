@@ -44,6 +44,7 @@
 %function rwsh.shutdown {%newline}
 
 # final setup and individual configuration
+%function ! {if $* {%return 1}; else {%return 0}}
 %function st {/bin/bash /usr/local/bin/test_rwsh}
 %function rwsh {/usr/local/bin/rwsh $*}
 %function test {/bin/test $*}

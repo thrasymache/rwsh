@@ -48,7 +48,7 @@ int Function_t::operator() (const Argv_t& src_argv) {
        i != script.end(); ++i) {
     Argv_t dest_argv = i->interpret(src_argv);
     last_return = (executable_map[dest_argv])(dest_argv);
-    if (excessive_nesting()) break;}
+    if (unwind_stack()) break;}
   int ret = last_return;
   if (decrement_nesting(src_argv)) ret = dollar_question;
   if (del_on_term && !executable_nesting) delete this;

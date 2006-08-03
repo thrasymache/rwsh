@@ -5,3 +5,5 @@ should be done, after all, both errors occurred.  But then this should be the
 behavior when a function calls an executable, which causes rwsh.autofunction to exceed MAX_NESTING, but in this case, only the excessive_nesting error occurs.
 
 %return must set errno to 0, because other function calls are causing errors
+
+If the shell receives a signal while waiting for input, it does not handle it until after the line is input

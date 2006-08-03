@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <map>
+#include <signal.h>
 #include <string>
 #include <vector>
 
@@ -25,6 +26,21 @@ namespace {std::string init_str =
   "%elif /bin/test $RC {%source $RC; %exit};"
   "%elif %true {%source /etc/rwshrc}";}
 
+static void signal_starter(int sig) {Executable_t::caught_signal = sig;}
+
+static void register_signals(void) {
+  signal(SIGHUP, signal_starter);
+  signal(SIGINT, signal_starter);
+  signal(SIGQUIT, signal_starter);
+  signal(SIGPIPE, signal_starter);
+  signal(SIGTERM, signal_starter);
+  signal(SIGTSTP, signal_starter);
+  signal(SIGCONT, signal_starter);
+  //signal(SIGCHLD, signal_starter);
+  signal(SIGINFO, signal_starter);
+  signal(SIGUSR1, signal_starter);
+  signal(SIGUSR2, signal_starter);}
+
 int main(int argc, char *argv[]) {
   Argv_t external_command_line(&argv[0], &argv[argc], 0);
   Command_stream_t command_stream(std::cin);
@@ -32,23 +48,26 @@ int main(int argc, char *argv[]) {
   executable_map.set(new Function_t("rwsh.init", init_str));
   external_command_line.push_front("rwsh.init");
   executable_map[external_command_line](external_command_line);
+  register_signals();
   Argv_t command;
-  while (command_stream >> command) {
-    try {
-      Arg_script_t script(command);
-      command = script.interpret(command);}
-    catch (Argv_t exception) {command = exception;}
-    int run_command;
-    command.push_front("rwsh.before_command");
-    e = executable_map.find(command);
-    if (e != executable_map.end()) 
-      run_command = (*e->second)(command);
-    else run_command = 0;
-    command.pop_front();
-    if (!run_command) executable_map[command](command);
-    command.push_front("rwsh.after_command");
-    e = executable_map.find(command);
-    if (e != executable_map.end()) (*e->second)(command);}
+  while (command_stream >> command || Executable_t::unwind_stack()) 
+    if (Executable_t::unwind_stack()) Executable_t::signal_handler();
+    else {
+      try {
+        Arg_script_t script(command);
+        command = script.interpret(command);}
+      catch (Argv_t exception) {command = exception;}
+      int run_command;
+      command.push_front("rwsh.before_command");
+      e = executable_map.find(command);
+      if (e != executable_map.end()) 
+        run_command = (*e->second)(command);
+      else run_command = 0;
+      command.pop_front();
+      if (!run_command) executable_map[command](command);
+      command.push_front("rwsh.after_command");
+      e = executable_map.find(command);
+      if (e != executable_map.end()) (*e->second)(command);}
   external_command_line[0] = "rwsh.shutdown";
   e = executable_map.find(external_command_line);
   if (e != executable_map.end()) 

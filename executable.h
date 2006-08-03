@@ -2,10 +2,10 @@
 
 class Executable_t {
  private:
-  static int global_nesting;
-  static bool excessive_nesting_v;
   static Argv_t call_stack;
-  static bool in_excessive_nesting_handler;
+  static int global_nesting;
+  static bool excessive_nesting;
+  static bool in_signal_handler;
 
  protected:
   int last_return;
@@ -17,10 +17,13 @@ class Executable_t {
   bool is_running(void) const {return !!executable_nesting;};
   bool del_on_term;
 
+  static const int SIGNONE   =  0;
+  static const int SIGEXNEST = -1;
   bool increment_nesting(const Argv_t& argv);
   bool decrement_nesting(const Argv_t& argv);
-  static bool excessive_nesting(void) {return excessive_nesting_v;}
-  static void excessive_nesting_handler(const Argv_t& src_argv);
+  static int caught_signal;
+  static bool unwind_stack(void) {return caught_signal != SIGNONE;}
+  static void signal_handler(void);
 
   virtual int operator() (const Argv_t& argv) = 0;
   virtual std::string name(void) const = 0;

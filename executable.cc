@@ -5,6 +5,7 @@
 // Copyright (C) 2005, 2006 Samuel Newbold
 
 #include <string>
+#include <signal.h>
 #include <map>
 #include <vector>
 
@@ -15,13 +16,13 @@
 #include "variable_map.h"
 
 int Executable_t::global_nesting(0);
-bool Executable_t::excessive_nesting_v(false);
-bool Executable_t::in_excessive_nesting_handler(false);
-Argv_t Executable_t::call_stack("rwsh.excessive_nesting");
+int Executable_t::caught_signal(0);
+bool Executable_t::in_signal_handler(false);
+Argv_t Executable_t::call_stack;
 
 bool Executable_t::increment_nesting(const Argv_t& argv) {
-  if (excessive_nesting_v || global_nesting > max_nesting+1)
-    return excessive_nesting_v = true;
+  if (global_nesting > max_nesting+1) caught_signal = SIGEXNEST;
+  if (unwind_stack()) return true;
   else {
     ++executable_nesting;
     ++global_nesting;
@@ -29,47 +30,58 @@ bool Executable_t::increment_nesting(const Argv_t& argv) {
 
 bool Executable_t::decrement_nesting(const Argv_t& argv) {
   --global_nesting;
-  if (excessive_nesting_v) excessive_nesting_handler(argv);
+  if (unwind_stack()) {
+    call_stack.push_back(argv[0]);
+    if (!global_nesting && !in_signal_handler) signal_handler();}
   --executable_nesting;
-  return excessive_nesting_v;}
+  return unwind_stack();}
 
 // code to call rwsh.excessive_nesting, separated out of operator() for clarity.
-// The requirements for excessive nesting handling to work properly are as 
+// The requirements for stack unwinding to work properly are as 
 // follows: All things derived from Executable_t must call increment_nesting
 // on start and decrement_nesting before terminating.  If they run more 
-// than one other executable, then they must call excessive_nesting() in 
+// than one other executable, then they must call unwind_stack() in 
 // between each executable, which must be of a Executable_t rather than a 
 // direct call to the function that implements a builtin (the code below to 
 // handle recursively excessive nesting is the only exception to this rule).
-// main does not need to do this excessive_nesting handling, because anything 
+// main does not need to do this handling, because anything 
 // that it calls directly will have an initial nesting of 0.
-void Executable_t::excessive_nesting_handler(const Argv_t& src_argv) {
-  call_stack.push_back(src_argv[0]);
-  if (in_excessive_nesting_handler) return;
-  if (!global_nesting) {
-    excessive_nesting_v = false;
-    in_excessive_nesting_handler = true;
-    Argv_t call_stack_copy = call_stack;                     //need for a copy: 
+void Executable_t::signal_handler(void) {
+  Argv_t call_stack_copy = call_stack;                     //need for a copy: 
+  switch (caught_signal) {
+    case SIGEXNEST: call_stack_copy.push_front("rwsh.excessive_nesting"); break;
+    case SIGHUP: call_stack_copy.push_front("rwsh.sighup"); break;
+    case SIGINT: call_stack_copy.push_front("rwsh.sigint"); break;
+    case SIGQUIT: call_stack_copy.push_front("rwsh.sigquit"); break;
+    case SIGPIPE: call_stack_copy.push_front("rwsh.sigpipe"); break;
+    case SIGTERM: call_stack_copy.push_front("rwsh.sigterm"); break;
+    case SIGTSTP: call_stack_copy.push_front("rwsh.sigtstp"); break;
+    case SIGCONT: call_stack_copy.push_front("rwsh.sigcont"); break;
+    case SIGCHLD: call_stack_copy.push_front("rwsh.sigchld"); break;
+    case SIGINFO: call_stack_copy.push_front("rwsh.siginfo"); break;
+    case SIGUSR1: call_stack_copy.push_front("rwsh.sigusr1"); break;
+    case SIGUSR2: call_stack_copy.push_front("rwsh.sigusr2"); break;
+    default: call_stack_copy.push_front("rwsh.sigunknown");}
+  call_stack.clear();
+  in_signal_handler = true;
+  caught_signal = SIGNONE;
+  executable_map[call_stack_copy](call_stack_copy);
+  if (unwind_stack()) {
+    echo_bi(Argv_t("%echo signal handler itself triggered signal"));
+    call_stack.push_front("%echo");
+    echo_bi(call_stack);
+    echo_bi(Argv_t("%echo \noriginal call stack:\n"));
+    call_stack_copy[0] = "%echo";
+    echo_bi(call_stack_copy);
+    newline_bi(Argv_t("%newline"));
     call_stack.clear();
-    call_stack.push_back("rwsh.excessive_nesting");
-    executable_map[call_stack_copy](call_stack_copy);
-    if (excessive_nesting_v) {
-      echo_bi(Argv_t("%echo rwsh.excessive_nesting itself "
-                     "exceeded MAX_NESTING:\n"));
-      call_stack[0] = "%echo";
-      echo_bi(call_stack);
-      echo_bi(Argv_t("%echo \noriginal call stack:\n"));
-      call_stack_copy[0] = "%echo";
-      echo_bi(call_stack_copy);
-      newline_bi(Argv_t("%newline"));
-      call_stack.clear();
-      call_stack.push_back("rwsh.excessive_nesting");
-      excessive_nesting_v = false;}
-    in_excessive_nesting_handler = false;
-    set_var("IF_TEST", "");}}
-// need for a copy: if rwsh.excessive_nesting exceeds MAX_NESTING itself
-//     then it will unwind the stack and write to call_stack. To preserve the 
-//     original call stack, we need a copy of call_stack to be the argument.
+    caught_signal = SIGNONE;}
+  in_signal_handler = false;
+  set_var("IF_TEST", "");}
+// need for a copy: if the internal function that runs for this signal itself
+//     triggers a signal then it will unwind the stack and write to call_stack. 
+//     To preserve the original call stack, we need a copy of call_stack to be 
+//     the argument.
 
 Binary_t::Binary_t(const std::string& impl) : implementation(impl) {}
 
