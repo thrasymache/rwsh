@@ -54,4 +54,6 @@
 %source $rc
 %set rc
 %function rwsh.after_script {%function rwsh.prompt {%set X $?; if test $ERRNO {echo ERRNO is set to  $ERRNO; %set OLD_ERRNO $ERRNO; %set ERRNO \ }; %echo $X \$}}
+%echo rwsh v
 %version
+%newline

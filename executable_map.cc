@@ -25,6 +25,20 @@ Executable_map_t::Executable_map_t(void) {
   set(new Built_in_t("%false", false_bi));
   set(new Built_in_t("%function", function_bi));
   set(new Built_in_t("%importenv", importenv_bi));
+  set(new Function_t("%internal", "%internal_errors; %internal_features; "
+                                  "%internal_vars"));
+  set(new Function_t("%internal_errors", "%echo rwsh.arguments_for_argfunction "
+                     "rwsh.binary_not_found rwsh.executable_not_found "
+                     "rwsh.excessive_nesting rwsh.multiple_argfunctions "
+                     "rwsh.mismatched_brace rwsh.init rwsh.sighup rwsh.sigint "
+                     "rwsh.sigquit rwsh.sigpipe rwsh.sigterm rwsh.sigstp "
+                     "rwsh.sigcont rwsh.siginfo rwsh.sigusr1 rwsh.sigusr2 "
+                     "rwsh.unreadable_dir "));
+  set(new Function_t("%internal_features", "%echo rwsh.after_command "
+                     "rwsh.after_script rwsh.before_command "
+                     "rwsh.before_script rwsh.prompt rwsh.raw_command "
+                     "rwsh.selection_not_found rwsh.shutdown "));
+  set(new Function_t("%internal_vars", "%echo CWD ERRNO FIGNORE IF_TEST"));
   set(new Built_in_t("%ls", ls_bi));
   set(new Built_in_t("%newline", newline_bi));
   set(new Built_in_t("%printenv", printenv_bi));
@@ -34,7 +48,9 @@ Executable_map_t::Executable_map_t(void) {
   set(new Built_in_t("%source", source_bi));
   set(new Built_in_t("%true", true_bi));
   set(new Built_in_t("%which", which_bi));
-  set(new Built_in_t("%version", version_bi));}
+  set(new Built_in_t("%version", version_bi));
+  set(new Built_in_t("%version_available", version_available_bi));
+  set(new Built_in_t("%version_compatible", version_compatible_bi));}
 
 // insert target into map, with key target->name(), replacing old value if key
 // is already in the map

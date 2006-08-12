@@ -3,7 +3,10 @@
 int autofunction_bi(const Argv_t& argv);
 int cd_bi(const Argv_t& argv);
 int echo_bi(const Argv_t& argv);
+int if_bi(const Argv_t& argv);
 int elif_bi(const Argv_t& argv);
+int elnif_bi(const Argv_t& argv);
+int else_bi(const Argv_t& argv);
 int exit_bi(const Argv_t& argv);
 int false_bi(const Argv_t& argv);
 int function_bi(const Argv_t& argv);
@@ -18,4 +21,6 @@ int source_bi(const Argv_t& argv);
 int true_bi(const Argv_t& argv);
 int which_bi(const Argv_t& argv);
 int version_bi(const Argv_t& argv);
+int version_available_bi(const Argv_t& argv);
+int version_compatible_bi(const Argv_t& argv);
 

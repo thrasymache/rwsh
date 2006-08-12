@@ -227,8 +227,25 @@ int autofunction_bi(const Argv_t& argv) {
       return 0;}}
   return 1;}
 
+static const std::string version_str("0.1+");
+
 // write to standard output the version of rwsh
 int version_bi(const Argv_t& argv) {
-  std::cout <<"rwsh v0.1+\n";
+  if (argv.size() != 1) return -1;
+  std::cout <<version_str;
   return 0;}
+
+// write to standard output a list of the version with which this shell is 
+// compatible
+int version_available_bi(const Argv_t& argv) {
+  if (argv.size() != 1) return -1;
+  std::cout <<version_str;
+  return 0;}
+
+// return true if the given version string is compatible with the version
+// of this shell
+int version_compatible_bi(const Argv_t& argv) {
+  if (argv.size() != 2) return -1;
+  else if (argv[1] == version_str) return 0;
+  else return 1;}
 
