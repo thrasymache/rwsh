@@ -61,7 +61,9 @@ void Executable_t::signal_handler(void) {
     case SIGINFO: call_stack_copy.push_front("rwsh.siginfo"); break;
     case SIGUSR1: call_stack_copy.push_front("rwsh.sigusr1"); break;
     case SIGUSR2: call_stack_copy.push_front("rwsh.sigusr2"); break;
-    default: call_stack_copy.push_front("rwsh.sigunknown");}
+    default: 
+      call_stack_copy.push_front("caught unknown signal in");
+      call_stack_copy.push_front("%echo");}
   call_stack.clear();
   in_signal_handler = true;
   caught_signal = SIGNONE;

@@ -162,19 +162,17 @@ hi
 there
 0 $
 0 $# control flow
-0 $%elif %true {e not this one}
-syntax error: elif without preceeding if
-0 $%set IF_TEST false
-0 $%elif %false {e nor this}
-1 $%elif %true {e but this}
+0 $%else_if %true {e not this one}
+-1 $%set IF_TEST false
+0 $%else_if %false {e nor this}
+0 $%else_if %true {e but this}
 but this
-0 $%elif %true {e this should be skipped}
-0 $%elif %false {e and certainly this}
+0 $%else_if %true {e this should be skipped}
+0 $%else_if %false {e and certainly this}
 0 $%set IF_TEST false
-0 $%elif %true {%elif %true {e nested syntax}; %set IF_TEST false; %elif %false {not to be printed}; %elif %true {e nested elif}; %set IF_TEST false}
-syntax error: elif without preceeding if
-nested elif
-0 $%elif %true {e elif failed to appropriately set IF_TEST on exit}
+0 $%else_if %true {%else_if %true {e nested syntax}; %set IF_TEST false; %else_if %false {not to be printed}; %else_if %true {e nested else_if}; %set IF_TEST false}
+nested else_if
+-1 $%else_if %true {e else_if failed to appropriately set IF_TEST on exit}
 0 $
 0 $# internal functions 
 0 $f rwsh.executable_not_found
@@ -207,5 +205,5 @@ after rwsh.after_command f rwsh.after_command
 0 $f g {h}
 0 $f h {g}
 0 $g
-rwsh.excessive_nesting : command not found ( rwsh.excessive_nesting h g h g h g %source rwsh.mapped_argfunction %elif rwsh.init )
+rwsh.excessive_nesting : command not found ( rwsh.excessive_nesting h g h g h g %source rwsh.mapped_argfunction %if rwsh.init )
 1 $

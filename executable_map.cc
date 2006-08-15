@@ -20,13 +20,15 @@ Executable_map_t::Executable_map_t(void) {
   set(new Built_in_t("%autofunction", autofunction_bi));
   set(new Built_in_t("%cd", cd_bi));
   set(new Built_in_t("%echo", echo_bi));
-  set(new Built_in_t("%elif", elif_bi));
+  set(new Built_in_t("%if", if_bi));
+  set(new Built_in_t("%if_errno", if_errno_bi));
+  set(new Built_in_t("%else_if", else_if_bi));
+  set(new Built_in_t("%else_not_if", else_not_if_bi));
+  set(new Built_in_t("%else", else_bi));
   set(new Built_in_t("%exit", exit_bi));
   set(new Built_in_t("%false", false_bi));
   set(new Built_in_t("%function", function_bi));
   set(new Built_in_t("%importenv", importenv_bi));
-  set(new Function_t("%internal", "%internal_errors; %internal_features; "
-                                  "%internal_vars"));
   set(new Function_t("%internal_errors", "%echo rwsh.arguments_for_argfunction "
                      "rwsh.binary_not_found rwsh.executable_not_found "
                      "rwsh.excessive_nesting rwsh.multiple_argfunctions "

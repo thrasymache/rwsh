@@ -104,15 +104,15 @@ f g {e hi; f g {e there}; f h {e nothing here}; g}
 g
 
 # control flow
-%elif %true {e not this one}
+%else_if %true {e not this one}
 %set IF_TEST false
-%elif %false {e nor this}
-%elif %true {e but this}
-%elif %true {e this should be skipped}
-%elif %false {e and certainly this}
+%else_if %false {e nor this}
+%else_if %true {e but this}
+%else_if %true {e this should be skipped}
+%else_if %false {e and certainly this}
 %set IF_TEST false
-%elif %true {%elif %true {e nested syntax}; %set IF_TEST false; %elif %false {not to be printed}; %elif %true {e nested elif}; %set IF_TEST false}
-%elif %true {e elif failed to appropriately set IF_TEST on exit}
+%else_if %true {%else_if %true {e nested syntax}; %set IF_TEST false; %else_if %false {not to be printed}; %else_if %true {e nested else_if}; %set IF_TEST false}
+%else_if %true {e else_if failed to appropriately set IF_TEST on exit}
 
 # internal functions 
 f rwsh.executable_not_found
@@ -139,3 +139,4 @@ g
 # exiting
 %exit
 %echo 1 2 3
+%function rwsh.after_command {%if_errno {%echo ERRNO set to $ERRNO; %newline; %set ERRNO \ }}

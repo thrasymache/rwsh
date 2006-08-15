@@ -22,9 +22,8 @@ Executable_map_t executable_map;
 namespace {std::string init_str =
   "%set MAX_NESTING 4;"
   "%set RC $2;"
-  "%set IF_TEST false;"
-  "%elif /bin/test $RC {%source $RC; %exit};"
-  "%elif %true {%source /etc/rwshrc}";}
+  "%if /bin/test $RC {%source $RC; %exit};"
+  "%else {%source /etc/rwshrc}";}
 
 static void signal_starter(int sig) {Executable_t::caught_signal = sig;}
 
@@ -36,7 +35,6 @@ static void register_signals(void) {
   signal(SIGTERM, signal_starter);
   signal(SIGTSTP, signal_starter);
   signal(SIGCONT, signal_starter);
-  //signal(SIGCHLD, signal_starter);
   signal(SIGINFO, signal_starter);
   signal(SIGUSR1, signal_starter);
   signal(SIGUSR2, signal_starter);}

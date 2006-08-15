@@ -49,19 +49,69 @@ int echo_bi(const Argv_t& argv) {
   std::cout.flush();
   return 0;}
 
+static int if_core(const Argv_t& argv, bool logic) {
+  Argv_t lookup(argv.begin()+1, argv.end(), 0);
+  if (logic == !executable_map[lookup](lookup)) {
+    if (Executable_t::unwind_stack()) return -1;
+    set_var("IF_TEST", "");
+    int ret;
+    if (argv.argfunction())
+      ret  = (*argv.argfunction())(Argv_t("rwsh.mapped_argfunction"));
+    else ret = 0;
+    if (get_var("IF_TEST") != "") {set_var("ERRNO", "BAD_IF_NEST"); ret = -1;}
+    set_var("IF_TEST", "true");
+    return ret;}
+  else return 0;}
+
+// run argfunction if $* returns true
+int if_bi(const Argv_t& argv) {
+  if (argv.size() < 2) {set_var("ERRNO", "ARGS"); return -1;}
+  if (get_var("IF_TEST") == "") {
+    int ret = if_core(argv, true);
+    set_var("IF_TEST", "false"); 
+    return ret;}
+  else {set_var("ERRNO", "IF_BEFORE_ELSE"); return -1;}}
+
+// run argfunction if ERRNO is set
+int if_errno_bi(const Argv_t& argv) {
+  int ret = 0;
+  if (get_var("ERRNO") != "" && argv.argfunction()) 
+    ret = (*argv.argfunction())(Argv_t("rwsh.mapped_argfunction"));
+  if (argv.size() != 1) {
+    set_var("ERRNO", "ARGS");
+    if (argv.argfunction()) 
+      ret = (*argv.argfunction())(Argv_t("rwsh.mapped_argfunction"));}
+  return ret;}
+
 // run argfunction if IF_TEST is false and $* returns true
-int elif_bi(const Argv_t& argv) {
-  if (argv.size() < 2) return 1;
-  if (get_var("IF_TEST") == "true");
-  else if (get_var("IF_TEST") == "false") {
-    Argv_t lookup(argv.begin()+1, argv.end(), 0);
-    if (!executable_map[lookup](lookup)) {
-      if (Executable_t::unwind_stack()) return dollar_question;
+int else_if_bi(const Argv_t& argv) {
+  if (argv.size() < 2) {set_var("ERRNO", "ARGS"); return -1;}
+  if (get_var("IF_TEST") == "true") return 0;
+  else if (get_var("IF_TEST") == "false") return if_core(argv, true);
+  else {set_var("ERRNO", "ELSE_WITHOUT_IF"); return -1;}}
+
+// run argfunction if IF_TEST is false and $* returns false
+int else_not_if_bi(const Argv_t& argv) {
+  if (argv.size() < 2) {set_var("ERRNO", "ARGS"); return -1;}
+  if (get_var("IF_TEST") == "true") return 0;
+  else if (get_var("IF_TEST") == "false") return if_core(argv, false);
+  else {set_var("ERRNO", "ELSE_WITHOUT_IF"); return -1;}}
+
+// run argfunction if IF_TEST is false 
+int else_bi(const Argv_t& argv) {
+  int ret;
+  if (argv.size() != 1) {set_var("ERRNO", "ARGS"); ret = -1;}
+  if (get_var("IF_TEST") == "true") ret = 0;
+  else if (get_var("IF_TEST") == "false") 
+    if (argv.argfunction()) {
       set_var("IF_TEST", "");
       (*argv.argfunction())(Argv_t("rwsh.mapped_argfunction"));
-      set_var("IF_TEST", "true");}}
-  else std::cout <<"syntax error: elif without preceeding if\n";
-  return dollar_question;}
+      if (get_var("IF_TEST") != "") {set_var("ERRNO", "BAD_IF_NEST"); ret = -1;}
+      else ret = dollar_question;}
+    else ret = 0;
+  else {set_var("ERRNO", "ELSE_WITHOUT_IF"); ret = -1;}
+  set_var("IF_TEST", "");
+  return ret;}
 
 // exit the shell
 int exit_bi(const Argv_t& argv) {

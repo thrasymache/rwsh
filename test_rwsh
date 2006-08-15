@@ -1,1 +1,1 @@
-/usr/local/bin/rwsh /usr/local/share/rwsh/test.sh </usr/local/share/rwsh/test_excessive_nesting.sh | diff -c /usr/local/share/rwsh/test.result -
+/usr/local/bin/test_rwsh_out | diff -c /usr/local/share/rwsh/test.result -
