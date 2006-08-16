@@ -2,17 +2,17 @@
 0
 %function rwsh.prompt{%echo \$}
 0
-$%function #{%true}
+$%function #{%nop}
 0
-$%function \ {%true}
+$%function \ {%nop}
 0
 $# argv tests
 0
-$%true
+$%nop
 0
-$     %true
+$     %nop
 0
-$%true 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+$%nop 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
 0
 $%echo 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 200
@@ -24,21 +24,21 @@ $%echo  \    1                2
 $%newline
 
 0
-$%which rwsh.mapped_argfunction {%true}
-{%true}
+$%which rwsh.mapped_argfunction {%nop}
+{%nop}
 0
 $%which rwsh.argfunction {
 rwsh.mismatched_brace : command not found ( rwsh.mismatched_brace %which rwsh.argfunction { )
-1
+-1
 $%which rwsh.argfunction }
 rwsh.mismatched_brace : command not found ( rwsh.mismatched_brace %which rwsh.argfunction } )
-1
+-1
 $%which rwsh.argfunction {}{}
 rwsh.multiple_argfunctions : command not found ( rwsh.multiple_argfunctions )
-1
+-1
 $%which rwsh.argfunction {rwsh.argfunction{}}
 rwsh.arguments_for_argfunction : command not found ( rwsh.arguments_for_argfunction rwsh.argfunction )
-1
+-1
 $%which rwsh.argfunction {{{{{{{{{{{}}}}}}}}}}}
 {\ {\ {\ {\ {\ {\ {\ {\ {\ {\ {\}}}}}}}}}}}
 0
@@ -56,7 +56,7 @@ $w e
 %function e {%echo $*; %newline}
 0
 $w {}
-%function  {%true}
+%function  {%nop}
 0
 $e text that doesn't have a prompt appended
 text that doesn't have a prompt appended
@@ -67,10 +67,6 @@ $# simple builtin tests
 0
 $%echo these are fixed strings
 these are fixed strings0
-$%false
-1
-$%false 1 2 3 4 5
-1
 $%ls /bin /usr/
 /bin
 /usr/
@@ -132,18 +128,18 @@ $%selection_set A /local/../../bin
 $e $A
 /bin
 0
-$%true
+$%nop
 0
-$%true 1 2 3 4 5
+$%nop 1 2 3 4 5
 0
 $%which a
 no a
 1
 $%which #
-%function # {%true}
+%function # {%nop}
 0
-$%which rwsh.mapped_argfunction {%true 1 \ \$ \@ $A $0 $# $* $*2 @a @$a @$1 @$* @$*2}
-{%true 1 \ \$ \@ $A $0 $# $* $*2 @a @$a @$1 @$*0 @$*2}
+$%which rwsh.mapped_argfunction {%nop 1 \ \$ \@ $A $0 $# $* $*2 @a @$a @$1 @$* @$*2}
+{%nop 1 \ \$ \@ $A $0 $# $* $*2 @a @$a @$1 @$*0 @$*2}
 0
 $%which rwsh.mapped_argfunction {rwsh.argfunction}
 {rwsh.argfunction}
@@ -208,10 +204,10 @@ $
 0
 $# function
 0
-$%function a {%true}
+$%function a {%nop}
 0
 $%which a
-%function a {%true}
+%function a {%nop}
 0
 $a 1 2 3
 0
@@ -269,27 +265,27 @@ $
 0
 $# control flow
 0
-$%else_if %true {e not this one}
+$%else_if %return 0 {e not this one}
 -1
 ERRNO set to ELSE_WITHOUT_IF
 $%set IF_TEST false
 0
-$%else_if %false {e nor this}
+$%else_if %return 1 {e nor this}
 0
-$%else_if %true {e but this}
+$%else_if %return 0 {e but this}
 but this
 0
-$%else_if %true {e this should be skipped}
+$%else_if %return 0 {e this should be skipped}
 0
-$%else_if %false {e and certainly this}
+$%else_if %return 1 {e and certainly this}
 0
 $%set IF_TEST false
 0
-$%else_if %true {%else_if %true {e nested syntax}; %set IF_TEST false; %else_if %false {not to be printed}; %else_if %true {e nested else_if}; %set IF_TEST false}
+$%else_if %return 0 {%else_if %return 0 {e nested syntax}; %set IF_TEST false; %else_if %return 1 {not to be printed}; %else_if %return 0 {e nested else_if}; %set IF_TEST false}
 nested else_if
 -1
 ERRNO set to BAD_IF_NEST
-$%else_if %true {e else_if failed to appropriately set IF_TEST on exit}
+$%else_if %return 0 {e else_if failed to appropriately set IF_TEST on exit}
 0
 $
 0
@@ -305,16 +301,16 @@ no x
 1
 $x
 x : command not found ( x )
-1
+-1
 $w rwsh.executable_not_found
-%function rwsh.executable_not_found {%echo $1 : command not found ( $* ); %newline; %false}
+%function rwsh.executable_not_found {%echo $1 : command not found ( $* ); %newline; %return -1}
 0
 $rwsh.mapped_argfunction 1 2 3 {e a $* a}
 a 1 2 3 a
 0
 $rwsh.mapped_argfunction
 rwsh.mapped_argfunction : command not found ( rwsh.mapped_argfunction )
-1
+-1
 $f g {w rwsh.argfunction {rwsh.unescaped_argfunction}; w rwsh.argfunction {rwsh.argfunction}; w rwsh.argfunction {rwsh.escaped_argfunction}}
 0
 $g {}

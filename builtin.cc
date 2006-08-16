@@ -118,9 +118,6 @@ int exit_bi(const Argv_t& argv) {
   exit_requested = true;
   return 0;}
 
-// return failure regardless of arguments
-int false_bi(const Argv_t& argv) {return 1;}
-
 // add argfunction to executable map with name $1
 int function_bi(const Argv_t& argv) {
   if (argv.size() < 2) return 1;
@@ -162,6 +159,9 @@ int ls_bi(const Argv_t& argv) {
 
 // write a newline to the standard output
 int newline_bi(const Argv_t& argv) {std::cout <<std::endl; return 0;}
+
+// do nothing
+int nop_bi(const Argv_t& argv) {return dollar_question;}
 
 // return the value given by the argument
 int return_bi(const Argv_t& argv) {
@@ -235,9 +235,6 @@ int source_bi(const Argv_t& argv) {
   e = executable_map.find(script_arg);
   if (e != executable_map.end()) (*e->second)(script_arg);
   return ret;}
-
-// return success regardless of arguments
-int true_bi(const Argv_t& argv) {return 0;}
 
 // return the string corresponding to the executable in the executable map with
 // key $1

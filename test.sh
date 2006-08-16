@@ -2,17 +2,17 @@
 %function rwsh.raw_command{%echo $1; %newline}
 %function rwsh.after_command {%echo $?; %newline; %if_errno {%echo ERRNO set to $ERRNO; %newline; %set ERRNO \ }}
 %function rwsh.prompt{%echo \$}
-%function #{%true}
-%function \ {%true}
+%function #{%nop}
+%function \ {%nop}
 # argv tests
-%true
-     %true
-%true 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+%nop
+     %nop
+%nop 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
 %echo 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
 %newline
 %echo  \    1                2       
 %newline
-%which rwsh.mapped_argfunction {%true}
+%which rwsh.mapped_argfunction {%nop}
 %which rwsh.argfunction {
 %which rwsh.argfunction }
 %which rwsh.argfunction {}{}
@@ -29,8 +29,6 @@ e text that doesn't have a prompt appended
 
 # simple builtin tests
 %echo these are fixed strings
-%false
-%false 1 2 3 4 5
 %ls /bin /usr/
 %printenv
 %printenv SHELL
@@ -53,11 +51,11 @@ e $A
 e $A
 %selection_set A /local/../../bin
 e $A
-%true
-%true 1 2 3 4 5
+%nop
+%nop 1 2 3 4 5
 %which a
 %which #
-%which rwsh.mapped_argfunction {%true 1 \ \$ \@ $A $0 $# $* $*2 @a @$a @$1 @$* @$*2}
+%which rwsh.mapped_argfunction {%nop 1 \ \$ \@ $A $0 $# $* $*2 @a @$a @$1 @$* @$*2}
 %which rwsh.mapped_argfunction {rwsh.argfunction}
 
 # binary test implicitly tests Old_argv_t
@@ -81,7 +79,7 @@ e @/usr/*d*
 e @/usr/*l*i*b*x*e*
 
 # function
-%function a {%true}
+%function a {%nop}
 %which a
 a 1 2 3
 %function a
@@ -105,15 +103,15 @@ f g {e hi; f g {e there}; f h {e nothing here}; g}
 g
 
 # control flow
-%else_if %true {e not this one}
+%else_if %return 0 {e not this one}
 %set IF_TEST false
-%else_if %false {e nor this}
-%else_if %true {e but this}
-%else_if %true {e this should be skipped}
-%else_if %false {e and certainly this}
+%else_if %return 1 {e nor this}
+%else_if %return 0 {e but this}
+%else_if %return 0 {e this should be skipped}
+%else_if %return 1 {e and certainly this}
 %set IF_TEST false
-%else_if %true {%else_if %true {e nested syntax}; %set IF_TEST false; %else_if %false {not to be printed}; %else_if %true {e nested else_if}; %set IF_TEST false}
-%else_if %true {e else_if failed to appropriately set IF_TEST on exit}
+%else_if %return 0 {%else_if %return 0 {e nested syntax}; %set IF_TEST false; %else_if %return 1 {not to be printed}; %else_if %return 0 {e nested else_if}; %set IF_TEST false}
+%else_if %return 0 {e else_if failed to appropriately set IF_TEST on exit}
 
 # internal functions 
 f rwsh.executable_not_found

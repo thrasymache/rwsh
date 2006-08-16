@@ -76,10 +76,10 @@ void Executable_t::signal_handler(void) {
     call_stack_copy[0] = "%echo";
     echo_bi(call_stack_copy);
     newline_bi(Argv_t("%newline"));
+    return_bi(Argv_t("%return -1"));
     call_stack.clear();
     caught_signal = SIGNONE;}
-  in_signal_handler = false;
-  set_var("IF_TEST", "");}
+  in_signal_handler = false;}
 // need for a copy: if the internal function that runs for this signal itself
 //     triggers a signal then it will unwind the stack and write to call_stack. 
 //     To preserve the original call stack, we need a copy of call_stack to be 

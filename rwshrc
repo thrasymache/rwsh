@@ -1,5 +1,5 @@
-%function \ {%true $*}
-%function # {%true $*}
+%function \ {%nop $*}
+%function # {%nop $*}
 %set MAX_NESTING 8
 
 # set up environment
@@ -36,13 +36,13 @@
 
 # internal functions
 %function rwsh.autofunction {%set X $1; if_only %autofunction $X \$* {echo added $X to executable map}}
-%function rwsh.arguments_for_argfunction {echo cannot specify arguments for $1 directly; %false}
+%function rwsh.arguments_for_argfunction {echo cannot specify arguments for $1 directly; %return -1}
 # rwsh.after_script is initialized after individual configuration file
 %function rwsh.before_script {%function rwsh.prompt}
-%function rwsh.binary_not_found {echo $1 : could not run binary; %false}
+%function rwsh.binary_not_found {echo $1 : could not run binary; %return -1}
 %function rwsh.excessive_nesting {%newline; %echo function exceeded MAX_NESTING ( $MAX_NESTING ). call stack: $*; %newline}
-%function rwsh.mismatched_brace {echo mismatched brace: $1; %false}
-%function rwsh.multiple_argfunctions {echo multiple argfunctions not supported at this time; %false}
+%function rwsh.mismatched_brace {echo mismatched brace: $1; %return -1}
+%function rwsh.multiple_argfunctions {echo multiple argfunctions not supported at this time; %return -1}
 %function rwsh.selection_not_found{echo no file matching pattern $1 for selection $2}
 %function rwsh.shutdown {%newline}
 %function rwsh.vars {%internal_vars; echo HOME $HOME; echo REGEX $REGEX; echo SELECT $SELECT}

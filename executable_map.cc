@@ -26,7 +26,6 @@ Executable_map_t::Executable_map_t(void) {
   set(new Built_in_t("%else_not_if", else_not_if_bi));
   set(new Built_in_t("%else", else_bi));
   set(new Built_in_t("%exit", exit_bi));
-  set(new Built_in_t("%false", false_bi));
   set(new Built_in_t("%function", function_bi));
   set(new Built_in_t("%importenv", importenv_bi));
   set(new Function_t("%internal_errors", "%echo rwsh.arguments_for_argfunction "
@@ -43,12 +42,12 @@ Executable_map_t::Executable_map_t(void) {
   set(new Function_t("%internal_vars", "%echo CWD ERRNO FIGNORE IF_TEST"));
   set(new Built_in_t("%ls", ls_bi));
   set(new Built_in_t("%newline", newline_bi));
+  set(new Built_in_t("%nop", nop_bi));
   set(new Built_in_t("%printenv", printenv_bi));
   set(new Built_in_t("%return", return_bi));
   set(new Built_in_t("%set", set_bi));
   set(new Built_in_t("%selection_set", selection_set_bi));
   set(new Built_in_t("%source", source_bi));
-  set(new Built_in_t("%true", true_bi));
   set(new Built_in_t("%which", which_bi));
   set(new Built_in_t("%version", version_bi));
   set(new Built_in_t("%version_available", version_available_bi));
@@ -100,6 +99,6 @@ Executable_t& Executable_map_t::operator[] (Argv_t& key) {
   i = this->find(key);
   if (i != end()) return *i->second;
   set(new Function_t("rwsh.executable_not_found", // reset executable_not_found
-                     "%echo $1 : command not found ( $* ); %newline; %false"));
+                     "%echo $1 : command not found ( $* ); %newline; %return -1"));
   return *(this->find(key)->second);}
 
