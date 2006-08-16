@@ -1,209 +1,342 @@
-%function rwsh.prompt{%echo $? \$}
-0 $%function #{%true}
-0 $%function \ {%true}
-0 $# argv tests
-0 $%true
-0 $     %true
-0 $%true 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
-0 $%echo 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
-1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 200 $%newline
+%function rwsh.after_command {%echo $?; %newline; %if_errno {%echo ERRNO set to $ERRNO; %newline; %set ERRNO \ }}
+0
+%function rwsh.prompt{%echo \$}
+0
+$%function #{%true}
+0
+$%function \ {%true}
+0
+$# argv tests
+0
+$%true
+0
+$     %true
+0
+$%true 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+0
+$%echo 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 200
+$%newline
 
-0 $%echo  \    1                2       
- 1 20 $%newline
+0
+$%echo  \    1                2       
+ 1 20
+$%newline
 
-0 $%which rwsh.mapped_argfunction {%true}
+0
+$%which rwsh.mapped_argfunction {%true}
 {%true}
-0 $%which rwsh.argfunction {
+0
+$%which rwsh.argfunction {
 rwsh.mismatched_brace : command not found ( rwsh.mismatched_brace %which rwsh.argfunction { )
-1 $%which rwsh.argfunction }
+1
+$%which rwsh.argfunction }
 rwsh.mismatched_brace : command not found ( rwsh.mismatched_brace %which rwsh.argfunction } )
-1 $%which rwsh.argfunction {}{}
+1
+$%which rwsh.argfunction {}{}
 rwsh.multiple_argfunctions : command not found ( rwsh.multiple_argfunctions )
-1 $%which rwsh.argfunction {rwsh.argfunction{}}
+1
+$%which rwsh.argfunction {rwsh.argfunction{}}
 rwsh.arguments_for_argfunction : command not found ( rwsh.arguments_for_argfunction rwsh.argfunction )
-1 $%which rwsh.argfunction {{{{{{{{{{{}}}}}}}}}}}
+1
+$%which rwsh.argfunction {{{{{{{{{{{}}}}}}}}}}}
 {\ {\ {\ {\ {\ {\ {\ {\ {\ {\ {\}}}}}}}}}}}
-0 $
-0 $# ability of functions to immitate built-ins
-0 $%function f {%function $1 {rwsh.argfunction}}
-0 $f w {%which $1 {rwsh.argfunction}}
-0 $f e {%echo $*; %newline}
-0 $w e
+0
+$
+0
+$# ability of functions to immitate built-ins
+0
+$%function f {%function $1 {rwsh.argfunction}}
+0
+$f w {%which $1 {rwsh.argfunction}}
+0
+$f e {%echo $*; %newline}
+0
+$w e
 %function e {%echo $*; %newline}
-0 $w {}
+0
+$w {}
 %function  {%true}
-0 $e text that doesn't have a prompt appended
+0
+$e text that doesn't have a prompt appended
 text that doesn't have a prompt appended
-0 $
-0 $# simple builtin tests
-0 $%echo these are fixed strings
-these are fixed strings0 $%false
-1 $%false 1 2 3 4 5
-1 $%ls /bin /usr/
+0
+$
+0
+$# simple builtin tests
+0
+$%echo these are fixed strings
+these are fixed strings0
+$%false
+1
+$%false 1 2 3 4 5
+1
+$%ls /bin /usr/
 /bin
 /usr/
-0 $%printenv
+0
+$%printenv
 ?=0
+ERRNO=
 IF_TEST=
 MAX_NESTING=8
 RC=/usr/local/share/rwsh/test.sh
-0 $%printenv SHELL
+0
+$%printenv SHELL
 
-0 $%importenv
-0 $%set MAX_NESTING 8
-0 $%set IF_TEST
-0 $%printenv SHELL
+0
+$%importenv
+0
+$%set MAX_NESTING 8
+0
+$%set IF_TEST
+0
+$%printenv SHELL
 /bin/bash
-0 $%printenv A
+0
+$%printenv A
 
-0 $%set A 1
-0 $%printenv A
+0
+$%set A 1
+0
+$%printenv A
 1
-0 $%selection_set A //usr
-0 $e $A
+0
+$%selection_set A //usr
+0
+$e $A
 /usr
-0 $%selection_set A /
-0 $e $A
+0
+$%selection_set A /
+0
+$e $A
 /usr/*
-0 $%selection_set A local/include
-0 $e $A
+0
+$%selection_set A local/include
+0
+$e $A
 /usr/local/include
-0 $%selection_set A ..
-0 $e $A
+0
+$%selection_set A ..
+0
+$e $A
 /usr
-0 $%selection_set A \
-0 $e $A
+0
+$%selection_set A \
+0
+$e $A
 /usr
-0 $%selection_set A /local/../../bin
-0 $e $A
+0
+$%selection_set A /local/../../bin
+0
+$e $A
 /bin
-0 $%true
-0 $%true 1 2 3 4 5
-0 $%which a
+0
+$%true
+0
+$%true 1 2 3 4 5
+0
+$%which a
 no a
-1 $%which #
+1
+$%which #
 %function # {%true}
-0 $%which rwsh.mapped_argfunction {%true 1 \ \$ \@ $A $0 $# $* $*2 @a @$a @$1 @$* @$*2}
+0
+$%which rwsh.mapped_argfunction {%true 1 \ \$ \@ $A $0 $# $* $*2 @a @$a @$1 @$* @$*2}
 {%true 1 \ \$ \@ $A $0 $# $* $*2 @a @$a @$1 @$*0 @$*2}
-0 $%which rwsh.mapped_argfunction {rwsh.argfunction}
+0
+$%which rwsh.mapped_argfunction {rwsh.argfunction}
 {rwsh.argfunction}
-0 $
-0 $# binary test implicitly tests Old_argv_t
-0 $/bin/echo 1 2 3
+0
+$
+0
+$# binary test implicitly tests Old_argv_t
+0
+$/bin/echo 1 2 3
 1 2 3
-0 $/bn/echo 1 2 3
+0
+$/bn/echo 1 2 3
 rwsh.binary_not_found : command not found ( rwsh.binary_not_found /bn/echo )
-65280 $
-0 $# arg_script tests
-0 $e 5 4 3 2 1
+65280
+$
+0
+$# arg_script tests
+0
+$e 5 4 3 2 1
 5 4 3 2 1
-0 $e $A $0 @$A
+0
+$e $A $0 @$A
 /bin /usr/local/share/rwsh/test.sh /bin
-0 $e 1 2 $* 3 4
+0
+$e 1 2 $* 3 4
 1 2 3 4
-0 $e $*2 1 2
+0
+$e $*2 1 2
 1 2
-0 $e @//usr
+0
+$e @//usr
 /usr
-0 $e @/*is*
+0
+$e @/*is*
 rwsh.selection_not_found : command not found ( rwsh.selection_not_found /*is* /*is* )
 
-0 $e @/bin
+0
+$e @/bin
 /bin
-0 $e @/usr/*bin
+0
+$e @/usr/*bin
 /usr/bin /usr/sbin
-0 $e @/usr/lib*
+0
+$e @/usr/lib*
 /usr/lib /usr/libexec
-0 $e @/usr/s*e
+0
+$e @/usr/s*e
 /usr/share /usr/standalone
-0 $e @/usr/*d*
+0
+$e @/usr/*d*
 /usr/include /usr/standalone
-0 $%set FIGNORE include
-0 $e @/usr/*d*
+0
+$%set FIGNORE include
+0
+$e @/usr/*d*
 /usr/standalone
-0 $e @/usr/*l*i*b*x*e*
+0
+$e @/usr/*l*i*b*x*e*
 /usr/libexec
-0 $
-0 $# function
-0 $%function a {%true}
-0 $%which a
+0
+$
+0
+$# function
+0
+$%function a {%true}
+0
+$%which a
 %function a {%true}
-0 $a 1 2 3
-0 $%function a
-0 $%which a
+0
+$a 1 2 3
+0
+$%function a
+0
+$%which a
 no a
-1 $%function a {e 9 $A $1 @//usr}
-0 $%which a
+1
+$%function a {e 9 $A $1 @//usr}
+0
+$%which a
 %function a {e 9 $A $1 @//usr}
-0 $a
+0
+$a
 9 /bin  /usr
-0 $a 1
+0
+$a 1
 9 /bin 1 /usr
-0 $a 1 2
+0
+$a 1 2
 9 /bin 1 /usr
-0 $%function a {e $*5 $* $*0}
-0 $a
+0
+$%function a {e $*5 $* $*0}
+0
+$a
 a
-0 $a 1
+0
+$a 1
 1 a 1
-0 $a 1 2
+0
+$a 1 2
 1 2 a 1 2
-0 $f g {%function $1{%function $1{rwsh.argfunction}}}
-0 $g a {e 3 2 1}
-0 $w a
+0
+$f g {%function $1{%function $1{rwsh.argfunction}}}
+0
+$g a {e 3 2 1}
+0
+$w a
 %function a {%function $1 {e 3 2 1}}
-0 $a b
-0 $b
+0
+$a b
+0
+$b
 3 2 1
-0 $# a function redefining itself doesn't seg fault
-0 $f g {e hi; f g {e there}; f h {e nothing here}; g}
-0 $g
+0
+$# a function redefining itself doesn't seg fault
+0
+$f g {e hi; f g {e there}; f h {e nothing here}; g}
+0
+$g
 hi
 there
-0 $
-0 $# control flow
-0 $%else_if %true {e not this one}
--1 $%set IF_TEST false
-0 $%else_if %false {e nor this}
-0 $%else_if %true {e but this}
+0
+$
+0
+$# control flow
+0
+$%else_if %true {e not this one}
+-1
+ERRNO set to ELSE_WITHOUT_IF
+$%set IF_TEST false
+0
+$%else_if %false {e nor this}
+0
+$%else_if %true {e but this}
 but this
-0 $%else_if %true {e this should be skipped}
-0 $%else_if %false {e and certainly this}
-0 $%set IF_TEST false
-0 $%else_if %true {%else_if %true {e nested syntax}; %set IF_TEST false; %else_if %false {not to be printed}; %else_if %true {e nested else_if}; %set IF_TEST false}
+0
+$%else_if %true {e this should be skipped}
+0
+$%else_if %false {e and certainly this}
+0
+$%set IF_TEST false
+0
+$%else_if %true {%else_if %true {e nested syntax}; %set IF_TEST false; %else_if %false {not to be printed}; %else_if %true {e nested else_if}; %set IF_TEST false}
 nested else_if
--1 $%else_if %true {e else_if failed to appropriately set IF_TEST on exit}
-0 $
-0 $# internal functions 
-0 $f rwsh.executable_not_found
-0 $w rwsh.executable_not_found
+-1
+ERRNO set to BAD_IF_NEST
+$%else_if %true {e else_if failed to appropriately set IF_TEST on exit}
+0
+$
+0
+$# internal functions 
+0
+$f rwsh.executable_not_found
+0
+$w rwsh.executable_not_found
 no rwsh.executable_not_found
-1 $w x
+1
+$w x
 no x
-1 $x
+1
+$x
 x : command not found ( x )
-1 $w rwsh.executable_not_found
+1
+$w rwsh.executable_not_found
 %function rwsh.executable_not_found {%echo $1 : command not found ( $* ); %newline; %false}
-0 $rwsh.mapped_argfunction 1 2 3 {e a $* a}
+0
+$rwsh.mapped_argfunction 1 2 3 {e a $* a}
 a 1 2 3 a
-0 $rwsh.mapped_argfunction
+0
+$rwsh.mapped_argfunction
 rwsh.mapped_argfunction : command not found ( rwsh.mapped_argfunction )
-1 $f g {w rwsh.argfunction {rwsh.unescaped_argfunction}; w rwsh.argfunction {rwsh.argfunction}; w rwsh.argfunction {rwsh.escaped_argfunction}}
-0 $g {}
+1
+$f g {w rwsh.argfunction {rwsh.unescaped_argfunction}; w rwsh.argfunction {rwsh.argfunction}; w rwsh.argfunction {rwsh.escaped_argfunction}}
+0
+$g {}
 no rwsh.argfunction
 {\}
 {rwsh.argfunction}
-0 $f rwsh.autofunction{%autofunction $1 \$*}
-0 $w false
+0
+$f rwsh.autofunction{%autofunction $1 \$*}
+0
+$w false
 no false
-1 $false
-256 $w false
+1
+$false
+256
+$w false
 %function false {/usr/bin/false $*}
-0 $f rwsh.after_command {e after $*0}
+0
+$f rwsh.after_command {e after $*0}
 after rwsh.after_command f rwsh.after_command
-0 $f rwsh.after_command
-0 $f g {h}
-0 $f h {g}
-0 $g
+$f rwsh.after_command
+$f g {h}
+$f h {g}
+$g
 rwsh.excessive_nesting : command not found ( rwsh.excessive_nesting h g h g h g %source rwsh.mapped_argfunction %if rwsh.init )
-1 $
+$

@@ -1,6 +1,7 @@
 %set MAX_NESTING 8
 %function rwsh.raw_command{%echo $1; %newline}
-%function rwsh.prompt{%echo $? \$}
+%function rwsh.after_command {%echo $?; %newline; %if_errno {%echo ERRNO set to $ERRNO; %newline; %set ERRNO \ }}
+%function rwsh.prompt{%echo \$}
 %function #{%true}
 %function \ {%true}
 # argv tests
@@ -139,4 +140,3 @@ g
 # exiting
 %exit
 %echo 1 2 3
-%function rwsh.after_command {%if_errno {%echo ERRNO set to $ERRNO; %newline; %set ERRNO \ }}
