@@ -2,7 +2,7 @@
 // arguments passed to an executable and/or tie several other executables into
 // a single executable.
 //
-// Copyright (C) 2005, 2006 Samuel Newbold
+// Copyright (C) 2006 Samuel Newbold
 
 #include <iostream>
 #include <iterator>

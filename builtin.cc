@@ -1,6 +1,6 @@
 // The functions that implement each of the builtin executables
 //
-// Copyright (C) 2005, 2006 Samuel Newbold
+// Copyright (C) 2006 Samuel Newbold
 
 #include <dirent.h>
 #include <fcntl.h>

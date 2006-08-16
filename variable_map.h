@@ -1,4 +1,4 @@
-// Copyright (C) 2005, 2006 Samuel Newbold
+// Copyright (C) 2006 Samuel Newbold
 
 const std::string& get_var(const std::string& key);
 void set_var(const std::string& key, const std::string& val);

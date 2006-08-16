@@ -1,6 +1,6 @@
 // The templates for selection read.
 //
-// Copyright (C) 2005, 2006 Samuel Newbold
+// Copyright (C) 2006 Samuel Newbold
 
 // modify partial by treating each element as a directory, and then replacing
 // that element with the entries in that directory that match entry_pattern,

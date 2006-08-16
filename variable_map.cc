@@ -1,7 +1,7 @@
 // Functions to implement a variable map, and permit it to be exported as the
 // environment for child processes.
 //
-// Copyright (C) 2005, 2006 Samuel Newbold
+// Copyright (C) 2006 Samuel Newbold
 
 #include <assert.h>
 #include <functional>

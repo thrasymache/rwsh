@@ -5,7 +5,7 @@
 // between the Argv_t that was passed to the function and the Argv_t that will 
 // be used to run a given executable.
 //
-// Copyright (C) 2005, 2006 Samuel Newbold
+// Copyright (C) 2006 Samuel Newbold
 
 #include <dirent.h>
 #include <fcntl.h>

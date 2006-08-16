@@ -1,6 +1,6 @@
+%set MAX_NESTING 8
 %function \ {%nop $*}
 %function # {%nop $*}
-%set MAX_NESTING 8
 
 # set up environment
 %importenv
@@ -43,7 +43,7 @@
 %function rwsh.excessive_nesting {%newline; %echo function exceeded MAX_NESTING ( $MAX_NESTING ). call stack: $*; %newline}
 %function rwsh.mismatched_brace {echo mismatched brace: $1; %return -1}
 %function rwsh.multiple_argfunctions {echo multiple argfunctions not supported at this time; %return -1}
-%function rwsh.selection_not_found{echo no file matching pattern $1 for selection $2}
+%function rwsh.selection_not_found{%echo no file matching pattern $1; %set x $2; if_only test $1 != $2 {%echo \ for selection $x}; %newline}
 %function rwsh.shutdown {%newline}
 %function rwsh.vars {%internal_vars; echo HOME $HOME; echo REGEX $REGEX; echo SELECT $SELECT}
 

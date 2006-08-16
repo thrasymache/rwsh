@@ -1,4 +1,4 @@
-// Copyright (C) 2005, 2006 Samuel Newbold
+// Copyright (C) 2006 Samuel Newbold
 
 int autofunction_bi(const Argv_t& argv);
 int cd_bi(const Argv_t& argv);

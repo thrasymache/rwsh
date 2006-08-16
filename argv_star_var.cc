@@ -2,7 +2,7 @@
 // won't export templates, so it must be included directly in each file where
 // it is used.
 //
-// Copyright (C) 2005, 2006 Samuel Newbold
+// Copyright (C) 2006 Samuel Newbold
 
 // write the strings corresponding to $*
 template<class Out>

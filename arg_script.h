@@ -1,4 +1,4 @@
-// Copyright (C) 2005, 2006 Samuel Newbold
+// Copyright (C) 2006 Samuel Newbold
 
 enum Arg_type_t {FIXED, VARIABLE, ARG_VAR, STAR_VAR, SELECTION, SELECT_VAR,
                  SELECT_ARG_VAR, SELECT_STAR_VAR};
