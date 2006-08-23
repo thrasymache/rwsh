@@ -20,6 +20,7 @@ std::map<std::string, std::string> variable_map;
 int dollar_question;
 unsigned max_nesting = 0;
 bool exit_requested = false;
+const std::string empty;
 
 const std::string& get_var(const std::string& key) {
   assert(!isargvar(key));
@@ -27,11 +28,16 @@ const std::string& get_var(const std::string& key) {
     std::ostringstream tmp; 
     tmp <<dollar_question;
     variable_map["?"] = tmp.str();}
-  return variable_map[key];}
+  std::map<std::string, std::string>::iterator i = variable_map.find(key);
+  if (i == variable_map.end()) return empty;
+  else return variable_map.find(key)->second;}
 
 void set_var(const std::string& key, const std::string& val) {
   assert(!isargvar(key));
-  variable_map[key] = val;
+  if (val != empty) variable_map[key] = val;
+  else {
+    std::map<std::string, std::string>::iterator i = variable_map.find(key);
+    if (i != variable_map.end()) variable_map.erase(i);}
   if (key == "MAX_NESTING") {
     int temp = atoi(variable_map[key].c_str());
     if (temp < 0) max_nesting = 0;
