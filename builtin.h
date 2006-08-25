@@ -19,6 +19,8 @@ int return_bi(const Argv_t& argv);
 int set_bi(const Argv_t& argv);
 int selection_set_bi(const Argv_t& argv);
 int source_bi(const Argv_t& argv);
+int test_equal_bi(const Argv_t& argv);
+int test_not_empty_bi(const Argv_t& argv);
 int which_bi(const Argv_t& argv);
 int version_bi(const Argv_t& argv);
 int version_available_bi(const Argv_t& argv);

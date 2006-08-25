@@ -10,6 +10,7 @@
 
 # alias builtins
 %function . {%source $*}
+%function af {rwsh.argfunction}
 %function echo {%echo $*; %newline}
 %function elif {%else_if $* {rwsh.argfunction}}
 %function else {%else {rwsh.argfunction}}
@@ -17,6 +18,7 @@
 %function fn {%function $* {rwsh.argfunction}}
 %function if {%if $*{rwsh.argfunction}}
 %function if_only {%if $* {rwsh.argfunction}; %else}
+%function if_only_not {%if $*; %else {rwsh.argfunction}}
 %function printenv {%printenv $*}
 %function which {%which $* {rwsh.argfunction}}
 
@@ -43,7 +45,7 @@
 %function rwsh.excessive_nesting {%newline; %echo function exceeded MAX_NESTING ( $MAX_NESTING ). call stack: $*; %newline}
 %function rwsh.mismatched_brace {echo mismatched brace: $1; %return -1}
 %function rwsh.multiple_argfunctions {echo multiple argfunctions not supported at this time; %return -1}
-%function rwsh.selection_not_found{%echo no file matching pattern $1; %set x $2; if_only test $1 != $2 {%echo \ for selection $x}; %newline}
+%function rwsh.selection_not_found{%echo no file matching pattern $1; %set x $2; if_only_not %test_equal $1 $2 {%echo \ for selection $x}; %newline}
 %function rwsh.shutdown {%newline}
 %function rwsh.vars {%internal_vars; echo HOME $HOME; echo REGEX $REGEX; echo SELECT $SELECT}
 
@@ -51,12 +53,11 @@
 %function ! {if $* {%return 1}; else {%return 0}}
 %function st {/bin/bash /usr/local/bin/test_rwsh}
 %function rwsh {/usr/local/bin/rwsh $*}
-%function test {/bin/test $*}
 %selection_set rc $HOME /.rwshrc
 %source $rc
 %set rc
 %function rwsh.after_script {%function rwsh.prompt {%echo \$}}
-%function rwsh.after_command {%set x $?; %set y $1; %if_errno {echo ERRNO is set to $ERRNO; %set OLD_ERRNO $ERRNO; %set ERRNO \ }; if_only test $x != 0 {echo $y returned $x}}
+%function rwsh.after_command {%set x $?; %set y $1; %if_errno {echo ERRNO is set to $ERRNO; %set OLD_ERRNO $ERRNO; %set ERRNO \ }; if_only_not %test_equal $x 0 {echo $y returned $x}}
 %echo rwsh v
 %version
 %newline

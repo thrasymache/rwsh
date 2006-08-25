@@ -23,7 +23,6 @@ bool exit_requested = false;
 const std::string empty;
 
 const std::string& get_var(const std::string& key) {
-  assert(!isargvar(key));
   if (key == "?") {
     std::ostringstream tmp; 
     tmp <<dollar_question;
@@ -33,7 +32,6 @@ const std::string& get_var(const std::string& key) {
   else return variable_map.find(key)->second;}
 
 void set_var(const std::string& key, const std::string& val) {
-  assert(!isargvar(key));
   if (val != empty) variable_map[key] = val;
   else {
     std::map<std::string, std::string>::iterator i = variable_map.find(key);
@@ -65,6 +63,7 @@ void print_var(std::pair<std::string, std::string> src) {
 
 // builtin function for printing the variable map
 int printenv_bi(const Argv_t& argv) {
+  get_var("?");
   if (argv.size() < 2) {
     for_each(variable_map.begin(), variable_map.end(), print_var);
     return 0;}

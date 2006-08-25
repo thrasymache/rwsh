@@ -73,10 +73,8 @@ $%ls /bin /usr/
 0
 $%printenv
 ?=0
-ERRNO=
-IF_TEST=
 MAX_NESTING=8
-RC=/usr/local/share/rwsh/test.sh
+rc=/usr/local/share/rwsh/test.sh
 0
 $%printenv SHELL
 

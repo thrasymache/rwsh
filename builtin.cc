@@ -67,8 +67,8 @@ static int if_core(const Argv_t& argv, bool logic) {
 int if_bi(const Argv_t& argv) {
   if (argv.size() < 2) {set_var("ERRNO", "ARGS"); return -1;}
   if (get_var("IF_TEST") == "") {
-    int ret = if_core(argv, true);
     set_var("IF_TEST", "false"); 
+    int ret = if_core(argv, true);
     return ret;}
   else {set_var("ERRNO", "IF_BEFORE_ELSE"); return -1;}}
 
@@ -101,7 +101,7 @@ int else_not_if_bi(const Argv_t& argv) {
 int else_bi(const Argv_t& argv) {
   int ret;
   if (argv.size() != 1) {set_var("ERRNO", "ARGS"); ret = -1;}
-  if (get_var("IF_TEST") == "true") ret = 0;
+  else if (get_var("IF_TEST") == "true") ret = 0;
   else if (get_var("IF_TEST") == "false") 
     if (argv.argfunction()) {
       set_var("IF_TEST", "");
@@ -188,7 +188,8 @@ int selection_set_bi(const Argv_t& argv) {
 
 // set variable $1 to $*2
 int set_bi(const Argv_t& argv) {
-  if (argv.size() < 2) return 1;
+  if (argv.size() < 2) return -1;
+  if (isargvar(argv[1])) return 1;
   std::string dest("");
   if (argv.size() > 2) {
     for (Argv_t::const_iterator i = argv.begin()+2; i != argv.end()-1; ++i) 
@@ -235,6 +236,16 @@ int source_bi(const Argv_t& argv) {
   e = executable_map.find(script_arg);
   if (e != executable_map.end()) (*e->second)(script_arg);
   return ret;}
+
+// return true if the two strings are the same
+int test_equal_bi(const Argv_t& argv) {
+  if (argv.size() != 3) {set_var("ERRNO", "ARGS"); return -1;}
+  else return argv[1] != argv[2];}
+
+// return true if the string is not empty
+int test_not_empty_bi(const Argv_t& argv) {
+  if (argv.size() != 2) {set_var("ERRNO", "ARGS"); return -1;}
+  else return !argv[1].length();}
 
 // return the string corresponding to the executable in the executable map with
 // key $1

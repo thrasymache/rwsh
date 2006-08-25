@@ -6,4 +6,8 @@ behavior when a function calls an executable, which causes rwsh.autofunction to 
 
 %return must set errno to 0, because other function calls are causing errors
 
-If the shell receives a signal while waiting for input, it does not handle it until after the line is input
+If the shell receives a signal while waiting for input, it does not handle it 
+until after the line is input
+
+There is no error handling for a write to stdout failing. (as file redirection
+is not yet supported, these are the only writes possible)
