@@ -12,3 +12,15 @@ until after the line is input
 There is no error handling for a write to stdout failing. (as file redirection
 is not yet supported, these are the only writes possible)
 
+If rwsh is run from rwsh, and then that shell receives a signal, the signal is 
+passed on to its parent shell, even if the child shell handled it appropriately. 
+There is no way to have the root directory be the result of a selection read
+
+A selection read of an empty string does not produce any results and it does 
+not produce a selection_not_found error
+
+A script cannot be run as if it was a compiled binary, it must be passed to the
+source builtin.  Furthermore, the source builtin will run scripts if and only 
+if the owner of the script has the execute permission for that file, regardless
+of the permissions of the user actually requesting to run the script.
+

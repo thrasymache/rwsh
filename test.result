@@ -137,7 +137,7 @@ $%which #
 %function # {%nop}
 0
 $%which rwsh.mapped_argfunction {%nop 1 \ \$ \@ $A $0 $# $* $*2 @a @$a @$1 @$* @$*2}
-{%nop 1 \  \$ \@ $A $0 $# $* $*2 @a @$a @$1 @$*0 @$*2}
+{%nop 1 \  \$ \@ $A $0 $# $* $*2 @a @$a @$1 @$*1 @$*2}
 0
 $%which rwsh.mapped_argfunction {rwsh.argfunction}
 {rwsh.argfunction}
