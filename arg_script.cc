@@ -45,7 +45,7 @@ Arg_spec_t::Arg_spec_t(const std::string& script) {
       else if (script[2] == '*') {
         type=SELECT_STAR_VAR;
         if (script.length() > 3) text=script.substr(3);
-        else text="0";}
+        else text="1";}
       else if (isargvar(script.substr(2))) {
         type=SELECT_ARG_VAR; text=script.substr(2);}
       else {type=SELECT_VAR; text=script.substr(2);}}
@@ -57,7 +57,8 @@ Arg_spec_t::Arg_spec_t(const std::string& script) {
 std::string Arg_spec_t::str(void) const {
   switch(type) {
     case FIXED: 
-      if (!text.length() || text[0] == '$' || text[0] == '@' || text[0] == '\\')
+      if (!text.length()) return "\\ ";
+      else if(text[0] == '$' || text[0] == '@' || text[0] == '\\')
         return "\\" + text;
       else return text;
     case VARIABLE: return "$" + text;
@@ -93,9 +94,10 @@ Arg_script_t::Arg_script_t(const Argv_t& src)
   if (!src.size()) this->push_back(Arg_spec_t(""));
   else if (is_argfunction_name(src[0]) && src[0] != "rwsh.mapped_argfunction") {
     if (src.size() != 1 || src.argfunction()) {
-      std::string error_string = "rwsh.arguments_for_argfunction ";
-      error_string += src[0];
-      throw Arguments_to_argfunction_t(error_string);}
+      Arguments_to_argfunction_t error;
+      error.push_back("rwsh.arguments_for_argfunction");
+      error.push_back(src[0]);
+      throw error;}
     if (src[0] == "rwsh.unescaped_argfunction") argfunction_level = 1;
     else if (src[0] == "rwsh.argfunction") argfunction_level = 2;
     else if (src[0] == "rwsh.escaped_argfunction") argfunction_level = 3;}

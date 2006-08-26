@@ -40,7 +40,7 @@ $%which rwsh.argfunction {rwsh.argfunction{}}
 rwsh.arguments_for_argfunction : command not found ( rwsh.arguments_for_argfunction rwsh.argfunction )
 -1
 $%which rwsh.argfunction {{{{{{{{{{{}}}}}}}}}}}
-{\ {\ {\ {\ {\ {\ {\ {\ {\ {\ {\}}}}}}}}}}}
+{\  {\  {\  {\  {\  {\  {\  {\  {\  {\  {\ }}}}}}}}}}}
 0
 $
 0
@@ -137,7 +137,7 @@ $%which #
 %function # {%nop}
 0
 $%which rwsh.mapped_argfunction {%nop 1 \ \$ \@ $A $0 $# $* $*2 @a @$a @$1 @$* @$*2}
-{%nop 1 \ \$ \@ $A $0 $# $* $*2 @a @$a @$1 @$*0 @$*2}
+{%nop 1 \  \$ \@ $A $0 $# $* $*2 @a @$a @$1 @$*0 @$*2}
 0
 $%which rwsh.mapped_argfunction {rwsh.argfunction}
 {rwsh.argfunction}
@@ -313,7 +313,7 @@ $f g {w rwsh.argfunction {rwsh.unescaped_argfunction}; w rwsh.argfunction {rwsh.
 0
 $g {}
 no rwsh.argfunction
-{\}
+{\ }
 {rwsh.argfunction}
 0
 $f rwsh.autofunction{%autofunction $1 \$*}

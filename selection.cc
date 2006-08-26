@@ -16,7 +16,6 @@
 #include <vector>
 
 #include "argv.h"
-#include "read_dir.cc"
 #include "selection.h"
 #include "tokenize.cc"
 #include "util.h"

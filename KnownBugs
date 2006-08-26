@@ -11,3 +11,4 @@ until after the line is input
 
 There is no error handling for a write to stdout failing. (as file redirection
 is not yet supported, these are the only writes possible)
+

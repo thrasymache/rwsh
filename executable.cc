@@ -95,7 +95,9 @@ int Binary_t::operator() (const Argv_t& argv_i) {
     Old_argv_t argv(argv_i);
     char **env = export_env();
     int ret = execve(implementation.c_str(), argv.argv(), env);
-    Argv_t error_argv("rwsh.binary_not_found " + argv_i[0]); 
+    Argv_t error_argv;
+    error_argv.push_back("rwsh.binary_not_found");
+    error_argv.push_back(argv_i[0]); 
     executable_map[error_argv](error_argv);
     exit(ret);}
   else wait(&ret);
