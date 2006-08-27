@@ -83,7 +83,7 @@ $%importenv
 0
 $%set MAX_NESTING 8
 0
-$%set IF_TEST
+$%set IF_TEST \
 0
 $%printenv SHELL
 /bin/bash
@@ -131,7 +131,6 @@ $%nop
 $%nop 1 2 3 4 5
 0
 $%which a
-no a
 1
 $%which #
 %function # {%nop}
@@ -175,6 +174,7 @@ $e @/*is*
 rwsh.selection_not_found : command not found ( rwsh.selection_not_found /*is* /*is* )
 
 0
+ERRNO set to ARGS
 $e @/bin
 /bin
 0
@@ -212,7 +212,6 @@ $a 1 2 3
 $%function a
 0
 $%which a
-no a
 1
 $%function a {e 9 $A $1 @//usr}
 0
@@ -292,10 +291,8 @@ $# internal functions
 $f rwsh.executable_not_found
 0
 $w rwsh.executable_not_found
-no rwsh.executable_not_found
 1
 $w x
-no x
 1
 $x
 x : command not found ( x )
@@ -312,14 +309,12 @@ rwsh.mapped_argfunction : command not found ( rwsh.mapped_argfunction )
 $f g {w rwsh.argfunction {rwsh.unescaped_argfunction}; w rwsh.argfunction {rwsh.argfunction}; w rwsh.argfunction {rwsh.escaped_argfunction}}
 0
 $g {}
-no rwsh.argfunction
 {\ }
 {rwsh.argfunction}
 0
 $f rwsh.autofunction{%autofunction $1 \$*}
 0
 $w false
-no false
 1
 $false
 256

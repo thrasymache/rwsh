@@ -34,7 +34,7 @@ e text that doesn't have a prompt appended
 %printenv SHELL
 %importenv
 %set MAX_NESTING 8
-%set IF_TEST
+%set IF_TEST \
 %printenv SHELL
 %printenv A
 %set A 1
