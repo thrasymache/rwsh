@@ -1,8 +1,8 @@
 %set MAX_NESTING 8
-%function rwsh.raw_command{%echo $1; %newline}
+%function rwsh.raw_command {%echo $1; %newline}
 %function rwsh.after_command {%echo $?; %newline; %if_errno {%echo ERRNO set to $ERRNO; %newline; %set ERRNO \ }}
-%function rwsh.prompt{%echo \$}
-%function #{%nop}
+%function rwsh.prompt {%echo \$}
+%function # {%nop}
 %function \ {%nop}
 # argv tests
 %nop
@@ -15,8 +15,8 @@
 %which rwsh.mapped_argfunction {%nop}
 %which rwsh.argfunction {
 %which rwsh.argfunction }
-%which rwsh.argfunction {}{}
-%which rwsh.argfunction {rwsh.argfunction{}}
+%which rwsh.argfunction {} {}
+%which rwsh.argfunction {rwsh.argfunction {}}
 %which rwsh.argfunction {{{{{{{{{{{}}}}}}}}}}}
 
 # ability of functions to immitate built-ins
@@ -93,7 +93,7 @@ a 1 2
 a
 a 1
 a 1 2
-f g {%function $1{%function $1{rwsh.argfunction}}}
+f g {%function $1 {%function $1 {rwsh.argfunction}}}
 g a {e 3 2 1}
 w a
 a b
@@ -123,7 +123,7 @@ rwsh.mapped_argfunction 1 2 3 {e a $* a}
 rwsh.mapped_argfunction
 f g {w rwsh.argfunction {rwsh.unescaped_argfunction}; w rwsh.argfunction {rwsh.argfunction}; w rwsh.argfunction {rwsh.escaped_argfunction}}
 g {}
-f rwsh.autofunction{%autofunction $1 \$*}
+f rwsh.autofunction {%autofunction $1 \$*}
 w false
 false
 w false

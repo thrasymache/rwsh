@@ -23,23 +23,32 @@ Executable_map_t::Executable_map_t(void) {
   set(new Built_in_t("%if", if_bi));
   set(new Built_in_t("%if_errno", if_errno_bi));
   set(new Built_in_t("%else_if", else_if_bi));
-  set(new Built_in_t("%else_not_if", else_not_if_bi));
+  set(new Built_in_t("%else_if_not", else_if_not_bi));
   set(new Built_in_t("%else", else_bi));
   set(new Built_in_t("%exit", exit_bi));
   set(new Built_in_t("%function", function_bi));
   set(new Built_in_t("%importenv", importenv_bi));
-  set(new Function_t("%internal_errors", "%echo rwsh.arguments_for_argfunction "
-                     "rwsh.binary_not_found rwsh.executable_not_found "
-                     "rwsh.excessive_nesting rwsh.multiple_argfunctions "
-                     "rwsh.mismatched_brace rwsh.init rwsh.sighup rwsh.sigint "
-                     "rwsh.sigquit rwsh.sigpipe rwsh.sigterm rwsh.sigstp "
-                     "rwsh.sigcont rwsh.siginfo rwsh.sigusr1 rwsh.sigusr2 "
-                     "rwsh.unreadable_dir "));
-  set(new Function_t("%internal_features", "%echo rwsh.after_command "
-                     "rwsh.after_script rwsh.before_command "
-                     "rwsh.before_script rwsh.prompt rwsh.raw_command "
-                     "rwsh.selection_not_found rwsh.shutdown "));
-  set(new Function_t("%internal_vars", "%echo CWD ERRNO FIGNORE IF_TEST"));
+  set(new Function_t("%internal_errors", 
+                     "%if %test_equal $# 1 {"
+                         "%echo rwsh.arguments_for_argfunction "
+                         "rwsh.binary_not_found rwsh.executable_not_found "
+                         "rwsh.excessive_nesting rwsh.mismatched_brace "
+                         "rwsh.multiple_argfunctions rwsh.init "
+                         "rwsh.selection_not_found rwsh.sighup rwsh.sigint "
+                         "rwsh.sigquit rwsh.sigpipe rwsh.sigterm rwsh.sigstp "
+                         "rwsh.sigcont rwsh.siginfo rwsh.sigusr1 rwsh.sigusr2 "
+                         "rwsh.unreadable_dir}; "
+                     "%else {%set ERRNO ARGS; %return -1}"));
+  set(new Function_t("%internal_features", 
+                     "%if %test_equal $# 1 {"
+                         "%echo rwsh.after_command "
+                         "rwsh.after_script rwsh.before_command "
+                         "rwsh.before_script rwsh.prompt rwsh.raw_command "
+                         "rwsh.shutdown rwsh.vars}; "
+                     "%else {%set ERRNO ARGS; %return -1}"));
+  set(new Function_t("%internal_vars", 
+                     "%if %test_equal $# 1 {%echo CWD ERRNO FIGNORE IF_TEST}; "
+                     "%else {%set ERRNO ARGS; %return -1}"));
   set(new Built_in_t("%ls", ls_bi));
   set(new Built_in_t("%newline", newline_bi));
   set(new Built_in_t("%nop", nop_bi));

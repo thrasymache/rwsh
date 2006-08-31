@@ -1,9 +1,9 @@
-%importenv
 %set MAX_NESTING 9
 %function \ {%nop}
 %function # {%nop}
 
 # set up environment
+%importenv
 %set SELECT $HOME
 %selection_set SELECT /
 %set FIGNORE .*
@@ -16,11 +16,11 @@
 %function else {%else {rwsh.argfunction}}
 %function exit {%exit}
 %function fn {%set x $1; %function $x $*2 {rwsh.argfunction}; %set y $?; %if %test_equal $y 1 {echo cannot set paths as functions}; %else_if %test_equal $y 2 {echo cannot set builtins as functions}; %else_if %test_equal $y 3 {echo cannot set argfunctions in executable map}; %else_if %test_equal $y 4 {echo function did not exist to be erased}; %else {%return $y}}
-%function if {%if $*{rwsh.argfunction}}
+%function if {%if $* {rwsh.argfunction}}
 %function if_only {%if $* {rwsh.argfunction}; %else}
 %function if_only_not {%if $*; %else {rwsh.argfunction}}
 %function printenv {%printenv $*}
-%function which {%set x $1; %if %which $x {rwsh.argfunction}; %else {echo no $x}}
+%function which {%set x $1; %which $x {rwsh.argfunction}; %if %test_equal $? 0; %else {echo no $x}}
 
 # selection commands
 %function cat {%selection_set SELECT $1; /bin/cat @$SELECT}
@@ -45,10 +45,10 @@
 %function rwsh.excessive_nesting {%newline; %echo function exceeded MAX_NESTING ( $MAX_NESTING ). call stack: $*; %newline}
 %function rwsh.mismatched_brace {%echo mismatched brace: $1; %newline; %return -1}
 %function rwsh.multiple_argfunctions {%echo multiple argfunctions not supported at this time; %newline; %return -1}
-%function rwsh.selection_not_found{%echo no file matching pattern $1; %set x $2; if_only_not %test_equal $1 $2 {%echo \ for selection $x}; %newline}
+%function rwsh.selection_not_found {%echo no file matching pattern $1; %set x $2; if_only_not %test_equal $1 $2 {%echo \ for selection $x}; %newline}
 %function rwsh.shutdown {%newline}
 %function rwsh.unreadable_dir {%echo cannot read directory $1; %newline}
-%function rwsh.vars {%internal_vars; echo HOME $HOME; echo REGEX $REGEX; echo SELECT $SELECT}
+%function rwsh.vars {%internal_vars; %newline; echo HOME $HOME; echo REGEX $REGEX; echo SELECT $SELECT}
 
 # final setup and individual configuration
 %function ! {if $* {%return 1}; else {%return 0}}

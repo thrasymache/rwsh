@@ -1,3 +1,9 @@
-rwsh is a shell for Unix-like systems. Documentation can be found at 
-http://sourceforge.net/docman/?group_id=161425
+rwsh is a shell for Unix-like systems.  
+
+Documentation can be found in the docs directory.  As it is still very much of 
+a proof-of-concept, there is no install or configure script.  
+
+No attempt has been made to keep it compatible with existing shells, or even 
+their basic semantics.  So please read at least the "introduction and 
+philosophy" document before assuming that you know what a command will do.
 

@@ -1,3 +1,12 @@
+rwsh v0.2 - scripts
+  *can source scripts
+  *signal handling
+  *builtins: cd, if, else_if, else_not_if, else, internal_features, 
+      internal_errors, internal_vars, nop, return, source, test_equal, 
+      test_not_empty, etc.
+  *rwsh.init produces a usable environment
+  *$0 is always the name of the current executable
+
 rwsh v0.1 - proof of concept
   *can run binaries, builtins and functions (but not scripts).
   *variable map

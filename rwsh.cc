@@ -22,7 +22,7 @@ Executable_map_t executable_map;
 namespace {std::string init_str =
   "%set MAX_NESTING 4;"
   "%set rc $2;"
-  "%if %test_not_empty $rc {%source $rc; %exit};"
+  "%if %test_not_empty $rc {%source $rc};"
   "%else {%source /etc/rwshrc}";}
 
 static void signal_starter(int sig) {Executable_t::caught_signal = sig;}

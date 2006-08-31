@@ -2,15 +2,25 @@
 <html>
 <head>
 
+
+
+  
+  
   
   <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
 
+
+
+  
+  
   
   <title>internal functions</title>
 </head>
 
 
 <body>
+
+
 
 To configure the prompt in other shells, one uses a shell variable.
 This can contain fixed text or one of several escapes that are replaced
@@ -27,53 +37,84 @@ difference being that if a feature function is missing, then nothing is
 run, but if an error message function is missing, then
 rwsh.executable_not_found is run instead.<br>
 
-<br>
 
-<h2>features</h2>
-
-<h3>rwsh.init</h3>
-
-This function is responsible for all of the initialization of the
-shell. It is the only value that is compiled into rwsh. The command
-line that started rwsh is passed to rwsh.init as its arguments. It
-doesn't do any good to change rwsh.init after the shell has started,
-but it can be examined to see what initialization has been done, and it
-can be run as a command to reinitialize the shell, possibly with
-different arguments.<br>
 
 <br>
 
+
+
+<h2>features
+</h2>
+
+<h3>rwsh.after_command</h3>
+
+
+After each command completes, rwsh.after_command is run with the entire command line as its arguments.
+<h3>rwsh.after_script</h3>
+
+rwsh.after_script is run by %source after a script completes. It is
+passed the same arguments as rwsh.before_script. If the script produced
+an excessive nesting error or a signal was caught, then
+rwsh.after_script will not be called. If there is some step that must
+be performed even in these circumstances, then they must be added to
+all of the signal handlers.
+<h3>rwsh.autofunction</h3>
+
+
+If a command is requested which is not in the executable map, then the
+entire command line is passed to rwsh.autofunction. Afterwards, the
+command is searched for again, and if it is not found, then
+rwsh.executable_not_found is called. Thus rwsh.autofunction must
+implement whatever $PATH-searching logic is desired, and then add the
+binary that it finds to the executable map as a function.&nbsp;
+<h3>rwsh.before_command</h3>
+
+
+Before any command is run, the entire command is passed to
+rwsh.before_command (if it exists). The command is run only if
+rwsh.before_command returns 0.
+<h3>rwsh.before_script</h3>
+
+This function is run by %source before it runs a script. It is passed
+the script name and its arguments. It should be used to unset the
+prompt and other internal functions not wanted inside the script.<br>
+
+
+
+<br>
+
+
+
+<h3>rwsh.prompt</h3>
+
+
+This function is responsible for printing the prompt and for any
+notification messages that should come before the prompt. It is not passed any
+arguments.<br>
+
+
+
+<h3>rwsh.raw_command</h3>
+
+This function is passed the entire command line as a single argument,
+before it is parsed, and will thus have the command as typed, rather
+than the command that will be run.
 <h3>rwsh.shutdown</h3>
+
+
 This function is run immediately before the shell exits (i.e. after the
 exit builtin is run, or after the shell receives EOF from stdin). Its
 arguments are the same as those that were used to initialize the shell.
 (The arguments to the rwsh executable itself, not the last set of
 arguments passed to rwsh.init.)<br>
 
-<br>
 
-<h3>rwsh.prompt</h3>
-This function is responsible for printing the prompt and for any
-notification messages that should come before the prompt. It takes no
-arguments.
-<h3>rwsh.before_command</h3>
-Before any command is run, the entire command is passed to
-rwsh.before_command (if it exists). The command is run only if
-rwsh.before_command returns 0.
-<h3>rwsh.after_command</h3>
-After each command completes, rwsh.after_command is run with the entire command line as its arguments.
-<h3>rwsh.autofunction</h3>
-If a command is requested which is not in the executable map, then the
-entire command line is passed to rwsh.autofunction. Afterwards, the
-command is searched for again, and if it is not found, then
-rwsh.executable_not_found is called. Thus rwsh.autofunction must
-implement whatever $PATH-searching logic is desired, and then add the
-binary that it finds to the executable map as a function.
-<br>
 
 <h2>error messages</h2>
 
 <h3>rwsh.arguments_for_argfunction</h3>
+
+
 
 <p>rwsh cannot handle passing arguments to rwsh.unescaped_argfunction,
 rwsh.argfunction, and rwsh.escaped_argfunction (e.g. "fn x {fn $1
@@ -84,24 +125,34 @@ to this function is the name of the function being called (i.e.
 rwsh.argfunction, rwsh.unescaped_argfunction, or
 rwsh.escaped_argfunction).</p>
 
+
+
 <p>If you find that you want to pass arguments to an argfunction, this
 is the purpose of rwsh.mapped_argfunction. While the second example
 given above would require two argument functions which is not currently
 supported, the first one could be written as "fn x {fn $1
 {rwsh.mapped_argfunction $1 {rwsh.argfunction}}}" </p>
 
+
+
 <h3>rwsh.binary_not_found</h3>
+
+
 
 If the execve() system call fails when attempting to run a binary,
 rwsh.binary_not_found is called with the name of the binary as its only
 argument.
 <h3>rwsh.executable_not_found</h3>
 
+
+
 <p>If a function or a builtin is requested that is not in the
 executable_map after calling rwsh.autofunction, then
 rwsh.executable_not_found is called with the same command line as was
 going to be passed to the missing executable, meaning that the
 executable's name is in $0.</p>
+
+
 
 <p>rwsh.executable_not_found ends up being an incredibly important
 error message because if some other error occurs, for which the
@@ -119,7 +170,11 @@ crisis if it isn't initialized immediately. However, if it is called
 and it is not defined, then it will be defined to a default value and
 that will be run.</p>
 
+
+
 <h3>rwsh.excessive_nesting</h3>
+
+
 
 <p>If a function nests more than $MAX_NESTING times, execution will be
 aborted and rwsh.excessive_nesting will be called with the call stack
@@ -135,6 +190,8 @@ absurdly high value, and then running a function that calls itself.) It
 is also useful to have an error message in these situations that does
 not fill several screens.</p>
 
+
+
 <p>If rwsh.excessive_nesting itself generates an excessive nesting
 error, then a default error message is given with the call stacks both
 of the original error, and the attempt of rwsh.excessive_nesting to
@@ -142,12 +199,28 @@ respond to that error. Because this error could be either the result of
 missetting MAX_NESTING or an error in rwsh.excessive_nesting, neither
 value is changed in this situation.</p>
 
+<h3>rwsh.init</h3>
+
+
+
+This function is responsible for all of the initialization of the
+shell. It is the only value that is compiled into rwsh. The command
+line that started rwsh is passed to rwsh.init as its arguments. It
+doesn't do any good to change rwsh.init after the shell has started,
+but it can be examined to see what initialization has been done, and it
+can be run as a command to reinitialize the shell, possibly with
+different arguments.
+
 <h3>rwsh.mismatched_brace</h3>
+
+
 If the braces in a command do not match properly, (implying a confusion
 as to where an argument function begins and ends), then rwsh.mismatched
 brace is called instead. It's one argument is the command string up to
 and including the first mismatched brace.
 <h3>rwsh.multiple_argfunctions</h3>
+
+
 rwsh cannot currently handle more than one argfunction per
 command.&nbsp;This does not limit the ability of argfunctions to be
 nested within other argfunctions, or even several argfunctions to be
@@ -157,12 +230,33 @@ then rwsh.multiple_argfunctions is called instead. It does not take any
 arguments.
 <h3>rwsh.selection_not_found</h3>
 
+
+
 <p>If a selection read fails to return any matches, then
 rwsh.selection_not_found is called, with the smallest part of the
 selection that did not find a match as its first argument and the full
 selection as its second argument. For example, a command line that read
 "/bin/ls @/ussr/local/" would result in a call of
 "rwsh.selection_not_found /ussr /ussr/local/*"</p>
+
+<h3>rwsh.sighup rwsh.sigint rwsh.sigquit rwsh.sigpipe rwsh.sigterm rwsh.sigstp rwsh.sigcont rwsh.siginfo rwsh.sigusr1 rwsh.sigusr2</h3>
+
+If the shell receives any of these signals, then it will unwind the
+stack, and pass the call stack as the arguments to the corresponding
+internal function.
+<h3>rwsh.unreadable_dir</h3>
+
+If a selection read encounters a directory to which you do not have
+read permissions, then rwsh.unreadable_dir is called with the name of
+that directory as its argument.<br>
+<h3>rwsh.vars</h3>
+rwsh.vars is currently the only exception to the rule that internal
+functions are run by the shell itself under the right circumstances.
+&nbsp;The intent is for the configuration script to give descriptive
+information about the variables used by the configured shell, since
+this will probably include variables that are not used by the shell
+directly, but are used instead by internal functions, or to implement
+other functionality.
 
 </body>
 </html>

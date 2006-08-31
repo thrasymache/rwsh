@@ -24,3 +24,10 @@ source builtin.  Furthermore, the source builtin will run scripts if and only
 if the owner of the script has the execute permission for that file, regardless
 of the permissions of the user actually requesting to run the script.
 
+If %cd is passed a relative path, the chdir system call will handle this 
+appropriately, but CWD will be set to just that relative path, rather than the 
+result of applying that relative path to the previous working directory.
+
+The test suite is incomplete.
+
+Catching a signal can result in a spurious BAD_IF_NEST error

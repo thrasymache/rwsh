@@ -36,7 +36,7 @@ int cd_bi(const Argv_t& argv) {
   if (!ret) set_var("CWD", argv[1]);
   else if (errno == ENOENT) set_var("ERRNO", "NOENT");
   else if (errno == ENOTDIR) set_var("ERRNO", "NOTDIR"); 
-  else set_var("ERRNO", "CDERROR"); 
+  else set_var("ERRNO", "CD_ERROR"); 
   errno = 0;
   return ret;}
 
@@ -91,7 +91,7 @@ int else_if_bi(const Argv_t& argv) {
   else {set_var("ERRNO", "ELSE_WITHOUT_IF"); return -1;}}
 
 // run argfunction if IF_TEST is false and $* returns false
-int else_not_if_bi(const Argv_t& argv) {
+int else_if_not_bi(const Argv_t& argv) {
   if (argv.size() < 2) {set_var("ERRNO", "ARGS"); return -1;}
   if (get_var("IF_TEST") == "true") return 0;
   else if (get_var("IF_TEST") == "false") return if_core(argv, false);
@@ -170,6 +170,7 @@ int return_bi(const Argv_t& argv) {
   if (errno == EINVAL) {set_var("ERRNO", "INVAL"); return -1;}
   else if (ret < INT_MIN) {set_var("ERRNO", "RANGE"); return INT_MIN;}
   else if (ret > INT_MAX) {set_var("ERRNO", "RANGE"); return INT_MAX;}
+  else if (errno) {set_var("ERRNO", "RETURN_ERROR"); return -1;}
   else return ret;}
 
 // modify variable $1 as a selection according to $2
