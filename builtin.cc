@@ -280,7 +280,7 @@ int autofunction_bi(const Argv_t& argv) {
       return 0;}}
   return 1;}
 
-static const std::string version_str("0.1+");
+static const std::string version_str("0.2");
 
 // write to standard output the version of rwsh
 int version_bi(const Argv_t& argv) {
