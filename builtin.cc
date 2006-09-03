@@ -234,6 +234,17 @@ int source_bi(const Argv_t& argv) {
   if (e != executable_map.end()) (*e->second)(script_arg);
   return ret;}
 
+// run the argument function once with each command in the specified function
+// invocation
+int stepwise_bi(const Argv_t& argv) {
+  if (argv.size() < 2) {set_var("ERRNO", "ARGS"); return -1;}
+  if (!argv.argfunction()) {set_var("ERRNO", "ARGFUNCTION"); return -1;}
+  // return 1 if the specified command is not a function
+  // generate the lookup for the function, look it up, and convince it that it
+  //    is executing
+  // iterate over your captive function, calling the argfunction
+  return 0;}
+
 // return true if the two strings are the same
 int test_equal_bi(const Argv_t& argv) {
   if (argv.size() != 3) {set_var("ERRNO", "ARGS"); return -1;}
@@ -280,7 +291,20 @@ int autofunction_bi(const Argv_t& argv) {
       return 0;}}
   return 1;}
 
-static const std::string version_str("0.2");
+// for each time that the arguments return true, run the argfunction
+int while_bi(const Argv_t& argv) {
+  if (argv.size() < 2) {set_var("ERRNO", "ARGS"); return -1;}
+  Argv_t lookup(argv.begin()+1, argv.end(), 0);
+  while (!executable_map[lookup](lookup)) {
+    if (Executable_t::unwind_stack()) return -1;
+    int ret;
+    if (argv.argfunction()) {
+      ret  = (*argv.argfunction())(Argv_t("rwsh.mapped_argfunction"));
+      if (Executable_t::unwind_stack()) return -1;}
+    else ret = 0;}
+  return 0;}
+
+static const std::string version_str("0.2+");
 
 // write to standard output the version of rwsh
 int version_bi(const Argv_t& argv) {

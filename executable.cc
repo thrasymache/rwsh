@@ -70,7 +70,7 @@ void Executable_t::signal_handler(void) {
   set_var("IF_TEST", "");
   executable_map[call_stack_copy](call_stack_copy);
   if (unwind_stack()) {
-    echo_bi(Argv_t("%echo signal handler itself triggered signal"));
+    echo_bi(Argv_t("%echo signal handler itself triggered signal\n"));
     call_stack.push_front("%echo");
     echo_bi(call_stack);
     echo_bi(Argv_t("%echo \noriginal call stack:\n"));

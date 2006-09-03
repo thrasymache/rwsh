@@ -21,6 +21,7 @@
 %function if_only_not {%if $*; %else {rwsh.argfunction}}
 %function printenv {%printenv $*}
 %function which {%set x $1; %which $x {rwsh.argfunction}; %if %test_equal $? 0; %else {echo no $x}}
+%function while {%while $* {rwsh.argfunction}}
 
 # selection commands
 %function cat {%selection_set SELECT $1; /bin/cat @$SELECT}

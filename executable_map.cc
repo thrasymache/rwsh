@@ -60,6 +60,7 @@ Executable_map_t::Executable_map_t(void) {
   set(new Built_in_t("%test_equal", test_equal_bi));
   set(new Built_in_t("%test_not_empty", test_not_empty_bi));
   set(new Built_in_t("%which", which_bi));
+  set(new Built_in_t("%while", while_bi));
   set(new Built_in_t("%version", version_bi));
   set(new Built_in_t("%version_available", version_available_bi));
   set(new Built_in_t("%version_compatible", version_compatible_bi));}
