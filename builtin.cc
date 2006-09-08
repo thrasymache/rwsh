@@ -203,12 +203,6 @@ int source_bi(const Argv_t& argv) {
   if (!(sb.st_mode & S_IXUSR)) {set_var("ERRNO", "NOEXEC"); return -1;}
   std::ifstream src(argv[1].c_str(), std::ios_base::in);
   Argv_t script_arg(argv);
-  script_arg[0] = "rwsh.before_script";
-  Executable_map_t::iterator e = 
-    executable_map.find(script_arg);
-  if (e != executable_map.end()) (*e->second)(argv);
-  if (Executable_t::unwind_stack()) return dollar_question;
-  script_arg.pop_front();
   Command_stream_t script(src);
   Argv_t command;
   int ret = -1;
@@ -217,21 +211,7 @@ int source_bi(const Argv_t& argv) {
       Arg_script_t script(command);
       command = script.interpret(script_arg);}
     catch (Argv_t exception) {command = exception;}
-    int run_command;
-    command.push_front("rwsh.before_command");
-    e = executable_map.find(command);
-    if (e != executable_map.end()) 
-      run_command = (*e->second)(command);
-    else run_command = 0;
-    command.pop_front();
-    if (!run_command) ret = executable_map[command](command);
-    command.push_front("rwsh.after_command");
-    e = executable_map.find(command);
-    if (e != executable_map.end()) (*e->second)(command);}
-  if (Executable_t::unwind_stack()) return dollar_question;
-  script_arg.push_front("rwsh.after_script");
-  e = executable_map.find(script_arg);
-  if (e != executable_map.end()) (*e->second)(script_arg);
+    ret = executable_map[command](command);}
   return ret;}
 
 // run the argument function once with each command in the specified function

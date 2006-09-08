@@ -31,3 +31,7 @@ result of applying that relative path to the previous working directory.
 The test suite is incomplete.
 
 Catching a signal can result in a spurious BAD_IF_NEST error
+
+%ls fails to mention soft links that refer to files that do not exist
+
+CWD is not set at startup

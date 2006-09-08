@@ -1,1 +1,1 @@
-/usr/local/bin/test_rwsh_out | diff -c /usr/local/share/rwsh/test.result -
+/usr/bin/test_rwsh_out | diff -c /usr/share/rwsh/test.result -

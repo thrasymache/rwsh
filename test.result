@@ -1,7 +1,5 @@
 %function rwsh.after_command {%echo $?; %newline; %if_errno {%echo ERRNO set to $ERRNO; %newline; %set ERRNO \ }}
-0
 %function rwsh.prompt {%echo \$}
-0
 $%function # {%nop}
 0
 $%function \ {%nop}
@@ -74,7 +72,7 @@ $%ls /bin /usr/
 $%printenv
 ?=0
 MAX_NESTING=8
-rc=/usr/local/share/rwsh/test.sh
+rc=/usr/share/rwsh/test_init.sh
 0
 $%printenv SHELL
 
@@ -159,13 +157,13 @@ $e 5 4 3 2 1
 5 4 3 2 1
 0
 $e $A $0 @$A
-/bin /usr/local/share/rwsh/test.sh /bin
+/bin e /bin
 0
 $e 1 2 $* 3 4
-1 2 3 4
+1 2 1 2 $* 3 4 3 4
 0
 $e $*2 1 2
-1 2
+1 2 1 2
 0
 $e @//usr
 /usr
@@ -309,6 +307,7 @@ rwsh.mapped_argfunction : command not found ( rwsh.mapped_argfunction )
 $f g {w rwsh.argfunction {rwsh.unescaped_argfunction}; w rwsh.argfunction {rwsh.argfunction}; w rwsh.argfunction {rwsh.escaped_argfunction}}
 0
 $g {}
+{w rwsh.argfunction {\ }; w rwsh.argfunction {rwsh.argfunction}; w rwsh.argfunction {rwsh.escaped_argfunction}}
 {\ }
 {rwsh.argfunction}
 0
@@ -327,5 +326,13 @@ $f rwsh.after_command
 $f g {h}
 $f h {g}
 $g
-rwsh.excessive_nesting : command not found ( rwsh.excessive_nesting h g h g h g %source rwsh.mapped_argfunction %if rwsh.init )
+rwsh.excessive_nesting : command not found ( rwsh.excessive_nesting h g h g h g h g h g )
+$f rwsh.excessive_nesting {h}
+$g
+signal handler itself triggered signal
+h g h g h g h g h rwsh.excessive_nesting
+original call stack:
+h g h g h g h g h g
 $
+$# exiting
+$%exit

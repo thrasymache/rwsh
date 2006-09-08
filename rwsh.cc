@@ -42,12 +42,14 @@ static void register_signals(void) {
 int main(int argc, char *argv[]) {
   Argv_t external_command_line(&argv[0], &argv[argc], 0);
   Command_stream_t command_stream(std::cin);
-  Executable_map_t::iterator e;
   executable_map.set(new Function_t("rwsh.init", init_str));
   external_command_line.push_front("rwsh.init");
   executable_map[external_command_line](external_command_line);
   register_signals();
   Argv_t command;
+  Argv_t prompt("rwsh.prompt");
+  Executable_map_t::iterator e = executable_map.find(prompt);
+  if (command_stream && e != executable_map.end()) (*e->second)(prompt);
   while (command_stream >> command || Executable_t::unwind_stack()) 
     if (Executable_t::unwind_stack()) Executable_t::signal_handler();
     else {
@@ -65,7 +67,10 @@ int main(int argc, char *argv[]) {
       if (!run_command) executable_map[command](command);
       command.push_front("rwsh.after_command");
       e = executable_map.find(command);
-      if (e != executable_map.end()) (*e->second)(command);}
+      if (e != executable_map.end()) (*e->second)(command);
+      if (command_stream) {
+        Executable_map_t::iterator e = executable_map.find(prompt);
+        if (e != executable_map.end()) (*e->second)(prompt);}}
   external_command_line[0] = "rwsh.shutdown";
   e = executable_map.find(external_command_line);
   if (e != executable_map.end()) 

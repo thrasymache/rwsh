@@ -40,12 +40,11 @@
 # internal functions
 %function rwsh.autofunction {%set X $1; if_only %autofunction $X \$* {%echo added $X to executable map; %newline}}
 %function rwsh.arguments_for_argfunction {%echo cannot specify arguments for $1 directly; %newline; %return -1}
-# rwsh.after_script is initialized after individual configuration file
-%function rwsh.before_script {%function rwsh.prompt}
 %function rwsh.binary_not_found {%echo $1 : could not run binary; %newline; %return -1}
 %function rwsh.excessive_nesting {%newline; %echo function exceeded MAX_NESTING ( $MAX_NESTING ). call stack: $*; %newline}
 %function rwsh.mismatched_brace {%echo mismatched brace: $1; %newline; %return -1}
 %function rwsh.multiple_argfunctions {%echo multiple argfunctions not supported at this time; %newline; %return -1}
+%function rwsh.prompt {%echo $SELECT \$}
 %function rwsh.selection_not_found {%echo no file matching pattern $1; %set x $2; if_only_not %test_equal $1 $2 {%echo \ for selection $x}; %newline}
 %function rwsh.shutdown {%newline}
 %function rwsh.unreadable_dir {%echo cannot read directory $1; %newline}
@@ -53,12 +52,10 @@
 
 # final setup and individual configuration
 %function ! {if $* {%return 1}; else {%return 0}}
-%function st {/bin/bash /usr/local/bin/test_rwsh}
-%function rwsh {/usr/local/bin/rwsh $*}
+%function st {/bin/bash /usr/bin/test_rwsh}
 %selection_set rc $HOME /.rwshrc
 %source $rc
 %set rc \
-%function rwsh.after_script {%function rwsh.prompt {%echo $SELECT \$}}
 %function rwsh.after_command {%set x $?; %set y $1; %if_errno {echo ERRNO is set to $ERRNO; %set OLD_ERRNO $ERRNO; %set ERRNO \ }; if_only_not %test_equal $x 0 {echo $y returned $x}}
 %echo rwsh v
 %version

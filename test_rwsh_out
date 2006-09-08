@@ -1,1 +1,1 @@
-/usr/local/bin/rwsh /usr/local/share/rwsh/test.sh </usr/local/share/rwsh/test_excessive_nesting.sh 
+/bin/rwsh /usr/share/rwsh/test_init.sh </usr/share/rwsh/test_main.sh 
