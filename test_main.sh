@@ -1,5 +1,5 @@
-%function # {%nop}
-%function \ {%nop}
+# rwsh.init %source are tested by having test_init.sh define #
+
 # argv tests
 %nop
      %nop
@@ -9,8 +9,10 @@
 %echo  \    1                2       
 %newline
 %which rwsh.mapped_argfunction {%nop}
+# rwsh.mismatched_brace
 %which rwsh.argfunction {
 %which rwsh.argfunction }
+# rwsh.multiple_argfunctions
 %which rwsh.argfunction {} {}
 %which rwsh.argfunction {rwsh.argfunction {}}
 %which rwsh.argfunction {{{{{{{{{{{}}}}}}}}}}}
@@ -23,58 +25,15 @@ w e
 w {}
 e text that doesn't have a prompt appended
 
-# simple builtin tests
+# builtin tests
+# %cd
+%cd /bin
+/bin/pwd
+
+# %echo
 %echo these are fixed strings
-%ls /bin /usr/
-%printenv
-%printenv SHELL
-%importenv
-%set MAX_NESTING 8
-%set IF_TEST \
-%printenv SHELL
-%printenv A
-%set A 1
-%printenv A
-%selection_set A //usr
-e $A
-%selection_set A /
-e $A
-%selection_set A local/include
-e $A
-%selection_set A ..
-e $A
-%selection_set A \
-e $A
-%selection_set A /local/../../bin
-e $A
-%nop
-%nop 1 2 3 4 5
-%which a
-%which #
-%which rwsh.mapped_argfunction {%nop 1 \ \$ \@ $A $0 $# $* $*2 @a @$a @$1 @$* @$*2}
-%which rwsh.mapped_argfunction {rwsh.argfunction}
 
-# binary test implicitly tests Old_argv_t
-/bin/echo 1 2 3
-/bn/echo 1 2 3
-
-# arg_script tests
-e 5 4 3 2 1
-e $A $0 @$A
-e 1 2 $* 3 4
-e $*2 1 2
-e @//usr
-e @/*is*
-e @/bin
-e @/usr/*bin
-e @/usr/lib*
-e @/usr/s*e
-e @/usr/*d*
-%set FIGNORE include
-e @/usr/*d*
-e @/usr/*l*i*b*x*e*
-
-# function
+# %function
 %function a {%nop}
 %which a
 a 1 2 3
@@ -98,39 +57,161 @@ b
 f g {e hi; f g {e there}; f h {e nothing here}; g}
 g
 
-# control flow
+# %if %else_if %else
+%if %return 0 {e if true}
+%else {e else true}
+%if %return 1 {e if false}
+%else {e else false}
 %else_if %return 0 {e not this one}
-%set IF_TEST false
-%else_if %return 1 {e nor this}
+%if %return 1 {e nor this}
 %else_if %return 0 {e but this}
 %else_if %return 0 {e this should be skipped}
 %else_if %return 1 {e and certainly this}
-%set IF_TEST false
-%else_if %return 0 {%else_if %return 0 {e nested syntax}; %set IF_TEST false; %else_if %return 1 {not to be printed}; %else_if %return 0 {e nested else_if}; %set IF_TEST false}
-%else_if %return 0 {e else_if failed to appropriately set IF_TEST on exit}
+%else {e nor this}
+%if %return 0 {%if %return 1 {not to be printed}; %else_if %return 0 {e nested else_if}}
+%else {e else_if failed to appropriately set IF_TEST on exit}
+%if %return 0 {%else_if %return 0 {e nested syntax}}
+%else {e already tested}
+
+# %if_errno
+rwsh.mapped_argfunction {%if_errno {e no error}; %set ERRNO x; %if_errno {e invented error}}
+
+# %internal_errors %internal_features %internal_vars
+%internal_errors
+%internal_features
+%internal_vars
+
+# %ls
+%ls /bin /usr/
+
+# %nop
+%nop
+%nop 1 2 3 4 5
+
+# %printenv %importenv_preserve %set
+%printenv
+%printenv SHELL
+%importenv_preserve
+%printenv SHELL
+%printenv A
+%set A 1
+%printenv A
+
+# %return
+%return 0
+%return 1
+%return 1E2
+
+# %selection_set
+%selection_set A //usr
+e $A
+%selection_set A /
+e $A
+%selection_set A local/include
+e $A
+%selection_set A ..
+e $A
+%selection_set A \
+e $A
+%selection_set A /local/../../bin
+e $A
+
+# %test_equal %test_not_empty
+%test_equal x y
+%test_equal x x
+%test_not_empty \
+%test_not_empty x
+
+# %which
+%which j
+%which #
+%which rwsh.mapped_argfunction {%nop 1 \ \$ \@ $A $0 $# $* $*2 @a @$a @$1 @$* @$*2}
+%which rwsh.mapped_argfunction {rwsh.argfunction}
+
+# %version %version_available %version_compatible
+%version
+%version_available
+%version_compatible 1.0
+
+# binary test implicitly tests Old_argv_t
+/bin/echo 1 2 3
+/bn/echo 1 2 3
+
+# arg_script tests
+e 5 4 3 2 1
+e $A $0 @$A
+e 1 2 $* 3 4
+e $*2 1 2
+e @//usr
+# rwsh.selection_not_found
+e @/*is*
+e @/bin
+e @/usr/*bin
+e @/usr/lib*
+e @/usr/s*e
+e @/usr/*d*
+%set FIGNORE include
+e @/usr/*d*
+e @/usr/*l*i*b*x*e*
 
 # internal functions 
+# rwsh.after_command rwsh.raw_command rwsh.prompt
+# all of these are used as part of the test itself. If this changes, then the 
+# following tests will fail.
+w rwsh.after_command
+w rwsh.prompt
+w rwsh.raw_command
+
+# rwsh.arguments_for_argfunction rwsh.before_command rwsh.binary_not_found
+w x {rwsh.escaped_argfunction me}
+f rwsh.before_command {%echo $*0; %newline}
+/bn
+f rwsh.before_command
+
+# rwsh.autofunction %autofunction
+f rwsh.autofunction {%autofunction $1 \$*}
+w false
+false
+w false
+
+# rwsh.executable_not_found
 f rwsh.executable_not_found
 w rwsh.executable_not_found
 w x
 x
 w rwsh.executable_not_found
+
+# rwsh.mapped_argfunction rwsh.unescaped_argfunction rwsh.argfunction
+# rwsh.escaped_argfunction
 rwsh.mapped_argfunction 1 2 3 {e a $* a}
 rwsh.mapped_argfunction
 f g {w rwsh.argfunction {rwsh.unescaped_argfunction}; w rwsh.argfunction {rwsh.argfunction}; w rwsh.argfunction {rwsh.escaped_argfunction}}
 g {}
-f rwsh.autofunction {%autofunction $1 \$*}
-w false
-false
-w false
-f rwsh.after_command {e after $*0}
-f rwsh.after_command
+
+# rwsh.excessive_nesting
 f g {h}
 f h {g}
 g
 f rwsh.excessive_nesting {h}
 g
 
-# exiting
+# rwsh.run_logic
+f rwsh.run_logic {%if %return $1; %else_if $*2; %else}
+0 e don't print
+1 e do print
+1 f rwsh.run_logic
+1 e executable not found
+
+# rwsh.vars
+rwsh.vars
+
+# %importenv_overwrite
+%set SHELL /bin/rwsh
+%printenv SHELL
+%importenv_overwrite
+%printenv SHELL
+
+# exiting rwsh.shutdown
+f rwsh.shutdown {e rwsh is now terminating}
 %exit
 %echo 1 2 3

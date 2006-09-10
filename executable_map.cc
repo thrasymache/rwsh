@@ -27,7 +27,8 @@ Executable_map_t::Executable_map_t(void) {
   set(new Built_in_t("%else", else_bi));
   set(new Built_in_t("%exit", exit_bi));
   set(new Built_in_t("%function", function_bi));
-  set(new Built_in_t("%importenv", importenv_bi));
+  set(new Built_in_t("%importenv_overwrite", importenv_overwrite_bi));
+  set(new Built_in_t("%importenv_preserve", importenv_preserve_bi));
   set(new Function_t("%internal_errors", 
                      "%if %test_equal $# 1 {"
                          "%echo rwsh.arguments_for_argfunction "
@@ -41,9 +42,8 @@ Executable_map_t::Executable_map_t(void) {
                      "%else {%set ERRNO ARGS; %return -1}"));
   set(new Function_t("%internal_features", 
                      "%if %test_equal $# 1 {"
-                         "%echo rwsh.after_command "
-                         "rwsh.after_script rwsh.before_command "
-                         "rwsh.before_script rwsh.prompt rwsh.raw_command "
+                         "%echo rwsh.after_command rwsh.before_command "
+                         "rwsh.prompt rwsh.raw_command rwsh.run_logic "
                          "rwsh.shutdown rwsh.vars}; "
                      "%else {%set ERRNO ARGS; %return -1}"));
   set(new Function_t("%internal_vars", 

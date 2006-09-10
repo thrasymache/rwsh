@@ -19,15 +19,16 @@
 
 Executable_map_t executable_map;
 
-namespace {std::string init_str =
+namespace {
+std::string init_str =
   "%set MAX_NESTING 4;"
   "%set rc $2;"
   "%if %test_not_empty $rc {%source $rc};"
-  "%else {%source /etc/rwshrc}";}
+  "%else {%source /etc/rwshrc}";
 
-static void signal_starter(int sig) {Executable_t::caught_signal = sig;}
+void signal_starter(int sig) {Executable_t::caught_signal = sig;}
 
-static void register_signals(void) {
+void register_signals(void) {
   signal(SIGHUP, signal_starter);
   signal(SIGINT, signal_starter);
   signal(SIGQUIT, signal_starter);
@@ -37,7 +38,7 @@ static void register_signals(void) {
   signal(SIGCONT, signal_starter);
   signal(SIGINFO, signal_starter);
   signal(SIGUSR1, signal_starter);
-  signal(SIGUSR2, signal_starter);}
+  signal(SIGUSR2, signal_starter);} } // end unnamed namespace
 
 int main(int argc, char *argv[]) {
   Argv_t external_command_line(&argv[0], &argv[argc], 0);
@@ -57,14 +58,17 @@ int main(int argc, char *argv[]) {
         Arg_script_t script(command);
         command = script.interpret(command);}
       catch (Argv_t exception) {command = exception;}
-      int run_command;
       command.push_front("rwsh.before_command");
       e = executable_map.find(command);
-      if (e != executable_map.end()) 
-        run_command = (*e->second)(command);
-      else run_command = 0;
-      command.pop_front();
-      if (!run_command) executable_map[command](command);
+      if (e != executable_map.end()) (*e->second)(command);
+      command[0] = "rwsh.run_logic";
+      e = executable_map.find(command);
+      if (e != executable_map.end()) {
+        (*e->second)(command);
+        command.pop_front();}
+      else {
+        command.pop_front();
+        executable_map[command](command);}
       command.push_front("rwsh.after_command");
       e = executable_map.find(command);
       if (e != executable_map.end()) (*e->second)(command);

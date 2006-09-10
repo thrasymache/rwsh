@@ -132,13 +132,25 @@ int function_bi(const Argv_t& argv) {
     executable_map.set(new Function_t(argv[1], argv.argfunction()));
     return 0;}}
 
-// import the external environment into the variable map
-int importenv_bi(const Argv_t& argv) {
+// import the external environment into the variable map, overwriting variables
+// that already exist
+int importenv_overwrite_bi(const Argv_t& argv) {
   if (argv.size() != 1) {set_var("ERRNO", "ARGS"); return -1;}
   for (char** i=environ; *i; ++i) {
     std::string src(*i);
     std::string::size_type div = src.find("=");
     if (div != std::string::npos) 
+      set_var(src.substr(0, div), src.substr(div+1));}
+  return 0;}
+
+// import the external environment into the variable map, preserving variables
+// that already exist
+int importenv_preserve_bi(const Argv_t& argv) {
+  if (argv.size() != 1) {set_var("ERRNO", "ARGS"); return -1;}
+  for (char** i=environ; *i; ++i) {
+    std::string src(*i);
+    std::string::size_type div = src.find("=");
+    if (div != std::string::npos && get_var(src.substr(0, div)) == "") 
       set_var(src.substr(0, div), src.substr(div+1));}
   return 0;}
 

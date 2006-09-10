@@ -1,22 +1,26 @@
+rwsh v0.3 -
+  * %source no longer runs internal functions other than rwsh.raw_command
+  * fixed rwsh.mapped_argfunction {$*} crash
+
 rwsh v0.2 - scripts
-  *can source scripts
-  *signal handling
-  *builtins: cd, if, else_if, else_not_if, else, internal_features, 
+  * can source scripts
+  * signal handling
+  * builtins: cd, if, else_if, else_not_if, else, internal_features, 
       internal_errors, internal_vars, nop, return, source, test_equal, 
       test_not_empty, etc.
-  *rwsh.init produces a usable environment
-  *$0 is always the name of the current executable
+  * rwsh.init produces a usable environment
+  * $0 is always the name of the current executable
 
 rwsh v0.1 - proof of concept
-  *can run binaries, builtins and functions (but not scripts).
-  *variable map
-  *builtins: autofunction, echo, exit, false, function, importenv, ls, newline,
+  * can run binaries, builtins and functions (but not scripts).
+  * variable map
+  * builtins: autofunction, echo, exit, false, function, importenv, ls, newline,
       printenv, set, selection_set, true, which, version
-  *selection read
-  *internal functions: rwsh.init, rwsh.shutdown, rwsh.prompt, 
+  * selection read
+  * internal functions: rwsh.init, rwsh.shutdown, rwsh.prompt, 
       rwsh.before_command, rwsh.after_command, rwsh.autofunction,
       rwsh.arguments_for_argfunction, rwsh.binary_not_found,
       rwsh.executable_not_found, rwsh.excessive_nesting, rwsh.mismatched_brace,
       rwsh.multiple_argfunctions, rwsh.selection_not_found
-  *one possibly nested argfunction allowed per command. (argfunction levels of
+  * one possibly nested argfunction allowed per command. (argfunction levels of
       mapped through escaped.)

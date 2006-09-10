@@ -142,6 +142,7 @@ Argv_t Arg_script_t::interpret(const Argv_t& src) const {
   if (!argfunction_level) {
     for (const_iterator i = begin(); i != end(); ++i) 
       i->interpret(src, std::back_inserter(result));
+    if (!result.size()) result.push_back("");
     if (argfunction) result.set_argfunction(argfunction->interpret(src));}
   else if (is_argfunction()) {
     result.push_back("rwsh.mapped_argfunction");
