@@ -65,11 +65,11 @@ static int if_core(const Argv_t& argv, bool logic) {
 
 // run argfunction if $* returns true
 int if_bi(const Argv_t& argv) {
-  if (argv.size() < 2) {set_var("ERRNO", "ARGS"); return -1;}
-  if (get_var("IF_TEST") == "") {
+  if (get_var("ERRNO") != "") return dollar_question;
+  else if (argv.size() < 2) {set_var("ERRNO", "ARGS"); return -1;}
+  else if (get_var("IF_TEST") == "") {
     set_var("IF_TEST", "false"); 
-    int ret = if_core(argv, true);
-    return ret;}
+    return if_core(argv, true);}
   else {set_var("ERRNO", "IF_BEFORE_ELSE"); return -1;}}
 
 // run argfunction if ERRNO is set
@@ -85,23 +85,26 @@ int if_errno_bi(const Argv_t& argv) {
 
 // run argfunction if IF_TEST is false and $* returns true
 int else_if_bi(const Argv_t& argv) {
-  if (argv.size() < 2) {set_var("ERRNO", "ARGS"); return -1;}
-  if (get_var("IF_TEST") == "true") return 0;
+  if (get_var("ERRNO") != "") return dollar_question;
+  else if (argv.size() < 2) {set_var("ERRNO", "ARGS"); return -1;}
+  else if (get_var("IF_TEST") == "true") return dollar_question;
   else if (get_var("IF_TEST") == "false") return if_core(argv, true);
   else {set_var("ERRNO", "ELSE_WITHOUT_IF"); return -1;}}
 
 // run argfunction if IF_TEST is false and $* returns false
 int else_if_not_bi(const Argv_t& argv) {
-  if (argv.size() < 2) {set_var("ERRNO", "ARGS"); return -1;}
-  if (get_var("IF_TEST") == "true") return 0;
+  if (get_var("ERRNO") != "") return dollar_question;
+  else if (argv.size() < 2) {set_var("ERRNO", "ARGS"); return -1;}
+  else if (get_var("IF_TEST") == "true") return dollar_question;
   else if (get_var("IF_TEST") == "false") return if_core(argv, false);
   else {set_var("ERRNO", "ELSE_WITHOUT_IF"); return -1;}}
 
 // run argfunction if IF_TEST is false 
 int else_bi(const Argv_t& argv) {
   int ret;
-  if (argv.size() != 1) {set_var("ERRNO", "ARGS"); ret = -1;}
-  else if (get_var("IF_TEST") == "true") ret = 0;
+  if (get_var("ERRNO") != "") ret = dollar_question;
+  else if (argv.size() != 1) {set_var("ERRNO", "ARGS"); ret = -1;}
+  else if (get_var("IF_TEST") == "true") ret = dollar_question;
   else if (get_var("IF_TEST") == "false") 
     if (argv.argfunction()) {
       set_var("IF_TEST", "");
@@ -249,7 +252,7 @@ int test_not_empty_bi(const Argv_t& argv) {
 
 // return the string corresponding to the executable in the executable map with
 // key $1
-int which_bi(const Argv_t& argv) {
+int which_executable_bi(const Argv_t& argv) {
   if (argv.size() != 2) {set_var("ERRNO", "ARGS"); return -1;}
   Argv_t lookup(argv.begin()+1, argv.end(), 0);
   Executable_map_t::iterator focus = executable_map.find(lookup);
@@ -262,6 +265,22 @@ int which_bi(const Argv_t& argv) {
     std::cout <<argv.argfunction()->str() <<std::endl;
     return 0;}
   else return 1;}
+
+// find the binary in $PATH with filename $1
+int which_path_bi(const Argv_t& argv) {
+  if (argv.size() != 2) {set_var("ERRNO", "ARGS"); return -1;}
+  Argv_t lookup(argv.begin()+1, argv.end(), 0);
+  std::vector<std::string> path;
+  tokenize_strict(get_var("PATH"), std::back_inserter(path), 
+                  std::bind2nd(std::equal_to<char>(), ':'));
+  for (std::vector<std::string>::iterator i = path.begin(); i != path.end();
+       ++i) {
+    std::string test = *i + '/' + lookup[0];
+    struct stat sb;
+    if (!stat(test.c_str(), &sb)) {
+      std::cout <<test <<std::endl;
+      return 0;}}
+  return 1;}
 
 // insert into the executable map a function with name $1 that runs the binary 
 // in $PATH with filename $1 with arguments $*2
@@ -283,12 +302,38 @@ int autofunction_bi(const Argv_t& argv) {
       return 0;}}
   return 1;}
 
+// prints the last return value of the executable with named $1
+int which_return_bi(const Argv_t& argv) {
+  if (argv.size() != 2) {set_var("ERRNO", "ARGS"); return -1;}
+  Argv_t lookup(argv.begin()+1, argv.end(), 0);
+  Executable_map_t::iterator focus = executable_map.find(lookup);
+  if (focus != executable_map.end()) {
+    std::cout <<focus->second->last_ret() <<std::endl;
+    return 0;}
+  else if ((lookup[0] == "rwsh.mapped_argfunction" || 
+            lookup[0] == "rwsh.argfunction") 
+           && argv.argfunction()) 
+    return 2;
+  else return 1;}
+
+// return true if ther is an executable in the executable map with key $1
+int which_test_bi(const Argv_t& argv) {
+  if (argv.size() != 2) {set_var("ERRNO", "ARGS"); return -1;}
+  Argv_t lookup(argv.begin()+1, argv.end(), 0);
+  Executable_map_t::iterator focus = executable_map.find(lookup);
+  if (focus != executable_map.end()) return 0;
+  else if ((lookup[0] == "rwsh.mapped_argfunction" || 
+            lookup[0] == "rwsh.argfunction") 
+           && argv.argfunction()) 
+    return 0;
+  else return 1;}
+
 // for each time that the arguments return true, run the argfunction
 int while_bi(const Argv_t& argv) {
   if (argv.size() < 2) {set_var("ERRNO", "ARGS"); return -1;}
   Argv_t lookup(argv.begin()+1, argv.end(), 0);
   while (!executable_map[lookup](lookup)) {
-    if (Executable_t::unwind_stack()) return -1;
+    if (Executable_t::unwind_stack() || get_var("ERRNO") != "") return -1;
     int ret;
     if (argv.argfunction()) {
       ret  = (*argv.argfunction())(Argv_t("rwsh.mapped_argfunction"));

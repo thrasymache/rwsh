@@ -25,26 +25,26 @@ $%echo  \    1                2
 $%newline
 
 0
-$%which rwsh.mapped_argfunction {%nop}
+$%which_executable rwsh.mapped_argfunction {%nop}
 {%nop}
 0
 $# rwsh.mismatched_brace
 0
-$%which rwsh.argfunction {
-rwsh.mismatched_brace : command not found ( rwsh.mismatched_brace %which rwsh.argfunction { )
+$%which_executable rwsh.argfunction {
+rwsh.mismatched_brace : command not found ( rwsh.mismatched_brace %which_executable rwsh.argfunction { )
 -1
-$%which rwsh.argfunction }
-rwsh.mismatched_brace : command not found ( rwsh.mismatched_brace %which rwsh.argfunction } )
+$%which_executable rwsh.argfunction }
+rwsh.mismatched_brace : command not found ( rwsh.mismatched_brace %which_executable rwsh.argfunction } )
 -1
 $# rwsh.multiple_argfunctions
 0
-$%which rwsh.argfunction {} {}
+$%which_executable rwsh.argfunction {} {}
 rwsh.multiple_argfunctions : command not found ( rwsh.multiple_argfunctions )
 -1
-$%which rwsh.argfunction {rwsh.argfunction {}}
+$%which_executable rwsh.argfunction {rwsh.argfunction {}}
 rwsh.arguments_for_argfunction : command not found ( rwsh.arguments_for_argfunction rwsh.argfunction )
 -1
-$%which rwsh.argfunction {{{{{{{{{{{}}}}}}}}}}}
+$%which_executable rwsh.argfunction {{{{{{{{{{{}}}}}}}}}}}
 {\  {\  {\  {\  {\  {\  {\  {\  {\  {\  {\ }}}}}}}}}}}
 0
 $
@@ -53,7 +53,7 @@ $# ability of functions to immitate built-ins
 0
 $%function f {%function $1 {rwsh.argfunction}}
 0
-$f w {%which $1 {rwsh.argfunction}}
+$f w {%which_executable $1 {rwsh.argfunction}}
 0
 $f e {%echo $*; %newline}
 0
@@ -89,18 +89,18 @@ $# %function
 0
 $%function a {%nop}
 0
-$%which a
+$%which_executable a
 %function a {%nop}
 0
 $a 1 2 3
 0
 $%function a
 0
-$%which a
+$%which_executable a
 1
 $%function a {e 9 $A $1 @//usr}
 0
-$%which a
+$%which_executable a
 %function a {e 9 $A $1 @//usr}
 0
 $a
@@ -301,17 +301,35 @@ $%test_not_empty x
 0
 $
 0
-$# %which
+$# %which_executable %which_test %which_return
 0
-$%which j
+$%which_test j
 1
-$%which #
+$%which_executable j
+1
+$%which_return %which_executable
+1
+0
+$%which_test #
+0
+$%which_executable #
 %function # {%nop}
 0
-$%which rwsh.mapped_argfunction {%nop 1 \ \$ \@ $A $0 $# $* $*2 @a @$a @$1 @$* @$*2}
+$%which_return %which_executable
+0
+0
+$%which_return %which2
+1
+$%which_executable rwsh.mapped_argfunction {%nop 1 \ \$ \@ $A $0 $# $* $*2 @a @$a @$1 @$* @$*2}
 {%nop 1 \  \$ \@ $A $0 $# $* $*2 @a @$a @$1 @$*1 @$*2}
 0
-$%which rwsh.mapped_argfunction {rwsh.argfunction}
+$%which_test rwsh.mapped_argfunction
+1
+$%which_executable rwsh.mapped_argfunction
+1
+$%which_test rwsh.mapped_argfunction {rwsh.argfunction}
+0
+$%which_executable rwsh.mapped_argfunction {rwsh.argfunction}
 {rwsh.argfunction}
 0
 $
@@ -420,12 +438,15 @@ rwsh.before_command f rwsh.before_command
 0
 $
 0
-$# rwsh.autofunction %autofunction
+$# rwsh.autofunction %autofunction %which_path
 0
 $f rwsh.autofunction {%autofunction $1 \$*}
 0
 $w false
 1
+$%which_path false
+/usr/bin/false
+0
 $false
 256
 $w false

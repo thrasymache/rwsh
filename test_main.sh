@@ -8,18 +8,18 @@
 %newline
 %echo  \    1                2       
 %newline
-%which rwsh.mapped_argfunction {%nop}
+%which_executable rwsh.mapped_argfunction {%nop}
 # rwsh.mismatched_brace
-%which rwsh.argfunction {
-%which rwsh.argfunction }
+%which_executable rwsh.argfunction {
+%which_executable rwsh.argfunction }
 # rwsh.multiple_argfunctions
-%which rwsh.argfunction {} {}
-%which rwsh.argfunction {rwsh.argfunction {}}
-%which rwsh.argfunction {{{{{{{{{{{}}}}}}}}}}}
+%which_executable rwsh.argfunction {} {}
+%which_executable rwsh.argfunction {rwsh.argfunction {}}
+%which_executable rwsh.argfunction {{{{{{{{{{{}}}}}}}}}}}
 
 # ability of functions to immitate built-ins
 %function f {%function $1 {rwsh.argfunction}}
-f w {%which $1 {rwsh.argfunction}}
+f w {%which_executable $1 {rwsh.argfunction}}
 f e {%echo $*; %newline}
 w e
 w {}
@@ -35,12 +35,12 @@ e text that doesn't have a prompt appended
 
 # %function
 %function a {%nop}
-%which a
+%which_executable a
 a 1 2 3
 %function a
-%which a
+%which_executable a
 %function a {e 9 $A $1 @//usr}
-%which a
+%which_executable a
 a
 a 1
 a 1 2
@@ -122,11 +122,19 @@ e $A
 %test_not_empty \
 %test_not_empty x
 
-# %which
-%which j
-%which #
-%which rwsh.mapped_argfunction {%nop 1 \ \$ \@ $A $0 $# $* $*2 @a @$a @$1 @$* @$*2}
-%which rwsh.mapped_argfunction {rwsh.argfunction}
+# %which_executable %which_test %which_return
+%which_test j
+%which_executable j
+%which_return %which_executable
+%which_test #
+%which_executable #
+%which_return %which_executable
+%which_return %which2
+%which_executable rwsh.mapped_argfunction {%nop 1 \ \$ \@ $A $0 $# $* $*2 @a @$a @$1 @$* @$*2}
+%which_test rwsh.mapped_argfunction
+%which_executable rwsh.mapped_argfunction
+%which_test rwsh.mapped_argfunction {rwsh.argfunction}
+%which_executable rwsh.mapped_argfunction {rwsh.argfunction}
 
 # %version %version_available %version_compatible
 %version
@@ -168,9 +176,10 @@ f rwsh.before_command {%echo $*0; %newline}
 /bn
 f rwsh.before_command
 
-# rwsh.autofunction %autofunction
+# rwsh.autofunction %autofunction %which_path
 f rwsh.autofunction {%autofunction $1 \$*}
 w false
+%which_path false
 false
 w false
 

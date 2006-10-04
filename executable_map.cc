@@ -59,7 +59,10 @@ Executable_map_t::Executable_map_t(void) {
   set(new Built_in_t("%source", source_bi));
   set(new Built_in_t("%test_equal", test_equal_bi));
   set(new Built_in_t("%test_not_empty", test_not_empty_bi));
-  set(new Built_in_t("%which", which_bi));
+  set(new Built_in_t("%which_executable", which_executable_bi));
+  set(new Built_in_t("%which_path", which_path_bi));
+  set(new Built_in_t("%which_return", which_return_bi));
+  set(new Built_in_t("%which_test", which_test_bi));
   set(new Built_in_t("%while", while_bi));
   set(new Built_in_t("%version", version_bi));
   set(new Built_in_t("%version_available", version_available_bi));
