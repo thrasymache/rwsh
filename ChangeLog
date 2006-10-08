@@ -1,5 +1,7 @@
 rwsh v0.3 -
-  * builtins: %which_test %which_path %which_return
+  * builtins: %importenv_overwrite, %importenv_preserve, %which_executable, 
+      %which_test, %which_path, %which_return, %while, %version_available,
+      %version_compatible,
   * %source no longer runs internal functions other than rwsh.raw_command
   * ERRNO prevents execution of if-family of builtins (obviously other than 
       if_errno)

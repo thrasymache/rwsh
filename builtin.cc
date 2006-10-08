@@ -337,7 +337,7 @@ int while_bi(const Argv_t& argv) {
     int ret;
     if (argv.argfunction()) {
       ret  = (*argv.argfunction())(Argv_t("rwsh.mapped_argfunction"));
-      if (Executable_t::unwind_stack()) return -1;}
+      if (Executable_t::unwind_stack() || get_var("ERRNO") != "") return -1;}
     else ret = 0;}
   return 0;}
 

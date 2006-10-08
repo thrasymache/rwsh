@@ -4,6 +4,8 @@
 
 
 
+
+  
   
   
   
@@ -11,6 +13,8 @@
 
 
 
+
+  
   
   
   
@@ -19,6 +23,7 @@
 
 
 <body>
+
 
 
 
@@ -31,10 +36,13 @@ command line. Instead they are intended to be useful building blocks
 for shell functions.<br>
 
 
+
 <br>
 
 
+
 <h3>%autofunction</h3>
+
 
 
 
@@ -47,13 +55,16 @@ done.<br>
 
 
 
+
 <h3>%cd</h3>
+
 
 
 The %cd changes the current working directory to the path given as its
 argument. If successful it sets CWD to the argument that was passed to
 it. It returns the value returned by chdir.
 <h3>%echo</h3>
+
 
 
 
@@ -64,7 +75,9 @@ the %newline builtin.<br>
 
 
 
+
 <h3>%exit</h3>
+
 
 
 
@@ -76,7 +89,9 @@ terminates.<br>
 
 
 
+
 <h3>%if</h3>
+
 
 
 %if executes its arguments as a command, and then runs its argument
@@ -88,9 +103,12 @@ value of its argfunction if it is run, and 0 otherwise. It sets IF_TEST
 to true if its arguments returned 0, and to false otherwise.<br>
 
 
+
 <h3>%if_errno</h3>
+
 %if_errno takes no arguments. &nbsp;It runs its argument function if the variable ERRNO is not the empty string.
 <h3>%else_if</h3>
+
 
 
 %else_if returns 0 immediately if IF_TEST is true. Otherwise it runs
@@ -100,7 +118,9 @@ between %if and %else.<br>
 
 
 
+
 <h3>%else_if_not</h3>
+
 
 
 %else_if_not is identical to %else_if except that it sets IF_TEST to
@@ -108,7 +128,9 @@ true and runs its argfunction only if the result of running its
 arguments returns nonzero.<br>
 
 
+
 <h3>%else</h3>
+
 
 
 %else does not take any arguments, it runs its argfunction if IF_TEST
@@ -120,7 +142,9 @@ without a %else.
 
 
 
+
 %function inserts its argument function into the executable map. The first argument is used as the name for the new function.<br>
+
 
 
 
@@ -128,11 +152,14 @@ without a %else.
 
 
 
+
 %importenv causes the environment that rwsh was run in to be imported into the variable map.<br>
 
 
 
+
 <h3>%internal_errors</h3>
+
 
 %internal_errors takes no arguments. It prints a list of those internal
 functions which are run whether they exist or not (and will thus result
@@ -140,12 +167,15 @@ in rwsh.executable_not_found errors if they do not exist). Except for
 rwsh.init they are all reporting errors themselves.
 <h3>%internal_features</h3>
 
+
 %internal_features takes no arguments. It prints a list of those internal functions which are run only if they exist.
 <h3>%internal_vars</h3>
+
 
 %internal_vars takes no arguments. It prints a list of those variables
 that are written by the shell itself or affect the running of builtins.
 <h3>%ls</h3>
+
 
 
 
@@ -156,7 +186,9 @@ use /bin/ls rather than %ls.<br>
 
 
 
+
 <h3>%newline</h3>
+
 
 
 
@@ -164,17 +196,22 @@ use /bin/ls rather than %ls.<br>
 
 
 
+
 <br>
+
 
 
 
 <h3>%nop</h3>
 
 
+
 %nop ignores its arguments, and leaves $? unchanged<br>
 
 
+
 <h3>%printenv</h3>
+
 
 
 
@@ -183,14 +220,18 @@ it is given an argument, then it prints out the value of that variable.<br>
 
 
 
+
 <h3>%return</h3>
+
 
 
 %return takes one argument, which it converts to an integer, and then
 returns that value. It has more error conditions than any other builtin.<br>
 
 
+
 <h3>%set</h3>
+
 
 
 
@@ -200,7 +241,9 @@ variable.<br>
 
 
 
+
 <h3>%selection_set</h3>
+
 
 
 
@@ -209,15 +252,19 @@ variant of %set, that treats the current value of the variable as a
 path that should be modified by the second argument.<br>
 
 
-<br>
-
-
 
 <br>
+
+
+
+
+<br>
+
 
 
 
 <h3>%source</h3>
+
 
 
 %source attempts to run its first argument as a shell script. The
@@ -231,12 +278,15 @@ returned by the script it ran.
 <h3>%test_equal</h3>
 
 
+
 %test_equal takes two arguments. It returns 0 if those two arguments are the same string
 <h3>%test_not_empty</h3>
 
 
+
 %test_not_empty takes one argument. It returns 0 if that argument is not the empty string.
 <h3>%which</h3>
+
 
 
 
@@ -253,18 +303,30 @@ and are printed with just their enclosing braces.<br>
 
 
 
+
+<h3>%while</h3>
+%while runs its arguments as a command, and for each time that they
+return 0, it runs its argument function. &nbsp;Note: a loop of the form
+"%while %return $X {...}" will either run its argument function
+infinitely or not at all. &nbsp;$X is interpretted once, before the
+statement is run, and however the argument function might change the
+value of X, it cannot change the value that it used to have.
 <h3>%version</h3>
+
 
 
 
 %version prints out the version of rwsh that is currently running<br>
 
 
+
 <h3>%version_compatible</h3>
+
 
 
 %version_compatible takes one argument, and returns 0 if that argument is an rwsh version number compatible with this one.
 <h3>%version_available</h3>
+
 
 
 %version_available takes no arguments, and prints out a list of those that would return true if passed to %version_compatible.

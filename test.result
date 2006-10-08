@@ -334,6 +334,29 @@ $%which_executable rwsh.mapped_argfunction {rwsh.argfunction}
 0
 $
 0
+$# %while
+0
+$%function tf {%return $X}
+0
+$%set X 1
+0
+$%while tf {e skipped}
+0
+$%set X 0
+0
+$%while tf {e printed; %set X 1}
+printed
+0
+$%set X 0
+0
+$%set Y 0
+0
+$%while tf {%if %return $Y {%set Y 1}; %else {%set X 1}; e in %while argfunction}
+in %while argfunction
+in %while argfunction
+0
+$
+0
 $# %version %version_available %version_compatible
 0
 $%version
