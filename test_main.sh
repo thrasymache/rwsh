@@ -63,20 +63,20 @@ f g {e hi; f g {e there}; f h {e nothing here}; g}
 g
 
 # %if %else_if %else
-%if %return 0 {e if true}
-%else {e else true}
-%if %return 1 {e if false}
-%else {e else false}
-%else_if %return 0 {e not this one}
-%if %return 1 {e nor this}
-%else_if %return 0 {e but this}
-%else_if %return 0 {e this should be skipped}
-%else_if %return 1 {e and certainly this}
-%else {e nor this}
-%if %return 0 {%if %return 1 {not to be printed}; %else_if %return 0 {e nested else_if}}
-%else {e else_if failed to appropriately set IF_TEST on exit}
-%if %return 0 {%else_if %return 0 {e nested syntax}}
-%else {e already tested}
+%if %return 0 {e if true; %return 1}
+%else {e else true; %return 3}
+%if %return 1 {e if false; %return 4}
+%else {e else false; %return 5}
+%else_if %return 0 {e not this one; %return 6}
+%if %return 1 {e nor this; %return 7}
+%else_if %return 0 {e but this; %return 8}
+%else_if %return 0 {e this should be skipped; %return 9}
+%else_if %return 1 {e and certainly this; %return 10}
+%else {e nor this; %return 11}
+%if %return 0 {%if %return 1 {not to be printed; %return 11}; %else_if %return 0 {e nested else_if; %return 12}}
+%else {e else_if failed to appropriately set IF_TEST on exit; %return 13}
+%if %return 0 {%else_if %return 0 {e nested syntax; %return 14}}
+%else {e already tested; %return 15}
 
 # %if_errno
 rwsh.mapped_argfunction {%if_errno {e no error}; %set ERRNO x; %if_errno {e invented error}}

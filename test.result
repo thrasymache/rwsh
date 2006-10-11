@@ -1,4 +1,4 @@
-%function rwsh.after_command {%echo $?; %newline; %if_errno {%echo ERRNO set to $ERRNO; %newline; %set ERRNO \ }}
+%function rwsh.after_command {%set last_command_return $?; %echo $last_command_return; %newline; %if_errno {%echo ERRNO set to $ERRNO; %newline; %set ERRNO \ }}
 %function rwsh.prompt {%echo \$}
 %function rwsh.vars {%internal_vars}
 %function # {%nop}
@@ -163,40 +163,40 @@ $
 0
 $# %if %else_if %else
 0
-$%if %return 0 {e if true}
+$%if %return 0 {e if true; %return 1}
 if true
+1
+$%else {e else true; %return 3}
 0
-$%else {e else true}
+$%if %return 1 {e if false; %return 4}
 0
-$%if %return 1 {e if false}
-0
-$%else {e else false}
+$%else {e else false; %return 5}
 else false
-0
-$%else_if %return 0 {e not this one}
+5
+$%else_if %return 0 {e not this one; %return 6}
 -1
 ERRNO set to ELSE_WITHOUT_IF
-$%if %return 1 {e nor this}
+$%if %return 1 {e nor this; %return 7}
 0
-$%else_if %return 0 {e but this}
+$%else_if %return 0 {e but this; %return 8}
 but this
+8
+$%else_if %return 0 {e this should be skipped; %return 9}
 0
-$%else_if %return 0 {e this should be skipped}
+$%else_if %return 1 {e and certainly this; %return 10}
 0
-$%else_if %return 1 {e and certainly this}
+$%else {e nor this; %return 11}
 0
-$%else {e nor this}
-0
-$%if %return 0 {%if %return 1 {not to be printed}; %else_if %return 0 {e nested else_if}}
+$%if %return 0 {%if %return 1 {not to be printed; %return 11}; %else_if %return 0 {e nested else_if; %return 12}}
 nested else_if
 -1
 ERRNO set to BAD_IF_NEST
-$%else {e else_if failed to appropriately set IF_TEST on exit}
+$%else {e else_if failed to appropriately set IF_TEST on exit; %return 13}
 0
-$%if %return 0 {%else_if %return 0 {e nested syntax}}
+$%if %return 0 {%else_if %return 0 {e nested syntax; %return 14}}
 -1
 ERRNO set to ELSE_WITHOUT_IF
-$%else {e already tested}
+$%else {e already tested; %return 15}
 0
 $
 0
@@ -240,6 +240,7 @@ $%printenv
 ?=0
 CWD=/bin
 MAX_NESTING=4
+last_command_return=0
 rc=/usr/share/rwsh/test_init.sh
 0
 $%printenv SHELL
@@ -451,7 +452,7 @@ $# all of these are used as part of the test itself. If this changes, then the
 $# following tests will fail.
 0
 $w rwsh.after_command
-%function rwsh.after_command {%echo $?; %newline; %if_errno {%echo ERRNO set to $ERRNO; %newline; %set ERRNO \ }}
+%function rwsh.after_command {%set last_command_return $?; %echo $last_command_return; %newline; %if_errno {%echo ERRNO set to $ERRNO; %newline; %set ERRNO \ }}
 0
 $w rwsh.prompt
 %function rwsh.prompt {%echo \$}
