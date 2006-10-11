@@ -20,13 +20,14 @@ Executable_map_t::Executable_map_t(void) {
   set(new Built_in_t("%autofunction", autofunction_bi));
   set(new Built_in_t("%cd", cd_bi));
   set(new Built_in_t("%echo", echo_bi));
-  set(new Built_in_t("%if", if_bi));
-  set(new Built_in_t("%if_errno", if_errno_bi));
+  set(new Built_in_t("%else", else_bi));
   set(new Built_in_t("%else_if", else_if_bi));
   set(new Built_in_t("%else_if_not", else_if_not_bi));
-  set(new Built_in_t("%else", else_bi));
   set(new Built_in_t("%exit", exit_bi));
   set(new Built_in_t("%function", function_bi));
+  set(new Built_in_t("%for", for_bi));
+  set(new Built_in_t("%if", if_bi));
+  set(new Built_in_t("%if_errno", if_errno_bi));
   set(new Built_in_t("%importenv_overwrite", importenv_overwrite_bi));
   set(new Built_in_t("%importenv_preserve", importenv_preserve_bi));
   set(new Function_t("%internal_errors", 

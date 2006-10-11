@@ -33,6 +33,11 @@ e text that doesn't have a prompt appended
 # %echo
 %echo these are fixed strings
 
+# %for
+%for {e no arguments $1}
+%for 1 {e one argument $1}
+%for 1 2 3 4 {e four arguments $1}
+
 # %function
 %function a {%nop}
 %which_executable a

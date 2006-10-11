@@ -9,6 +9,7 @@ int else_if_bi(const Argv_t& argv);
 int else_if_not_bi(const Argv_t& argv);
 int else_bi(const Argv_t& argv);
 int exit_bi(const Argv_t& argv);
+int for_bi(const Argv_t& argv);
 int function_bi(const Argv_t& argv);
 int importenv_overwrite_bi(const Argv_t& argv);
 int importenv_preserve_bi(const Argv_t& argv);

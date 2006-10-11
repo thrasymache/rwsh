@@ -122,6 +122,20 @@ int exit_bi(const Argv_t& argv) {
   exit_requested = true;
   return 0;}
 
+// run the argfunction for each argument, passing that value as the argument
+int for_bi(const Argv_t& argv) {
+  if (argv.size() < 2) {set_var("ERRNO", "ARGS"); return -1;}
+  int ret = -1;
+  Argv_t body("rwsh.mapped_argfunction");
+  body.push_back("");
+  for (Argv_t::const_iterator i = ++argv.begin(); i != argv.end(); ++i) {
+    if (argv.argfunction()) {
+      body[1] = *i;
+      ret  = (*argv.argfunction())(body);
+      if (Executable_t::unwind_stack() || get_var("ERRNO") != "") return -1;}
+    else ret = 0;}
+  return ret;}
+
 // add argfunction to executable map with name $1
 int function_bi(const Argv_t& argv) {
   if (argv.size() != 2) {set_var("ERRNO", "ARGS"); return -1;}
@@ -331,15 +345,15 @@ int which_test_bi(const Argv_t& argv) {
 // for each time that the arguments return true, run the argfunction
 int while_bi(const Argv_t& argv) {
   if (argv.size() < 2) {set_var("ERRNO", "ARGS"); return -1;}
+  int ret = -1;
   Argv_t lookup(argv.begin()+1, argv.end(), 0);
   while (!executable_map[lookup](lookup)) {
     if (Executable_t::unwind_stack() || get_var("ERRNO") != "") return -1;
-    int ret;
     if (argv.argfunction()) {
       ret  = (*argv.argfunction())(Argv_t("rwsh.mapped_argfunction"));
       if (Executable_t::unwind_stack() || get_var("ERRNO") != "") return -1;}
     else ret = 0;}
-  return 0;}
+  return ret;}
 
 static const std::string version_str("0.2+");
 

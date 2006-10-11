@@ -85,6 +85,22 @@ $%echo these are fixed strings
 these are fixed strings0
 $
 0
+$# %for
+0
+$%for {e no arguments $1}
+-1
+ERRNO set to ARGS
+$%for 1 {e one argument $1}
+one argument 1
+0
+$%for 1 2 3 4 {e four arguments $1}
+four arguments 1
+four arguments 2
+four arguments 3
+four arguments 4
+0
+$
+0
 $# %function
 0
 $%function a {%nop}
@@ -341,7 +357,7 @@ $%function tf {%return $X}
 $%set X 1
 0
 $%while tf {e skipped}
-0
+-1
 $%set X 0
 0
 $%while tf {e printed; %set X 1}
