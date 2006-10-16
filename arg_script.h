@@ -55,3 +55,6 @@ class Arg_script_t : private std::vector<Arg_spec_t> {
   const Arg_spec_t& operator[] (int i) const {return Base::operator[](i);}; };
 
 bool is_argfunction_name(const std::string& focus);
+bool is_binary_name(const std::string& focus);
+bool is_builtin_name(const std::string& focus);
+bool is_function_name(const std::string& focus);

@@ -1,20 +1,21 @@
+%function rwsh.before_command {%return $last_command_return}
 %function rwsh.after_command {%set last_command_return $?; %echo $last_command_return; %newline; %if_errno {%echo ERRNO set to $ERRNO; %newline; %set ERRNO \ }}
 %function rwsh.prompt {%echo \$}
 %function rwsh.vars {%internal_vars}
 %function # {%nop}
 %function \ {%nop}
 $# rwsh.init %source are tested by having test_init.sh define #
-0
+-10
 $
-0
+-10
 $# argv tests
-0
+-10
 $%nop
-0
+-10
 $     %nop
-0
+-10
 $%nop 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
-0
+-10
 $%echo 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 200
 $%newline
@@ -37,7 +38,7 @@ $%which_executable rwsh.argfunction }
 rwsh.mismatched_brace : command not found ( rwsh.mismatched_brace %which_executable rwsh.argfunction } )
 -1
 $# rwsh.multiple_argfunctions
-0
+-1
 $%which_executable rwsh.argfunction {} {}
 rwsh.multiple_argfunctions : command not found ( rwsh.multiple_argfunctions )
 -1
@@ -167,7 +168,7 @@ $%if %return 0 {e if true; %return 1}
 if true
 1
 $%else {e else true; %return 3}
-0
+1
 $%if %return 1 {e if false; %return 4}
 0
 $%else {e else false; %return 5}
@@ -182,26 +183,26 @@ $%else_if %return 0 {e but this; %return 8}
 but this
 8
 $%else_if %return 0 {e this should be skipped; %return 9}
-0
+8
 $%else_if %return 1 {e and certainly this; %return 10}
-0
+8
 $%else {e nor this; %return 11}
-0
+8
 $%if %return 0 {%if %return 1 {not to be printed; %return 11}; %else_if %return 0 {e nested else_if; %return 12}}
 nested else_if
 -1
 ERRNO set to BAD_IF_NEST
 $%else {e else_if failed to appropriately set IF_TEST on exit; %return 13}
-0
+-1
 $%if %return 0 {%else_if %return 0 {e nested syntax; %return 14}}
 -1
 ERRNO set to ELSE_WITHOUT_IF
 $%else {e already tested; %return 15}
-0
+-1
 $
-0
+-1
 $# %if_errno
-0
+-1
 $rwsh.mapped_argfunction {%if_errno {e no error}; %set ERRNO x; %if_errno {e invented error}}
 invented error
 0
@@ -271,9 +272,9 @@ $%return 1E2
 -1
 ERRNO set to NAN
 $
-0
+-1
 $# %selection_set
-0
+-1
 $%selection_set A //usr
 0
 $e $A
@@ -303,6 +304,27 @@ $%selection_set A /local/../../bin
 0
 $e $A
 /bin
+0
+$
+0
+$# %stepwise
+0
+$%stepwise stepwise {e $*}
+1
+$%stepwise %stepwise {e $*}
+2
+$%stepwise e stepping through echo
+-1
+ERRNO set to ARGFUNCTION
+$%stepwise e stepping through echo {e $*}
+%echo stepping through echo
+%newline
+0
+$%stepwise rwsh.after_command %stepwise e stepping through echo {e $*}
+%set last_command_return 0
+%echo 0
+%newline
+%if_errno
 0
 $
 0
@@ -383,9 +405,9 @@ $%version_available
 $%version_compatible 1.0
 1
 $
-0
+1
 $# binary test implicitly tests Old_argv_t
-0
+1
 $/bin/echo 1 2 3
 1 2 3
 0
@@ -393,9 +415,9 @@ $/bn/echo 1 2 3
 rwsh.binary_not_found : command not found ( rwsh.binary_not_found /bn/echo )
 65280
 $
-0
+65280
 $# arg_script tests
-0
+65280
 $e 5 4 3 2 1
 5 4 3 2 1
 0

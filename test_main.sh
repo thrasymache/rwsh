@@ -121,6 +121,13 @@ e $A
 %selection_set A /local/../../bin
 e $A
 
+# %stepwise
+%stepwise stepwise {e $*}
+%stepwise %stepwise {e $*}
+%stepwise e stepping through echo
+%stepwise e stepping through echo {e $*}
+%stepwise rwsh.after_command %stepwise e stepping through echo {e $*}
+
 # %test_equal %test_not_empty
 %test_equal x y
 %test_equal x x

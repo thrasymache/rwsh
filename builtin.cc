@@ -248,11 +248,23 @@ int source_bi(const Argv_t& argv) {
 int stepwise_bi(const Argv_t& argv) {
   if (argv.size() < 2) {set_var("ERRNO", "ARGS"); return -1;}
   if (!argv.argfunction()) {set_var("ERRNO", "ARGFUNCTION"); return -1;}
-  // return 1 if the specified command is not a function
-  // generate the lookup for the function, look it up, and convince it that it
-  //    is executing
-  // iterate over your captive function, calling the argfunction
-  return 0;}
+  Argv_t lookup(argv.begin()+1, argv.end(), 0);
+  Executable_map_t::iterator e = executable_map.find(lookup);
+  if (e == executable_map.end()) return 1;  // executable not found
+  Function_t* f = dynamic_cast<Function_t*>(e->second);
+  if (!f) return 2; // the named executable is not a function
+  if (f->increment_nesting(lookup)) return dollar_question;
+  int ret = -1;
+  for (Function_t::const_iterator i = f->script.begin(); 
+       i != f->script.end(); ++i) {
+    Argv_t body = i->interpret(lookup);
+    body.push_front("rwsh.mapped_argfunction");
+    ret  = (*argv.argfunction())(body);
+    if (Executable_t::unwind_stack() || get_var("ERRNO") != "") {
+      ret = -1;
+      break;}}
+  if (f->decrement_nesting(lookup)) ret = dollar_question;
+  return ret;}
 
 // return true if the two strings are the same
 int test_equal_bi(const Argv_t& argv) {

@@ -156,11 +156,25 @@ Argv_t Arg_script_t::interpret(const Argv_t& src) const {
 
 void Arg_script_t::clear(void) {delete argfunction; Base::clear();}
 
-// test for whether an executable name corresponds to one of those used for
+// test whether an executable name corresponds to one of those used for
 // argument functions.
 bool is_argfunction_name(const std::string& focus) {
   return focus == "rwsh.mapped_argfunction" || 
          focus == "rwsh.unescaped_argfunction" ||
          focus == "rwsh.argfunction" ||
          focus == "rwsh.escaped_argfunction";}
+
+// test whether an executable name corresponds to a binary executable
+// (i.e. filesystem path)
+bool is_binary_name(const std::string& focus) {
+  return !focus.empty() && focus[0] == '/';}
+
+// test whether an executable name is possible for a builtin, does not test 
+// whether this builtin exists
+bool is_builtin_name(const std::string& focus) {
+  return !focus.empty() && focus[0] == '%';}
+
+// test whether an executable name is possible for a function
+bool is_function_name(const std::string& focus) {
+  return !is_binary_name(focus) && !is_builtin_name(focus);}
 
