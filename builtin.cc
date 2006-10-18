@@ -139,8 +139,8 @@ int for_bi(const Argv_t& argv) {
 // add argfunction to executable map with name $1
 int function_bi(const Argv_t& argv) {
   if (argv.size() != 2) {set_var("ERRNO", "ARGS"); return -1;}
-  else if (argv[1][0] == '/') return 1;
-  else if (argv[1][0] == '%') return 2;
+  else if (is_binary_name(argv[1])) return 1;
+  else if (is_builtin_name(argv[1])) return 2;
   else if (is_argfunction_name(argv[1])) return 3;
   else if (!argv.argfunction()) {
     Argv_t lookup(argv.begin()+1, argv.end(), 0);

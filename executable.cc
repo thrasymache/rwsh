@@ -34,6 +34,7 @@ bool Executable_t::decrement_nesting(const Argv_t& argv) {
     call_stack.push_back(argv[0]);
     if (!global_nesting && !in_signal_handler) signal_handler();}
   --executable_nesting;
+  if (del_on_term && !executable_nesting) delete this;
   return unwind_stack();}
 
 // code to call rwsh.excessive_nesting, separated out of operator() for clarity.
@@ -105,7 +106,6 @@ int Binary_t::operator() (const Argv_t& argv_i) {
   else wait(&ret);
   dollar_question = last_return = ret;
   if (decrement_nesting(argv_i)) ret = dollar_question;
-  if (del_on_term && !executable_nesting) delete this;
   return ret;}
 
 Built_in_t::Built_in_t(const std::string& name_i, 
@@ -118,6 +118,5 @@ int Built_in_t::operator() (const Argv_t& argv) {
   dollar_question = last_return = (*implementation)(argv);
   int ret = last_return;
   if (decrement_nesting(argv)) ret = dollar_question;
-  if (del_on_term && !executable_nesting) delete this;
   return ret;}
 

@@ -104,6 +104,10 @@ $
 0
 $# %function
 0
+$%function /bin/bash {%nop}
+1
+$%function %function {%nop}
+2
 $%function a {%nop}
 0
 $%which_executable a
@@ -309,12 +313,9 @@ $
 0
 $# %stepwise
 0
-$e $MAX_NESTING
-4
-0
 $%set PREV $MAX_NESTING
 0
-$%set MAX_NESTING 30
+$%set MAX_NESTING 12
 0
 $f wrapper {a $* one; a $* two; a $* three}
 0
@@ -379,13 +380,14 @@ e 1 2 three three
 2
 $%set MAX_NESTING $PREV 
 0
-$e $MAX_NESTING
-4
-0
+$%stepwise wrapper 1 2 {d $*}
+a 1 2 one
+rwsh.excessive_nesting : command not found ( rwsh.excessive_nesting a %stepwise d rwsh.mapped_argfunction wrapper %stepwise )
+-1
 $
-0
+-1
 $# %test_equal %test_not_empty
-0
+-1
 $%test_equal x y
 1
 $%test_equal x x

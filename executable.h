@@ -6,10 +6,10 @@ class Executable_t {
   static int global_nesting;
   static bool excessive_nesting;
   static bool in_signal_handler;
+  unsigned executable_nesting;
 
  protected:
   int last_return;
-  unsigned executable_nesting;
 
  public:
   Executable_t(void) : executable_nesting(0), del_on_term(false) {};

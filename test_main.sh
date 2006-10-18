@@ -39,6 +39,8 @@ e text that doesn't have a prompt appended
 %for 1 2 3 4 {e four arguments $1}
 
 # %function
+%function /bin/bash {%nop}
+%function %function {%nop}
 %function a {%nop}
 %which_executable a
 a 1 2 3
@@ -122,9 +124,8 @@ e $A
 e $A
 
 # %stepwise
-e $MAX_NESTING
 %set PREV $MAX_NESTING
-%set MAX_NESTING 30
+%set MAX_NESTING 12
 f wrapper {a $* one; a $* two; a $* three}
 f a {e $* one; e $* two; e $* three}
 f d {e $*; %stepwise $* {d $*}}
@@ -135,7 +136,7 @@ wrapper 1 2
 %stepwise wrapper 1 2 {e $*}
 %stepwise wrapper 1 2 {d $*}
 %set MAX_NESTING $PREV 
-e $MAX_NESTING
+%stepwise wrapper 1 2 {d $*}
 
 # %test_equal %test_not_empty
 %test_equal x y

@@ -50,9 +50,8 @@ int Function_t::operator() (const Argv_t& src_argv) {
     Argv_t dest_argv = i->interpret(src_argv);
     ret = (executable_map[dest_argv])(dest_argv);
     if (unwind_stack()) break;}
-  if (decrement_nesting(src_argv)) ret = dollar_question;
   last_return = ret;
-  if (del_on_term && !executable_nesting) delete this;
+  if (decrement_nesting(src_argv)) ret = dollar_question;
   return ret;}
 
 // convert the function to a string. except for the handling of the name this
