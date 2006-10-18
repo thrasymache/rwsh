@@ -309,22 +309,78 @@ $
 0
 $# %stepwise
 0
+$e $MAX_NESTING
+4
+0
+$%set PREV $MAX_NESTING
+0
+$%set MAX_NESTING 30
+0
+$f wrapper {a $* one; a $* two; a $* three}
+0
+$f a {e $* one; e $* two; e $* three}
+0
+$f d {e $*; %stepwise $* {d $*}}
+0
 $%stepwise stepwise {e $*}
 1
 $%stepwise %stepwise {e $*}
 2
-$%stepwise e stepping through echo
+$wrapper 1 2
+1 2 one one
+1 2 one two
+1 2 one three
+1 2 two one
+1 2 two two
+1 2 two three
+1 2 three one
+1 2 three two
+1 2 three three
+0
+$%stepwise wrapper 1 2
 -1
 ERRNO set to ARGFUNCTION
-$%stepwise e stepping through echo {e $*}
-%echo stepping through echo
-%newline
+$%stepwise wrapper 1 2 {e $*}
+a 1 2 one
+a 1 2 two
+a 1 2 three
 0
-$%stepwise rwsh.after_command %stepwise e stepping through echo {e $*}
-%set last_command_return 0
-%echo 0
+$%stepwise wrapper 1 2 {d $*}
+a 1 2 one
+e 1 2 one one
+%echo 1 2 one one
 %newline
-%if_errno
+e 1 2 one two
+%echo 1 2 one two
+%newline
+e 1 2 one three
+%echo 1 2 one three
+%newline
+a 1 2 two
+e 1 2 two one
+%echo 1 2 two one
+%newline
+e 1 2 two two
+%echo 1 2 two two
+%newline
+e 1 2 two three
+%echo 1 2 two three
+%newline
+a 1 2 three
+e 1 2 three one
+%echo 1 2 three one
+%newline
+e 1 2 three two
+%echo 1 2 three two
+%newline
+e 1 2 three three
+%echo 1 2 three three
+%newline
+2
+$%set MAX_NESTING $PREV 
+0
+$e $MAX_NESTING
+4
 0
 $
 0

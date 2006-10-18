@@ -122,11 +122,20 @@ e $A
 e $A
 
 # %stepwise
+e $MAX_NESTING
+%set PREV $MAX_NESTING
+%set MAX_NESTING 30
+f wrapper {a $* one; a $* two; a $* three}
+f a {e $* one; e $* two; e $* three}
+f d {e $*; %stepwise $* {d $*}}
 %stepwise stepwise {e $*}
 %stepwise %stepwise {e $*}
-%stepwise e stepping through echo
-%stepwise e stepping through echo {e $*}
-%stepwise rwsh.after_command %stepwise e stepping through echo {e $*}
+wrapper 1 2
+%stepwise wrapper 1 2
+%stepwise wrapper 1 2 {e $*}
+%stepwise wrapper 1 2 {d $*}
+%set MAX_NESTING $PREV 
+e $MAX_NESTING
 
 # %test_equal %test_not_empty
 %test_equal x y

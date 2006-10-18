@@ -1,5 +1,5 @@
 rwsh v0.3 -
-  * builtins: %for, %importenv_overwrite, %importenv_preserve, 
+  * builtins: %for, %importenv_overwrite, %importenv_preserve, %stepwise,
       %which_executable, %which_test, %which_path, %which_return, %while, 
       %version_available, %version_compatible
   * %source no longer runs internal functions other than rwsh.raw_command

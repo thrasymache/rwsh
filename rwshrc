@@ -15,6 +15,8 @@
 %function elif {%else_if $* {rwsh.argfunction}}
 %function else {%else {rwsh.argfunction}}
 %function exit {%exit}
+%function and {%if %return 1; %stepwise $* {%else_if_not $*}; %else}
+%function or {%if %return 1; %stepwise $* {%else_if $*}; %else}
 %function fn {%set x $1; %function $x $*2 {rwsh.argfunction}; %set y $?; %if %test_equal $y 1 {echo cannot set paths as functions}; %else_if %test_equal $y 2 {echo cannot set builtins as functions}; %else_if %test_equal $y 3 {echo cannot set argfunctions in executable map}; %else_if %test_equal $y 4 {echo function did not exist to be erased}; %else {%return $y}}
 %function if {%if $* {rwsh.argfunction}}
 %function if_only {%if $* {rwsh.argfunction}; %else}
