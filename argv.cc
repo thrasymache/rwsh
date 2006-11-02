@@ -39,10 +39,12 @@ Argv_t::Argv_t(const std::string& src) : argfunction_v(0) {
       clear();
       push_back("rwsh.multiple_argfunctions");
       return;}
-    argfunction_v = new Function_t("rwsh.argfunction", 
-                                   src.substr(o_brace+1, c_brace-o_brace-1));
+    try {argfunction_v = new Function_t("rwsh.argfunction", 
+                                     src.substr(o_brace+1, c_brace-o_brace-1));}
+    catch (Argv_t exception) {*this = exception; return;}
     o_brace = src.find_first_of("{}", c_brace+1);
-    add_tokens(src.substr(c_brace+1, o_brace-c_brace-1));};}
+    add_tokens(src.substr(c_brace+1, o_brace-c_brace-1));}
+  if (!size()) push_back("");}
 
 Argv_t::Argv_t(const Argv_t& src) : Base(src), argfunction_v(0) {
   argfunction_v = src.argfunction()->copy_pointer();}

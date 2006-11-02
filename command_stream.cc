@@ -30,16 +30,15 @@ Command_stream_t& Command_stream_t::operator>> (Argv_t& dest) {
     raw_command.push_back(line);
     (*e->second)(raw_command);
     if (Executable_t::unwind_stack()) return *this;}
-  try {dest = Argv_t(line);}
-  catch (Argv_t exception) {dest = exception;}
+  dest = Argv_t(line);
   return *this;}
 
 // returns non-zero if the last command was read successfully
 Command_stream_t::operator void* () const {
-  if (exit_requested || Executable_t::unwind_stack()) return 0;
+  if (vars->exit_requested || Executable_t::unwind_stack()) return 0;
   else return src.operator void*();}
 
 // returns true if the last command could not be read
 bool Command_stream_t::operator! () const {
-  return (exit_requested) || Executable_t::unwind_stack() || src.fail();} 
+  return vars->exit_requested || Executable_t::unwind_stack() || src.fail();} 
 

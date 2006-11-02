@@ -26,7 +26,7 @@ class Executable_t {
   static void signal_handler(void);
 
   virtual int operator() (const Argv_t& argv) = 0;
-  virtual std::string name(void) const = 0;
+  virtual const std::string& name(void) const = 0;
   virtual std::string str() const = 0;};
 
 class Binary_t : public Executable_t {
@@ -34,15 +34,15 @@ class Binary_t : public Executable_t {
  public:
   Binary_t(const std::string& impl);
   virtual int operator() (const Argv_t& argv);
-  virtual std::string name(void) const {return implementation;};
+  virtual const std::string& name(void) const {return implementation;};
   virtual std::string str() const {return implementation;}; };
 
-class Built_in_t : public Executable_t {
+class Builtin_t : public Executable_t {
   int (*implementation)(const Argv_t& argv);
   std::string name_v;
  public:
-  Built_in_t(const std::string& name, int (*impl)(const Argv_t& argv));
+  Builtin_t(const std::string& name, int (*impl)(const Argv_t& argv));
   virtual int operator() (const Argv_t& argv);
-  virtual std::string name(void) const {return name_v;};
+  virtual const std::string& name(void) const {return name_v;};
   virtual std::string str() const {return name_v;}; };
 

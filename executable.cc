@@ -1,4 +1,4 @@
-// The definition of the Binary_t and Built_in_t classes. The former executes
+// The definition of the Binary_t and Builtin_t classes. The former executes
 // external programs, the latter executes commands that are implemented by
 // functions in builtin.cc.
 //
@@ -21,7 +21,7 @@ bool Executable_t::in_signal_handler(false);
 Argv_t Executable_t::call_stack;
 
 bool Executable_t::increment_nesting(const Argv_t& argv) {
-  if (global_nesting > max_nesting+1) caught_signal = SIGEXNEST;
+  if (global_nesting > vars->max_nesting+1) caught_signal = SIGEXNEST;
   if (unwind_stack()) return true;
   else {
     ++executable_nesting;
@@ -68,7 +68,7 @@ void Executable_t::signal_handler(void) {
   call_stack.clear();
   in_signal_handler = true;
   caught_signal = SIGNONE;
-  set_var("IF_TEST", "");
+  vars->set("IF_TEST", "");
   executable_map[call_stack_copy](call_stack_copy);
   if (unwind_stack()) {
     echo_bi(Argv_t("%echo signal handler itself triggered signal\n"));
@@ -81,7 +81,7 @@ void Executable_t::signal_handler(void) {
     return_bi(Argv_t("%return -1"));
     call_stack.clear();
     caught_signal = SIGNONE;
-    set_var("IF_TEST", "");}
+    vars->set("IF_TEST", "");}
   in_signal_handler = false;}
 // need for a copy: if the internal function that runs for this signal itself
 //     triggers a signal then it will unwind the stack and write to call_stack. 
@@ -96,7 +96,7 @@ int Binary_t::operator() (const Argv_t& argv_i) {
   int ret;
   if (!fork()) {  
     Old_argv_t argv(argv_i);
-    char **env = export_env();
+    char **env = vars->export_env();
     int ret = execve(implementation.c_str(), argv.argv(), env);
     Argv_t error_argv;
     error_argv.push_back("rwsh.binary_not_found");
@@ -108,12 +108,12 @@ int Binary_t::operator() (const Argv_t& argv_i) {
   if (decrement_nesting(argv_i)) ret = dollar_question;
   return ret;}
 
-Built_in_t::Built_in_t(const std::string& name_i, 
+Builtin_t::Builtin_t(const std::string& name_i, 
                        int (*impl)(const Argv_t& argv)) : 
   implementation(impl), name_v(name_i) {}
 
 // run the given builtin
-int Built_in_t::operator() (const Argv_t& argv) {
+int Builtin_t::operator() (const Argv_t& argv) {
   if (increment_nesting(argv)) return dollar_question;
   dollar_question = last_return = (*implementation)(argv);
   int ret = last_return;

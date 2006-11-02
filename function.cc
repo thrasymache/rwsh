@@ -32,13 +32,13 @@ Function_t::Function_t(const std::string& name_i, const std::string& src) :
   
 // generate a new function by unescaping argument functions and replacing
 // unescaped_argfunction with the argument function in argv
-Function_t* Function_t::interpret(const Argv_t& argv) const {
+Function_t* Function_t::apply(const Argv_t& argv) const {
   if (script[0].is_argfunction()) return argv.argfunction()->copy_pointer();
   else {
     Function_t* result = new Function_t(name());
     for (std::vector<Arg_script_t>::const_iterator i = script.begin();
          i != script.end(); ++i) {
-      result->script.push_back(Arg_script_t(*i, argv));}
+      result->script.push_back(i->apply(argv));}
     return result;}}
   
 // run the given function

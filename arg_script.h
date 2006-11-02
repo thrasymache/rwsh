@@ -22,11 +22,11 @@ class Arg_script_t : private std::vector<Arg_spec_t> {
  public:
   Arg_script_t(const Argv_t& src) throw (Arguments_to_argfunction_t);
   Arg_script_t(const Arg_script_t& src);
-  Arg_script_t(const Arg_script_t& src, const Argv_t& argv);
   Arg_script_t& operator=(const Arg_script_t& src);
   ~Arg_script_t(void);
   std::string str(void) const;
   Argv_t interpret(const Argv_t& src) const;
+  Arg_script_t apply(const Argv_t& src) const;
   bool is_argfunction(void) const {return argfunction_level == 1;};
 
 // vector semantics

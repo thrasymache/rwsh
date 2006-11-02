@@ -16,30 +16,31 @@
 #include "variable_map.h"
 
 char** env;
-std::map<std::string, std::string> variable_map;
-int dollar_question;
-unsigned max_nesting = 0;
-bool exit_requested = false;
-const std::string empty;
+Variable_map_t root_variable_map;
+Variable_map_t* vars = &root_variable_map;
+const std::string empty_str;
+int Variable_map_t::dollar_question = -1;
+int& dollar_question = Variable_map_t::dollar_question;
+bool Variable_map_t::exit_requested = false;
 
-const std::string& get_var(const std::string& key) {
+const std::string& Variable_map_t::get(const std::string& key) {
   if (key == "?") {
     std::ostringstream tmp; 
     tmp <<dollar_question;
-    variable_map["?"] = tmp.str();}
-  std::map<std::string, std::string>::iterator i = variable_map.find(key);
-  if (i == variable_map.end()) return empty;
-  else return variable_map.find(key)->second;}
+    (*this)["?"] = tmp.str();}
+  std::map<std::string, std::string>::iterator i = find(key);
+  if (i == end()) return empty_str;
+  else return find(key)->second;}
 
-void set_var(const std::string& key, const std::string& val) {
-  if (val != empty) variable_map[key] = val;
+void Variable_map_t::set(const std::string& key, const std::string& val) {
+  if (val != empty_str) (*this)[key] = val;
   else {
-    std::map<std::string, std::string>::iterator i = variable_map.find(key);
-    if (i != variable_map.end()) variable_map.erase(i);}
+    std::map<std::string, std::string>::iterator i = find(key);
+    if (i != end()) erase(i);}
   if (key == "MAX_NESTING") {
-    int temp = atoi(variable_map[key].c_str());
-    if (temp < 0) max_nesting = 0;
-    else max_nesting = temp;}}
+    int temp = atoi((*this)[key].c_str());
+    if (temp < 0) this->max_nesting = 0;
+    else this->max_nesting = temp;}}
 
 template <class In>
 char** copy_to_char_star_star(In first, In last, char** res) {
@@ -52,22 +53,9 @@ char** copy_to_char_star_star(In first, In last, char** res) {
   return res;}
 
 // return the variable map in a way that can be passed to child processes
-char** export_env(void) {
+char** Variable_map_t::export_env(void) {
   delete env;
-  env = new char*[variable_map.size() + 1];
-  copy_to_char_star_star(variable_map.begin(), variable_map.end(), env);
+  env = new char*[vars->size() + 1];
+  copy_to_char_star_star(this->begin(), this->end(), env);
   return env;}
-
-void print_var(std::pair<std::string, std::string> src) {
-  std::cout <<src.first <<'=' <<src.second <<std::endl;}
-
-// builtin function for printing the variable map
-int printenv_bi(const Argv_t& argv) {
-  get_var("?");
-  if (argv.size() < 2) {
-    for_each(variable_map.begin(), variable_map.end(), print_var);
-    return 0;}
-  else {
-    std::cout <<variable_map[argv[1]] <<std::endl;
-    return 0;}}
 

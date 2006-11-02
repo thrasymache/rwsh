@@ -19,6 +19,7 @@ class Argv_t : private std::vector<std::string> {
   Function_t* argfunction(void) const {return argfunction_v;};
   void set_argfunction(Function_t* val) {argfunction_v = val;};
   std::string get_var(const std::string& key) const;
+  void set_var(const std::string& key, const std::string& value) const;
   template<class Out> Out star_var(const std::string& key, Out res) const;
 
 // vector semantics

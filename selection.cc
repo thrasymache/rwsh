@@ -19,7 +19,6 @@
 #include "selection.h"
 #include "tokenize.cc"
 #include "util.h"
-#include "variable_map.h"
 
 Entry_pattern_t::Entry_pattern_t(const std::string& src) {
   std::string::size_type j = src.find_first_of('*');
@@ -39,7 +38,8 @@ Entry_pattern_t::Entry_pattern_t(const std::string& src) {
     while (j < std::string::npos);}}
 
 // recursive function to determine matches after initial text 
-bool Entry_pattern_t::find_terms(size_type cur_term, const std::string& s) {
+bool Entry_pattern_t::find_terms(size_type cur_term, const std::string& s) 
+        const {
   if (cur_term == terms.size())
     if (unterminated || !s.length()) return true;
     else return false;
@@ -53,21 +53,21 @@ bool Entry_pattern_t::find_terms(size_type cur_term, const std::string& s) {
   return false;}
 
 // returns true if s matches the entry pattern
-bool Entry_pattern_t::match(const std::string& s) {
+bool Entry_pattern_t::match(const std::string& s) const {
   if (s.compare(0, initial.size(), initial)) return false;
   return find_terms(0, s.substr(initial.size()));}
 
 // convert to a string. inverse of constructor.
-const std::string& Entry_pattern_t::string(void) const {
-  str = initial;
+const std::string& Entry_pattern_t::str(void) const {
+  string_v = initial;
   for (std::vector<std::string>::const_iterator i=terms.begin(); 
        i != terms.end(); ++i)
-    str += '*' + *i;
-  if (unterminated) str += '*';
-  return str;}
+    string_v += '*' + *i;
+  if (unterminated) string_v += '*';
+  return string_v;}
 
-void str_to_entry_pattern(const std::string& src, 
-                          std::vector<Entry_pattern_t>& res) {
+void str_to_entry_pattern_vector(const std::string& src, 
+                                 std::vector<Entry_pattern_t>& res) {
   std::vector<std::string> temp;
   tokenize_strict(src, std::back_inserter(temp), 
                   std::bind2nd(std::equal_to<char>(), '/'));
@@ -81,13 +81,10 @@ void str_to_entry_pattern(const std::string& src,
     else if (*i == "..") {if (res.size()) res.pop_back();}
     else res.push_back(Entry_pattern_t(*i));}}
 
-// read base as a selection, modify it according to change and then write the
-// result to base.
-void selection_write(const std::string& change, std::string& base) {
-  std::vector<Entry_pattern_t> focus;
-  str_to_entry_pattern(base, focus);
-  str_to_entry_pattern(change, focus);
-  base.clear();
-  for (std::vector<Entry_pattern_t>::iterator i=focus.begin();
-       i != focus.end(); ++i) base += '/' + i->string();}
+std::string entry_pattern_vector_to_str(
+                                      const std::vector<Entry_pattern_t>& src) {
+  std::string result;
+  for (std::vector<Entry_pattern_t>::const_iterator i=src.begin();
+       i != src.end(); ++i) result += '/' + i->str();
+  return result;}
 

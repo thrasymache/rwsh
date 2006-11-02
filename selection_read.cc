@@ -6,8 +6,8 @@
 // that element with the entries in that directory that match entry_pattern,
 // but do not match ignore_pattern.
 template<class In> 
-void partial_match_children(In& partial, Entry_pattern_t entry_pattern,
-                            Entry_pattern_t ignore_pattern) {
+void partial_match_children(In& partial, const Entry_pattern_t& entry_pattern,
+                            const Entry_pattern_t& ignore_pattern) {
   typename In::iterator first = partial.begin();
   while (first != partial.end()) {
     std::vector<std::string> temp;
@@ -24,8 +24,8 @@ void partial_match_children(In& partial, Entry_pattern_t entry_pattern,
 template<class Out>
 void selection_read(const std::string& src, Out res) {
   std::vector<Entry_pattern_t> focus;
-  str_to_entry_pattern(src, focus);
-  Entry_pattern_t ignore(get_var("FIGNORE"));
+  str_to_entry_pattern_vector(src, focus);
+  Entry_pattern_t ignore(vars->get("FIGNORE"));
   std::list<std::string> partial(1);
   for (std::vector<Entry_pattern_t>::iterator i=focus.begin(); 
        i!=focus.end() && partial.size(); ++i){// each path step in the selection
@@ -39,11 +39,11 @@ void selection_read(const std::string& src, Out res) {
     if (!partial.size()) {
       std::string error_string = "rwsh.selection_not_found ";
       for (std::vector<Entry_pattern_t>::iterator j=focus.begin(); j!=i+1; ++j)
-        error_string += "/" + j->string();
+        error_string += "/" + j->str();
       error_string += " ";
       for (std::vector<Entry_pattern_t>::iterator j=focus.begin(); 
            j!=focus.end(); ++j)
-        error_string += "/" + j->string();
+        error_string += "/" + j->str();
       Argv_t argv(error_string);
       executable_map[argv](argv);}}
   copy(partial.begin(), partial.end(), res);}

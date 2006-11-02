@@ -77,11 +77,11 @@ template<class Out>
 void Arg_spec_t::interpret(const Argv_t& src, Out res) const {
   switch(type) {
     case FIXED:      *res++ = text; break;
-    case VARIABLE:   *res++ = get_var(text); break;
+    case VARIABLE:   *res++ = vars->get(text); break;
     case ARG_VAR:    *res++ = src.get_var(text); break;
     case STAR_VAR:   res = src.star_var(text, res); break;
     case SELECTION:  selection_read(text, res); break;
-    case SELECT_VAR: selection_read(get_var(text), res); break;
+    case SELECT_VAR: selection_read(vars->get(text), res); break;
     case SELECT_ARG_VAR: selection_read(src.get_var(text), res); break;
     case SELECT_STAR_VAR: std::cerr <<"@$* not implemented yet\n"; break;}}
 
@@ -91,8 +91,7 @@ Arg_spec_t& construct_arg_spec(const std::string& src) {
 Arg_script_t::Arg_script_t(const Argv_t& src) 
   throw (Arguments_to_argfunction_t): 
   argfunction_level(0), argfunction(src.argfunction()->copy_pointer()) {
-  if (!src.size()) this->push_back(Arg_spec_t(""));
-  else if (is_argfunction_name(src[0]) && src[0] != "rwsh.mapped_argfunction") {
+  if (is_argfunction_name(src[0]) && src[0] != "rwsh.mapped_argfunction") {
     if (src.size() != 1 || src.argfunction()) {
       Arguments_to_argfunction_t error;
       error.push_back("rwsh.arguments_for_argfunction");
@@ -107,14 +106,6 @@ Arg_script_t::Arg_script_t(const Argv_t& src)
 Arg_script_t::Arg_script_t(const Arg_script_t& src) : 
   Base(src), argfunction_level(src.argfunction_level), 
   argfunction(src.argfunction->copy_pointer()) {}
-
-// produce a new Arg_script by unescaping argument functions and replacing
-// unescaped_argfunction with argv.argfunction
-Arg_script_t::Arg_script_t(const Arg_script_t& src, const Argv_t& argv) :
-  Base(src), 
-  argfunction_level(src.argfunction_level? src.argfunction_level-1: 0), 
-  argfunction(0) {
-  if (src.argfunction) argfunction = src.argfunction->interpret(argv);}
 
 Arg_script_t& Arg_script_t::operator=(const Arg_script_t& src) {
   this->clear();
@@ -143,7 +134,7 @@ Argv_t Arg_script_t::interpret(const Argv_t& src) const {
     for (const_iterator i = begin(); i != end(); ++i) 
       i->interpret(src, std::back_inserter(result));
     if (!result.size()) result.push_back("");
-    if (argfunction) result.set_argfunction(argfunction->interpret(src));}
+    if (argfunction) result.set_argfunction(argfunction->apply(src));}
   else if (is_argfunction()) {
     result.push_back("rwsh.mapped_argfunction");
     copy(src.begin()+1, src.end(), std::back_inserter(result));
@@ -152,6 +143,14 @@ Argv_t Arg_script_t::interpret(const Argv_t& src) const {
     result.push_back("rwsh.unescaped_argfunction");
   else if (argfunction_level == 3) result.push_back("rwsh.argfunction");
   else assert(0); // unhandled argfunction_level
+  return result;}
+
+// produce a new Arg_script by unescaping argument functions and replacing
+// unescaped_argfunction with argv.argfunction
+Arg_script_t Arg_script_t::apply(const Argv_t& src) const {
+  Arg_script_t result(*this);
+  if (result.argfunction_level) --result.argfunction_level;  
+  if (this->argfunction) result.argfunction = this->argfunction->apply(src);
   return result;}
 
 void Arg_script_t::clear(void) {delete argfunction; Base::clear();}

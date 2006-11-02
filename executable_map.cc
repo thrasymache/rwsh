@@ -17,19 +17,19 @@
 #include "function.h"
 
 Executable_map_t::Executable_map_t(void) {
-  set(new Built_in_t("%autofunction", autofunction_bi));
-  set(new Built_in_t("%cd", cd_bi));
-  set(new Built_in_t("%echo", echo_bi));
-  set(new Built_in_t("%else", else_bi));
-  set(new Built_in_t("%else_if", else_if_bi));
-  set(new Built_in_t("%else_if_not", else_if_not_bi));
-  set(new Built_in_t("%exit", exit_bi));
-  set(new Built_in_t("%function", function_bi));
-  set(new Built_in_t("%for", for_bi));
-  set(new Built_in_t("%if", if_bi));
-  set(new Built_in_t("%if_errno", if_errno_bi));
-  set(new Built_in_t("%importenv_overwrite", importenv_overwrite_bi));
-  set(new Built_in_t("%importenv_preserve", importenv_preserve_bi));
+  set(new Builtin_t("%autofunction", autofunction_bi));
+  set(new Builtin_t("%cd", cd_bi));
+  set(new Builtin_t("%echo", echo_bi));
+  set(new Builtin_t("%else", else_bi));
+  set(new Builtin_t("%else_if", else_if_bi));
+  set(new Builtin_t("%else_if_not", else_if_not_bi));
+  set(new Builtin_t("%exit", exit_bi));
+  set(new Builtin_t("%function", function_bi));
+  set(new Builtin_t("%for", for_bi));
+  set(new Builtin_t("%if", if_bi));
+  set(new Builtin_t("%if_errno", if_errno_bi));
+  set(new Builtin_t("%importenv_overwrite", importenv_overwrite_bi));
+  set(new Builtin_t("%importenv_preserve", importenv_preserve_bi));
   set(new Function_t("%internal_errors", 
                      "%if %test_equal $# 1 {"
                          "%echo rwsh.arguments_for_argfunction "
@@ -50,25 +50,25 @@ Executable_map_t::Executable_map_t(void) {
   set(new Function_t("%internal_vars", 
                      "%if %test_equal $# 1 {%echo CWD ERRNO FIGNORE IF_TEST}; "
                      "%else {%set ERRNO ARGS; %return -1}"));
-  set(new Built_in_t("%ls", ls_bi));
-  set(new Built_in_t("%newline", newline_bi));
-  set(new Built_in_t("%nop", nop_bi));
-  set(new Built_in_t("%printenv", printenv_bi));
-  set(new Built_in_t("%return", return_bi));
-  set(new Built_in_t("%set", set_bi));
-  set(new Built_in_t("%selection_set", selection_set_bi));
-  set(new Built_in_t("%stepwise", stepwise_bi));
-  set(new Built_in_t("%source", source_bi));
-  set(new Built_in_t("%test_equal", test_equal_bi));
-  set(new Built_in_t("%test_not_empty", test_not_empty_bi));
-  set(new Built_in_t("%which_executable", which_executable_bi));
-  set(new Built_in_t("%which_path", which_path_bi));
-  set(new Built_in_t("%which_return", which_return_bi));
-  set(new Built_in_t("%which_test", which_test_bi));
-  set(new Built_in_t("%while", while_bi));
-  set(new Built_in_t("%version", version_bi));
-  set(new Built_in_t("%version_available", version_available_bi));
-  set(new Built_in_t("%version_compatible", version_compatible_bi));}
+  set(new Builtin_t("%ls", ls_bi));
+  set(new Builtin_t("%newline", newline_bi));
+  set(new Builtin_t("%nop", nop_bi));
+  set(new Builtin_t("%printenv", printenv_bi));
+  set(new Builtin_t("%return", return_bi));
+  set(new Builtin_t("%set", set_bi));
+  set(new Builtin_t("%selection_set", selection_set_bi));
+  set(new Builtin_t("%stepwise", stepwise_bi));
+  set(new Builtin_t("%source", source_bi));
+  set(new Builtin_t("%test_equal", test_equal_bi));
+  set(new Builtin_t("%test_not_empty", test_not_empty_bi));
+  set(new Builtin_t("%which_executable", which_executable_bi));
+  set(new Builtin_t("%which_path", which_path_bi));
+  set(new Builtin_t("%which_return", which_return_bi));
+  set(new Builtin_t("%which_test", which_test_bi));
+  set(new Builtin_t("%while", while_bi));
+  set(new Builtin_t("%version", version_bi));
+  set(new Builtin_t("%version_available", version_available_bi));
+  set(new Builtin_t("%version_compatible", version_compatible_bi));}
 
 // insert target into map, with key target->name(), replacing old value if key
 // is already in the map
