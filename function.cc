@@ -48,7 +48,7 @@ int Function_t::operator() (const Argv_t& src_argv) {
   for (std::vector<Arg_script_t>::const_iterator i = script.begin();
        i != script.end(); ++i) {
     Argv_t dest_argv = i->interpret(src_argv);
-    ret = (executable_map[dest_argv])(dest_argv);
+    ret = executable_map.run(dest_argv);
     if (unwind_stack()) break;}
   last_return = ret;
   if (decrement_nesting(src_argv)) ret = dollar_question;

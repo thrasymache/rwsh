@@ -13,7 +13,7 @@ template<class Out> int read_dir(const std::string& filename, Out dest) {
     Argv_t error_argv;
     error_argv.push_back("rwsh.unreadable_dir");
     error_argv.push_back(file);
-    executable_map[error_argv](error_argv);
+    executable_map.run(error_argv);
     return 2;}
   long basep;
   while (int length = getdirentries(src, buffer, sb.st_blksize, &basep)) {

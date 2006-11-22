@@ -44,13 +44,11 @@ int main(int argc, char *argv[]) {
   Argv_t external_command_line(&argv[0], &argv[argc], 0);
   Command_stream_t command_stream(std::cin);
   executable_map.set(new Function_t("rwsh.init", init_str));
-  external_command_line.push_front("rwsh.init");
-  executable_map[external_command_line](external_command_line);
+  executable_map.run_if_exists("rwsh.init", external_command_line);
   register_signals();
   Argv_t command;
-  Argv_t prompt("rwsh.prompt");
-  Executable_map_t::iterator e = executable_map.find(prompt);
-  if (command_stream && e != executable_map.end()) (*e->second)(prompt);
+  Argv_t prompt;
+  if (command_stream) executable_map.run_if_exists("rwsh.prompt", prompt);
   while (command_stream >> command || Executable_t::unwind_stack()) 
     if (Executable_t::unwind_stack()) Executable_t::signal_handler();
     else {
@@ -58,25 +56,10 @@ int main(int argc, char *argv[]) {
         Arg_script_t script(command);
         command = script.interpret(command);}
       catch (Argv_t exception) {command = exception;}
-      command.push_front("rwsh.before_command");
-      e = executable_map.find(command);
-      if (e != executable_map.end()) (*e->second)(command);
-      command[0] = "rwsh.run_logic";
-      e = executable_map.find(command);
-      if (e != executable_map.end()) {
-        (*e->second)(command);
-        command.pop_front();}
-      else {
-        command.pop_front();
-        executable_map[command](command);}
-      command.push_front("rwsh.after_command");
-      e = executable_map.find(command);
-      if (e != executable_map.end()) (*e->second)(command);
-      if (command_stream) {
-        Executable_map_t::iterator e = executable_map.find(prompt);
-        if (e != executable_map.end()) (*e->second)(prompt);}}
-  external_command_line[0] = "rwsh.shutdown";
-  e = executable_map.find(external_command_line);
-  if (e != executable_map.end()) 
-    (*e->second)(external_command_line);
+      executable_map.run_if_exists("rwsh.before_command", command);
+      if (!executable_map.find("rwsh.run_logic")) executable_map.run(command);
+      else executable_map.run_if_exists("rwsh.run_logic", command);
+      executable_map.run_if_exists("rwsh.after_command", command);
+      if (command_stream) executable_map.run_if_exists("rwsh.prompt", prompt);}
+  executable_map.run_if_exists("rwsh.shutdown", external_command_line);
   return dollar_question;}

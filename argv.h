@@ -1,11 +1,13 @@
 // Copyright (C) 2005, 2006 Samuel Newbold
 
 class Function_t;
+class Variable_map_t;
 
 class Argv_t : private std::vector<std::string> {
   typedef std::vector<std::string> Base;
   Function_t* argfunction_v;
   void add_tokens(const std::string& src);
+  static Variable_map_t* var_map;
 
  public:
   Argv_t(void) : argfunction_v(0) {};
@@ -20,6 +22,8 @@ class Argv_t : private std::vector<std::string> {
   void set_argfunction(Function_t* val) {argfunction_v = val;};
   std::string get_var(const std::string& key) const;
   void set_var(const std::string& key, const std::string& value) const;
+  unsigned max_nesting(void) const;
+  char** export_env(void) const;
   template<class Out> Out star_var(const std::string& key, Out res) const;
 
 // vector semantics

@@ -23,6 +23,7 @@ void partial_match_children(In& partial, const Entry_pattern_t& entry_pattern,
 // treat src as a selection, add matching files to res.
 template<class Out>
 void selection_read(const std::string& src, Out res) {
+  extern Variable_map_t* vars;
   std::vector<Entry_pattern_t> focus;
   str_to_entry_pattern_vector(src, focus);
   Entry_pattern_t ignore(vars->get("FIGNORE"));
@@ -45,6 +46,6 @@ void selection_read(const std::string& src, Out res) {
            j!=focus.end(); ++j)
         error_string += "/" + j->str();
       Argv_t argv(error_string);
-      executable_map[argv](argv);}}
+      executable_map.run(argv);}}
   copy(partial.begin(), partial.end(), res);}
 

@@ -13,7 +13,6 @@ public:
   static bool exit_requested;
   unsigned max_nesting;};
 
-extern Variable_map_t* vars;
 extern int& dollar_question;
 
 inline bool isargvar(const std::string& focus) {

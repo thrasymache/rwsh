@@ -21,7 +21,7 @@ bool Executable_t::in_signal_handler(false);
 Argv_t Executable_t::call_stack;
 
 bool Executable_t::increment_nesting(const Argv_t& argv) {
-  if (global_nesting > vars->max_nesting+1) caught_signal = SIGEXNEST;
+  if (global_nesting > argv.max_nesting()+1) caught_signal = SIGEXNEST;
   if (unwind_stack()) return true;
   else {
     ++executable_nesting;
@@ -48,6 +48,7 @@ bool Executable_t::decrement_nesting(const Argv_t& argv) {
 // main does not need to do this handling, because anything 
 // that it calls directly will have an initial nesting of 0.
 void Executable_t::signal_handler(void) {
+  extern Variable_map_t* vars;
   Argv_t call_stack_copy = call_stack;                     //need for a copy: 
   switch (caught_signal) {
     case SIGEXNEST: call_stack_copy.push_front("rwsh.excessive_nesting"); break;
@@ -69,7 +70,7 @@ void Executable_t::signal_handler(void) {
   in_signal_handler = true;
   caught_signal = SIGNONE;
   vars->set("IF_TEST", "");
-  executable_map[call_stack_copy](call_stack_copy);
+  executable_map.run(call_stack_copy);
   if (unwind_stack()) {
     echo_bi(Argv_t("%echo signal handler itself triggered signal\n"));
     call_stack.push_front("%echo");
@@ -96,12 +97,12 @@ int Binary_t::operator() (const Argv_t& argv_i) {
   int ret;
   if (!fork()) {  
     Old_argv_t argv(argv_i);
-    char **env = vars->export_env();
+    char **env = argv_i.export_env();
     int ret = execve(implementation.c_str(), argv.argv(), env);
     Argv_t error_argv;
     error_argv.push_back("rwsh.binary_not_found");
     error_argv.push_back(argv_i[0]); 
-    executable_map[error_argv](error_argv);
+    executable_map.run(error_argv);
     exit(ret);}
   else wait(&ret);
   dollar_question = last_return = ret;

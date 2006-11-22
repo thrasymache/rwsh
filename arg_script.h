@@ -20,7 +20,7 @@ class Arg_script_t : private std::vector<Arg_spec_t> {
   Function_t* argfunction;
 
  public:
-  Arg_script_t(const Argv_t& src) throw (Arguments_to_argfunction_t);
+  Arg_script_t(const Argv_t& src);
   Arg_script_t(const Arg_script_t& src);
   Arg_script_t& operator=(const Arg_script_t& src);
   ~Arg_script_t(void);

@@ -77,19 +77,18 @@ template<class Out>
 void Arg_spec_t::interpret(const Argv_t& src, Out res) const {
   switch(type) {
     case FIXED:      *res++ = text; break;
-    case VARIABLE:   *res++ = vars->get(text); break;
+    case VARIABLE:   *res++ = src.get_var(text); break;
     case ARG_VAR:    *res++ = src.get_var(text); break;
     case STAR_VAR:   res = src.star_var(text, res); break;
     case SELECTION:  selection_read(text, res); break;
-    case SELECT_VAR: selection_read(vars->get(text), res); break;
+    case SELECT_VAR: selection_read(src.get_var(text), res); break;
     case SELECT_ARG_VAR: selection_read(src.get_var(text), res); break;
     case SELECT_STAR_VAR: std::cerr <<"@$* not implemented yet\n"; break;}}
 
 Arg_spec_t& construct_arg_spec(const std::string& src) {
   return *(new Arg_spec_t(src));}
 
-Arg_script_t::Arg_script_t(const Argv_t& src) 
-  throw (Arguments_to_argfunction_t): 
+Arg_script_t::Arg_script_t(const Argv_t& src) :
   argfunction_level(0), argfunction(src.argfunction()->copy_pointer()) {
   if (is_argfunction_name(src[0]) && src[0] != "rwsh.mapped_argfunction") {
     if (src.size() != 1 || src.argfunction()) {
