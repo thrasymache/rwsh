@@ -9,9 +9,9 @@ class Executable_map_t : private std::map<std::string, Executable_t*> {
  public:
   Executable_map_t(void);
   size_type erase (const std::string& key);
-  Executable_t* find(const std::string& key);
+  Executable_t* find(const Argv_t& key);
   int run(Argv_t& argv);
-  void run_if_exists(const std::string& key, Argv_t& argv);
+  bool run_if_exists(const std::string& key, Argv_t& argv);
   // insert executable if not present, replace if executable already exists
   void set(Executable_t* target); };
 

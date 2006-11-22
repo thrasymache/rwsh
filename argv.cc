@@ -56,7 +56,7 @@ Argv_t::Argv_t(const Argv_t& src) : Base(src), argfunction_v(0) {
 
 Argv_t& Argv_t::operator=(const Argv_t& src) {
   clear();
-  copy(src.begin(), src.end(), std::back_inserter(*this));
+  std::copy(src.begin(), src.end(), std::back_inserter(*this));
   argfunction_v = src.argfunction()->copy_pointer();}
 
 Argv_t::~Argv_t(void) {delete argfunction_v;}

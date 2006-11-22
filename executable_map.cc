@@ -88,26 +88,27 @@ Executable_map_t::size_type Executable_map_t::erase (const std::string& key) {
     Base::erase(pos);
     return 1;}}
 
-Executable_t* Executable_map_t::find(const std::string& key) {
-  iterator i = Base::find(key);
-  if (i == end()) return NULL;
-  else return i->second;}
+Executable_t* Executable_map_t::find(const Argv_t& key) {
+  iterator i = Base::find(key[0]);
+  if (i != end()) return i->second;
+  else if (key[0] == "rwsh.mapped_argfunction") return key.argfunction(); 
+  else return NULL;}
 
-void Executable_map_t::run_if_exists(const std::string& key, Argv_t& argv) {
+bool Executable_map_t::run_if_exists(const std::string& key, Argv_t& argv) {
   Executable_t* i = find(key);
   if (i) {
     argv.push_front(key);
     (*i)(argv);
-    argv.pop_front();}}
+    argv.pop_front();
+    return true;}
+  else return false;}
 
 int Executable_map_t::run(Argv_t& argv) {
-  Executable_t* i = find(argv[0]);                      // first check for key
+  Executable_t* i = find(argv);                         // first check for key
   if (i) return (*i)(argv);
   else if (argv[0][0] == '/') {                         // insert a binary
     set(new Binary_t(argv[0]));
     return (*find(argv[0]))(argv);}
-  else if (argv[0] == "rwsh.mapped_argfunction") {      // handle argfunction
-    if (argv.argfunction()) return (*argv.argfunction())(argv);}
   if (!is_argfunction_name(argv[0])) {                  // try autofunction
     run_if_exists("rwsh.autofunction", argv);
     i = find(argv[0]);                                  // second check for key

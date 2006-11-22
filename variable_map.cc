@@ -3,9 +3,6 @@
 //
 // Copyright (C) 2006 Samuel Newbold
 
-#include <assert.h>
-#include <functional>
-#include <iostream>
 #include <map>
 #include <stdlib.h>
 #include <sstream>

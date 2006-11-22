@@ -57,8 +57,8 @@ int main(int argc, char *argv[]) {
         command = script.interpret(command);}
       catch (Argv_t exception) {command = exception;}
       executable_map.run_if_exists("rwsh.before_command", command);
-      if (!executable_map.find("rwsh.run_logic")) executable_map.run(command);
-      else executable_map.run_if_exists("rwsh.run_logic", command);
+      if (!executable_map.run_if_exists("rwsh.run_logic", command))
+         executable_map.run(command);
       executable_map.run_if_exists("rwsh.after_command", command);
       if (command_stream) executable_map.run_if_exists("rwsh.prompt", prompt);}
   executable_map.run_if_exists("rwsh.shutdown", external_command_line);

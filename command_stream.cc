@@ -4,7 +4,6 @@
 //
 // Copyright (C) 2005, 2006 Samuel Newbold
 
-#include <functional>
 #include <iostream>
 #include <map>
 #include <string>

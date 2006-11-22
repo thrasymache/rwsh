@@ -49,23 +49,25 @@ bool Executable_t::decrement_nesting(const Argv_t& argv) {
 // that it calls directly will have an initial nesting of 0.
 void Executable_t::signal_handler(void) {
   extern Variable_map_t* vars;
-  Argv_t call_stack_copy = call_stack;                     //need for a copy: 
+  Argv_t call_stack_copy;                     //need for a copy: 
   switch (caught_signal) {
-    case SIGEXNEST: call_stack_copy.push_front("rwsh.excessive_nesting"); break;
-    case SIGHUP: call_stack_copy.push_front("rwsh.sighup"); break;
-    case SIGINT: call_stack_copy.push_front("rwsh.sigint"); break;
-    case SIGQUIT: call_stack_copy.push_front("rwsh.sigquit"); break;
-    case SIGPIPE: call_stack_copy.push_front("rwsh.sigpipe"); break;
-    case SIGTERM: call_stack_copy.push_front("rwsh.sigterm"); break;
-    case SIGTSTP: call_stack_copy.push_front("rwsh.sigtstp"); break;
-    case SIGCONT: call_stack_copy.push_front("rwsh.sigcont"); break;
-    case SIGCHLD: call_stack_copy.push_front("rwsh.sigchld"); break;
-    case SIGINFO: call_stack_copy.push_front("rwsh.siginfo"); break;
-    case SIGUSR1: call_stack_copy.push_front("rwsh.sigusr1"); break;
-    case SIGUSR2: call_stack_copy.push_front("rwsh.sigusr2"); break;
+    case SIGEXNEST: call_stack_copy.push_back("rwsh.excessive_nesting"); break;
+    case SIGHUP: call_stack_copy.push_back("rwsh.sighup"); break;
+    case SIGINT: call_stack_copy.push_back("rwsh.sigint"); break;
+    case SIGQUIT: call_stack_copy.push_back("rwsh.sigquit"); break;
+    case SIGPIPE: call_stack_copy.push_back("rwsh.sigpipe"); break;
+    case SIGTERM: call_stack_copy.push_back("rwsh.sigterm"); break;
+    case SIGTSTP: call_stack_copy.push_back("rwsh.sigtstp"); break;
+    case SIGCONT: call_stack_copy.push_back("rwsh.sigcont"); break;
+    case SIGCHLD: call_stack_copy.push_back("rwsh.sigchld"); break;
+    case SIGINFO: call_stack_copy.push_back("rwsh.siginfo"); break;
+    case SIGUSR1: call_stack_copy.push_back("rwsh.sigusr1"); break;
+    case SIGUSR2: call_stack_copy.push_back("rwsh.sigusr2"); break;
     default: 
-      call_stack_copy.push_front("caught unknown signal in");
-      call_stack_copy.push_front("%echo");}
+      call_stack_copy.push_back("caught unknown signal in");
+      call_stack_copy.push_back("%echo");}
+  std::copy(call_stack.begin(), call_stack.end(), 
+            std::back_inserter(call_stack_copy));
   call_stack.clear();
   in_signal_handler = true;
   caught_signal = SIGNONE;

@@ -265,7 +265,7 @@ int stepwise_bi(const Argv_t& argv) {
   if (argv.size() < 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
   if (!argv.argfunction()) {argv.set_var("ERRNO", "ARGFUNCTION"); return -1;}
   Argv_t lookup(argv.begin()+1, argv.end(), 0);
-  Executable_t* e = executable_map.find(lookup[0]);
+  Executable_t* e = executable_map.find(lookup);
   if (!e) return 1;  // executable not found
   Function_t* f = dynamic_cast<Function_t*>(e);
   if (!f) return 2; // the named executable is not a function
@@ -296,15 +296,11 @@ int test_not_empty_bi(const Argv_t& argv) {
 // key $1
 int which_executable_bi(const Argv_t& argv) {
   if (argv.size() != 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
-  Argv_t lookup(argv.begin()+1, argv.end(), 0);
-  Executable_t* focus = executable_map.find(lookup[0]);
+  Argv_t lookup(argv.begin()+1, argv.end(), argv.argfunction());
+  if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
+  Executable_t* focus = executable_map.find(lookup);
   if (focus) {
     std::cout <<focus->str() <<std::endl;
-    return 0;}
-  else if ((lookup[0] == "rwsh.mapped_argfunction" || 
-            lookup[0] == "rwsh.argfunction") 
-           && argv.argfunction()) {
-    std::cout <<argv.argfunction()->str() <<std::endl;
     return 0;}
   else return 1;}
 
@@ -348,7 +344,7 @@ int autofunction_bi(const Argv_t& argv) {
 int which_return_bi(const Argv_t& argv) {
   if (argv.size() != 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
   Argv_t lookup(argv.begin()+1, argv.end(), 0);
-  Executable_t* focus = executable_map.find(lookup[0]);
+  Executable_t* focus = executable_map.find(lookup);
   if (focus) {
     std::cout <<focus->last_ret() <<std::endl;
     return 0;}
@@ -361,14 +357,9 @@ int which_return_bi(const Argv_t& argv) {
 // return true if ther is an executable in the executable map with key $1
 int which_test_bi(const Argv_t& argv) {
   if (argv.size() != 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
-  Argv_t lookup(argv.begin()+1, argv.end(), 0);
-  Executable_t* focus = executable_map.find(lookup[0]);
-  if (focus) return 0;
-  else if ((lookup[0] == "rwsh.mapped_argfunction" || 
-            lookup[0] == "rwsh.argfunction") 
-           && argv.argfunction()) 
-    return 0;
-  else return 1;}
+  Argv_t lookup(argv.begin()+1, argv.end(), argv.argfunction());
+  if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
+  return !executable_map.find(lookup);}
 
 // for each time that the arguments return true, run the argfunction
 int while_bi(const Argv_t& argv) {
