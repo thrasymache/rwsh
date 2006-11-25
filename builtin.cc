@@ -10,6 +10,7 @@
 #include <map>
 #include <stdio.h>
 #include <string>
+#include <sstream>
 #include <sys/stat.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -26,9 +27,11 @@ extern char** environ;
 #include "read_dir.cc"
 #include "selection.h"
 #include "tokenize.cc"
+#include "util.h"
 #include "variable_map.h"
 
 // change the current directory to the one given
+// returns the error returned from chdir
 int cd_bi(const Argv_t& argv) {
   if (argv.size() != 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
   errno = 0;
@@ -65,6 +68,7 @@ static int if_core(const Argv_t& argv, bool logic) {
   else return 0;}
 
 // run argfunction if $* returns true
+// returns the value returned by the argfunction
 int if_bi(const Argv_t& argv) {
   if (argv.get_var("ERRNO") != "") return dollar_question;
   else if (argv.size() < 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
@@ -74,6 +78,7 @@ int if_bi(const Argv_t& argv) {
   else {argv.set_var("ERRNO", "IF_BEFORE_ELSE"); return -1;}}
 
 // run argfunction if ERRNO is set
+// returns the (second?) return value from argfunction
 int if_errno_bi(const Argv_t& argv) {
   int ret = 0;
   if (argv.get_var("ERRNO") != "" && argv.argfunction()) 
@@ -85,6 +90,7 @@ int if_errno_bi(const Argv_t& argv) {
   return ret;}
 
 // run argfunction if IF_TEST is false and $* returns true
+// returns the value returned by the argfunction
 int else_if_bi(const Argv_t& argv) {
   if (argv.get_var("ERRNO") != "") return dollar_question;
   else if (argv.size() < 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
@@ -93,6 +99,7 @@ int else_if_bi(const Argv_t& argv) {
   else {argv.set_var("ERRNO", "ELSE_WITHOUT_IF"); return -1;}}
 
 // run argfunction if IF_TEST is false and $* returns false
+// returns the value returned by the argfunction
 int else_if_not_bi(const Argv_t& argv) {
   if (argv.get_var("ERRNO") != "") return dollar_question;
   else if (argv.size() < 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
@@ -101,6 +108,7 @@ int else_if_not_bi(const Argv_t& argv) {
   else {argv.set_var("ERRNO", "ELSE_WITHOUT_IF"); return -1;}}
 
 // run argfunction if IF_TEST is false 
+// returns the value returned by the argfunction
 int else_bi(const Argv_t& argv) {
   int ret;
   if (argv.get_var("ERRNO") != "") ret = dollar_question;
@@ -124,6 +132,7 @@ int exit_bi(const Argv_t& argv) {
   return 0;}
 
 // run the argfunction for each argument, passing that value as the argument
+// returns the value returned by the argfunction
 int for_bi(const Argv_t& argv) {
   if (argv.size() < 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
   int ret = -1;
@@ -133,7 +142,8 @@ int for_bi(const Argv_t& argv) {
     if (argv.argfunction()) {
       body[1] = *i;
       ret  = (*argv.argfunction())(body);
-      if (Executable_t::unwind_stack() || argv.get_var("ERRNO") != "") return -1;}
+      if (Executable_t::unwind_stack() || argv.get_var("ERRNO") != "") 
+        return -1;}
     else ret = 0;}
   return ret;}
 
@@ -205,17 +215,10 @@ int printenv_bi(const Argv_t& argv) {
 // return the value given by the argument
 int return_bi(const Argv_t& argv) {
   if (argv.size() != 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
-  const char* focus = argv[1].c_str();
-  char* endptr;
-  errno = 0;
-  long ret = strtol(focus, &endptr, 10);
-  if (!*focus || *endptr) {argv.set_var("ERRNO", "NAN"); return -1;}
-  if (errno == ERANGE) argv.set_var("ERRNO", "RANGE");
-  if (errno == EINVAL) {argv.set_var("ERRNO", "INVAL"); return -1;}
-  else if (ret < INT_MIN) {argv.set_var("ERRNO", "RANGE"); return INT_MIN;}
-  else if (ret > INT_MAX) {argv.set_var("ERRNO", "RANGE"); return INT_MAX;}
-  else if (errno) {argv.set_var("ERRNO", "RETURN_ERROR"); return -1;}
-  else return ret;}
+  try {return my_strtoi(argv[1]);}
+  catch (E_generic_t) {argv.set_var("ERRNO", "RETURN_ERROR"); return -1;}
+  catch (E_nan_t) {argv.set_var("ERRNO", "NAN"); return -1;}
+  catch (E_range_t) {argv.set_var("ERRNO", "RANGE"); return -1;}}
 
 // modify variable $1 as a selection according to $2
 int selection_set_bi(const Argv_t& argv) {
@@ -241,6 +244,7 @@ int set_bi(const Argv_t& argv) {
 
 // run the first argument as if it was a script, passing additional arguments
 // to that script
+// returns last return value from script, -1 if empty
 int source_bi(const Argv_t& argv) {
   if (argv.size() < 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
   struct stat sb;
@@ -280,7 +284,7 @@ int stepwise_bi(const Argv_t& argv) {
       ret = -1;
       break;}}
   if (f->decrement_nesting(lookup)) ret = dollar_question;
-  return ret;}
+  return ret;} // last return value from argfunction
 
 // return true if the two strings are the same
 int test_equal_bi(const Argv_t& argv) {
@@ -292,7 +296,7 @@ int test_not_empty_bi(const Argv_t& argv) {
   if (argv.size() != 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
   else return !argv[1].length();}
 
-// return the string corresponding to the executable in the executable map with
+// print the string corresponding to the executable in the executable map with
 // key $1
 int which_executable_bi(const Argv_t& argv) {
   if (argv.size() != 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
@@ -302,7 +306,7 @@ int which_executable_bi(const Argv_t& argv) {
   if (focus) {
     std::cout <<focus->str() <<std::endl;
     return 0;}
-  else return 1;}
+  else return 1;} // executable does not exist
 
 // find the binary in $PATH with filename $1
 int which_path_bi(const Argv_t& argv) {
@@ -318,7 +322,7 @@ int which_path_bi(const Argv_t& argv) {
     if (!stat(test.c_str(), &sb)) {
       std::cout <<test <<std::endl;
       return 0;}}
-  return 1;}
+  return 1;} // executable does not exist
 
 // insert into the executable map a function with name $1 that runs the binary 
 // in $PATH with filename $1 with arguments $*2
@@ -338,7 +342,7 @@ int autofunction_bi(const Argv_t& argv) {
            ++j) script += " " + *j;
       executable_map.set(new Function_t(lookup[0], test + script));
       return 0;}}
-  return 1;}
+  return 1;} // executable does not exist
 
 // prints the last return value of the executable with named $1
 int which_return_bi(const Argv_t& argv) {
@@ -351,8 +355,8 @@ int which_return_bi(const Argv_t& argv) {
   else if ((lookup[0] == "rwsh.mapped_argfunction" || 
             lookup[0] == "rwsh.argfunction") 
            && argv.argfunction()) 
-    return 2;
-  else return 1;}
+    return 2; // return values not stored for argfunctions
+  else return 1;} // executable does not exist
 
 // return true if ther is an executable in the executable map with key $1
 int which_test_bi(const Argv_t& argv) {
@@ -362,6 +366,7 @@ int which_test_bi(const Argv_t& argv) {
   return !executable_map.find(lookup);}
 
 // for each time that the arguments return true, run the argfunction
+// returns the last return from the argfunction
 int while_bi(const Argv_t& argv) {
   if (argv.size() < 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
   int ret = -1;
@@ -370,9 +375,33 @@ int while_bi(const Argv_t& argv) {
     if (Executable_t::unwind_stack() || argv.get_var("ERRNO") != "") return -1;
     if (argv.argfunction()) {
       ret  = (*argv.argfunction())(Argv_t("rwsh.mapped_argfunction"));
-      if (Executable_t::unwind_stack() || argv.get_var("ERRNO") != "") return -1;}
+      if (Executable_t::unwind_stack() || argv.get_var("ERRNO") != "")
+        return -1;}
     else ret = 0;}
   return ret;}
+
+int var_add_bi(const Argv_t& argv) {
+  if (argv.size() != 3) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  const std::string& var_str = argv.get_var(argv[1]);
+  if (var_str == "") return 1; // variable does not exist
+  int var_term;
+  try {var_term = my_strtoi(var_str);}
+  catch (E_generic_t) {argv.set_var("ERRNO", "VAR_ADD_ERROR"); return -1;}
+  catch (E_nan_t) {argv.set_var("ERRNO", "VAR_NAN"); return -1;}
+  catch (E_range_t) {argv.set_var("ERRNO", "VAR_RANGE"); return -1;}
+  int const_term;
+  try {const_term = my_strtoi(argv[2]);}
+  catch (E_generic_t) {argv.set_var("ERRNO", "VAR_ADD_ERROR"); return -1;}
+  catch (E_nan_t) {argv.set_var("ERRNO", "CONST_NAN"); return -1;}
+  catch (E_range_t) {argv.set_var("ERRNO", "CONST_RANGE"); return -1;}
+  int sum = var_term + const_term;
+  int var_negative = var_term < 0;
+  if (var_negative == (const_term < 0) && var_negative != (sum < 0)) {
+    argv.set_var("ERRNO", "SUM_RANGE"); return -1;}
+  std::ostringstream tmp; 
+  tmp <<sum;
+  argv.set_var(argv[1], tmp.str());
+  return 0;}
 
 static const std::string version_str("0.2+");
 

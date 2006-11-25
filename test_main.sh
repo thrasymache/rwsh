@@ -105,9 +105,16 @@ rwsh.mapped_argfunction {%if_errno {e no error}; %set ERRNO x; %if_errno {e inve
 %printenv A
 
 # %return
+%return
+%return 1 1
 %return 0
 %return 1
+%return \
+%return O
 %return 1E2
+%return 2147483647
+%return 2147483649
+%return -2147483649
 
 # %selection_set
 %selection_set A //usr
@@ -167,6 +174,26 @@ wrapper 1 2
 %set X 0
 %set Y 0
 %while tf {%if %return $Y {%set Y 1}; %else {%set X 1}; e in %while argfunction}
+
+# %var_add
+%var_add
+%var_add x 1 2
+%set x A
+%var_add x 2 
+%set x 3000000000
+%var_add x 2 
+%set x -2147483648
+%var_add x A
+%var_add x 3000000000
+%var_add x -2147483648
+%var_add x 2147483647
+%var_add x 2147483647
+e $x
+%var_add x 2147483647
+%var_add x -2147483648
+e $x
+%var_add x $x
+e $x
 
 # %version %version_available %version_compatible
 %version

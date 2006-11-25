@@ -29,6 +29,7 @@ int which_path_bi(const Argv_t& argv);
 int which_return_bi(const Argv_t& argv);
 int which_test_bi(const Argv_t& argv);
 int while_bi(const Argv_t& argv);
+int var_add_bi(const Argv_t& argv);
 int version_bi(const Argv_t& argv);
 int version_available_bi(const Argv_t& argv);
 int version_compatible_bi(const Argv_t& argv);

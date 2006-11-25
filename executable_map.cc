@@ -66,6 +66,7 @@ Executable_map_t::Executable_map_t(void) {
   set(new Builtin_t("%which_return", which_return_bi));
   set(new Builtin_t("%which_test", which_test_bi));
   set(new Builtin_t("%while", while_bi));
+  set(new Builtin_t("%var_add", var_add_bi));
   set(new Builtin_t("%version", version_bi));
   set(new Builtin_t("%version_available", version_available_bi));
   set(new Builtin_t("%version_compatible", version_compatible_bi));}
