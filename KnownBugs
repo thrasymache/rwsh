@@ -33,3 +33,6 @@ Catching a signal can result in a spurious BAD_IF_NEST error
 %ls fails to mention soft links that refer to files that do not exist
 
 CWD is not set at startup
+
+%stepwise refuses to step through all builtins, including control flow builtins,
+like %while and %source that clearly have separable parts.

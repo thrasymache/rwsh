@@ -24,7 +24,8 @@ class Argv_t : private std::vector<std::string> {
   void set_var(const std::string& key, const std::string& value) const;
   unsigned max_nesting(void) const;
   char** export_env(void) const;
-  template<class Out> Out star_var(const std::string& key, Out res) const;
+  template<class Out> 
+  Out star_var(const std::string& key, unsigned reference_level, Out res) const;
 
 // vector semantics
   typedef Base::value_type value_type;

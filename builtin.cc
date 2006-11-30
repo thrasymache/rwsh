@@ -296,6 +296,11 @@ int test_not_empty_bi(const Argv_t& argv) {
   if (argv.size() != 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
   else return !argv[1].length();}
 
+// return true if the two strings are different 
+int test_not_equal_bi(const Argv_t& argv) {
+  if (argv.size() != 3) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  else return argv[1] == argv[2];}
+
 // print the string corresponding to the executable in the executable map with
 // key $1
 int which_executable_bi(const Argv_t& argv) {
@@ -348,14 +353,13 @@ int autofunction_bi(const Argv_t& argv) {
 int which_return_bi(const Argv_t& argv) {
   if (argv.size() != 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
   Argv_t lookup(argv.begin()+1, argv.end(), 0);
+  if (lookup[0] == "rwsh.mapped_argfunction" || 
+            lookup[0] == "rwsh.argfunction") 
+    return 2; // return values not stored for argfunctions
   Executable_t* focus = executable_map.find(lookup);
   if (focus) {
     std::cout <<focus->last_ret() <<std::endl;
     return 0;}
-  else if ((lookup[0] == "rwsh.mapped_argfunction" || 
-            lookup[0] == "rwsh.argfunction") 
-           && argv.argfunction()) 
-    return 2; // return values not stored for argfunctions
   else return 1;} // executable does not exist
 
 // return true if ther is an executable in the executable map with key $1

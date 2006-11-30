@@ -4,7 +4,7 @@
 %function rwsh.vars {%internal_vars}
 %function # {%nop}
 %function \ {%nop}
-$# rwsh.init %source are tested by having test_init.sh define #
+$# rwsh.init is tested by having test_init.sh define #
 -10
 $
 -10
@@ -73,6 +73,12 @@ $# builtin tests
 0
 $# %cd
 0
+$%cd
+-1
+ERRNO set to ARGS
+$%cd /bin /
+-1
+ERRNO set to ARGS
 $%cd /bin
 0
 $/bin/pwd
@@ -82,6 +88,9 @@ $
 0
 $# %echo
 0
+$%echo
+-1
+ERRNO set to ARGS
 $%echo these are fixed strings
 these are fixed strings0
 $
@@ -104,10 +113,15 @@ $
 0
 $# %function
 0
+$%function
+-1
+ERRNO set to ARGS
 $%function /bin/bash {%nop}
 1
 $%function %function {%nop}
 2
+$%function rwsh.escaped_argfunction {%nop}
+3
 $%function a {%nop}
 0
 $%which_executable a
@@ -168,6 +182,18 @@ $
 0
 $# %if %else_if %else
 0
+$%if
+-1
+ERRNO set to ARGS
+$%else_if
+-1
+ERRNO set to ARGS
+$%else_if_not
+-1
+ERRNO set to ARGS
+$%else
+-1
+ERRNO set to ELSE_WITHOUT_IF
 $%if %return 0 {e if true; %return 1}
 if true
 1
@@ -207,14 +233,25 @@ $
 -1
 $# %if_errno
 -1
-$rwsh.mapped_argfunction {%if_errno {e no error}; %set ERRNO x; %if_errno {e invented error}}
-invented error
+$rwsh.mapped_argfunction {%if_errno {e no error}; %set ERRNO x; %if_errno {e invented error $ERRNO}; %if_errno %return 0 {e doubled error $ERRNO}}
+invented error x
+doubled error x
+doubled error ARGS
 0
-ERRNO set to x
+ERRNO set to ARGS
 $
 0
 $# %internal_errors %internal_features %internal_vars
 0
+$%internal_errors 1
+-1
+ERRNO set to ARGS
+$%internal_features 1
+-1
+ERRNO set to ARGS
+$%internal_vars 1
+-1
+ERRNO set to ARGS
 $%internal_errors
 rwsh.arguments_for_argfunction rwsh.binary_not_found rwsh.executable_not_found rwsh.excessive_nesting rwsh.mismatched_brace rwsh.multiple_argfunctions rwsh.init rwsh.selection_not_found rwsh.sighup rwsh.sigint rwsh.sigquit rwsh.sigpipe rwsh.sigterm rwsh.sigstp rwsh.sigcont rwsh.siginfo rwsh.sigusr1 rwsh.sigusr2 rwsh.unreadable_dir0
 $%internal_features
@@ -225,9 +262,22 @@ $
 0
 $# %ls
 0
+$%ls
+-1
+ERRNO set to ARGS
 $%ls /bin /usr/
 /bin
 /usr/
+0
+$
+0
+$# %newline
+0
+$%newline 1
+-1
+ERRNO set to ARGS
+$%newline
+
 0
 $
 0
@@ -259,6 +309,11 @@ $%printenv SHELL
 $%printenv A
 
 0
+$%set A
+-1
+ERRNO set to ARGS
+$%set 1 1
+1
 $%set A 1
 0
 $%printenv A
@@ -299,6 +354,9 @@ $
 -1
 $# %selection_set
 -1
+$%selection_set A
+-1
+ERRNO set to ARGS
 $%selection_set A //usr
 0
 $e $A
@@ -331,22 +389,55 @@ $e $A
 0
 $
 0
+$# %source
+0
+$%source
+-1
+ERRNO set to ARGS
+$%source /*fu*bar*
+-1
+ERRNO set to NOENT
+$# if you actually have that file, something is seriously wrong
+-1
+$%source /etc/hostname
+-1
+ERRNO set to NOENT
+$# %source is tested by having test_init.sh define #
+-1
+$w rwsh.init
+%function rwsh.init {%set MAX_NESTING 4; %set rc $2; %if %test_not_empty $rc {%source $rc}; %else {%source /etc/rwshrc}}
+0
+$
+0
 $# %stepwise
 0
 $%set PREV $MAX_NESTING
 0
 $%set MAX_NESTING 12
 0
-$f wrapper {a $* one; a $* two; a $* three}
+$f wrapper {%set ERRNO x; a $* two; a $* three}
 0
 $f a {e $* one; e $* two; e $* three}
 0
 $f d {e $*; %stepwise $* {d $*}}
 0
+$%stepwise {e $*}
+-1
+ERRNO set to ARGS
+$%stepwise wrapper 1 2
+-1
+ERRNO set to ARGFUNCTION
 $%stepwise stepwise {e $*}
 1
 $%stepwise %stepwise {e $*}
 2
+$%stepwise wrapper 1 2 {e $*}
+%set ERRNO x
+a 1 2 two
+a 1 2 three
+0
+$f wrapper {a $* one; a $* two; a $* three}
+0
 $wrapper 1 2
 1 2 one one
 1 2 one two
@@ -358,9 +449,6 @@ $wrapper 1 2
 1 2 three two
 1 2 three three
 0
-$%stepwise wrapper 1 2
--1
-ERRNO set to ARGFUNCTION
 $%stepwise wrapper 1 2 {e $*}
 a 1 2 one
 a 1 2 two
@@ -406,12 +494,34 @@ rwsh.excessive_nesting : command not found ( rwsh.excessive_nesting a %stepwise 
 -1
 $
 -1
-$# %test_equal %test_not_empty
+$# %test_equal %test_not_equal %test_not_empty
 -1
+$%test_equal x
+-1
+ERRNO set to ARGS
+$%test_equal x x x
+-1
+ERRNO set to ARGS
+$%test_not_equal x 
+-1
+ERRNO set to ARGS
+$%test_not_equal x x x
+-1
+ERRNO set to ARGS
+$%test_not_empty 
+-1
+ERRNO set to ARGS
+$%test_not_empty x x
+-1
+ERRNO set to ARGS
 $%test_equal x y
 1
 $%test_equal x x
 0
+$%test_not_equal x y
+0
+$%test_not_equal x x
+1
 $%test_not_empty \
 1
 $%test_not_empty x
@@ -420,57 +530,79 @@ $
 0
 $# %which_executable %which_test %which_return
 0
+$%which_test
+-1
+ERRNO set to ARGS
 $%which_test j
 1
-$%which_executable j
-1
-$%which_return %which_executable
-1
-0
 $%which_test #
-0
-$%which_executable #
-%function # {%nop}
-0
-$%which_return %which_executable
-0
-0
-$%which_return %which2
-1
-$%which_executable rwsh.mapped_argfunction {%nop 1 \ \$ \@ $A $0 $# $* $*2 @a @$a @$1 @$* @$*2}
-{%nop 1 \  \$ \@ $A $0 $# $* $*2 @a @$a @$1 @$*1 @$*2}
 0
 $%which_test rwsh.mapped_argfunction
 1
-$%which_executable rwsh.mapped_argfunction
-1
 $%which_test rwsh.mapped_argfunction {rwsh.argfunction}
 0
+$%which_executable
+-1
+ERRNO set to ARGS
+$%which_executable j
+1
+$%which_executable #
+%function # {%nop}
+0
+$%which_executable rwsh.mapped_argfunction {%nop 1 \ \$ \@ $A $$A $0 $$$1 $# $* $*2 @a @$a @$1 @$* @$*2}
+{%nop 1 \  \$ \@ $A $$A $0 $$$1 $# $* $*2 @a @$a @$1 @$*1 @$*2}
+0
+$%which_executable rwsh.mapped_argfunction
+1
 $%which_executable rwsh.mapped_argfunction {rwsh.argfunction}
 {rwsh.argfunction}
+0
+$%which_return
+-1
+ERRNO set to ARGS
+$%which_return rwsh.mapped_argfunction
+2
+$%which_return rwsh.mapped_argfunction {rwsh.argfunction}
+2
+$%which_return %which_return
+2
+0
+$%which_return j
+1
+$%which_return #
+0
 0
 $
 0
 $# %while
 0
-$%function tf {%return $X}
+$%function tf {%test_not_equal $X $N}
 0
-$%set X 1
+$%set X 0
+0
+$%set N 4
+0
+$%while {e ARGS}
+-1
+ERRNO set to ARGS
+$%while tf {e printed; %set X 4}
+printed
 0
 $%while tf {e skipped}
 -1
 $%set X 0
 0
-$%while tf {e printed; %set X 1}
-printed
+$%while tf {e in %while argfunction $X; %var_add X 1}
+in %while argfunction 0
+in %while argfunction 1
+in %while argfunction 2
+in %while argfunction 3
 0
 $%set X 0
 0
-$%set Y 0
-0
-$%while tf {%if %return $Y {%set Y 1}; %else {%set X 1}; e in %while argfunction}
-in %while argfunction
-in %while argfunction
+$%while tf {%if %return $X {%set X 1}; %else {%function tf {%return 1}}; e in overwriting argfunction;}
+in overwriting argfunction
+in overwriting argfunction
 0
 $
 0
@@ -527,6 +659,18 @@ $
 0
 $# %version %version_available %version_compatible
 0
+$%version 1.0
+-1
+ERRNO set to ARGS
+$%version_available 1.0
+-1
+ERRNO set to ARGS
+$%version_compatible
+-1
+ERRNO set to ARGS
+$%version_compatible 1.0 1.0
+-1
+ERRNO set to ARGS
 $%version
 0.2+0
 $%version_available
@@ -558,6 +702,12 @@ $e 1 2 $* 3 4
 0
 $e $*2 1 2
 1 2 1 2
+0
+$e A $1 1 $$3 $$$3
+A A 1 A /bin
+0
+$e A 1 2 3 4 5 6 7 $$$$$$$$$8
+A 1 2 3 4 5 6 7 /bin
 0
 $e @//usr
 /usr
@@ -739,6 +889,9 @@ $# exiting rwsh.shutdown
 0
 $f rwsh.shutdown {e rwsh is now terminating}
 0
+$%exit now
+-1
+ERRNO set to ARGS
 $%exit
 0
 rwsh is now terminating

@@ -4,6 +4,8 @@
 
 
 
+
+  
   
   
   
@@ -11,6 +13,8 @@
 
 
 
+
+  
   
   
   
@@ -20,7 +24,9 @@
 
 <body>
 
+
 <h3>philosophy</h3>
+
 
 The first concrete idea that I had for the interface of rwsh, was that
 I wanted a shell that knew that after you'd done something with a few
@@ -41,16 +47,23 @@ startup script. No parsing is done of arguments before they are
 passed to rwsh.init.<br>
 
 
+
 <br>
 
+
 <h3>exploring rwsh.init</h3>
+
 Somehow commenting on what happens between when rwsh starts executing
 and when it starts accepting input seems like the best way to introduce
 it. &nbsp;This serves the double purpose of showing its style of doing
 things, and explaining how to reconfigure it.&nbsp; <br>
+
 If you run "%which rwsh.init", you will get the following output.<br>
+
 %function rwsh.init {%set MAX_NESTING 4; %set rc $2; %if %test_not_empty $rc {%source $rc}; %else {%source /etc/rwshrc}}<br>
+
 <br>
+
 The only configuration and initialization that happens before rwsh.init
 is called is to add builtin commands to the executable_map,&nbsp;to
 reformat the arguments to rwsh into something that can be accepted by a
@@ -73,16 +86,24 @@ functions are passed as arguments to builtins and other functions see
 the argument functions document. If a script is passed to rwsh it ends
 up as $2. &nbsp;$0 is always the name of the current executable.
 &nbsp;$1 is the name under which rwsh was run.<br>
+
 <br>
+
 If rwsh is not passed any arguments, then it runs /etc/rwshrc, the
 rwshrc distributed with v0.2 is given below, interspersed with comments.<br>
+
 <br>
+
 
 
 %set MAX_NESTING 9<br>
+
 %function \ {%nop}<br>
+
 %function # {%nop}<br>
+
 <br>
+
 Again, MAX_NESTING must be reset, or execution would stop at the first
 blank line. The backslash is actually escaping a blank space, which is
 what is run
@@ -103,13 +124,21 @@ function names, so that #* is run whenever any command that begins with
 map. &nbsp;I am not sure when I will get around to implementing that. <br>
 
 
+
 <br>
+
 # set up environment<br>
+
 %importenv<br>
+
 %set SELECT $HOME<br>
+
 %selection_set SELECT /<br>
+
 %set FIGNORE .*<br>
+
 <br>
+
 Now blank lines and comments can be included in the init script without
 generating errors. &nbsp;The environment is initially empty, and must
 be explicitly imported. &nbsp;This will overwrite any conflicting
@@ -117,27 +146,44 @@ variables that have been set. &nbsp;Next SELECT is set to $HOME/, which
 will make the initial selection all of the files in the user's home
 directory. &nbsp;FIGNORE is set to ignore files that begin with a
 period.<br>
+
 <br>
+
 # alias builtins<br>
+
 %function . {%source $*}<br>
+
 %function af {rwsh.argfunction}<br>
+
 %function echo {%echo $*; %newline}<br>
+
 %function elif {%else_if $* {rwsh.argfunction}}<br>
+
 %function else {%else {rwsh.argfunction}}<br>
+
 %function exit {%exit}<br>
+
 %function fn {%set x $1; %function $x $*2 {rwsh.argfunction}; %set y
 $?; %if %test_equal $y 1 {echo cannot set paths as functions}; %else_if
 %test_equal $y 2 {echo cannot set builtins as functions}; %else_if
 %test_equal $y 3 {echo cannot set argfunctions in executable map};
 %else_if %test_equal $y 4 {echo function did not exist to be erased};
 %else {%return $y}}<br>
+
 %function if {%if $*{rwsh.argfunction}}<br>
+
 %function if_only {%if $* {rwsh.argfunction}; %else}<br>
+
 %function if_only_not {%if $*; %else {rwsh.argfunction}}<br>
+
 %function printenv {%printenv $*}<br>
+
 %function which {%set x $1; %which $x {rwsh.argfunction}; %if %test_equal $? 0; <br>
+
 %else {echo no $x}}<br>
+
 <br>
+
 builtins and rwsh.mapped_argfunction are given wrapper functions which
 print text for error conditions that do not set ERRNO. &nbsp;Since it
 is a syntax error to have a %if conditional without a %else, if_only
@@ -150,21 +196,37 @@ are. &nbsp;Since most of the time you do want the newline, the function
 echo is written to include that newline. <br>
 
 
+
 &nbsp;<br>
+
 # selection commands<br>
+
 %function cat {%selection_set SELECT $1; /bin/cat @$SELECT}<br>
+
 %function cd {%selection_set SELECT $1; %cd @$SELECT; %selection_set SELECT /}<br>
+
 %function cp {%selection_set SELECT $1; /bin/cp @$SELECT $2}<br>
+
 %function cvs {%selection_set SELECT $2; /usr/bin/cvs $1 @$SELECT}<br>
+
 %function grep {%set REGEX $1; %selection_set SELECT $2; /usr/bin/grep $REGEX @$SELECT}<br>
+
 %function regrep {%selection_set SELECT $1; /usr/bin/grep $REGEX @$SELECT}<br>
+
 %function ls {%selection_set SELECT $1; %ls @$SELECT}<br>
+
 %function less {%selection_set SELECT $1; /usr/bin/less @$SELECT}<br>
+
 %function set {%set $1 $2 $*3}<br>
+
 %function vi {%selection_set SELECT $1; /usr/bin/vi @$SELECT}<br>
+
 %function wc {%selection_set SELECT $1; /usr/bin/wc @$SELECT}<br>
+
 %function unselect {%set SELECT $CWD; %selection_set SELECT /}<br>
+
 <br>
+
 Executables that want to make use of the selection must be defined to
 do so. Read more in the document, "the selection." It is currently not
 possible to use rwsh.autofunction to add new executables that use the
@@ -177,23 +239,39 @@ useful for moving back to the directory where you are working after
 having looked at some file in a distant part of the filesystem.<br>
 
 
+
 <br>
+
 # internal functions<br>
+
 %function rwsh.autofunction {%set X $1; if_only %autofunction $X \$* {%echo added $X to executable map; %newline}}<br>
+
 %function rwsh.arguments_for_argfunction {%echo cannot specify arguments for $1 directly; %newline; %return -1}<br>
+
 # rwsh.after_script is initialized after individual configuration file<br>
+
 %function rwsh.before_script {%function rwsh.prompt}<br>
+
 %function rwsh.binary_not_found {%echo $1 : could not run binary; %newline; %return -1}<br>
+
 %function rwsh.excessive_nesting {%newline; %echo function exceeded MAX_NESTING ( $MAX_NESTING ). call stack: $*; %newline}<br>
+
 %function rwsh.mismatched_brace {%echo mismatched brace: $1; %newline; %return -1}<br>
+
 %function rwsh.multiple_argfunctions {%echo multiple argfunctions not supported <br>
+
 at this time; %newline; %return -1}<br>
+
 %function rwsh.selection_not_found{%echo no file matching pattern $1;
 %set x $2;&nbsp;if_only_not %test_equal $1 $2 {%echo \ for selection
 $x}; %newline}<br>
+
 %function rwsh.shutdown {%newline}<br>
+
 %function rwsh.unreadable_dir {%echo cannot read directory $1; %newline}<br>
+
 %function rwsh.vars {%internal_vars; %newline; echo HOME $HOME; echo REGEX $REGEX; echo SELECT $SELECT}<br>
+
 There are a number of other internal functions in addition to
 rwsh.init. They are documented in "internal functions."
 &nbsp;rwsh.autofunction worth mentioning now: if a command that does
@@ -202,21 +280,35 @@ executable map, rwsh.autofunction is run to attempt to add it.
 &nbsp;This rwsh.autofunction searches through $PATH and if it finds a
 file, inserts it as a function, but this will be much more configurable
 in the near future. <br>
+
 <br>
+
 # final setup and individual configuration<br>
+
 %function ! {if $* {%return 1}; else {%return 0}}<br>
+
 %function st {/bin/bash /usr/local/bin/test_rwsh}<br>
+
 %function rwsh {/usr/local/bin/rwsh $*}<br>
+
 %selection_set rc $HOME /.rwshrc<br>
+
 %source $rc<br>
+
 %set rc \<br>
+
 %function rwsh.after_script {%function rwsh.prompt {%echo $SELECT \$}}<br>
+
 %function rwsh.after_command {%set x $?; %set y $1; %if_errno {echo
 ERRNO is set&nbsp;to $ERRNO; %set OLD_ERRNO $ERRNO; %set ERRNO \ };
 if_only_not %test_equal $x 0 {echo $y returned $x}}<br>
+
 %echo rwsh v<br>
+
 %version<br>
+
 %newline<br>
+
 The ! operator is defined as a function, which makes it easy to
 reconfigure its return values, if this is desired. &nbsp;st runs the
 test script. &nbsp;Then a user-specific configuration file is sourced.
@@ -226,7 +318,9 @@ or to print output only under certain circumstances, as
 rwsh.after_command does here. &nbsp;As a final step, the name of the
 program and its version number is printed.<br>
 
+
 <h3>a few words about what happens after you type a command</h3>
+
 
 Commands are divided by newline characters. The first thing that
 happens is that it is divided into tokens, separated by one or more
@@ -237,7 +331,9 @@ If this fails (because the braces are mismatched or there is more than
 one argument function for a particular command), then the requested
 command is replaced by the appropriate internal function request. <br>
 
+
 <br>
+
 
 Next, the command is interpretted. Interpretting tokens involves
 replacing variables, performing selection reads, and handling escapes.
@@ -263,7 +359,9 @@ begins with a $ or an @ (or a backslash for that matter). An argument
 function is interpretted by reducing argument function levels. See the
 argument functions document for an explanation.<br>
 
+
 <br>
+
 
 The first token on the command line (a.k.a. $0) is then looked up in
 the executable map. If it is not found and rwsh.autofunction exists,
@@ -273,6 +371,37 @@ some point $0 is found in the executable map, then that executable is
 run. If $0 begins with a forward slash, then the shell attempts to run
 the specified file. In any case the interpretted arguments are passed
 to the executable that is run.<br>
+<h3>generalized text interface</h3>
+Part of the idea of this project was to create something of a
+generalized text interface. Certain limits were accepted from the
+start, such as the idea that a command ends with a newline. This
+prevents something based upon rwsh from getting much past the level of
+ed as a text editor. Also, any special characters (e.g. braces), which
+are interpretted by the shell, cannot be used by commands for other
+purposes. But as a trivial example, a counter can be created by
+defining the following three commands.<br>
+<br>
+%set a 0<br>
+%function \ {%var_add a 1}<br>
+%function rwsh.prompt {%echo $a \$}<br>
+<br>
+Empty commands now increment the counter stored in a, and the prompt
+prints the current value of the counter. If the following four commands
+are used as an init script, then rwsh will treat any command as a
+request to increment the given counter.<br>
+<br>
+%function rwsh.prompt {%printenv}<br>
+%function rwsh.autofunction {%set var_name $1; %if %test_not_empty
+$$var_name {%var_add $var_name 1}; %else {%set $var_name 1}; %set
+var_name \}<br>
+%function rwsh.executable_not_found {%nop}<br>
+%set rc \<br>
+<br>
+If the first command is replaced by "%function rwsh.shutdown
+{%printenv}" then it will count silently, and display the results when
+the shell exits. Of course all of these printouts will be cluttered by
+the MAX_NESTING and $? values.<br>
+
 
 
 

@@ -1,9 +1,10 @@
 rwsh v0.3 -
   * builtins: %for, %importenv_overwrite, %importenv_preserve, %stepwise,
-      %which_executable, %which_test, %which_path, %which_return, %while, 
-      %var_add %version_available, %version_compatible
+      %test_not_equal, %which_executable, %which_test, %which_path, 
+      %which_return, %while, %var_add %version_available, %version_compatible
   * %source no longer runs internal functions other than rwsh.raw_command
   * ERRNO prevents execution of control flow builtins
+  * reference variables - $$X prints the value of the variable named by X
   * fixed rwsh.mapped_argfunction {$*} crash
 
 rwsh v0.2 - scripts

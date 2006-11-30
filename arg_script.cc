@@ -32,12 +32,14 @@ Arg_spec_t::Arg_spec_t(const std::string& script) {
   if (!script.length()) type=FIXED;
   else if (script[0] == '$') {
     if (script.length() < 2) type=VARIABLE;
-    else if (script[1] == '*') {
-      type=STAR_VAR;
-      if (script.length() > 2) text=script.substr(2);
-      else text="1";}
-    else if (isargvar(script.substr(1))) {type=ARG_VAR; text=script.substr(1);}
-    else {type=VARIABLE; text=script.substr(1);}}
+    else {
+      int i = 1;
+      while (i < script.length() && script[i] == '$') ++reference_level, ++i;
+      if (script[i] == '*') {
+        type=STAR_VAR;
+        if (script.length() - i > 1) text=script.substr(i+1);
+        else text="1";}
+      else {type=VARIABLE; text=script.substr(i);}}}
   else if (script[0] == '@') {
     if (script.length() < 2) type=SELECTION;
     else if (script[1] == '$') {
@@ -46,8 +48,6 @@ Arg_spec_t::Arg_spec_t(const std::string& script) {
         type=SELECT_STAR_VAR;
         if (script.length() > 3) text=script.substr(3);
         else text="1";}
-      else if (isargvar(script.substr(2))) {
-        type=SELECT_ARG_VAR; text=script.substr(2);}
       else {type=SELECT_VAR; text=script.substr(2);}}
     else {type=SELECTION; text=script.substr(1);}}
   else if (script[0] == '\\') {type=FIXED; text=script.substr(1);}
@@ -55,20 +55,20 @@ Arg_spec_t::Arg_spec_t(const std::string& script) {
 
 // create a string from Arg_spec. inverse of constructor.
 std::string Arg_spec_t::str(void) const {
+  std::string base;
+  for (int i=0; i < reference_level; ++i) base += '$';
   switch(type) {
     case FIXED: 
       if (!text.length()) return "\\ ";
       else if(text[0] == '$' || text[0] == '@' || text[0] == '\\')
         return "\\" + text;
       else return text;
-    case VARIABLE: return "$" + text;
-    case ARG_VAR: return "$" + text;
+    case VARIABLE: return base + "$" + text;
     case STAR_VAR: 
-      if (text == "1") return "$*";
-      else return "$*" + text;
+      if (text == "1") return base + "$*";
+      else return base + "$*" + text;
     case SELECTION: return "@" + text;
     case SELECT_VAR: return "@$" + text;
-    case SELECT_ARG_VAR: return "@$" + text;
     case SELECT_STAR_VAR: return "@$*" + text;}}
 
 // produce one or more strings for destination Argv from Arg_spec and source
@@ -77,12 +77,14 @@ template<class Out>
 void Arg_spec_t::interpret(const Argv_t& src, Out res) const {
   switch(type) {
     case FIXED:      *res++ = text; break;
-    case VARIABLE:   *res++ = src.get_var(text); break;
-    case ARG_VAR:    *res++ = src.get_var(text); break;
-    case STAR_VAR:   res = src.star_var(text, res); break;
+    case VARIABLE: {
+      std::string next = src.get_var(text);
+      for (unsigned i = 0; i < reference_level; ++i) next = src.get_var(next);
+      *res++ = next;
+      break;}
+    case STAR_VAR:   res = src.star_var(text, reference_level, res); break;
     case SELECTION:  selection_read(text, res); break;
     case SELECT_VAR: selection_read(src.get_var(text), res); break;
-    case SELECT_ARG_VAR: selection_read(src.get_var(text), res); break;
     case SELECT_STAR_VAR: std::cerr <<"@$* not implemented yet\n"; break;}}
 
 Arg_spec_t& construct_arg_spec(const std::string& src) {

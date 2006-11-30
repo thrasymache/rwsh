@@ -23,6 +23,7 @@ int selection_set_bi(const Argv_t& argv);
 int source_bi(const Argv_t& argv);
 int stepwise_bi(const Argv_t& argv);
 int test_equal_bi(const Argv_t& argv);
+int test_not_equal_bi(const Argv_t& argv);
 int test_not_empty_bi(const Argv_t& argv);
 int which_executable_bi(const Argv_t& argv);
 int which_path_bi(const Argv_t& argv);

@@ -1,10 +1,11 @@
 // Copyright (C) 2006 Samuel Newbold
 
-enum Arg_type_t {FIXED, VARIABLE, ARG_VAR, STAR_VAR, SELECTION, SELECT_VAR,
-                 SELECT_ARG_VAR, SELECT_STAR_VAR};
+enum Arg_type_t {FIXED, VARIABLE, STAR_VAR, SELECTION, SELECT_VAR,
+                 SELECT_STAR_VAR};
 
 class Arg_spec_t {
   Arg_type_t type;
+  unsigned reference_level;
   std::string text;
  public:
   Arg_spec_t(const std::string& script);

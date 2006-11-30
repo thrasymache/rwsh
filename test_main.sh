@@ -1,4 +1,4 @@
-# rwsh.init %source are tested by having test_init.sh define #
+# rwsh.init is tested by having test_init.sh define #
 
 # argv tests
 %nop
@@ -27,10 +27,13 @@ e text that doesn't have a prompt appended
 
 # builtin tests
 # %cd
+%cd
+%cd /bin /
 %cd /bin
 /bin/pwd
 
 # %echo
+%echo
 %echo these are fixed strings
 
 # %for
@@ -39,8 +42,10 @@ e text that doesn't have a prompt appended
 %for 1 2 3 4 {e four arguments $1}
 
 # %function
+%function
 %function /bin/bash {%nop}
 %function %function {%nop}
+%function rwsh.escaped_argfunction {%nop}
 %function a {%nop}
 %which_executable a
 a 1 2 3
@@ -65,6 +70,10 @@ f g {e hi; f g {e there}; f h {e nothing here}; g}
 g
 
 # %if %else_if %else
+%if
+%else_if
+%else_if_not
+%else
 %if %return 0 {e if true; %return 1}
 %else {e else true; %return 3}
 %if %return 1 {e if false; %return 4}
@@ -81,15 +90,23 @@ g
 %else {e already tested; %return 15}
 
 # %if_errno
-rwsh.mapped_argfunction {%if_errno {e no error}; %set ERRNO x; %if_errno {e invented error}}
+rwsh.mapped_argfunction {%if_errno {e no error}; %set ERRNO x; %if_errno {e invented error $ERRNO}; %if_errno %return 0 {e doubled error $ERRNO}}
 
 # %internal_errors %internal_features %internal_vars
+%internal_errors 1
+%internal_features 1
+%internal_vars 1
 %internal_errors
 %internal_features
 %internal_vars
 
 # %ls
+%ls
 %ls /bin /usr/
+
+# %newline
+%newline 1
+%newline
 
 # %nop
 %nop
@@ -101,6 +118,8 @@ rwsh.mapped_argfunction {%if_errno {e no error}; %set ERRNO x; %if_errno {e inve
 %importenv_preserve
 %printenv SHELL
 %printenv A
+%set A
+%set 1 1
 %set A 1
 %printenv A
 
@@ -117,6 +136,7 @@ rwsh.mapped_argfunction {%if_errno {e no error}; %set ERRNO x; %if_errno {e inve
 %return -2147483649
 
 # %selection_set
+%selection_set A
 %selection_set A //usr
 e $A
 %selection_set A /
@@ -130,50 +150,76 @@ e $A
 %selection_set A /local/../../bin
 e $A
 
+# %source
+%source
+%source /*fu*bar*
+# if you actually have that file, something is seriously wrong
+%source /etc/hostname
+# %source is tested by having test_init.sh define #
+w rwsh.init
+
 # %stepwise
 %set PREV $MAX_NESTING
 %set MAX_NESTING 12
-f wrapper {a $* one; a $* two; a $* three}
+f wrapper {%set ERRNO x; a $* two; a $* three}
 f a {e $* one; e $* two; e $* three}
 f d {e $*; %stepwise $* {d $*}}
+%stepwise {e $*}
+%stepwise wrapper 1 2
 %stepwise stepwise {e $*}
 %stepwise %stepwise {e $*}
+%stepwise wrapper 1 2 {e $*}
+f wrapper {a $* one; a $* two; a $* three}
 wrapper 1 2
-%stepwise wrapper 1 2
 %stepwise wrapper 1 2 {e $*}
 %stepwise wrapper 1 2 {d $*}
 %set MAX_NESTING $PREV 
 %stepwise wrapper 1 2 {d $*}
 
-# %test_equal %test_not_empty
+# %test_equal %test_not_equal %test_not_empty
+%test_equal x
+%test_equal x x x
+%test_not_equal x 
+%test_not_equal x x x
+%test_not_empty 
+%test_not_empty x x
 %test_equal x y
 %test_equal x x
+%test_not_equal x y
+%test_not_equal x x
 %test_not_empty \
 %test_not_empty x
 
 # %which_executable %which_test %which_return
+%which_test
 %which_test j
-%which_executable j
-%which_return %which_executable
 %which_test #
-%which_executable #
-%which_return %which_executable
-%which_return %which2
-%which_executable rwsh.mapped_argfunction {%nop 1 \ \$ \@ $A $0 $# $* $*2 @a @$a @$1 @$* @$*2}
 %which_test rwsh.mapped_argfunction
-%which_executable rwsh.mapped_argfunction
 %which_test rwsh.mapped_argfunction {rwsh.argfunction}
+%which_executable
+%which_executable j
+%which_executable #
+%which_executable rwsh.mapped_argfunction {%nop 1 \ \$ \@ $A $$A $0 $$$1 $# $* $*2 @a @$a @$1 @$* @$*2}
+%which_executable rwsh.mapped_argfunction
 %which_executable rwsh.mapped_argfunction {rwsh.argfunction}
+%which_return
+%which_return rwsh.mapped_argfunction
+%which_return rwsh.mapped_argfunction {rwsh.argfunction}
+%which_return %which_return
+%which_return j
+%which_return #
 
 # %while
-%function tf {%return $X}
-%set X 1
+%function tf {%test_not_equal $X $N}
+%set X 0
+%set N 4
+%while {e ARGS}
+%while tf {e printed; %set X 4}
 %while tf {e skipped}
 %set X 0
-%while tf {e printed; %set X 1}
+%while tf {e in %while argfunction $X; %var_add X 1}
 %set X 0
-%set Y 0
-%while tf {%if %return $Y {%set Y 1}; %else {%set X 1}; e in %while argfunction}
+%while tf {%if %return $X {%set X 1}; %else {%function tf {%return 1}}; e in overwriting argfunction;}
 
 # %var_add
 %var_add
@@ -196,6 +242,10 @@ e $x
 e $x
 
 # %version %version_available %version_compatible
+%version 1.0
+%version_available 1.0
+%version_compatible
+%version_compatible 1.0 1.0
 %version
 %version_available
 %version_compatible 1.0
@@ -209,6 +259,8 @@ e 5 4 3 2 1
 e $A $0 @$A
 e 1 2 $* 3 4
 e $*2 1 2
+e A $1 1 $$3 $$$3
+e A 1 2 3 4 5 6 7 $$$$$$$$$8
 e @//usr
 # rwsh.selection_not_found
 e @/*is*
@@ -281,5 +333,6 @@ rwsh.vars
 
 # exiting rwsh.shutdown
 f rwsh.shutdown {e rwsh is now terminating}
+%exit now
 %exit
 %echo 1 2 3
