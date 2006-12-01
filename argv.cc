@@ -90,7 +90,30 @@ void Argv_t::set_var(const std::string& key, const std::string& value) const {
               case '7': case '8': case '9': case '0': return;
     default: var_map->set(key, value);}}
 
-unsigned Argv_t::max_nesting(void) const {return var_map->max_nesting;}
+bool Argv_t::var_exists(const std::string& key) const {
+  switch (key[0]) {
+    case '#': case '*': return true; 
+    case '1': case '2': case '3': case '4': case '5': case '6': 
+              case '7': case '8': case '9': case '0': {
+      int n = std::atoi(key.c_str());
+      return size() > n;}
+    default: return var_map->exists(key);}}
+
+int Argv_t::global_var(const std::string& key, 
+                        const std::string& value) const {
+  switch (key[0]) {
+    case '#': case '*': case '1': case '2': case '3': case '4': case '5': 
+              case '6': case '7': case '8': case '9': case '0': return 2;
+    default: return var_map->add(key, value);}}
+
+int Argv_t::unset_var(const std::string& key) const {
+  switch (key[0]) {
+    case '#': case '*': case '1': case '2': case '3': case '4': case '5': 
+              case '6': case '7': case '8': case '9': case '0': return 3;
+    default: return var_map->unset(key);}}
+
+unsigned Argv_t::max_nesting(void) const {return var_map->max_nesting();}
+
 char** Argv_t::export_env(void) const {return var_map->export_env();}
 
 void Argv_t::clear(void) {

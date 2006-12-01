@@ -24,8 +24,9 @@ Executable_map_t::Executable_map_t(void) {
   set(new Builtin_t("%else_if", else_if_bi));
   set(new Builtin_t("%else_if_not", else_if_not_bi));
   set(new Builtin_t("%exit", exit_bi));
-  set(new Builtin_t("%function", function_bi));
   set(new Builtin_t("%for", for_bi));
+  set(new Builtin_t("%function", function_bi));
+  set(new Builtin_t("%global", global_bi));
   set(new Builtin_t("%if", if_bi));
   set(new Builtin_t("%if_errno", if_errno_bi));
   set(new Builtin_t("%importenv_overwrite", importenv_overwrite_bi));
@@ -62,12 +63,14 @@ Executable_map_t::Executable_map_t(void) {
   set(new Builtin_t("%test_equal", test_equal_bi));
   set(new Builtin_t("%test_not_empty", test_not_empty_bi));
   set(new Builtin_t("%test_not_equal", test_not_equal_bi));
+  set(new Builtin_t("%unset", unset_bi));
   set(new Builtin_t("%which_executable", which_executable_bi));
   set(new Builtin_t("%which_path", which_path_bi));
   set(new Builtin_t("%which_return", which_return_bi));
   set(new Builtin_t("%which_test", which_test_bi));
   set(new Builtin_t("%while", while_bi));
   set(new Builtin_t("%var_add", var_add_bi));
+  set(new Builtin_t("%var_exists", var_exists_bi));
   set(new Builtin_t("%version", version_bi));
   set(new Builtin_t("%version_available", version_available_bi));
   set(new Builtin_t("%version_compatible", version_compatible_bi));}

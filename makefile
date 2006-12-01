@@ -11,7 +11,8 @@ rwsh: $(objects)
 arg_script.o: argv.h argv_star_var.cc arg_script.h executable.h \
 	executable_map.h function.h read_dir.cc selection.h selection_read.cc \
 	variable_map.h
-argv.o: argv.h arg_script.h executable.h function.h tokenize.cc util.h
+argv.o: argv.h arg_script.h executable.h function.h tokenize.cc util.h \
+	variable_map.h
 builtin.o: argv.h arg_script.h builtin.h executable.h executable_map.h \
 	function.h read_dir.cc selection.h tokenize.cc variable_map.h
 command_stream.o: argv.h arg_script.h command_stream.h executable.h \

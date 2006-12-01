@@ -3,15 +3,20 @@
 class Variable_map_t : private std::map<std::string, std::string> {
   typedef std::map<std::string, std::string> Base;
   friend int printenv_bi(const Argv_t& argv);
-public:
-  Variable_map_t(void) : max_nesting(0) {};
-  const std::string& get(const std::string& key);
-  void set(const std::string& key, const std::string& value);
-  char** export_env(void);
 
+  unsigned max_nesting_v;
+public:
+  Variable_map_t(void) : max_nesting_v(0) {};
   static int dollar_question;
   static bool exit_requested;
-  unsigned max_nesting;};
+  unsigned max_nesting(void) {return max_nesting_v;};
+
+  bool add(const std::string& key, const std::string& value);
+  bool exists(const std::string& key) const;
+  const std::string& get(const std::string& key);
+  void set(const std::string& key, const std::string& value);
+  int unset(const std::string& key);
+  char** export_env(void) const;};
 
 extern int& dollar_question;
 

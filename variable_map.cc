@@ -20,24 +20,36 @@ int Variable_map_t::dollar_question = -1;
 int& dollar_question = Variable_map_t::dollar_question;
 bool Variable_map_t::exit_requested = false;
 
+bool Variable_map_t::add(const std::string& key, const std::string& value) {
+  std::pair<std::string, std::string> entry(key, value);
+  std::pair<iterator, bool> ret = insert(entry);
+  return !ret.second;}
+
+bool Variable_map_t::exists(const std::string& key) const {
+  std::map<std::string, std::string>::const_iterator i = find(key);
+  return i != end();}
+
 const std::string& Variable_map_t::get(const std::string& key) {
   if (key == "?") {
     std::ostringstream tmp; 
     tmp <<dollar_question;
     (*this)["?"] = tmp.str();}
-  std::map<std::string, std::string>::iterator i = find(key);
+  std::map<std::string, std::string>::const_iterator i = find(key);
   if (i == end()) return empty_str;
   else return find(key)->second;}
 
 void Variable_map_t::set(const std::string& key, const std::string& val) {
-  if (val != empty_str) (*this)[key] = val;
-  else {
-    std::map<std::string, std::string>::iterator i = find(key);
-    if (i != end()) erase(i);}
+  (*this)[key] = val;
   if (key == "MAX_NESTING") {
     int temp = atoi((*this)[key].c_str());
-    if (temp < 0) this->max_nesting = 0;
-    else this->max_nesting = temp;}}
+    if (temp < 0) this->max_nesting_v = 0;
+    else this->max_nesting_v = temp;}}
+
+int Variable_map_t::unset(const std::string& key) {
+  if (key == "MAX_NESTING" || key == "?") return 2;
+  std::map<std::string, std::string>::iterator i = find(key);
+  if (i != end()) {erase(i); return 0;}
+  else return 1;}
 
 template <class In>
 char** copy_to_char_star_star(In first, In last, char** res) {
@@ -50,7 +62,7 @@ char** copy_to_char_star_star(In first, In last, char** res) {
   return res;}
 
 // return the variable map in a way that can be passed to child processes
-char** Variable_map_t::export_env(void) {
+char** Variable_map_t::export_env(void) const {
   delete env;
   env = new char*[vars->size() + 1];
   copy_to_char_star_star(this->begin(), this->end(), env);

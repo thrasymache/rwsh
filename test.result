@@ -180,6 +180,65 @@ there
 0
 $
 0
+$# %global %unset %var_exists 
+0
+$%global
+-1
+ERRNO set to ARGS
+$%global x y z
+-1
+ERRNO set to ARGS
+$%unset
+-1
+ERRNO set to ARGS
+$%unset x y
+-1
+ERRNO set to ARGS
+$%var_exists
+-1
+ERRNO set to ARGS
+$%var_exists x y
+-1
+ERRNO set to ARGS
+$%global 100 nihilism
+2
+$%unset #
+3
+$%unset *
+3
+$%unset 1
+3
+$%unset MAX_NESTING
+2
+$%var_exists #
+0
+$%var_exists *
+0
+$%var_exists 0
+0
+$%var_exists 2
+1
+$%var_exists x
+1
+$%unset x
+1
+$%global x nihilism
+0
+$%var_exists x
+0
+$e $x
+nihilism
+0
+$%global x nihilism
+1
+$%unset x
+0
+$%var_exists x
+1
+$%return 0
+0
+$
+0
 $# %if %else_if %else
 0
 $%if
@@ -294,6 +353,8 @@ $# %printenv %importenv_preserve %set
 $%printenv
 ?=0
 CWD=/bin
+ERRNO=
+IF_TEST=
 MAX_NESTING=4
 last_command_return=0
 rc=/usr/share/rwsh/test_init.sh

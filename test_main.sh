@@ -69,6 +69,32 @@ b
 f g {e hi; f g {e there}; f h {e nothing here}; g}
 g
 
+# %global %unset %var_exists 
+%global
+%global x y z
+%unset
+%unset x y
+%var_exists
+%var_exists x y
+%global 100 nihilism
+%unset #
+%unset *
+%unset 1
+%unset MAX_NESTING
+%var_exists #
+%var_exists *
+%var_exists 0
+%var_exists 2
+%var_exists x
+%unset x
+%global x nihilism
+%var_exists x
+e $x
+%global x nihilism
+%unset x
+%var_exists x
+%return 0
+
 # %if %else_if %else
 %if
 %else_if

@@ -160,6 +160,10 @@ int function_bi(const Argv_t& argv) {
     executable_map.set(new Function_t(argv[1], argv.argfunction()));
     return 0;}}
 
+int global_bi(const Argv_t& argv) {
+  if (argv.size() != 3) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  else return argv.global_var(argv[1], argv[2]);}
+
 // import the external environment into the variable map, overwriting variables
 // that already exist
 int importenv_overwrite_bi(const Argv_t& argv) {
@@ -301,6 +305,59 @@ int test_not_equal_bi(const Argv_t& argv) {
   if (argv.size() != 3) {argv.set_var("ERRNO", "ARGS"); return -1;}
   else return argv[1] == argv[2];}
 
+int unset_bi(const Argv_t& argv) {
+  if (argv.size() != 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  else return argv.unset_var(argv[1]);}
+
+int var_add_bi(const Argv_t& argv) {
+  if (argv.size() != 3) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  const std::string& var_str = argv.get_var(argv[1]);
+  if (var_str == "") return 1; // variable does not exist
+  int var_term;
+  try {var_term = my_strtoi(var_str);}
+  catch (E_generic_t) {argv.set_var("ERRNO", "VAR_ADD_ERROR"); return -1;}
+  catch (E_nan_t) {argv.set_var("ERRNO", "VAR_NAN"); return -1;}
+  catch (E_range_t) {argv.set_var("ERRNO", "VAR_RANGE"); return -1;}
+  int const_term;
+  try {const_term = my_strtoi(argv[2]);}
+  catch (E_generic_t) {argv.set_var("ERRNO", "VAR_ADD_ERROR"); return -1;}
+  catch (E_nan_t) {argv.set_var("ERRNO", "CONST_NAN"); return -1;}
+  catch (E_range_t) {argv.set_var("ERRNO", "CONST_RANGE"); return -1;}
+  int sum = var_term + const_term;
+  int var_negative = var_term < 0;
+  if (var_negative == (const_term < 0) && var_negative != (sum < 0)) {
+    argv.set_var("ERRNO", "SUM_RANGE"); return -1;}
+  std::ostringstream tmp; 
+  tmp <<sum;
+  argv.set_var(argv[1], tmp.str());
+  return 0;}
+
+int var_exists_bi(const Argv_t& argv) {
+  if (argv.size() != 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  else return !argv.var_exists(argv[1]);}
+
+static const std::string version_str("0.2+");
+
+// write to standard output the version of rwsh
+int version_bi(const Argv_t& argv) {
+  if (argv.size() != 1) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  std::cout <<version_str;
+  return 0;}
+
+// write to standard output a list of the version with which this shell is 
+// compatible
+int version_available_bi(const Argv_t& argv) {
+  if (argv.size() != 1) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  std::cout <<version_str;
+  return 0;}
+
+// return true if the given version string is compatible with the version
+// of this shell
+int version_compatible_bi(const Argv_t& argv) {
+  if (argv.size() != 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  else if (argv[1] == version_str) return 0;
+  else return 1;}
+
 // print the string corresponding to the executable in the executable map with
 // key $1
 int which_executable_bi(const Argv_t& argv) {
@@ -383,49 +440,4 @@ int while_bi(const Argv_t& argv) {
         return -1;}
     else ret = 0;}
   return ret;}
-
-int var_add_bi(const Argv_t& argv) {
-  if (argv.size() != 3) {argv.set_var("ERRNO", "ARGS"); return -1;}
-  const std::string& var_str = argv.get_var(argv[1]);
-  if (var_str == "") return 1; // variable does not exist
-  int var_term;
-  try {var_term = my_strtoi(var_str);}
-  catch (E_generic_t) {argv.set_var("ERRNO", "VAR_ADD_ERROR"); return -1;}
-  catch (E_nan_t) {argv.set_var("ERRNO", "VAR_NAN"); return -1;}
-  catch (E_range_t) {argv.set_var("ERRNO", "VAR_RANGE"); return -1;}
-  int const_term;
-  try {const_term = my_strtoi(argv[2]);}
-  catch (E_generic_t) {argv.set_var("ERRNO", "VAR_ADD_ERROR"); return -1;}
-  catch (E_nan_t) {argv.set_var("ERRNO", "CONST_NAN"); return -1;}
-  catch (E_range_t) {argv.set_var("ERRNO", "CONST_RANGE"); return -1;}
-  int sum = var_term + const_term;
-  int var_negative = var_term < 0;
-  if (var_negative == (const_term < 0) && var_negative != (sum < 0)) {
-    argv.set_var("ERRNO", "SUM_RANGE"); return -1;}
-  std::ostringstream tmp; 
-  tmp <<sum;
-  argv.set_var(argv[1], tmp.str());
-  return 0;}
-
-static const std::string version_str("0.2+");
-
-// write to standard output the version of rwsh
-int version_bi(const Argv_t& argv) {
-  if (argv.size() != 1) {argv.set_var("ERRNO", "ARGS"); return -1;}
-  std::cout <<version_str;
-  return 0;}
-
-// write to standard output a list of the version with which this shell is 
-// compatible
-int version_available_bi(const Argv_t& argv) {
-  if (argv.size() != 1) {argv.set_var("ERRNO", "ARGS"); return -1;}
-  std::cout <<version_str;
-  return 0;}
-
-// return true if the given version string is compatible with the version
-// of this shell
-int version_compatible_bi(const Argv_t& argv) {
-  if (argv.size() != 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
-  else if (argv[1] == version_str) return 0;
-  else return 1;}
 
