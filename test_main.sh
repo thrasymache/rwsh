@@ -185,8 +185,6 @@ e $A
 w rwsh.init
 
 # %stepwise
-%set PREV $MAX_NESTING
-%set MAX_NESTING 12
 f wrapper {%set ERRNO x; a $* two; a $* three}
 f a {e $* one; e $* two; e $* three}
 f d {e $*; %stepwise $* {d $*}}
@@ -197,10 +195,12 @@ f d {e $*; %stepwise $* {d $*}}
 %stepwise wrapper 1 2 {e $*}
 f wrapper {a $* one; a $* two; a $* three}
 wrapper 1 2
+%stepwise wrapper 1 2 {d $*}
 %stepwise wrapper 1 2 {e $*}
+%set PREV $MAX_NESTING
+%set MAX_NESTING 12
 %stepwise wrapper 1 2 {d $*}
 %set MAX_NESTING $PREV 
-%stepwise wrapper 1 2 {d $*}
 
 # %test_equal %test_not_equal %test_not_empty
 %test_equal x

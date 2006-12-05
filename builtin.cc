@@ -56,14 +56,16 @@ static int if_core(const Argv_t& argv, bool logic) {
   Argv_t lookup(argv.begin()+1, argv.end(), 0);
   if (logic == !executable_map.run(lookup)) {
     if (Executable_t::unwind_stack()) return -1;
-    argv.set_var("IF_TEST", "");
+    argv.unset_var("IF_TEST");
     int ret;
     if (argv.argfunction())
       ret  = (*argv.argfunction())(Argv_t("rwsh.mapped_argfunction"));
     else ret = 0;
-    if (argv.get_var("IF_TEST") != "") {
-      argv.set_var("ERRNO", "BAD_IF_NEST"); ret = -1;}
-    argv.set_var("IF_TEST", "true");
+    if (argv.var_exists("IF_TEST")) {
+      argv.set_var("ERRNO", "BAD_IF_NEST");
+      argv.unset_var("IF_TEST");
+      ret = -1;}
+    else argv.global_var("IF_TEST", "true");
     return ret;}
   else return 0;}
 
@@ -72,10 +74,13 @@ static int if_core(const Argv_t& argv, bool logic) {
 int if_bi(const Argv_t& argv) {
   if (argv.get_var("ERRNO") != "") return dollar_question;
   else if (argv.size() < 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
-  else if (argv.get_var("IF_TEST") == "") {
-    argv.set_var("IF_TEST", "false"); 
+  else if (!argv.var_exists("IF_TEST")) {
+    argv.global_var("IF_TEST", "false"); 
     return if_core(argv, true);}
-  else {argv.set_var("ERRNO", "IF_BEFORE_ELSE"); return -1;}}
+  else {
+    argv.set_var("ERRNO", "IF_BEFORE_ELSE");
+    argv.unset_var("IF_TEST");
+    return -1;}}
 
 // run argfunction if ERRNO is set
 // returns the (second?) return value from argfunction
@@ -94,6 +99,8 @@ int if_errno_bi(const Argv_t& argv) {
 int else_if_bi(const Argv_t& argv) {
   if (argv.get_var("ERRNO") != "") return dollar_question;
   else if (argv.size() < 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  else if (!argv.var_exists("IF_TEST")) {
+    argv.set_var("ERRNO", "ELSE_WITHOUT_IF"); return -1;}
   else if (argv.get_var("IF_TEST") == "true") return dollar_question;
   else if (argv.get_var("IF_TEST") == "false") return if_core(argv, true);
   else {argv.set_var("ERRNO", "ELSE_WITHOUT_IF"); return -1;}}
@@ -103,6 +110,8 @@ int else_if_bi(const Argv_t& argv) {
 int else_if_not_bi(const Argv_t& argv) {
   if (argv.get_var("ERRNO") != "") return dollar_question;
   else if (argv.size() < 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  else if (!argv.var_exists("IF_TEST")) {
+    argv.set_var("ERRNO", "ELSE_WITHOUT_IF"); return -1;}
   else if (argv.get_var("IF_TEST") == "true") return dollar_question;
   else if (argv.get_var("IF_TEST") == "false") return if_core(argv, false);
   else {argv.set_var("ERRNO", "ELSE_WITHOUT_IF"); return -1;}}
@@ -113,16 +122,19 @@ int else_bi(const Argv_t& argv) {
   int ret;
   if (argv.get_var("ERRNO") != "") ret = dollar_question;
   else if (argv.size() != 1) {argv.set_var("ERRNO", "ARGS"); ret = -1;}
+  else if (!argv.var_exists("IF_TEST")) {
+    argv.set_var("ERRNO", "ELSE_WITHOUT_IF"); ret = -1;}
   else if (argv.get_var("IF_TEST") == "true") ret = dollar_question;
   else if (argv.get_var("IF_TEST") == "false") 
     if (argv.argfunction()) {
-      argv.set_var("IF_TEST", "");
+      argv.unset_var("IF_TEST");
       (*argv.argfunction())(Argv_t("rwsh.mapped_argfunction"));
-      if (argv.get_var("IF_TEST") != "") {argv.set_var("ERRNO", "BAD_IF_NEST"); ret = -1;}
+      if (argv.var_exists("IF_TEST")) {
+        argv.set_var("ERRNO", "BAD_IF_NEST"); ret = -1;}
       else ret = dollar_question;}
     else ret = 0;
   else {argv.set_var("ERRNO", "ELSE_WITHOUT_IF"); ret = -1;}
-  argv.set_var("IF_TEST", "");
+  argv.unset_var("IF_TEST");
   return ret;}
 
 // exit the shell
@@ -237,7 +249,7 @@ int selection_set_bi(const Argv_t& argv) {
 // set variable $1 to $*2
 int set_bi(const Argv_t& argv) {
   if (argv.size() < 3) {argv.set_var("ERRNO", "ARGS"); return -1;}
-  if (isargvar(argv[1])) return 1;
+  if (isargvar(argv[1]) || argv[1] == "IF_TEST") return 1;
   std::string dest("");
   if (argv.size() > 2) {
     for (Argv_t::const_iterator i = argv.begin()+2; i != argv.end()-1; ++i) 

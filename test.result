@@ -283,6 +283,7 @@ nested else_if
 ERRNO set to BAD_IF_NEST
 $%else {e else_if failed to appropriately set IF_TEST on exit; %return 13}
 -1
+ERRNO set to ELSE_WITHOUT_IF
 $%if %return 0 {%else_if %return 0 {e nested syntax; %return 14}}
 -1
 ERRNO set to ELSE_WITHOUT_IF
@@ -354,7 +355,6 @@ $%printenv
 ?=0
 CWD=/bin
 ERRNO=
-IF_TEST=
 MAX_NESTING=4
 last_command_return=0
 rc=/usr/share/rwsh/test_init.sh
@@ -472,10 +472,6 @@ $
 0
 $# %stepwise
 0
-$%set PREV $MAX_NESTING
-0
-$%set MAX_NESTING 12
-0
 $f wrapper {%set ERRNO x; a $* two; a $* three}
 0
 $f a {e $* one; e $* two; e $* three}
@@ -510,10 +506,18 @@ $wrapper 1 2
 1 2 three two
 1 2 three three
 0
+$%stepwise wrapper 1 2 {d $*}
+a 1 2 one
+rwsh.excessive_nesting : command not found ( rwsh.excessive_nesting a %stepwise d rwsh.mapped_argfunction wrapper %stepwise )
+-1
 $%stepwise wrapper 1 2 {e $*}
 a 1 2 one
 a 1 2 two
 a 1 2 three
+0
+$%set PREV $MAX_NESTING
+0
+$%set MAX_NESTING 12
 0
 $%stepwise wrapper 1 2 {d $*}
 a 1 2 one
@@ -549,14 +553,10 @@ e 1 2 three three
 2
 $%set MAX_NESTING $PREV 
 0
-$%stepwise wrapper 1 2 {d $*}
-a 1 2 one
-rwsh.excessive_nesting : command not found ( rwsh.excessive_nesting a %stepwise d rwsh.mapped_argfunction wrapper %stepwise )
--1
 $
--1
+0
 $# %test_equal %test_not_equal %test_not_empty
--1
+0
 $%test_equal x
 -1
 ERRNO set to ARGS
