@@ -1,5 +1,5 @@
 %function rwsh.before_command {%return $last_command_return}
-%function rwsh.after_command {%set last_command_return $?; %echo $last_command_return; %newline; %if_errno {%echo ERRNO set to $ERRNO; %newline; %set ERRNO \ }}
+%function rwsh.after_command {%set last_command_return $?; %echo $last_command_return; %newline; %if_errno {%echo ERRNO set to $ERRNO; %newline; %unset ERRNO}}
 %function rwsh.prompt {%echo \$}
 %function rwsh.vars {%internal_vars}
 %function # {%nop}
@@ -58,6 +58,8 @@ $f w {%which_executable $1 {rwsh.argfunction}}
 0
 $f e {%echo $*; %newline}
 0
+$f m {rwsh.argfunction}
+0
 $w e
 %function e {%echo $*; %newline}
 0
@@ -66,6 +68,9 @@ $w {}
 0
 $e text that doesn't have a prompt appended
 text that doesn't have a prompt appended
+0
+$m {e again}
+again
 0
 $
 0
@@ -93,6 +98,26 @@ $%echo
 ERRNO set to ARGS
 $%echo these are fixed strings
 these are fixed strings0
+$
+0
+$# %error_unit
+0
+$%error_unit
+-1
+ERRNO set to ARGFUNCTION
+$%error_unit {e $*0}
+rwsh.mapped_argfunction
+0
+$%error_unit x y z {e $*0; %global ERRNO X}
+rwsh.mapped_argfunction x y z
+0
+ERRNO set to X
+$m {%global ERRNO X; %error_unit {%var_exists ERRNO}} 
+1
+ERRNO set to X
+$m {%global ERRNO X; %error_unit {%var_exists ERRNO; %global ERRNO Y}} 
+0
+ERRNO set to X Y
 $
 0
 $# %for
@@ -295,10 +320,9 @@ $# %if_errno
 -1
 $rwsh.mapped_argfunction {%if_errno {e no error}; %set ERRNO x; %if_errno {e invented error $ERRNO}; %if_errno %return 0 {e doubled error $ERRNO}}
 invented error x
-doubled error x
-doubled error ARGS
+doubled error x ARGS
 0
-ERRNO set to ARGS
+ERRNO set to x ARGS
 $
 0
 $# %internal_errors %internal_features %internal_vars
@@ -317,7 +341,7 @@ rwsh.arguments_for_argfunction rwsh.binary_not_found rwsh.executable_not_found r
 $%internal_features
 rwsh.after_command rwsh.before_command rwsh.prompt rwsh.raw_command rwsh.run_logic rwsh.shutdown rwsh.vars0
 $%internal_vars
-CWD ERRNO FIGNORE IF_TEST0
+CWD ERRNO FIGNORE IF_TEST MAX_NESTING0
 $
 0
 $# %ls
@@ -349,23 +373,16 @@ $%nop 1 2 3 4 5
 0
 $
 0
-$# %printenv %importenv_preserve %set
+$# %printenv %set
 0
 $%printenv
 ?=0
+A=
 CWD=/bin
-ERRNO=
-MAX_NESTING=4
+FIGNORE=
+MAX_NESTING=5
 last_command_return=0
 rc=/usr/share/rwsh/test_init.sh
-0
-$%printenv SHELL
-
-0
-$%importenv_preserve
-0
-$%printenv SHELL
-/bin/bash
 0
 $%printenv A
 
@@ -508,14 +525,14 @@ $wrapper 1 2
 0
 $%stepwise wrapper 1 2 {d $*}
 a 1 2 one
-rwsh.excessive_nesting : command not found ( rwsh.excessive_nesting a %stepwise d rwsh.mapped_argfunction wrapper %stepwise )
+rwsh.excessive_nesting : command not found ( rwsh.excessive_nesting rwsh.mapped_argfunction a %stepwise d rwsh.mapped_argfunction wrapper %stepwise )
 -1
 $%stepwise wrapper 1 2 {e $*}
 a 1 2 one
 a 1 2 two
 a 1 2 three
 0
-$%set PREV $MAX_NESTING
+$%set A $MAX_NESTING
 0
 $%set MAX_NESTING 12
 0
@@ -551,7 +568,7 @@ e 1 2 three three
 %echo 1 2 three three
 %newline
 2
-$%set MAX_NESTING $PREV 
+$%set MAX_NESTING $A 
 0
 $
 0
@@ -637,31 +654,31 @@ $
 0
 $# %while
 0
-$%function tf {%test_not_equal $X $N}
+$%function tf {%test_not_equal $A $N}
 0
-$%set X 0
+$%set A 0
 0
 $%set N 4
 0
 $%while {e ARGS}
 -1
 ERRNO set to ARGS
-$%while tf {e printed; %set X 4}
+$%while tf {e printed; %set A 4}
 printed
 0
 $%while tf {e skipped}
 -1
-$%set X 0
+$%set A 0
 0
-$%while tf {e in %while argfunction $X; %var_add X 1}
+$%while tf {e in %while argfunction $A; %var_add A 1}
 in %while argfunction 0
 in %while argfunction 1
 in %while argfunction 2
 in %while argfunction 3
 0
-$%set X 0
+$%set A 0
 0
-$%while tf {%if %return $X {%set X 1}; %else {%function tf {%return 1}}; e in overwriting argfunction;}
+$%while tf {%if %return $A {%set A 1}; %else {%function tf {%return 1}}; e in overwriting argfunction;}
 in overwriting argfunction
 in overwriting argfunction
 0
@@ -672,49 +689,50 @@ $# %var_add
 $%var_add
 -1
 ERRNO set to ARGS
-$%var_add x 1 2
+$%var_add A 1 2
 -1
 ERRNO set to ARGS
-$%set x A
+$%set A A
 0
-$%var_add x 2 
+$%var_add A 2 
 -1
 ERRNO set to VAR_NAN
-$%set x 3000000000
+$%set A 3000000000
 0
-$%var_add x 2 
+$%var_add A 2 
 -1
 ERRNO set to VAR_RANGE
-$%set x -2147483648
+$%set A -2147483648
 0
-$%var_add x A
+$%var_add A A
 -1
 ERRNO set to CONST_NAN
-$%var_add x 3000000000
+$%var_add A 3000000000
 -1
 ERRNO set to CONST_RANGE
-$%var_add x -2147483648
+$%var_add A -2147483648
 -1
 ERRNO set to SUM_RANGE
-$%var_add x 2147483647
+$%var_add A 2147483647
 0
-$%var_add x 2147483647
+$%var_add A 2147483647
 0
-$e $x
+$e $A
 2147483646
 0
-$%var_add x 2147483647
+$%var_add A 2147483647
 -1
 ERRNO set to SUM_RANGE
-$%var_add x -2147483648
+$%var_add A -2147483648
 0
-$e $x
+$e $A
 -2
 0
-$%var_add x $x
-0
-$e $x
--4
+$%var_add A $x
+-1
+ERRNO set to CONST_NAN
+$e $A
+-2
 0
 $
 0
@@ -752,6 +770,8 @@ $
 65280
 $# arg_script tests
 65280
+$%set A /bin
+0
 $e 5 4 3 2 1
 5 4 3 2 1
 0
@@ -814,7 +834,7 @@ $# all of these are used as part of the test itself. If this changes, then the
 $# following tests will fail.
 0
 $w rwsh.after_command
-%function rwsh.after_command {%set last_command_return $?; %echo $last_command_return; %newline; %if_errno {%echo ERRNO set to $ERRNO; %newline; %set ERRNO \ }}
+%function rwsh.after_command {%set last_command_return $?; %echo $last_command_return; %newline; %if_errno {%echo ERRNO set to $ERRNO; %newline; %unset ERRNO}}
 0
 $w rwsh.prompt
 %function rwsh.prompt {%echo \$}
@@ -841,6 +861,8 @@ rwsh.before_command f rwsh.before_command
 $
 0
 $# rwsh.autofunction %autofunction %which_path
+0
+$%global PATH /bin:/usr/bin
 0
 $f rwsh.autofunction {%autofunction $1 \$*}
 0
@@ -898,15 +920,15 @@ $f g {h}
 $f h {g}
 0
 $g
-rwsh.excessive_nesting : command not found ( rwsh.excessive_nesting h g h g h g )
+rwsh.excessive_nesting : command not found ( rwsh.excessive_nesting g h g h g h g )
 -1
 $f rwsh.excessive_nesting {h}
 0
 $g
 signal handler itself triggered signal
-h g h g h rwsh.excessive_nesting
+g h g h g h rwsh.excessive_nesting
 original call stack:
-h g h g h g
+g h g h g h g
 0
 $
 0
@@ -929,10 +951,32 @@ $
 $# rwsh.vars
 0
 $rwsh.vars
-CWD ERRNO FIGNORE IF_TEST0
+CWD ERRNO FIGNORE IF_TEST MAX_NESTING0
 $
 0
-$# %importenv_overwrite
+$# check for extraneous variables
+0
+$%printenv
+?=0
+A=/bin
+CWD=/bin
+FIGNORE=include
+MAX_NESTING=5
+N=4
+PATH=/bin:/usr/bin
+last_command_return=0
+rc=/usr/share/rwsh/test_init.sh
+0
+$
+0
+$# %importenv_preserve %importenv_overwrite
+0
+$%set SHELL /bin/rwsh
+0
+$%importenv_preserve
+0
+$%printenv SHELL
+/bin/rwsh
 0
 $%set SHELL /bin/rwsh
 0

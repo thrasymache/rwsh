@@ -22,15 +22,16 @@ class Argv_t : private std::vector<std::string> {
   void set_argfunction(Function_t* val) {argfunction_v = val;};
 
 // variables
-  int global_var(const std::string& key, const std::string& value) const;
-  bool var_exists(const std::string& key) const;
-  std::string get_var(const std::string& key) const;
-  void set_var(const std::string& key, const std::string& value) const;
-  int unset_var(const std::string& key) const;
-  unsigned max_nesting(void) const;
+  void append_to_errno(const std::string& value) const;
   char** export_env(void) const;
+  std::string get_var(const std::string& key) const;
+  int global_var(const std::string& key, const std::string& value) const;
+  unsigned max_nesting(void) const;
+  void set_var(const std::string& key, const std::string& value) const;
   template<class Out> 
   Out star_var(const std::string& key, unsigned reference_level, Out res) const;
+  int unset_var(const std::string& key) const;
+  bool var_exists(const std::string& key) const;
 
 // vector semantics
   typedef Base::value_type value_type;

@@ -21,9 +21,11 @@
 %function f {%function $1 {rwsh.argfunction}}
 f w {%which_executable $1 {rwsh.argfunction}}
 f e {%echo $*; %newline}
+f m {rwsh.argfunction}
 w e
 w {}
 e text that doesn't have a prompt appended
+m {e again}
 
 # builtin tests
 # %cd
@@ -35,6 +37,13 @@ e text that doesn't have a prompt appended
 # %echo
 %echo
 %echo these are fixed strings
+
+# %error_unit
+%error_unit
+%error_unit {e $*0}
+%error_unit x y z {e $*0; %global ERRNO X}
+m {%global ERRNO X; %error_unit {%var_exists ERRNO}} 
+m {%global ERRNO X; %error_unit {%var_exists ERRNO; %global ERRNO Y}} 
 
 # %for
 %for {e no arguments $1}
@@ -138,11 +147,8 @@ rwsh.mapped_argfunction {%if_errno {e no error}; %set ERRNO x; %if_errno {e inve
 %nop
 %nop 1 2 3 4 5
 
-# %printenv %importenv_preserve %set
+# %printenv %set
 %printenv
-%printenv SHELL
-%importenv_preserve
-%printenv SHELL
 %printenv A
 %set A
 %set 1 1
@@ -197,10 +203,10 @@ f wrapper {a $* one; a $* two; a $* three}
 wrapper 1 2
 %stepwise wrapper 1 2 {d $*}
 %stepwise wrapper 1 2 {e $*}
-%set PREV $MAX_NESTING
+%set A $MAX_NESTING
 %set MAX_NESTING 12
 %stepwise wrapper 1 2 {d $*}
-%set MAX_NESTING $PREV 
+%set MAX_NESTING $A 
 
 # %test_equal %test_not_equal %test_not_empty
 %test_equal x
@@ -236,36 +242,36 @@ wrapper 1 2
 %which_return #
 
 # %while
-%function tf {%test_not_equal $X $N}
-%set X 0
+%function tf {%test_not_equal $A $N}
+%set A 0
 %set N 4
 %while {e ARGS}
-%while tf {e printed; %set X 4}
+%while tf {e printed; %set A 4}
 %while tf {e skipped}
-%set X 0
-%while tf {e in %while argfunction $X; %var_add X 1}
-%set X 0
-%while tf {%if %return $X {%set X 1}; %else {%function tf {%return 1}}; e in overwriting argfunction;}
+%set A 0
+%while tf {e in %while argfunction $A; %var_add A 1}
+%set A 0
+%while tf {%if %return $A {%set A 1}; %else {%function tf {%return 1}}; e in overwriting argfunction;}
 
 # %var_add
 %var_add
-%var_add x 1 2
-%set x A
-%var_add x 2 
-%set x 3000000000
-%var_add x 2 
-%set x -2147483648
-%var_add x A
-%var_add x 3000000000
-%var_add x -2147483648
-%var_add x 2147483647
-%var_add x 2147483647
-e $x
-%var_add x 2147483647
-%var_add x -2147483648
-e $x
-%var_add x $x
-e $x
+%var_add A 1 2
+%set A A
+%var_add A 2 
+%set A 3000000000
+%var_add A 2 
+%set A -2147483648
+%var_add A A
+%var_add A 3000000000
+%var_add A -2147483648
+%var_add A 2147483647
+%var_add A 2147483647
+e $A
+%var_add A 2147483647
+%var_add A -2147483648
+e $A
+%var_add A $x
+e $A
 
 # %version %version_available %version_compatible
 %version 1.0
@@ -281,6 +287,7 @@ e $x
 /bn/echo 1 2 3
 
 # arg_script tests
+%set A /bin
 e 5 4 3 2 1
 e $A $0 @$A
 e 1 2 $* 3 4
@@ -314,6 +321,7 @@ f rwsh.before_command {%echo $*0; %newline}
 f rwsh.before_command
 
 # rwsh.autofunction %autofunction %which_path
+%global PATH /bin:/usr/bin
 f rwsh.autofunction {%autofunction $1 \$*}
 w false
 %which_path false
@@ -351,7 +359,13 @@ f rwsh.run_logic {%if %return $1; %else_if $*2; %else}
 # rwsh.vars
 rwsh.vars
 
-# %importenv_overwrite
+# check for extraneous variables
+%printenv
+
+# %importenv_preserve %importenv_overwrite
+%set SHELL /bin/rwsh
+%importenv_preserve
+%printenv SHELL
 %set SHELL /bin/rwsh
 %printenv SHELL
 %importenv_overwrite

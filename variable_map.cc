@@ -13,17 +13,28 @@
 #include "variable_map.h"
 
 char** env;
-Variable_map_t root_variable_map;
+Variable_map_t root_variable_map(true);
 Variable_map_t* vars = &root_variable_map;
 const std::string empty_str;
 int Variable_map_t::dollar_question = -1;
 int& dollar_question = Variable_map_t::dollar_question;
 bool Variable_map_t::exit_requested = false;
 
+Variable_map_t::Variable_map_t(bool root) : max_nesting_v(0) {
+  if(root) {
+    add("?", "");
+    add("CWD", "");
+    add("FIGNORE", "");
+    add("MAX_NESTING", "0");}}
+
 bool Variable_map_t::add(const std::string& key, const std::string& value) {
   std::pair<std::string, std::string> entry(key, value);
   std::pair<iterator, bool> ret = insert(entry);
   return !ret.second;}
+
+void Variable_map_t::append_to_errno(const std::string& value) {
+  if (exists("ERRNO")) set("ERRNO", get("ERRNO") + " " + value);
+  else add("ERRNO", value);}
 
 bool Variable_map_t::exists(const std::string& key) const {
   std::map<std::string, std::string>::const_iterator i = find(key);
@@ -46,7 +57,8 @@ void Variable_map_t::set(const std::string& key, const std::string& val) {
     else this->max_nesting_v = temp;}}
 
 int Variable_map_t::unset(const std::string& key) {
-  if (key == "MAX_NESTING" || key == "?") return 2;
+  if (key == "MAX_NESTING" || key == "FIGNORE" || key == "?" || 
+      key == "CWD") return 2;
   std::map<std::string, std::string>::iterator i = find(key);
   if (i != end()) {erase(i); return 0;}
   else return 1;}

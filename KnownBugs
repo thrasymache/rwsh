@@ -36,3 +36,5 @@ CWD is not set at startup
 
 %stepwise refuses to step through all builtins, including control flow builtins,
 like %while and %source that clearly have separable parts.
+
+many simple tasks (such as setf) require the use of global variable, which, besides being clumsy, prevents you from setf'ing that variable

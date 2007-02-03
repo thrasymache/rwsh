@@ -6,7 +6,7 @@ class Variable_map_t : private std::map<std::string, std::string> {
 
   unsigned max_nesting_v;
 public:
-  Variable_map_t(void) : max_nesting_v(0) {};
+  Variable_map_t(bool root);
   static int dollar_question;
   static bool exit_requested;
   unsigned max_nesting(void) {return max_nesting_v;};
@@ -16,6 +16,7 @@ public:
   const std::string& get(const std::string& key);
   void set(const std::string& key, const std::string& value);
   int unset(const std::string& key);
+  void append_to_errno(const std::string& value);
   char** export_env(void) const;};
 
 extern int& dollar_question;

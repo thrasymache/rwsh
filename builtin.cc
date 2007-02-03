@@ -33,120 +33,54 @@ extern char** environ;
 // change the current directory to the one given
 // returns the error returned from chdir
 int cd_bi(const Argv_t& argv) {
-  if (argv.size() != 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
   errno = 0;
   int ret = chdir(argv[1].c_str());
   if (!ret) argv.set_var("CWD", argv[1]);
-  else if (errno == ENOENT) argv.set_var("ERRNO", "NOENT");
-  else if (errno == ENOTDIR) argv.set_var("ERRNO", "NOTDIR"); 
-  else argv.set_var("ERRNO", "CD_ERROR"); 
+  else if (errno == ENOENT) argv.append_to_errno("NOENT");
+  else if (errno == ENOTDIR) argv.append_to_errno("NOTDIR"); 
+  else argv.append_to_errno("CD_ERROR"); 
   errno = 0;
   return ret;}
 
 // echo arguments to standard output
 int echo_bi(const Argv_t& argv) {
-  if (argv.size() < 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  if (argv.size() < 2) {argv.append_to_errno("ARGS"); return -1;}
   for (Argv_t::const_iterator i = argv.begin()+1; i != argv.end()-1; ++i)
     std::cout <<*i <<' ';
   std::cout <<argv.back();
   std::cout.flush();
   return 0;}
 
-static int if_core(const Argv_t& argv, bool logic) {
-  Argv_t lookup(argv.begin()+1, argv.end(), 0);
-  if (logic == !executable_map.run(lookup)) {
-    if (Executable_t::unwind_stack()) return -1;
-    argv.unset_var("IF_TEST");
-    int ret;
-    if (argv.argfunction())
-      ret  = (*argv.argfunction())(Argv_t("rwsh.mapped_argfunction"));
-    else ret = 0;
-    if (argv.var_exists("IF_TEST")) {
-      argv.set_var("ERRNO", "BAD_IF_NEST");
-      argv.unset_var("IF_TEST");
-      ret = -1;}
-    else argv.global_var("IF_TEST", "true");
-    return ret;}
-  else return 0;}
-
-// run argfunction if $* returns true
-// returns the value returned by the argfunction
-int if_bi(const Argv_t& argv) {
-  if (argv.get_var("ERRNO") != "") return dollar_question;
-  else if (argv.size() < 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
-  else if (!argv.var_exists("IF_TEST")) {
-    argv.global_var("IF_TEST", "false"); 
-    return if_core(argv, true);}
-  else {
-    argv.set_var("ERRNO", "IF_BEFORE_ELSE");
-    argv.unset_var("IF_TEST");
-    return -1;}}
-
-// run argfunction if ERRNO is set
-// returns the (second?) return value from argfunction
-int if_errno_bi(const Argv_t& argv) {
-  int ret = 0;
-  if (argv.get_var("ERRNO") != "" && argv.argfunction()) 
-    ret = (*argv.argfunction())(Argv_t("rwsh.mapped_argfunction"));
-  if (argv.size() != 1) {
-    argv.set_var("ERRNO", "ARGS");
-    if (argv.argfunction()) 
-      ret = (*argv.argfunction())(Argv_t("rwsh.mapped_argfunction"));}
-  return ret;}
-
-// run argfunction if IF_TEST is false and $* returns true
-// returns the value returned by the argfunction
-int else_if_bi(const Argv_t& argv) {
-  if (argv.get_var("ERRNO") != "") return dollar_question;
-  else if (argv.size() < 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
-  else if (!argv.var_exists("IF_TEST")) {
-    argv.set_var("ERRNO", "ELSE_WITHOUT_IF"); return -1;}
-  else if (argv.get_var("IF_TEST") == "true") return dollar_question;
-  else if (argv.get_var("IF_TEST") == "false") return if_core(argv, true);
-  else {argv.set_var("ERRNO", "ELSE_WITHOUT_IF"); return -1;}}
-
-// run argfunction if IF_TEST is false and $* returns false
-// returns the value returned by the argfunction
-int else_if_not_bi(const Argv_t& argv) {
-  if (argv.get_var("ERRNO") != "") return dollar_question;
-  else if (argv.size() < 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
-  else if (!argv.var_exists("IF_TEST")) {
-    argv.set_var("ERRNO", "ELSE_WITHOUT_IF"); return -1;}
-  else if (argv.get_var("IF_TEST") == "true") return dollar_question;
-  else if (argv.get_var("IF_TEST") == "false") return if_core(argv, false);
-  else {argv.set_var("ERRNO", "ELSE_WITHOUT_IF"); return -1;}}
-
-// run argfunction if IF_TEST is false 
-// returns the value returned by the argfunction
-int else_bi(const Argv_t& argv) {
-  int ret;
-  if (argv.get_var("ERRNO") != "") ret = dollar_question;
-  else if (argv.size() != 1) {argv.set_var("ERRNO", "ARGS"); ret = -1;}
-  else if (!argv.var_exists("IF_TEST")) {
-    argv.set_var("ERRNO", "ELSE_WITHOUT_IF"); ret = -1;}
-  else if (argv.get_var("IF_TEST") == "true") ret = dollar_question;
-  else if (argv.get_var("IF_TEST") == "false") 
-    if (argv.argfunction()) {
-      argv.unset_var("IF_TEST");
-      (*argv.argfunction())(Argv_t("rwsh.mapped_argfunction"));
-      if (argv.var_exists("IF_TEST")) {
-        argv.set_var("ERRNO", "BAD_IF_NEST"); ret = -1;}
-      else ret = dollar_question;}
-    else ret = 0;
-  else {argv.set_var("ERRNO", "ELSE_WITHOUT_IF"); ret = -1;}
-  argv.unset_var("IF_TEST");
-  return ret;}
+// unset ERRNO while running argfunction, then merge errors
+int error_unit_bi(const Argv_t& argv) {
+  if (!argv.argfunction()) {argv.append_to_errno("ARGFUNCTION"); return -1;}
+  Argv_t inner_args("rwsh.mapped_argfunction");
+  copy(argv.begin()+1, argv.end(), std::back_inserter(inner_args));
+  std::string saved_errno;
+  bool previous_error;
+  if (argv.var_exists("ERRNO")) {
+    previous_error = true;
+    saved_errno = argv.get_var("ERRNO");
+    argv.unset_var("ERRNO");}
+  else previous_error = false;
+  (*argv.argfunction())(inner_args);
+  if (previous_error)
+    if (argv.var_exists("ERRNO"))
+      argv.set_var("ERRNO", saved_errno + " " + argv.get_var("ERRNO"));
+    else argv.global_var("ERRNO", saved_errno);
+  return dollar_question;}
 
 // exit the shell
 int exit_bi(const Argv_t& argv) {
-  if (argv.size() != 1) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  if (argv.size() != 1) {argv.append_to_errno("ARGS"); return -1;}
   Variable_map_t::exit_requested = true;
   return 0;}
 
 // run the argfunction for each argument, passing that value as the argument
 // returns the value returned by the argfunction
 int for_bi(const Argv_t& argv) {
-  if (argv.size() < 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  if (argv.size() < 2) {argv.append_to_errno("ARGS"); return -1;}
   int ret = -1;
   Argv_t body("rwsh.mapped_argfunction");
   body.push_back("");
@@ -154,14 +88,14 @@ int for_bi(const Argv_t& argv) {
     if (argv.argfunction()) {
       body[1] = *i;
       ret  = (*argv.argfunction())(body);
-      if (Executable_t::unwind_stack() || argv.get_var("ERRNO") != "") 
+      if (Executable_t::unwind_stack() || argv.var_exists("ERRNO")) 
         return -1;}
     else ret = 0;}
   return ret;}
 
 // add argfunction to executable map with name $1
 int function_bi(const Argv_t& argv) {
-  if (argv.size() != 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
   else if (is_binary_name(argv[1])) return 1;
   else if (is_builtin_name(argv[1])) return 2;
   else if (is_argfunction_name(argv[1])) return 3;
@@ -173,13 +107,94 @@ int function_bi(const Argv_t& argv) {
     return 0;}}
 
 int global_bi(const Argv_t& argv) {
-  if (argv.size() != 3) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  if (argv.size() != 3) {argv.append_to_errno("ARGS"); return -1;}
   else return argv.global_var(argv[1], argv[2]);}
+
+static int if_core(const Argv_t& argv, bool logic) {
+  Argv_t lookup(argv.begin()+1, argv.end(), 0);
+  if (logic == !executable_map.run(lookup)) {
+    if (Executable_t::unwind_stack()) return -1;
+    argv.unset_var("IF_TEST");
+    int ret;
+    if (argv.argfunction())
+      ret  = (*argv.argfunction())(Argv_t("rwsh.mapped_argfunction"));
+    else ret = 0;
+    if (argv.var_exists("IF_TEST")) {
+      argv.append_to_errno("BAD_IF_NEST");
+      argv.unset_var("IF_TEST");
+      ret = -1;}
+    else argv.global_var("IF_TEST", "true");
+    return ret;}
+  else return 0;}
+
+// run argfunction if $* returns true
+// returns the value returned by the argfunction
+int if_bi(const Argv_t& argv) {
+  if (argv.var_exists("ERRNO")) return dollar_question;
+  else if (argv.size() < 2) {argv.append_to_errno("ARGS"); return -1;}
+  else if (!argv.var_exists("IF_TEST")) {
+    argv.global_var("IF_TEST", "false"); 
+    return if_core(argv, true);}
+  else {
+    argv.append_to_errno("IF_BEFORE_ELSE");
+    argv.unset_var("IF_TEST");
+    return -1;}}
+
+// run argfunction if ERRNO is set
+// returns the (second?) return value from argfunction
+int if_errno_bi(const Argv_t& argv) {
+  if (argv.size() != 1) argv.append_to_errno("ARGS");
+  if (argv.var_exists("ERRNO") && argv.argfunction()) 
+    return (*argv.argfunction())(Argv_t("rwsh.mapped_argfunction"));
+  else return 0;}
+
+// run argfunction if IF_TEST is false and $* returns true
+// returns the value returned by the argfunction
+int else_if_bi(const Argv_t& argv) {
+  if (argv.var_exists("ERRNO")) return dollar_question;
+  else if (argv.size() < 2) {argv.append_to_errno("ARGS"); return -1;}
+  else if (!argv.var_exists("IF_TEST")) {
+    argv.append_to_errno("ELSE_WITHOUT_IF"); return -1;}
+  else if (argv.get_var("IF_TEST") == "true") return dollar_question;
+  else if (argv.get_var("IF_TEST") == "false") return if_core(argv, true);
+  else {argv.append_to_errno("ELSE_WITHOUT_IF"); return -1;}}
+
+// run argfunction if IF_TEST is false and $* returns false
+// returns the value returned by the argfunction
+int else_if_not_bi(const Argv_t& argv) {
+  if (argv.var_exists("ERRNO")) return dollar_question;
+  else if (argv.size() < 2) {argv.append_to_errno("ARGS"); return -1;}
+  else if (!argv.var_exists("IF_TEST")) {
+    argv.append_to_errno("ELSE_WITHOUT_IF"); return -1;}
+  else if (argv.get_var("IF_TEST") == "true") return dollar_question;
+  else if (argv.get_var("IF_TEST") == "false") return if_core(argv, false);
+  else {argv.append_to_errno("ELSE_WITHOUT_IF"); return -1;}}
+
+// run argfunction if IF_TEST is false 
+// returns the value returned by the argfunction
+int else_bi(const Argv_t& argv) {
+  int ret;
+  if (argv.var_exists("ERRNO")) ret = dollar_question;
+  else if (argv.size() != 1) {argv.append_to_errno("ARGS"); ret = -1;}
+  else if (!argv.var_exists("IF_TEST")) {
+    argv.append_to_errno("ELSE_WITHOUT_IF"); ret = -1;}
+  else if (argv.get_var("IF_TEST") == "true") ret = dollar_question;
+  else if (argv.get_var("IF_TEST") == "false") 
+    if (argv.argfunction()) {
+      argv.unset_var("IF_TEST");
+      (*argv.argfunction())(Argv_t("rwsh.mapped_argfunction"));
+      if (argv.var_exists("IF_TEST")) {
+        argv.append_to_errno("BAD_IF_NEST"); ret = -1;}
+      else ret = dollar_question;}
+    else ret = 0;
+  else {argv.append_to_errno("ELSE_WITHOUT_IF"); ret = -1;}
+  argv.unset_var("IF_TEST");
+  return ret;}
 
 // import the external environment into the variable map, overwriting variables
 // that already exist
 int importenv_overwrite_bi(const Argv_t& argv) {
-  if (argv.size() != 1) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  if (argv.size() != 1) {argv.append_to_errno("ARGS"); return -1;}
   for (char** i=environ; *i; ++i) {
     std::string src(*i);
     std::string::size_type div = src.find("=");
@@ -190,7 +205,7 @@ int importenv_overwrite_bi(const Argv_t& argv) {
 // import the external environment into the variable map, preserving variables
 // that already exist
 int importenv_preserve_bi(const Argv_t& argv) {
-  if (argv.size() != 1) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  if (argv.size() != 1) {argv.append_to_errno("ARGS"); return -1;}
   for (char** i=environ; *i; ++i) {
     std::string src(*i);
     std::string::size_type div = src.find("=");
@@ -200,7 +215,7 @@ int importenv_preserve_bi(const Argv_t& argv) {
 
 // list the files specified by the arguments if they exist
 int ls_bi(const Argv_t& argv) {
-  if (argv.size() < 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  if (argv.size() < 2) {argv.append_to_errno("ARGS"); return -1;}
   struct stat sb;
   for (Argv_t::const_iterator i=argv.begin(); i != argv.end(); ++i) 
     if (!stat(i->c_str(), &sb)) std::cout <<*i <<'\n';
@@ -208,7 +223,7 @@ int ls_bi(const Argv_t& argv) {
 
 // write a newline to the standard output
 int newline_bi(const Argv_t& argv) {
-  if (argv.size() != 1) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  if (argv.size() != 1) {argv.append_to_errno("ARGS"); return -1;}
   else {std::cout <<std::endl; return 0;}}
 
 // ignore arguments, and then do nothing
@@ -230,15 +245,15 @@ int printenv_bi(const Argv_t& argv) {
 
 // return the value given by the argument
 int return_bi(const Argv_t& argv) {
-  if (argv.size() != 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
   try {return my_strtoi(argv[1]);}
-  catch (E_generic_t) {argv.set_var("ERRNO", "RETURN_ERROR"); return -1;}
-  catch (E_nan_t) {argv.set_var("ERRNO", "NAN"); return -1;}
-  catch (E_range_t) {argv.set_var("ERRNO", "RANGE"); return -1;}}
+  catch (E_generic_t) {argv.append_to_errno("RETURN_ERROR"); return -1;}
+  catch (E_nan_t) {argv.append_to_errno("NAN"); return -1;}
+  catch (E_range_t) {argv.append_to_errno("RANGE"); return -1;}}
 
 // modify variable $1 as a selection according to $2
 int selection_set_bi(const Argv_t& argv) {
-  if (argv.size() < 3) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  if (argv.size() < 3) {argv.append_to_errno("ARGS"); return -1;}
   std::vector<Entry_pattern_t> focus;
   str_to_entry_pattern_vector(argv.get_var(argv[1]), focus);
   for (Argv_t::const_iterator i = argv.begin()+2; i != argv.end(); ++i) 
@@ -248,7 +263,7 @@ int selection_set_bi(const Argv_t& argv) {
 
 // set variable $1 to $*2
 int set_bi(const Argv_t& argv) {
-  if (argv.size() < 3) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  if (argv.size() < 3) {argv.append_to_errno("ARGS"); return -1;}
   if (isargvar(argv[1]) || argv[1] == "IF_TEST") return 1;
   std::string dest("");
   if (argv.size() > 2) {
@@ -262,10 +277,10 @@ int set_bi(const Argv_t& argv) {
 // to that script
 // returns last return value from script, -1 if empty
 int source_bi(const Argv_t& argv) {
-  if (argv.size() < 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  if (argv.size() < 2) {argv.append_to_errno("ARGS"); return -1;}
   struct stat sb;
-  if (stat(argv[1].c_str(), &sb)) {argv.set_var("ERRNO", "NOENT"); return -1;}
-  if (!(sb.st_mode & S_IXUSR)) {argv.set_var("ERRNO", "NOEXEC"); return -1;}
+  if (stat(argv[1].c_str(), &sb)) {argv.append_to_errno("NOENT"); return -1;}
+  if (!(sb.st_mode & S_IXUSR)) {argv.append_to_errno("NOEXEC"); return -1;}
   std::ifstream src(argv[1].c_str(), std::ios_base::in);
   Argv_t script_arg(argv);
   Command_stream_t script(src);
@@ -282,8 +297,8 @@ int source_bi(const Argv_t& argv) {
 // run the argument function once with each command in the specified function
 // invocation
 int stepwise_bi(const Argv_t& argv) {
-  if (argv.size() < 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
-  if (!argv.argfunction()) {argv.set_var("ERRNO", "ARGFUNCTION"); return -1;}
+  if (argv.size() < 2) {argv.append_to_errno("ARGS"); return -1;}
+  if (!argv.argfunction()) {argv.append_to_errno("ARGFUNCTION"); return -1;}
   Argv_t lookup(argv.begin()+1, argv.end(), 0);
   Executable_t* e = executable_map.find(lookup);
   if (!e) return 1;  // executable not found
@@ -296,7 +311,7 @@ int stepwise_bi(const Argv_t& argv) {
     Argv_t body = i->interpret(lookup);
     body.push_front("rwsh.mapped_argfunction");
     ret  = (*argv.argfunction())(body);
-    if (Executable_t::unwind_stack() || argv.get_var("ERRNO") != "") {
+    if (Executable_t::unwind_stack() || argv.var_exists("ERRNO")) {
       ret = -1;
       break;}}
   if (f->decrement_nesting(lookup)) ret = dollar_question;
@@ -304,76 +319,76 @@ int stepwise_bi(const Argv_t& argv) {
 
 // return true if the two strings are the same
 int test_equal_bi(const Argv_t& argv) {
-  if (argv.size() != 3) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  if (argv.size() != 3) {argv.append_to_errno("ARGS"); return -1;}
   else return argv[1] != argv[2];}
 
 // return true if the string is not empty
 int test_not_empty_bi(const Argv_t& argv) {
-  if (argv.size() != 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
   else return !argv[1].length();}
 
 // return true if the two strings are different 
 int test_not_equal_bi(const Argv_t& argv) {
-  if (argv.size() != 3) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  if (argv.size() != 3) {argv.append_to_errno("ARGS"); return -1;}
   else return argv[1] == argv[2];}
 
 int unset_bi(const Argv_t& argv) {
-  if (argv.size() != 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
   else return argv.unset_var(argv[1]);}
 
 int var_add_bi(const Argv_t& argv) {
-  if (argv.size() != 3) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  if (argv.size() != 3) {argv.append_to_errno("ARGS"); return -1;}
   const std::string& var_str = argv.get_var(argv[1]);
   if (var_str == "") return 1; // variable does not exist
   int var_term;
   try {var_term = my_strtoi(var_str);}
-  catch (E_generic_t) {argv.set_var("ERRNO", "VAR_ADD_ERROR"); return -1;}
-  catch (E_nan_t) {argv.set_var("ERRNO", "VAR_NAN"); return -1;}
-  catch (E_range_t) {argv.set_var("ERRNO", "VAR_RANGE"); return -1;}
+  catch (E_generic_t) {argv.append_to_errno("VAR_ADD_ERROR"); return -1;}
+  catch (E_nan_t) {argv.append_to_errno("VAR_NAN"); return -1;}
+  catch (E_range_t) {argv.append_to_errno("VAR_RANGE"); return -1;}
   int const_term;
   try {const_term = my_strtoi(argv[2]);}
-  catch (E_generic_t) {argv.set_var("ERRNO", "VAR_ADD_ERROR"); return -1;}
-  catch (E_nan_t) {argv.set_var("ERRNO", "CONST_NAN"); return -1;}
-  catch (E_range_t) {argv.set_var("ERRNO", "CONST_RANGE"); return -1;}
+  catch (E_generic_t) {argv.append_to_errno("VAR_ADD_ERROR"); return -1;}
+  catch (E_nan_t) {argv.append_to_errno("CONST_NAN"); return -1;}
+  catch (E_range_t) {argv.append_to_errno("CONST_RANGE"); return -1;}
   int sum = var_term + const_term;
   int var_negative = var_term < 0;
   if (var_negative == (const_term < 0) && var_negative != (sum < 0)) {
-    argv.set_var("ERRNO", "SUM_RANGE"); return -1;}
+    argv.append_to_errno("SUM_RANGE"); return -1;}
   std::ostringstream tmp; 
   tmp <<sum;
   argv.set_var(argv[1], tmp.str());
   return 0;}
 
 int var_exists_bi(const Argv_t& argv) {
-  if (argv.size() != 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
   else return !argv.var_exists(argv[1]);}
 
 static const std::string version_str("0.2+");
 
 // write to standard output the version of rwsh
 int version_bi(const Argv_t& argv) {
-  if (argv.size() != 1) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  if (argv.size() != 1) {argv.append_to_errno("ARGS"); return -1;}
   std::cout <<version_str;
   return 0;}
 
 // write to standard output a list of the version with which this shell is 
 // compatible
 int version_available_bi(const Argv_t& argv) {
-  if (argv.size() != 1) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  if (argv.size() != 1) {argv.append_to_errno("ARGS"); return -1;}
   std::cout <<version_str;
   return 0;}
 
 // return true if the given version string is compatible with the version
 // of this shell
 int version_compatible_bi(const Argv_t& argv) {
-  if (argv.size() != 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
   else if (argv[1] == version_str) return 0;
   else return 1;}
 
 // print the string corresponding to the executable in the executable map with
 // key $1
 int which_executable_bi(const Argv_t& argv) {
-  if (argv.size() != 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
   Argv_t lookup(argv.begin()+1, argv.end(), argv.argfunction());
   if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
   Executable_t* focus = executable_map.find(lookup);
@@ -384,7 +399,7 @@ int which_executable_bi(const Argv_t& argv) {
 
 // find the binary in $PATH with filename $1
 int which_path_bi(const Argv_t& argv) {
-  if (argv.size() != 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
   Argv_t lookup(argv.begin()+1, argv.end(), 0);
   std::vector<std::string> path;
   tokenize_strict(argv.get_var("PATH"), std::back_inserter(path), 
@@ -401,7 +416,7 @@ int which_path_bi(const Argv_t& argv) {
 // insert into the executable map a function with name $1 that runs the binary 
 // in $PATH with filename $1 with arguments $*2
 int autofunction_bi(const Argv_t& argv) {
-  if (argv.size() < 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  if (argv.size() < 2) {argv.append_to_errno("ARGS"); return -1;}
   Argv_t lookup(argv.begin()+1, argv.end(), 0);
   std::vector<std::string> path;
   tokenize_strict(argv.get_var("PATH"), std::back_inserter(path), 
@@ -420,7 +435,7 @@ int autofunction_bi(const Argv_t& argv) {
 
 // prints the last return value of the executable with named $1
 int which_return_bi(const Argv_t& argv) {
-  if (argv.size() != 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
   Argv_t lookup(argv.begin()+1, argv.end(), 0);
   if (lookup[0] == "rwsh.mapped_argfunction" || 
             lookup[0] == "rwsh.argfunction") 
@@ -433,7 +448,7 @@ int which_return_bi(const Argv_t& argv) {
 
 // return true if ther is an executable in the executable map with key $1
 int which_test_bi(const Argv_t& argv) {
-  if (argv.size() != 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
   Argv_t lookup(argv.begin()+1, argv.end(), argv.argfunction());
   if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
   return !executable_map.find(lookup);}
@@ -441,14 +456,14 @@ int which_test_bi(const Argv_t& argv) {
 // for each time that the arguments return true, run the argfunction
 // returns the last return from the argfunction
 int while_bi(const Argv_t& argv) {
-  if (argv.size() < 2) {argv.set_var("ERRNO", "ARGS"); return -1;}
+  if (argv.size() < 2) {argv.append_to_errno("ARGS"); return -1;}
   int ret = -1;
   Argv_t lookup(argv.begin()+1, argv.end(), 0);
   while (!executable_map.run(lookup)) {
-    if (Executable_t::unwind_stack() || argv.get_var("ERRNO") != "") return -1;
+    if (Executable_t::unwind_stack() || argv.var_exists("ERRNO")) return -1;
     if (argv.argfunction()) {
       ret  = (*argv.argfunction())(Argv_t("rwsh.mapped_argfunction"));
-      if (Executable_t::unwind_stack() || argv.get_var("ERRNO") != "")
+      if (Executable_t::unwind_stack() || argv.var_exists("ERRNO"))
         return -1;}
     else ret = 0;}
   return ret;}
