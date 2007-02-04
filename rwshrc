@@ -4,6 +4,7 @@
 
 # set up environment
 %importenv_preserve
+%global OLD_ERRNO /
 %global REGEX /
 %global SELECT $HOME
 %global TEMP1 /
@@ -38,6 +39,7 @@
 %function less {%selection_set SELECT $1; /usr/bin/less @$SELECT}
 %function set {%set $1 $2 $*3}
 %function vi {%selection_set SELECT $1; /usr/bin/vi @$SELECT}
+%function vim {%selection_set SELECT $1; /usr/bin/vim @$SELECT}
 %function wc {%selection_set SELECT $1; /usr/bin/wc @$SELECT}
 %function unselect {%set SELECT $CWD; %selection_set SELECT /}
 
@@ -57,7 +59,6 @@
 # misc
 %function ! {if $* {%return 1}; else {%return 0}}
 %function and {%if %return 1; %stepwise $* {%else_if_not $*}; %else}
-%function append_errno {%set TEMP1 $*; %if_errno {%set ERRNO $ERRNO $TEMP1}; %if % return 0 {%global ERRNO $TEMP1}; %else}
 %function or {%if %return 1; %stepwise $* {%else_if $*}; %else}
 %function st {/bin/bash /usr/bin/test_rwsh}
 

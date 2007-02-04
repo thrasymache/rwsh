@@ -47,14 +47,18 @@ const std::string& Variable_map_t::get(const std::string& key) {
     (*this)["?"] = tmp.str();}
   std::map<std::string, std::string>::const_iterator i = find(key);
   if (i == end()) return empty_str;
-  else return find(key)->second;}
+  else return i->second;}
 
-void Variable_map_t::set(const std::string& key, const std::string& val) {
-  (*this)[key] = val;
-  if (key == "MAX_NESTING") {
-    int temp = atoi((*this)[key].c_str());
-    if (temp < 0) this->max_nesting_v = 0;
-    else this->max_nesting_v = temp;}}
+int Variable_map_t::set(const std::string& key, const std::string& value) {
+  std::map<std::string, std::string>::iterator i = find(key);
+  if (i == end()) return 1;
+  else {
+    i->second = value;
+    if (key == "MAX_NESTING") {
+      int temp = atoi(i->second.c_str());
+      if (temp < 0) this->max_nesting_v = 0;
+      else this->max_nesting_v = temp;}
+    return 0;}}
 
 int Variable_map_t::unset(const std::string& key) {
   if (key == "MAX_NESTING" || key == "FIGNORE" || key == "?" || 

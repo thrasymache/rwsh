@@ -87,11 +87,11 @@ std::string Argv_t::get_var(const std::string& key) const {
       else return "";}
     default: return var_map->get(key);}}
 
-void Argv_t::set_var(const std::string& key, const std::string& value) const {
+int Argv_t::set_var(const std::string& key, const std::string& value) const {
   switch (key[0]) {
     case '#': case '1': case '2': case '3': case '4': case '5': case '6': 
-              case '7': case '8': case '9': case '0': return;
-    default: var_map->set(key, value);}}
+              case '7': case '8': case '9': case '0': return 2;
+    default: return var_map->set(key, value);}}
 
 bool Argv_t::var_exists(const std::string& key) const {
   switch (key[0]) {

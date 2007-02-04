@@ -27,7 +27,7 @@ class Argv_t : private std::vector<std::string> {
   std::string get_var(const std::string& key) const;
   int global_var(const std::string& key, const std::string& value) const;
   unsigned max_nesting(void) const;
-  void set_var(const std::string& key, const std::string& value) const;
+  int set_var(const std::string& key, const std::string& value) const;
   template<class Out> 
   Out star_var(const std::string& key, unsigned reference_level, Out res) const;
   int unset_var(const std::string& key) const;

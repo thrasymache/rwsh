@@ -14,7 +14,7 @@ public:
   bool add(const std::string& key, const std::string& value);
   bool exists(const std::string& key) const;
   const std::string& get(const std::string& key);
-  void set(const std::string& key, const std::string& value);
+  int set(const std::string& key, const std::string& value);
   int unset(const std::string& key);
   void append_to_errno(const std::string& value);
   char** export_env(void) const;};

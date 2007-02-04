@@ -124,8 +124,8 @@ e $x
 %if %return 0 {%else_if %return 0 {e nested syntax; %return 14}}
 %else {e already tested; %return 15}
 
-# %if_errno
-rwsh.mapped_argfunction {%if_errno {e no error}; %set ERRNO x; %if_errno {e invented error $ERRNO}; %if_errno %return 0 {e doubled error $ERRNO}}
+# %if_errno %append_to_errno
+rwsh.mapped_argfunction {%if_errno {e no error}; %append_to_errno x; %if_errno {e invented error $ERRNO}; %if_errno %return 0 {e doubled error $ERRNO}}
 
 # %internal_errors %internal_features %internal_vars
 %internal_errors 1
@@ -151,6 +151,7 @@ rwsh.mapped_argfunction {%if_errno {e no error}; %set ERRNO x; %if_errno {e inve
 %printenv
 %printenv A
 %set A
+%set Z 1
 %set 1 1
 %set A 1
 %printenv A
@@ -191,7 +192,7 @@ e $A
 w rwsh.init
 
 # %stepwise
-f wrapper {%set ERRNO x; a $* two; a $* three}
+f wrapper {%append_to_errno x; a $* two; a $* three}
 f a {e $* one; e $* two; e $* three}
 f d {e $*; %stepwise $* {d $*}}
 %stepwise {e $*}
@@ -363,7 +364,7 @@ rwsh.vars
 %printenv
 
 # %importenv_preserve %importenv_overwrite
-%set SHELL /bin/rwsh
+%global SHELL /bin/rwsh
 %importenv_preserve
 %printenv SHELL
 %set SHELL /bin/rwsh

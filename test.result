@@ -316,9 +316,9 @@ $%else {e already tested; %return 15}
 -1
 $
 -1
-$# %if_errno
+$# %if_errno %append_to_errno
 -1
-$rwsh.mapped_argfunction {%if_errno {e no error}; %set ERRNO x; %if_errno {e invented error $ERRNO}; %if_errno %return 0 {e doubled error $ERRNO}}
+$rwsh.mapped_argfunction {%if_errno {e no error}; %append_to_errno x; %if_errno {e invented error $ERRNO}; %if_errno %return 0 {e doubled error $ERRNO}}
 invented error x
 doubled error x ARGS
 0
@@ -381,6 +381,7 @@ A=
 CWD=/bin
 FIGNORE=
 MAX_NESTING=5
+N=
 last_command_return=0
 rc=/usr/share/rwsh/test_init.sh
 0
@@ -390,8 +391,10 @@ $%printenv A
 $%set A
 -1
 ERRNO set to ARGS
-$%set 1 1
+$%set Z 1
 1
+$%set 1 1
+2
 $%set A 1
 0
 $%printenv A
@@ -483,13 +486,13 @@ ERRNO set to NOENT
 $# %source is tested by having test_init.sh define #
 -1
 $w rwsh.init
-%function rwsh.init {%set MAX_NESTING 4; %set rc $2; %if %test_not_empty $rc {%source $rc}; %else {%source /etc/rwshrc}}
+%function rwsh.init {%set MAX_NESTING 4; %global rc $2; %if %test_not_empty $rc {%source $rc}; %else {%source /etc/rwshrc}}
 0
 $
 0
 $# %stepwise
 0
-$f wrapper {%set ERRNO x; a $* two; a $* three}
+$f wrapper {%append_to_errno x; a $* two; a $* three}
 0
 $f a {e $* one; e $* two; e $* three}
 0
@@ -506,7 +509,7 @@ $%stepwise stepwise {e $*}
 $%stepwise %stepwise {e $*}
 2
 $%stepwise wrapper 1 2 {e $*}
-%set ERRNO x
+%append_to_errno x
 a 1 2 two
 a 1 2 three
 0
@@ -971,7 +974,7 @@ $
 0
 $# %importenv_preserve %importenv_overwrite
 0
-$%set SHELL /bin/rwsh
+$%global SHELL /bin/rwsh
 0
 $%importenv_preserve
 0

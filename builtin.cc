@@ -30,6 +30,16 @@ extern char** environ;
 #include "util.h"
 #include "variable_map.h"
 
+// add the given string to the end of ERRNO, creating it if necessary
+int append_to_errno_bi(const Argv_t& argv) {
+  if (argv.size() < 1) return 1;
+  std::string dest("");
+  for (Argv_t::const_iterator i = argv.begin()+1; i != argv.end()-1; ++i) 
+    dest += *i + ' ';
+  dest += argv.back();
+  argv.append_to_errno(dest);
+  return 0;}
+
 // change the current directory to the one given
 // returns the error returned from chdir
 int cd_bi(const Argv_t& argv) {
@@ -199,7 +209,9 @@ int importenv_overwrite_bi(const Argv_t& argv) {
     std::string src(*i);
     std::string::size_type div = src.find("=");
     if (div != std::string::npos) 
-      argv.set_var(src.substr(0, div), src.substr(div+1));}
+      if (argv.var_exists(src.substr(0, div)))
+        argv.set_var(src.substr(0, div), src.substr(div+1));
+      else argv.global_var(src.substr(0, div), src.substr(div+1));}
   return 0;}
 
 // import the external environment into the variable map, preserving variables
@@ -209,8 +221,8 @@ int importenv_preserve_bi(const Argv_t& argv) {
   for (char** i=environ; *i; ++i) {
     std::string src(*i);
     std::string::size_type div = src.find("=");
-    if (div != std::string::npos && argv.get_var(src.substr(0, div)) == "") 
-      argv.set_var(src.substr(0, div), src.substr(div+1));}
+    if (div != std::string::npos && !argv.var_exists(src.substr(0, div))) 
+      argv.global_var(src.substr(0, div), src.substr(div+1));}
   return 0;}
 
 // list the files specified by the arguments if they exist
@@ -262,16 +274,15 @@ int selection_set_bi(const Argv_t& argv) {
   return 0;}
 
 // set variable $1 to $*2
+// returns 1 if the variable does not exist
 int set_bi(const Argv_t& argv) {
   if (argv.size() < 3) {argv.append_to_errno("ARGS"); return -1;}
-  if (isargvar(argv[1]) || argv[1] == "IF_TEST") return 1;
+  if (isargvar(argv[1]) || argv[1] == "IF_TEST") return 2;
   std::string dest("");
-  if (argv.size() > 2) {
-    for (Argv_t::const_iterator i = argv.begin()+2; i != argv.end()-1; ++i) 
-      dest += *i + ' ';
-    dest += argv.back();}
-  argv.set_var(argv[1], dest);
-  return 0;}
+  for (Argv_t::const_iterator i = argv.begin()+2; i != argv.end()-1; ++i) 
+    dest += *i + ' ';
+  dest += argv.back();
+  return argv.set_var(argv[1], dest);}
 
 // run the first argument as if it was a script, passing additional arguments
 // to that script
