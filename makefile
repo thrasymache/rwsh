@@ -1,8 +1,8 @@
 # makefile for rwsh
 
 objects = rwsh.o arg_script.o argv.o builtin.o command_stream.o \
-		executable.o executable_map.o function.o selection.o \
-		util.o variable_map.o 
+		executable.o executable_map.o function.o rwsh_stream.o \
+                selection.o util.o variable_map.o 
 CXXFLAGS = -g
 CC = g++
 
@@ -11,10 +11,11 @@ rwsh: $(objects)
 arg_script.o: argv.h argv_star_var.cc arg_script.h executable.h \
 	executable_map.h function.h read_dir.cc selection.h selection_read.cc \
 	variable_map.h
-argv.o: argv.h arg_script.h executable.h function.h tokenize.cc util.h \
-	variable_map.h
+argv.o: argv.h arg_script.h executable.h function.h rwsh_stream.h tokenize.cc \
+	util.h variable_map.h
 builtin.o: argv.h arg_script.h builtin.h executable.h executable_map.h \
-	function.h read_dir.cc selection.h tokenize.cc variable_map.h
+	function.h read_dir.cc rwsh_stream.h selection.h tokenize.cc \
+	variable_map.h
 command_stream.o: argv.h arg_script.h command_stream.h executable.h \
 	executable_map.h variable_map.h
 executable.o: argv.h executable.h executable_map.h variable_map.h
@@ -24,6 +25,7 @@ function.o: argv.h arg_script.h executable.h executable_map.h function.h \
 	tokenize.cc
 rwsh.o: argv.h arg_script.h command_stream.h executable.h executable_map.h \
 	function.h variable_map.h
+rwsh_stream.o: rwsh_stream.h
 selection.o: argv.h read_dir.cc selection.h tokenize.cc util.h variable_map.h
 util.o: util.h
 variable_map.o: argv.h variable_map.h

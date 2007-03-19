@@ -2,7 +2,7 @@
 //
 // Copyright (C) 2006 Samuel Newbold
 
-#include <iostream>
+#include <sys/errno.h>
 #include <string>
 
 #include "util.h"

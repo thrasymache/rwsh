@@ -1,24 +1,31 @@
 // Copyright (C) 2005, 2006 Samuel Newbold
 
 class Function_t;
+class Rwsh_stream_t;
+extern Rwsh_stream_t* default_stream_p;
 class Variable_map_t;
 
 class Argv_t : private std::vector<std::string> {
   typedef std::vector<std::string> Base;
   Function_t* argfunction_v;
-  void add_tokens(const std::string& src);
+  Rwsh_stream_t* myout_v;
   static Variable_map_t* var_map;
 
+  void add_tokens(const std::string& src);
+
  public:
-  Argv_t(void) : argfunction_v(0) {};
+  Argv_t(Rwsh_stream_t* myout_i) : argfunction_v(0), myout_v(myout_i) {};
   Argv_t(const std::string& src);
-  template <class In> Argv_t(In first, In last, Function_t* argfunction_i) :
-    Base(first, last), argfunction_v(argfunction_i->copy_pointer()) {};
+  template <class In> Argv_t(In first, In last, Function_t* argfunction_i, 
+                             Rwsh_stream_t* myout_i) :
+    Base(first, last), argfunction_v(argfunction_i->copy_pointer()), 
+    myout_v(myout_i) {};
   Argv_t(const Argv_t& src);
   ~Argv_t(void);
   Argv_t& operator=(const Argv_t& src);
   std::string str(void) const;
   Function_t* argfunction(void) const {return argfunction_v;};
+  Rwsh_stream_t* myout(void) const {return myout_v;};
   void set_argfunction(Function_t* val) {argfunction_v = val;};
 
 // variables

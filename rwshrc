@@ -26,12 +26,14 @@
 %function printenv {%printenv $*}
 %function setf {%set TEMP1 $1; %set TEMP2 $2; %if %var_exists $TEMP1 {%set $TEMP1 $TEMP2}; %else {%global $TEMP1 $TEMP2}}
 %function which {%set TEMP1 $1; %which_executable $TEMP1 {rwsh.argfunction}; %if %test_equal $? 0; %else {echo no $TEMP1}}
+%function whichp {%set TEMP1 $1; %which_path $TEMP1; %if %test_equal $? 0; %else {echo $TEMP1 not found in $PATH}}
 %function while {%while $* {rwsh.argfunction}}
 
 # selection commands
 %function cat {%selection_set SELECT $1; /bin/cat @$SELECT}
 %function cd {%selection_set SELECT $1; %cd @$SELECT; %selection_set SELECT /}
 %function cp {%selection_set SELECT $1; /bin/cp @$SELECT $2}
+%function create {/usr/bin/touch $1; %selection_set SELECT $1}
 %function cvs {%selection_set SELECT $2; /usr/bin/cvs $1 @$SELECT}
 %function grep {%set REGEX $1; %selection_set SELECT $2; /usr/bin/grep $REGEX @$SELECT}
 %function regrep {%selection_set SELECT $1; /usr/bin/grep $REGEX @$SELECT}

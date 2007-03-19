@@ -9,7 +9,6 @@
 
 #include <dirent.h>
 #include <fcntl.h>
-#include <iostream>
 #include <iterator>
 #include <list>
 #include <map>
@@ -24,6 +23,7 @@
 #include "executable_map.h"
 #include "function.h"
 #include "read_dir.cc"
+#include "rwsh_stream.h"
 #include "selection.h"
 #include "selection_read.cc"
 #include "variable_map.h"
@@ -85,7 +85,8 @@ void Arg_spec_t::interpret(const Argv_t& src, Out res) const {
     case STAR_VAR:   res = src.star_var(text, reference_level, res); break;
     case SELECTION:  selection_read(text, res); break;
     case SELECT_VAR: selection_read(src.get_var(text), res); break;
-    case SELECT_STAR_VAR: std::cerr <<"@$* not implemented yet\n"; break;}}
+    case SELECT_STAR_VAR: 
+      *default_stream_p <<"@$* not implemented yet\n"; break;}}
 
 Arg_spec_t& construct_arg_spec(const std::string& src) {
   return *(new Arg_spec_t(src));}
@@ -130,7 +131,7 @@ std::string Arg_script_t::str(void) const {
 
 // produce a destination Argv from the source Argv according to this script
 Argv_t Arg_script_t::interpret(const Argv_t& src) const {
-  Argv_t result;
+  Argv_t result(src.myout());
   if (!argfunction_level) {
     for (const_iterator i = begin(); i != end(); ++i) 
       i->interpret(src, std::back_inserter(result));

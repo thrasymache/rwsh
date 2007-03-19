@@ -23,7 +23,7 @@ Command_stream_t& Command_stream_t::operator>> (Argv_t& dest) {
   std::string line;
   getline(src, line);
   if (operator!()) return *this;
-  Argv_t raw_command;
+  Argv_t raw_command(default_stream_p);
   raw_command.push_back(line);
   executable_map.run_if_exists("rwsh.raw_command", raw_command);
   if (Executable_t::unwind_stack()) return *this;

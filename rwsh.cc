@@ -15,9 +15,12 @@
 #include "executable.h"
 #include "executable_map.h"
 #include "function.h"
+#include "rwsh_stream.h"
 #include "variable_map.h"
 
 Executable_map_t executable_map;
+Default_stream_t default_stream;
+Rwsh_stream_t* default_stream_p = &default_stream;
 
 namespace {
 std::string init_str =
@@ -41,13 +44,13 @@ void register_signals(void) {
   signal(SIGUSR2, signal_starter);} } // end unnamed namespace
 
 int main(int argc, char *argv[]) {
-  Argv_t external_command_line(&argv[0], &argv[argc], 0);
+  Argv_t external_command_line(&argv[0], &argv[argc], 0, default_stream_p);
   Command_stream_t command_stream(std::cin);
   executable_map.set(new Function_t("rwsh.init", init_str));
   executable_map.run_if_exists("rwsh.init", external_command_line);
   register_signals();
-  Argv_t command;
-  Argv_t prompt;
+  Argv_t command(0);
+  Argv_t prompt(default_stream_p);
   if (command_stream) executable_map.run_if_exists("rwsh.prompt", prompt);
   while (command_stream >> command || Executable_t::unwind_stack()) 
     if (Executable_t::unwind_stack()) Executable_t::signal_handler();

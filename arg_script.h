@@ -13,7 +13,7 @@ class Arg_spec_t {
   template<class Out> void interpret(const Argv_t& src, Out dest) const; };
 
 struct Arguments_to_argfunction_t : public Argv_t {
-  Arguments_to_argfunction_t() : Argv_t() {};};
+  Arguments_to_argfunction_t() : Argv_t(default_stream_p) {};};
 
 class Arg_script_t : private std::vector<Arg_spec_t> {
   typedef std::vector<Arg_spec_t> Base;

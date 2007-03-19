@@ -6,7 +6,6 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include <functional>
-#include <iostream>
 #include <iterator>
 #include <list>
 #include <stdio.h>

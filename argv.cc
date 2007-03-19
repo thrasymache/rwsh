@@ -4,7 +4,6 @@
 // Copyright (C) 2005, 2006 Samuel Newbold
 
 #include <functional>
-#include <iostream>
 #include <iterator>
 #include <map>
 #include <sstream>
@@ -15,6 +14,7 @@
 #include "arg_script.h"
 #include "executable.h"
 #include "function.h"
+#include "rwsh_stream.h"
 #include "tokenize.cc"
 #include "util.h"
 #include "variable_map.h"
@@ -29,7 +29,8 @@ void Argv_t::add_tokens(const std::string& src) {
     tokenize(src.substr(skipspace), std::back_inserter(*this), 
              std::bind2nd(std::equal_to<char>(), ' '));}}
 
-Argv_t::Argv_t(const std::string& src) : argfunction_v(0) {
+Argv_t::Argv_t(const std::string& src) : argfunction_v(0), 
+      myout_v(default_stream_p) {
   std::string::size_type o_brace, c_brace;
   o_brace = src.find_first_of("{}"); 
   add_tokens(src.substr(0, o_brace));
@@ -51,13 +52,15 @@ Argv_t::Argv_t(const std::string& src) : argfunction_v(0) {
     add_tokens(src.substr(c_brace+1, o_brace-c_brace-1));}
   if (!size()) push_back("");}
 
-Argv_t::Argv_t(const Argv_t& src) : Base(src), argfunction_v(0) {
+Argv_t::Argv_t(const Argv_t& src) : Base(src), argfunction_v(0), 
+      myout_v(src.myout_v) {
   argfunction_v = src.argfunction()->copy_pointer();}
 
 Argv_t& Argv_t::operator=(const Argv_t& src) {
   clear();
   std::copy(src.begin(), src.end(), std::back_inserter(*this));
-  argfunction_v = src.argfunction()->copy_pointer();}
+  argfunction_v = src.argfunction()->copy_pointer();
+  myout_v = src.myout_v;}
 
 Argv_t::~Argv_t(void) {delete argfunction_v;}
 

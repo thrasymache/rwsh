@@ -5,7 +5,6 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include <fstream>
-#include <iostream>
 #include <iterator>
 #include <map>
 #include <stdio.h>
@@ -24,6 +23,7 @@ extern char** environ;
 #include "executable.h"
 #include "executable_map.h"
 #include "function.h"
+#include "rwsh_stream.h"
 #include "read_dir.cc"
 #include "selection.h"
 #include "tokenize.cc"
@@ -57,9 +57,9 @@ int cd_bi(const Argv_t& argv) {
 int echo_bi(const Argv_t& argv) {
   if (argv.size() < 2) {argv.append_to_errno("ARGS"); return -1;}
   for (Argv_t::const_iterator i = argv.begin()+1; i != argv.end()-1; ++i)
-    std::cout <<*i <<' ';
-  std::cout <<argv.back();
-  std::cout.flush();
+    *argv.myout() <<*i <<" ";
+  *argv.myout() <<argv.back();
+  argv.myout()->flush();
   return 0;}
 
 // unset ERRNO while running argfunction, then merge errors
@@ -110,8 +110,7 @@ int function_bi(const Argv_t& argv) {
   else if (is_builtin_name(argv[1])) return 2;
   else if (is_argfunction_name(argv[1])) return 3;
   else if (!argv.argfunction()) {
-    Argv_t lookup(argv.begin()+1, argv.end(), 0);
-    return 4 * !executable_map.erase(lookup[0]);}
+    return 4 * !executable_map.erase(*(argv.begin()+1));}
   else {
     executable_map.set(new Function_t(argv[1], argv.argfunction()));
     return 0;}}
@@ -121,7 +120,7 @@ int global_bi(const Argv_t& argv) {
   else return argv.global_var(argv[1], argv[2]);}
 
 static int if_core(const Argv_t& argv, bool logic) {
-  Argv_t lookup(argv.begin()+1, argv.end(), 0);
+  Argv_t lookup(argv.begin()+1, argv.end(), 0, argv.myout());
   if (logic == !executable_map.run(lookup)) {
     if (Executable_t::unwind_stack()) return -1;
     argv.unset_var("IF_TEST");
@@ -230,30 +229,30 @@ int ls_bi(const Argv_t& argv) {
   if (argv.size() < 2) {argv.append_to_errno("ARGS"); return -1;}
   struct stat sb;
   for (Argv_t::const_iterator i=argv.begin(); i != argv.end(); ++i) 
-    if (!stat(i->c_str(), &sb)) std::cout <<*i <<'\n';
+    if (!stat(i->c_str(), &sb)) *argv.myout() <<*i <<"\n";
+  argv.myout()->flush();
   return 0;}
 
 // write a newline to the standard output
 int newline_bi(const Argv_t& argv) {
   if (argv.size() != 1) {argv.append_to_errno("ARGS"); return -1;}
-  else {std::cout <<std::endl; return 0;}}
+  else {*argv.myout() <<"\n"; argv.myout()->flush(); return 0;}}
 
 // ignore arguments, and then do nothing
 int nop_bi(const Argv_t& argv) {return dollar_question;}
-
-namespace {void print_var(std::pair<std::string, std::string> src) {
-  std::cout <<src.first <<'=' <<src.second <<std::endl;}}
 
 // builtin function for printing the variable map
 int printenv_bi(const Argv_t& argv) {
   extern Variable_map_t* vars;
   vars->get("?");
   if (argv.size() < 2) {
-    for_each(vars->begin(), vars->end(), print_var);
-    return 0;}
+    for (Variable_map_t::const_iterator i = vars->begin(); 
+         i != vars->end(); ++i)
+      *argv.myout() <<i->first <<"=" <<i->second <<"\n";}
   else {
-    std::cout <<(*vars)[argv[1]] <<std::endl;
-    return 0;}}
+    *argv.myout() <<(*vars)[argv[1]] <<"\n";}
+  argv.myout()->flush();
+  return 0;}
 
 // return the value given by the argument
 int return_bi(const Argv_t& argv) {
@@ -295,7 +294,7 @@ int source_bi(const Argv_t& argv) {
   std::ifstream src(argv[1].c_str(), std::ios_base::in);
   Argv_t script_arg(argv);
   Command_stream_t script(src);
-  Argv_t command;
+  Argv_t command(0);
   int ret = -1;
   while (script >> command) {
     try {
@@ -310,7 +309,7 @@ int source_bi(const Argv_t& argv) {
 int stepwise_bi(const Argv_t& argv) {
   if (argv.size() < 2) {argv.append_to_errno("ARGS"); return -1;}
   if (!argv.argfunction()) {argv.append_to_errno("ARGFUNCTION"); return -1;}
-  Argv_t lookup(argv.begin()+1, argv.end(), 0);
+  Argv_t lookup(argv.begin()+1, argv.end(), 0, argv.myout());
   Executable_t* e = executable_map.find(lookup);
   if (!e) return 1;  // executable not found
   Function_t* f = dynamic_cast<Function_t*>(e);
@@ -386,7 +385,8 @@ int version_bi(const Argv_t& argv) {
 // compatible
 int version_available_bi(const Argv_t& argv) {
   if (argv.size() != 1) {argv.append_to_errno("ARGS"); return -1;}
-  std::cout <<version_str;
+  *argv.myout() <<version_str;
+  argv.myout()->flush();
   return 0;}
 
 // return true if the given version string is compatible with the version
@@ -400,18 +400,19 @@ int version_compatible_bi(const Argv_t& argv) {
 // key $1
 int which_executable_bi(const Argv_t& argv) {
   if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
-  Argv_t lookup(argv.begin()+1, argv.end(), argv.argfunction());
+  Argv_t lookup(argv.begin()+1, argv.end(), argv.argfunction(), 0);
   if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
   Executable_t* focus = executable_map.find(lookup);
   if (focus) {
-    std::cout <<focus->str() <<std::endl;
+    *argv.myout() <<focus->str() <<"\n";
+    argv.myout()->flush();
     return 0;}
   else return 1;} // executable does not exist
 
 // find the binary in $PATH with filename $1
 int which_path_bi(const Argv_t& argv) {
   if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
-  Argv_t lookup(argv.begin()+1, argv.end(), 0);
+  Argv_t lookup(argv.begin()+1, argv.end(), 0, 0);
   std::vector<std::string> path;
   tokenize_strict(argv.get_var("PATH"), std::back_inserter(path), 
                   std::bind2nd(std::equal_to<char>(), ':'));
@@ -420,7 +421,7 @@ int which_path_bi(const Argv_t& argv) {
     std::string test = *i + '/' + lookup[0];
     struct stat sb;
     if (!stat(test.c_str(), &sb)) {
-      std::cout <<test <<std::endl;
+      *argv.myout() <<test <<"\n";
       return 0;}}
   return 1;} // executable does not exist
 
@@ -428,7 +429,7 @@ int which_path_bi(const Argv_t& argv) {
 // in $PATH with filename $1 with arguments $*2
 int autofunction_bi(const Argv_t& argv) {
   if (argv.size() < 2) {argv.append_to_errno("ARGS"); return -1;}
-  Argv_t lookup(argv.begin()+1, argv.end(), 0);
+  Argv_t lookup(argv.begin()+1, argv.end(), 0, 0);
   std::vector<std::string> path;
   tokenize_strict(argv.get_var("PATH"), std::back_inserter(path), 
                   std::bind2nd(std::equal_to<char>(), ':'));
@@ -447,20 +448,21 @@ int autofunction_bi(const Argv_t& argv) {
 // prints the last return value of the executable with named $1
 int which_return_bi(const Argv_t& argv) {
   if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
-  Argv_t lookup(argv.begin()+1, argv.end(), 0);
+  Argv_t lookup(argv.begin()+1, argv.end(), 0, 0);
   if (lookup[0] == "rwsh.mapped_argfunction" || 
             lookup[0] == "rwsh.argfunction") 
     return 2; // return values not stored for argfunctions
   Executable_t* focus = executable_map.find(lookup);
   if (focus) {
-    std::cout <<focus->last_ret() <<std::endl;
+    *argv.myout() <<focus->last_ret() <<"\n";
+    argv.myout()->flush();
     return 0;}
   else return 1;} // executable does not exist
 
 // return true if ther is an executable in the executable map with key $1
 int which_test_bi(const Argv_t& argv) {
   if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
-  Argv_t lookup(argv.begin()+1, argv.end(), argv.argfunction());
+  Argv_t lookup(argv.begin()+1, argv.end(), argv.argfunction(), 0);
   if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
   return !executable_map.find(lookup);}
 
@@ -469,7 +471,7 @@ int which_test_bi(const Argv_t& argv) {
 int while_bi(const Argv_t& argv) {
   if (argv.size() < 2) {argv.append_to_errno("ARGS"); return -1;}
   int ret = -1;
-  Argv_t lookup(argv.begin()+1, argv.end(), 0);
+  Argv_t lookup(argv.begin()+1, argv.end(), 0, argv.myout());
   while (!executable_map.run(lookup)) {
     if (Executable_t::unwind_stack() || argv.var_exists("ERRNO")) return -1;
     if (argv.argfunction()) {
