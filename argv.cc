@@ -3,11 +3,8 @@
 //
 // Copyright (C) 2005, 2006 Samuel Newbold
 
-#include <functional>
-#include <iterator>
 #include <map>
 #include <sstream>
-#include <string>
 #include <vector>
 
 #include "argv.h"
@@ -15,19 +12,10 @@
 #include "executable.h"
 #include "function.h"
 #include "rwsh_stream.h"
-#include "tokenize.cc"
-#include "util.h"
 #include "variable_map.h"
 
 extern Variable_map_t* vars;
 Variable_map_t* Argv_t::var_map = vars;
-
-// algorithm used twice by string constructor
-void Argv_t::add_tokens(const std::string& src) {
-  std::string::size_type skipspace = src.find_first_not_of(" "); 
-  if (skipspace != std::string::npos) {
-    tokenize(src.substr(skipspace), std::back_inserter(*this), 
-             std::bind2nd(std::equal_to<char>(), ' '));}}
 
 Argv_t::Argv_t(const Argv_t& src) : Base(src), argfunction_v(0), 
       myout_v(src.myout_v) {

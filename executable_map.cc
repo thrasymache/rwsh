@@ -110,6 +110,7 @@ bool Executable_map_t::run_if_exists(const std::string& key, Argv_t& argv) {
   Executable_t* i = find(argv);
   if (i) {
     (*i)(argv);
+    if (Executable_t::unwind_stack()) Executable_t::signal_handler();
     argv.pop_front();
     return true;}
   else {

@@ -1,4 +1,4 @@
-// Copyright (C) 2006 Samuel Newbold
+// Copyright (C) 2006, 2007 Samuel Newbold
 
 enum Arg_type_t {FIXED, VARIABLE, STAR_VAR, SELECTION, SELECT_VAR,
                  SELECT_STAR_VAR, SUBSTITUTION};
@@ -13,7 +13,12 @@ class Arg_spec_t {
   template<class Out> void interpret(const Argv_t& src, Out dest) const; };
 
 struct Arguments_to_argfunction_t : public Argv_t {
-  Arguments_to_argfunction_t() : Argv_t(default_stream_p) {};};
+  Arguments_to_argfunction_t(const std::string& argfunction_type);};
+
+struct Mismatched_brace_t : public Argv_t {
+  Mismatched_brace_t(const std::string& prefix);};
+
+struct Multiple_argfunctions_t : public Argv_t {Multiple_argfunctions_t();};
 
 class Arg_script_t : private std::vector<Arg_spec_t> {
   typedef std::vector<Arg_spec_t> Base;
@@ -24,7 +29,6 @@ class Arg_script_t : private std::vector<Arg_spec_t> {
   void add_tokens(const std::string& s);
 
  public:
-  Arg_script_t(const Argv_t& src);
   Arg_script_t(const std::string& src);
   Arg_script_t(const Arg_script_t& src);
   Arg_script_t& operator=(const Arg_script_t& src);

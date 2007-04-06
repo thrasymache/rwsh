@@ -11,8 +11,6 @@ class Argv_t : private std::vector<std::string> {
   Rwsh_stream_t* myout_v;
   static Variable_map_t* var_map;
 
-  void add_tokens(const std::string& src);
-
  public:
   Argv_t(Rwsh_stream_t* myout_i) : argfunction_v(0), myout_v(myout_i) {};
   template <class In> Argv_t(In first, In last, Function_t* argfunction_i, 

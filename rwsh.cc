@@ -51,18 +51,16 @@ int main(int argc, char *argv[]) {
   register_signals();
   Arg_script_t script("");
   Argv_t prompt(default_stream_p);
-  if (command_stream) executable_map.run_if_exists("rwsh.prompt", prompt);
-  while (command_stream >> script || Executable_t::unwind_stack()) 
-    if (Executable_t::unwind_stack()) Executable_t::signal_handler();
-    else {
-      Argv_t command(0);
-      try {
-        command = script.interpret(script.argv());}
-      catch (Argv_t exception) {command = exception;}
-      executable_map.run_if_exists("rwsh.before_command", command);
-      if (!executable_map.run_if_exists("rwsh.run_logic", command))
-         executable_map.run(command);
-      executable_map.run_if_exists("rwsh.after_command", command);
-      if (command_stream) executable_map.run_if_exists("rwsh.prompt", prompt);}
+  while (command_stream) {
+    executable_map.run_if_exists("rwsh.prompt", prompt);
+    Argv_t command(0);
+    try {
+      command_stream >> script;
+      command = script.interpret(script.argv());}
+    catch (Argv_t exception) {command = exception;}
+    executable_map.run_if_exists("rwsh.before_command", command);
+    if (!executable_map.run_if_exists("rwsh.run_logic", command))
+       executable_map.run(command);
+    executable_map.run_if_exists("rwsh.after_command", command);}
   executable_map.run_if_exists("rwsh.shutdown", external_command_line);
   return dollar_question;}

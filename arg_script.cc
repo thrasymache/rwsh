@@ -94,21 +94,18 @@ void Arg_spec_t::interpret(const Argv_t& src, Out res) const {
 Arg_spec_t& construct_arg_spec(const std::string& src) {
   return *(new Arg_spec_t(src));}
 
-Arg_script_t::Arg_script_t(const Argv_t& src) :
-      argfunction_level(0), argfunction(src.argfunction()->copy_pointer()), 
-      myout(src.myout()) {
-  if (is_argfunction_name(src[0]) && src[0] != "rwsh.mapped_argfunction") {
-    if (src.size() != 1 || src.argfunction()) {
-      Arguments_to_argfunction_t error;
-      error.push_back("rwsh.arguments_for_argfunction");
-      error.push_back(src[0]);
-      throw error;}
-    if (src[0] == "rwsh.unescaped_argfunction") argfunction_level = 1;
-    else if (src[0] == "rwsh.argfunction") argfunction_level = 2;
-    else if (src[0] == "rwsh.escaped_argfunction") argfunction_level = 3;
-    else assert(0);}                             // unhandled argfunction level
-  else transform(src.begin(), src.end(), std::back_inserter(*this), 
-                 construct_arg_spec);}
+Arguments_to_argfunction_t::Arguments_to_argfunction_t(
+    const std::string& argfunction_type) : Argv_t(default_stream_p) {
+  push_back("rwsh.arguments_for_argfunction");
+  push_back(argfunction_type);}
+
+Mismatched_brace_t::Mismatched_brace_t(const std::string& prefix) : 
+    Argv_t(default_stream_p) {
+  push_back("rwsh.mismatched_brace");
+  push_back(prefix);}
+
+Multiple_argfunctions_t::Multiple_argfunctions_t() : Argv_t(default_stream_p) {
+      push_back("rwsh.multiple_argfunctions");}
 
 Arg_script_t::Arg_script_t(const std::string& src) :
       argfunction(0), argfunction_level(0), myout(default_stream_p) {
@@ -117,28 +114,18 @@ Arg_script_t::Arg_script_t(const std::string& src) :
   add_tokens(src.substr(0, o_brace));
   while (o_brace != std::string::npos) {
     c_brace = find_close_brace(src, o_brace);
-    if (src[o_brace] == '}' || c_brace == std::string::npos) {
-      clear();
-      push_back(Arg_spec_t("rwsh.mismatched_brace"));
-      push_back(src.substr(0, o_brace+1));
-      return;}
-    if (argfunction) {
-      clear();
-      push_back(Arg_spec_t("rwsh.multiple_argfunctions"));
-      return;}
-    try {argfunction = new Function_t("rwsh.argfunction", 
-                                     src.substr(o_brace+1, c_brace-o_brace-1));}
-    catch (Argv_t exception) {*this = exception; return;}
+    if (src[o_brace] == '}' || c_brace == std::string::npos)
+      throw Mismatched_brace_t(src.substr(0, o_brace+1));
+    if (argfunction) throw Multiple_argfunctions_t();
+    argfunction = new Function_t("rwsh.argfunction", 
+                                     src.substr(o_brace+1, c_brace-o_brace-1));
     o_brace = src.find_first_of("{}", c_brace+1);
     add_tokens(src.substr(c_brace+1, o_brace-c_brace-1));}
   if (!size()) push_back(Arg_spec_t(""));
   if (is_argfunction_name(front().str()) && 
       front().str() != "rwsh.mapped_argfunction") {
-    if (size() != 1 || argfunction) {
-      Arguments_to_argfunction_t error;
-      error.push_back("rwsh.arguments_for_argfunction");
-      error.push_back(front().str());
-      throw error;}
+    if (size() != 1 || argfunction) 
+      throw Arguments_to_argfunction_t(front().str());
     if (front().str() == "rwsh.unescaped_argfunction") argfunction_level = 1;
     else if (front().str() == "rwsh.argfunction") argfunction_level = 2;
     else if (front().str() == "rwsh.escaped_argfunction") argfunction_level = 3;

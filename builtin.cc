@@ -304,9 +304,10 @@ int source_bi(const Argv_t& argv) {
   Command_stream_t command_stream(src);
   Arg_script_t script("");
   int ret = -1;
-  while (command_stream >> script) {
+  while (command_stream && !Executable_t::unwind_stack()) {
     Argv_t command(0);
     try {
+      if (!(command_stream >> script)) break;
       command = script.interpret(script.argv());}
     catch (Argv_t exception) {command = exception;}
     ret = executable_map.run(command);}
