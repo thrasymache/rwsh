@@ -5,8 +5,9 @@
 // between the Argv_t that was passed to the function and the Argv_t that will 
 // be used to run a given executable.
 //
-// Copyright (C) 2006 Samuel Newbold
+// Copyright (C) 2006, 2007 Samuel Newbold
 
+#include <assert.h>
 #include <dirent.h>
 #include <fcntl.h>
 #include <iterator>
@@ -26,9 +27,11 @@
 #include "rwsh_stream.h"
 #include "selection.h"
 #include "selection_read.cc"
+#include "tokenize.cc"
+#include "util.h"
 #include "variable_map.h"
 
-Arg_spec_t::Arg_spec_t(const std::string& script) {
+Arg_spec_t::Arg_spec_t(const std::string& script) : reference_level(0) {
   if (!script.length()) type=FIXED;
   else if (script[0] == '$') {
     if (script.length() < 2) type=VARIABLE;
@@ -92,7 +95,8 @@ Arg_spec_t& construct_arg_spec(const std::string& src) {
   return *(new Arg_spec_t(src));}
 
 Arg_script_t::Arg_script_t(const Argv_t& src) :
-  argfunction_level(0), argfunction(src.argfunction()->copy_pointer()) {
+      argfunction_level(0), argfunction(src.argfunction()->copy_pointer()), 
+      myout(src.myout()) {
   if (is_argfunction_name(src[0]) && src[0] != "rwsh.mapped_argfunction") {
     if (src.size() != 1 || src.argfunction()) {
       Arguments_to_argfunction_t error;
@@ -101,21 +105,75 @@ Arg_script_t::Arg_script_t(const Argv_t& src) :
       throw error;}
     if (src[0] == "rwsh.unescaped_argfunction") argfunction_level = 1;
     else if (src[0] == "rwsh.argfunction") argfunction_level = 2;
-    else if (src[0] == "rwsh.escaped_argfunction") argfunction_level = 3;}
+    else if (src[0] == "rwsh.escaped_argfunction") argfunction_level = 3;
+    else assert(0);}                             // unhandled argfunction level
   else transform(src.begin(), src.end(), std::back_inserter(*this), 
                  construct_arg_spec);}
 
+Arg_script_t::Arg_script_t(const std::string& src) :
+      argfunction(0), argfunction_level(0), myout(default_stream_p) {
+  std::string::size_type o_brace, c_brace;
+  o_brace = src.find_first_of("{}"); 
+  add_tokens(src.substr(0, o_brace));
+  while (o_brace != std::string::npos) {
+    c_brace = find_close_brace(src, o_brace);
+    if (src[o_brace] == '}' || c_brace == std::string::npos) {
+      clear();
+      push_back(Arg_spec_t("rwsh.mismatched_brace"));
+      push_back(src.substr(0, o_brace+1));
+      return;}
+    if (argfunction) {
+      clear();
+      push_back(Arg_spec_t("rwsh.multiple_argfunctions"));
+      return;}
+    try {argfunction = new Function_t("rwsh.argfunction", 
+                                     src.substr(o_brace+1, c_brace-o_brace-1));}
+    catch (Argv_t exception) {*this = exception; return;}
+    o_brace = src.find_first_of("{}", c_brace+1);
+    add_tokens(src.substr(c_brace+1, o_brace-c_brace-1));}
+  if (!size()) push_back(Arg_spec_t(""));
+  if (is_argfunction_name(front().str()) && 
+      front().str() != "rwsh.mapped_argfunction") {
+    if (size() != 1 || argfunction) {
+      Arguments_to_argfunction_t error;
+      error.push_back("rwsh.arguments_for_argfunction");
+      error.push_back(front().str());
+      throw error;}
+    if (front().str() == "rwsh.unescaped_argfunction") argfunction_level = 1;
+    else if (front().str() == "rwsh.argfunction") argfunction_level = 2;
+    else if (front().str() == "rwsh.escaped_argfunction") argfunction_level = 3;
+    else assert(0);}}                            // unhandled argfunction level
+
 Arg_script_t::Arg_script_t(const Arg_script_t& src) : 
-  Base(src), argfunction_level(src.argfunction_level), 
-  argfunction(src.argfunction->copy_pointer()) {}
+  Base(src), argfunction(src.argfunction->copy_pointer()),
+ argfunction_level(src.argfunction_level), myout(src.myout) {}
 
 Arg_script_t& Arg_script_t::operator=(const Arg_script_t& src) {
   this->clear();
-  argfunction_level = src.argfunction_level;
   copy(src.begin(), src.end(), std::back_inserter(*this));
-  argfunction = src.argfunction->copy_pointer();}
+  argfunction = src.argfunction->copy_pointer();
+  argfunction_level = src.argfunction_level;
+  myout = src.myout;}
 
 Arg_script_t::~Arg_script_t(void) {delete argfunction;}
+
+// algorithm used twice by string constructor
+void Arg_script_t::add_tokens(const std::string& src) {
+  std::string::size_type skipspace = src.find_first_not_of(" "); 
+  if (skipspace != std::string::npos) {
+    tokenize_arg_spec(src.substr(skipspace), std::back_inserter(*this), 
+             std::bind2nd(std::equal_to<char>(), ' '));}}
+
+// naively create an Argv_t from Arg_script. string constructor for Argv_t.
+Argv_t Arg_script_t::argv(void) const {
+  Argv_t result(myout);
+  if (!argfunction_level) {
+    for(const_iterator i=begin(); i != end(); ++i) result.push_back(i->str());
+    result.set_argfunction(argfunction->copy_pointer());}
+  else if (argfunction_level == 1) result.push_back("rwsh.argfunction");
+  else if (argfunction_level == 2) result.push_back("rwsh.escaped_argfunction");
+  else assert(0);
+  return result;} // unhandled argfunction_level
 
 // create a string from Arg_script. inverse of string constructor.
 std::string Arg_script_t::str(void) const {
@@ -131,7 +189,7 @@ std::string Arg_script_t::str(void) const {
 
 // produce a destination Argv from the source Argv according to this script
 Argv_t Arg_script_t::interpret(const Argv_t& src) const {
-  Argv_t result(src.myout());
+  Argv_t result(myout);
   if (!argfunction_level) {
     for (const_iterator i = begin(); i != end(); ++i) 
       i->interpret(src, std::back_inserter(result));
@@ -155,7 +213,11 @@ Arg_script_t Arg_script_t::apply(const Argv_t& src) const {
   if (this->argfunction) result.argfunction = this->argfunction->apply(src);
   return result;}
 
-void Arg_script_t::clear(void) {delete argfunction; Base::clear();}
+void Arg_script_t::clear(void) {
+  delete argfunction; 
+  argfunction = 0;
+  myout=0; 
+  Base::clear();}
 
 // test whether an executable name corresponds to one of those used for
 // argument functions.

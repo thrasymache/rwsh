@@ -18,7 +18,7 @@
 #include "variable_map.h"
 
 // write the next command to dest. run rwsh.prompt as appropriate
-Command_stream_t& Command_stream_t::operator>> (Argv_t& dest) {
+Command_stream_t& Command_stream_t::operator>> (Arg_script_t& dest) {
   if (operator!()) return *this;
   std::string line;
   getline(src, line);
@@ -27,7 +27,7 @@ Command_stream_t& Command_stream_t::operator>> (Argv_t& dest) {
   raw_command.push_back(line);
   executable_map.run_if_exists("rwsh.raw_command", raw_command);
   if (Executable_t::unwind_stack()) return *this;
-  dest = Argv_t(line);
+  dest = Arg_script_t(line);
   return *this;}
 
 // returns non-zero if the last command was read successfully

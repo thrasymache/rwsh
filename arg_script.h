@@ -1,7 +1,7 @@
 // Copyright (C) 2006 Samuel Newbold
 
 enum Arg_type_t {FIXED, VARIABLE, STAR_VAR, SELECTION, SELECT_VAR,
-                 SELECT_STAR_VAR};
+                 SELECT_STAR_VAR, SUBSTITUTION};
 
 class Arg_spec_t {
   Arg_type_t type;
@@ -17,14 +17,19 @@ struct Arguments_to_argfunction_t : public Argv_t {
 
 class Arg_script_t : private std::vector<Arg_spec_t> {
   typedef std::vector<Arg_spec_t> Base;
-  unsigned argfunction_level;
   Function_t* argfunction;
+  unsigned argfunction_level;
+  Rwsh_stream_t* myout;
+
+  void add_tokens(const std::string& s);
 
  public:
   Arg_script_t(const Argv_t& src);
+  Arg_script_t(const std::string& src);
   Arg_script_t(const Arg_script_t& src);
   Arg_script_t& operator=(const Arg_script_t& src);
   ~Arg_script_t(void);
+  Argv_t argv(void) const;
   std::string str(void) const;
   Argv_t interpret(const Argv_t& src) const;
   Arg_script_t apply(const Argv_t& src) const;

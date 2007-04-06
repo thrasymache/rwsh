@@ -932,7 +932,7 @@ signal handler itself triggered signal
 g h g h g h rwsh.excessive_nesting
 original call stack:
 g h g h g h g
-0
+-1
 $
 0
 $# rwsh.run_logic

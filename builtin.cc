@@ -65,7 +65,8 @@ int echo_bi(const Argv_t& argv) {
 // unset ERRNO while running argfunction, then merge errors
 int error_unit_bi(const Argv_t& argv) {
   if (!argv.argfunction()) {argv.append_to_errno("ARGFUNCTION"); return -1;}
-  Argv_t inner_args("rwsh.mapped_argfunction");
+  Argv_t inner_args(default_stream_p);
+  inner_args.push_back("rwsh.mapped_argfunction");
   copy(argv.begin()+1, argv.end(), std::back_inserter(inner_args));
   std::string saved_errno;
   bool previous_error;
@@ -92,7 +93,8 @@ int exit_bi(const Argv_t& argv) {
 int for_bi(const Argv_t& argv) {
   if (argv.size() < 2) {argv.append_to_errno("ARGS"); return -1;}
   int ret = -1;
-  Argv_t body("rwsh.mapped_argfunction");
+  Argv_t body(default_stream_p);
+  body.push_back("rwsh.mapped_argfunction");
   body.push_back("");
   for (Argv_t::const_iterator i = ++argv.begin(); i != argv.end(); ++i) {
     if (argv.argfunction()) {
@@ -125,8 +127,10 @@ static int if_core(const Argv_t& argv, bool logic) {
     if (Executable_t::unwind_stack()) return -1;
     argv.unset_var("IF_TEST");
     int ret;
-    if (argv.argfunction())
-      ret  = (*argv.argfunction())(Argv_t("rwsh.mapped_argfunction"));
+    if (argv.argfunction()) {
+      Argv_t mapped_argv(argv.myout());
+      mapped_argv.push_back("rwsh.mapped_argfunction");
+      ret = (*argv.argfunction())(mapped_argv);}
     else ret = 0;
     if (argv.var_exists("IF_TEST")) {
       argv.append_to_errno("BAD_IF_NEST");
@@ -153,8 +157,10 @@ int if_bi(const Argv_t& argv) {
 // returns the (second?) return value from argfunction
 int if_errno_bi(const Argv_t& argv) {
   if (argv.size() != 1) argv.append_to_errno("ARGS");
-  if (argv.var_exists("ERRNO") && argv.argfunction()) 
-    return (*argv.argfunction())(Argv_t("rwsh.mapped_argfunction"));
+  if (argv.var_exists("ERRNO") && argv.argfunction()) {
+    Argv_t mapped_argv(argv.myout());
+    mapped_argv.push_back("rwsh.mapped_argfunction");
+    return (*argv.argfunction())(mapped_argv);}
   else return 0;}
 
 // run argfunction if IF_TEST is false and $* returns true
@@ -191,7 +197,9 @@ int else_bi(const Argv_t& argv) {
   else if (argv.get_var("IF_TEST") == "false") 
     if (argv.argfunction()) {
       argv.unset_var("IF_TEST");
-      (*argv.argfunction())(Argv_t("rwsh.mapped_argfunction"));
+      Argv_t mapped_argv(argv.myout());
+      mapped_argv.push_back("rwsh.mapped_argfunction");
+      (*argv.argfunction())(mapped_argv);
       if (argv.var_exists("IF_TEST")) {
         argv.append_to_errno("BAD_IF_NEST"); ret = -1;}
       else ret = dollar_question;}
@@ -293,13 +301,13 @@ int source_bi(const Argv_t& argv) {
   if (!(sb.st_mode & S_IXUSR)) {argv.append_to_errno("NOEXEC"); return -1;}
   std::ifstream src(argv[1].c_str(), std::ios_base::in);
   Argv_t script_arg(argv);
-  Command_stream_t script(src);
-  Argv_t command(0);
+  Command_stream_t command_stream(src);
+  Arg_script_t script("");
   int ret = -1;
-  while (script >> command) {
+  while (command_stream >> script) {
+    Argv_t command(0);
     try {
-      Arg_script_t script(command);
-      command = script.interpret(script_arg);}
+      command = script.interpret(script.argv());}
     catch (Argv_t exception) {command = exception;}
     ret = executable_map.run(command);}
   return ret;}
@@ -378,7 +386,7 @@ static const std::string version_str("0.2+");
 // write to standard output the version of rwsh
 int version_bi(const Argv_t& argv) {
   if (argv.size() != 1) {argv.append_to_errno("ARGS"); return -1;}
-  std::cout <<version_str;
+  *argv.myout() <<version_str;
   return 0;}
 
 // write to standard output a list of the version with which this shell is 
@@ -475,7 +483,9 @@ int while_bi(const Argv_t& argv) {
   while (!executable_map.run(lookup)) {
     if (Executable_t::unwind_stack() || argv.var_exists("ERRNO")) return -1;
     if (argv.argfunction()) {
-      ret  = (*argv.argfunction())(Argv_t("rwsh.mapped_argfunction"));
+      Argv_t mapped_argv(argv.myout());
+      mapped_argv.push_back("rwsh.mapped_argfunction");
+      ret = (*argv.argfunction())(mapped_argv);
       if (Executable_t::unwind_stack() || argv.var_exists("ERRNO"))
         return -1;}
     else ret = 0;}

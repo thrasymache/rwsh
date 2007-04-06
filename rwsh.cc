@@ -49,15 +49,15 @@ int main(int argc, char *argv[]) {
   executable_map.set(new Function_t("rwsh.init", init_str));
   executable_map.run_if_exists("rwsh.init", external_command_line);
   register_signals();
-  Argv_t command(0);
+  Arg_script_t script("");
   Argv_t prompt(default_stream_p);
   if (command_stream) executable_map.run_if_exists("rwsh.prompt", prompt);
-  while (command_stream >> command || Executable_t::unwind_stack()) 
+  while (command_stream >> script || Executable_t::unwind_stack()) 
     if (Executable_t::unwind_stack()) Executable_t::signal_handler();
     else {
+      Argv_t command(0);
       try {
-        Arg_script_t script(command);
-        command = script.interpret(command);}
+        command = script.interpret(script.argv());}
       catch (Argv_t exception) {command = exception;}
       executable_map.run_if_exists("rwsh.before_command", command);
       if (!executable_map.run_if_exists("rwsh.run_logic", command))

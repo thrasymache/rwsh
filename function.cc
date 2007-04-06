@@ -25,7 +25,7 @@ Function_t::Function_t(const std::string& name_i, const std::string& src) :
                             std::bind2nd(std::equal_to<char>(), ';'));
   for (std::vector<std::string>::const_iterator i = commands.begin();
        i != commands.end(); ++i) {
-    script.push_back(Arg_script_t(Argv_t(*i)));
+    script.push_back(Arg_script_t(*i));
     if (commands.size() != 1 && script.back().is_argfunction())
       *default_stream_p <<"rwsh.argfunction cannot occur as one of several "
                   "commands\n";}}

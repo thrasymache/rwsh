@@ -38,14 +38,15 @@ void selection_read(const std::string& src, Out res) {
         if (stat(j->c_str(), &sb)) {j = partial.erase(j); --j;}}
     else partial_match_children(partial, *i, ignore);
     if (!partial.size()) {
-      std::string error_string = "rwsh.selection_not_found ";
+      Argv_t argv(default_stream_p);
+      argv.push_back("rwsh.selection_not_found");
+      argv.push_back("");
       for (std::vector<Entry_pattern_t>::iterator j=focus.begin(); j!=i+1; ++j)
-        error_string += "/" + j->str();
-      error_string += " ";
+        argv.back() += "/" + j->str();
+      argv.push_back("");
       for (std::vector<Entry_pattern_t>::iterator j=focus.begin(); 
            j!=focus.end(); ++j)
-        error_string += "/" + j->str();
-      Argv_t argv(error_string);
+        argv.back() += "/" + j->str();
       executable_map.run(argv);}}
   copy(partial.begin(), partial.end(), res);}
 

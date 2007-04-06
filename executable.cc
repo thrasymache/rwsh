@@ -13,6 +13,7 @@
 #include "builtin.h"
 #include "executable.h"
 #include "executable_map.h"
+#include "rwsh_stream.h"
 #include "variable_map.h"
 
 int Executable_t::global_nesting(0);
@@ -74,14 +75,15 @@ void Executable_t::signal_handler(void) {
   vars->unset("IF_TEST");
   executable_map.run(call_stack_copy);
   if (unwind_stack()) {
-    echo_bi(Argv_t("%echo signal handler itself triggered signal\n"));
+    *default_stream_p <<"signal handler itself triggered signal\n";
     call_stack.push_front("%echo");
     echo_bi(call_stack);
-    echo_bi(Argv_t("%echo \noriginal call stack:\n"));
+    *default_stream_p <<"\noriginal call stack:\n";
     call_stack_copy[0] = "%echo";
     echo_bi(call_stack_copy);
-    newline_bi(Argv_t("%newline"));
-    return_bi(Argv_t("%return -1"));
+    *default_stream_p <<"\n";
+    default_stream_p->flush();
+    dollar_question = -1;
     call_stack.clear();
     caught_signal = SIGNONE;
     vars->unset("IF_TEST");}

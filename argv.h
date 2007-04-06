@@ -1,4 +1,4 @@
-// Copyright (C) 2005, 2006 Samuel Newbold
+// Copyright (C) 2005, 2006, 2007 Samuel Newbold
 
 class Function_t;
 class Rwsh_stream_t;
@@ -15,7 +15,6 @@ class Argv_t : private std::vector<std::string> {
 
  public:
   Argv_t(Rwsh_stream_t* myout_i) : argfunction_v(0), myout_v(myout_i) {};
-  Argv_t(const std::string& src);
   template <class In> Argv_t(In first, In last, Function_t* argfunction_i, 
                              Rwsh_stream_t* myout_i) :
     Base(first, last), argfunction_v(argfunction_i->copy_pointer()), 
@@ -60,7 +59,9 @@ class Argv_t : private std::vector<std::string> {
   iterator end(void) {return Base::end();};
   const_iterator end(void) const {return Base::end();};
   const_reference front(void) const {return Base::front();};
+  reference front(void) {return Base::front();};
   const_reference back(void) const {return Base::back();};
+  reference back(void) {return Base::back();};
   iterator erase(iterator key) {return Base::erase(key);}
   iterator erase(iterator first, iterator last) {
     return Base::erase(first, last);}
