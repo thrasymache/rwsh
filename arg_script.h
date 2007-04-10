@@ -15,6 +15,9 @@ class Arg_spec_t {
 struct Arguments_to_argfunction_t : public Argv_t {
   Arguments_to_argfunction_t(const std::string& argfunction_type);};
 
+struct Bad_argfunction_style_t : public Argv_t {
+  Bad_argfunction_style_t(const std::string& argfunction_style);};
+
 struct Mismatched_brace_t : public Argv_t {
   Mismatched_brace_t(const std::string& prefix);};
 

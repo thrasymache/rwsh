@@ -23,20 +23,6 @@ Out tokenize(const std::string& in, Out res, Pred p) {
 // character two past the end, just as i will after it is incremented. Thus
 // the test for token_start != i will tell if there is in fact a token 
 
-// repeated separators are interpreted as a single separator
-// empty input produces no output
-template<class Out, class Pred>
-Out tokenize_arg_spec(const std::string& in, Out res, Pred p) {
-  unsigned token_start=0, i=0;
-  for (; i<in.length(); ++i) {
-    if (p(in[i])) {
-      *res++ = Arg_spec_t(in.substr(token_start, i-token_start));
-      while (i<in.length() && p(in[i])) ++i;
-      token_start = i + (i>=in.length());}}        //dealing with end of line:
-  if (token_start != i) 
-    *res = Arg_spec_t(in.substr(token_start, i-token_start));
-  return res;}
-
 // repeated separators result in empty tokens
 // empty input produces a single empty string
 template<class Out, class Pred>

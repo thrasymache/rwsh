@@ -27,7 +27,6 @@
 #include "rwsh_stream.h"
 #include "selection.h"
 #include "selection_read.cc"
-#include "tokenize.cc"
 #include "util.h"
 #include "variable_map.h"
 
@@ -95,32 +94,51 @@ Arg_spec_t& construct_arg_spec(const std::string& src) {
   return *(new Arg_spec_t(src));}
 
 Arguments_to_argfunction_t::Arguments_to_argfunction_t(
-    const std::string& argfunction_type) : Argv_t(default_stream_p) {
+      const std::string& argfunction_type) : Argv_t(default_stream_p) {
   push_back("rwsh.arguments_for_argfunction");
   push_back(argfunction_type);}
 
+Bad_argfunction_style_t::Bad_argfunction_style_t(
+      const std::string& argfunction_style) : Argv_t(default_stream_p) {
+  push_back("rwsh.bad_argfunction_style");
+  push_back(argfunction_style);}
+
 Mismatched_brace_t::Mismatched_brace_t(const std::string& prefix) : 
-    Argv_t(default_stream_p) {
+      Argv_t(default_stream_p) {
   push_back("rwsh.mismatched_brace");
   push_back(prefix);}
 
 Multiple_argfunctions_t::Multiple_argfunctions_t() : Argv_t(default_stream_p) {
       push_back("rwsh.multiple_argfunctions");}
 
+#include <iostream>
 Arg_script_t::Arg_script_t(const std::string& src) :
       argfunction(0), argfunction_level(0), myout(default_stream_p) {
-  std::string::size_type o_brace, c_brace;
-  o_brace = src.find_first_of("{}"); 
-  add_tokens(src.substr(0, o_brace));
-  while (o_brace != std::string::npos) {
-    c_brace = find_close_brace(src, o_brace);
-    if (src[o_brace] == '}' || c_brace == std::string::npos)
-      throw Mismatched_brace_t(src.substr(0, o_brace+1));
-    if (argfunction) throw Multiple_argfunctions_t();
-    argfunction = new Function_t("rwsh.argfunction", 
-                                     src.substr(o_brace+1, c_brace-o_brace-1));
-    o_brace = src.find_first_of("{}", c_brace+1);
-    add_tokens(src.substr(c_brace+1, o_brace-c_brace-1));}
+  std::string::size_type token_start = src.find_first_not_of(" "); 
+  while (token_start != std::string::npos) {
+    std::string::size_type token_end = src.find_first_of("{} ", token_start); 
+    if (token_end == std::string::npos) 
+      push_back(Arg_spec_t(src.substr(token_start, std::string::npos)));
+    else switch (src[token_end]) {
+      case ' ': 
+        push_back(Arg_spec_t(src.substr(token_start, token_end-token_start))); 
+        break;
+      case '{': {
+        if (token_start != token_end) {
+          std::string style = src.substr(token_start, token_end-token_start);
+          if (style != "$") throw Bad_argfunction_style_t(style);
+          else std::cout <<"you've got yourself a substitution\n";}
+        std::string::size_type close_brace = find_close_brace(src, token_end);
+        if (close_brace == std::string::npos)
+          throw Mismatched_brace_t(src.substr(0, token_end+1));
+        if (argfunction) throw Multiple_argfunctions_t();
+        std::string f_str = src.substr(token_end+1, close_brace-token_end-1);
+        argfunction = new Function_t("rwsh.argfunction", f_str);
+        token_end = close_brace+1;
+        break;}
+      case '}': throw Mismatched_brace_t(src.substr(0, token_end+1));
+      default: assert(0);} // error in std::string::find_first_of
+    token_start = src.find_first_not_of(" ", token_end);}
   if (!size()) push_back(Arg_spec_t(""));
   if (is_argfunction_name(front().str()) && 
       front().str() != "rwsh.mapped_argfunction") {
@@ -143,13 +161,6 @@ Arg_script_t& Arg_script_t::operator=(const Arg_script_t& src) {
   myout = src.myout;}
 
 Arg_script_t::~Arg_script_t(void) {delete argfunction;}
-
-// algorithm used twice by string constructor
-void Arg_script_t::add_tokens(const std::string& src) {
-  std::string::size_type skipspace = src.find_first_not_of(" "); 
-  if (skipspace != std::string::npos) {
-    tokenize_arg_spec(src.substr(skipspace), std::back_inserter(*this), 
-             std::bind2nd(std::equal_to<char>(), ' '));}}
 
 // naively create an Argv_t from Arg_script. string constructor for Argv_t.
 Argv_t Arg_script_t::argv(void) const {
