@@ -413,7 +413,7 @@ int which_executable_bi(const Argv_t& argv) {
   if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
   Executable_t* focus = executable_map.find(lookup);
   if (focus) {
-    *argv.myout() <<focus->str() <<"\n";
+    *argv.myout() <<focus->str();
     argv.myout()->flush();
     return 0;}
   else return 1;} // executable does not exist
@@ -430,7 +430,7 @@ int which_path_bi(const Argv_t& argv) {
     std::string test = *i + '/' + lookup[0];
     struct stat sb;
     if (!stat(test.c_str(), &sb)) {
-      *argv.myout() <<test <<"\n";
+      *argv.myout() <<test;
       return 0;}}
   return 1;} // executable does not exist
 
@@ -463,7 +463,7 @@ int which_return_bi(const Argv_t& argv) {
     return 2; // return values not stored for argfunctions
   Executable_t* focus = executable_map.find(lookup);
   if (focus) {
-    *argv.myout() <<focus->last_ret() <<"\n";
+    *argv.myout() <<focus->last_ret();
     argv.myout()->flush();
     return 0;}
   else return 1;} // executable does not exist

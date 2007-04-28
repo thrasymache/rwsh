@@ -14,6 +14,7 @@
 #include <list>
 #include <map>
 #include <string>
+#include <sstream>
 #include <sys/stat.h>
 #include <vector>
 
@@ -27,10 +28,12 @@
 #include "rwsh_stream.h"
 #include "selection.h"
 #include "selection_read.cc"
+#include "substitution_stream.h"
 #include "util.h"
 #include "variable_map.h"
 
-Arg_spec_t::Arg_spec_t(const std::string& script) : reference_level(0) {
+Arg_spec_t::Arg_spec_t(const std::string& script) : reference_level(0),
+      substitution(0) {
   if (!script.length()) type=FIXED;
   else if (script[0] == '$') {
     if (script.length() < 2) type=VARIABLE;
@@ -55,6 +58,9 @@ Arg_spec_t::Arg_spec_t(const std::string& script) : reference_level(0) {
   else if (script[0] == '\\') {type=FIXED; text=script.substr(1);}
   else {type=FIXED; text=script;}};
 
+Arg_spec_t::Arg_spec_t(Function_t* substitution_i) : type(SUBSTITUTION), 
+  reference_level(0), substitution(substitution_i), text() {}
+
 // create a string from Arg_spec. inverse of constructor.
 std::string Arg_spec_t::str(void) const {
   std::string base;
@@ -71,7 +77,8 @@ std::string Arg_spec_t::str(void) const {
       else return base + "$*" + text;
     case SELECTION: return "@" + text;
     case SELECT_VAR: return "@$" + text;
-    case SELECT_STAR_VAR: return "@$*" + text;}}
+    case SELECT_STAR_VAR: return "@$*" + text;
+    case SUBSTITUTION: return "&" + substitution->str();}}
 
 // produce one or more strings for destination Argv from Arg_spec and source
 // Argv
@@ -88,7 +95,12 @@ void Arg_spec_t::interpret(const Argv_t& src, Out res) const {
     case SELECTION:  selection_read(text, res); break;
     case SELECT_VAR: selection_read(src.get_var(text), res); break;
     case SELECT_STAR_VAR: 
-      *default_stream_p <<"@$* not implemented yet\n"; break;}}
+      *default_stream_p <<"@$* not implemented yet\n"; break;
+    case SUBSTITUTION: {
+      Substitution_stream_t override_stream;
+      (*substitution)(src, &override_stream); 
+      *res++ = override_stream.str();
+      break;}}}
 
 Arg_spec_t& construct_arg_spec(const std::string& src) {
   return *(new Arg_spec_t(src));}
@@ -111,7 +123,6 @@ Mismatched_brace_t::Mismatched_brace_t(const std::string& prefix) :
 Multiple_argfunctions_t::Multiple_argfunctions_t() : Argv_t(default_stream_p) {
       push_back("rwsh.multiple_argfunctions");}
 
-#include <iostream>
 Arg_script_t::Arg_script_t(const std::string& src) :
       argfunction(0), argfunction_level(0), myout(default_stream_p) {
   std::string::size_type token_start = src.find_first_not_of(" "); 
@@ -124,16 +135,20 @@ Arg_script_t::Arg_script_t(const std::string& src) :
         push_back(Arg_spec_t(src.substr(token_start, token_end-token_start))); 
         break;
       case '{': {
-        if (token_start != token_end) {
-          std::string style = src.substr(token_start, token_end-token_start);
-          if (style != "$") throw Bad_argfunction_style_t(style);
-          else std::cout <<"you've got yourself a substitution\n";}
         std::string::size_type close_brace = find_close_brace(src, token_end);
         if (close_brace == std::string::npos)
           throw Mismatched_brace_t(src.substr(0, token_end+1));
-        if (argfunction) throw Multiple_argfunctions_t();
         std::string f_str = src.substr(token_end+1, close_brace-token_end-1);
-        argfunction = new Function_t("rwsh.argfunction", f_str);
+        Function_t* temp_function = new Function_t("rwsh.argfunction", f_str);
+        if (token_start != token_end) {
+          std::string style = src.substr(token_start, token_end-token_start);
+          if (style != "&") throw Bad_argfunction_style_t(style);
+          else push_back(Arg_spec_t(temp_function));}
+        else {
+          if (argfunction) {
+            delete temp_function;
+            throw Multiple_argfunctions_t();}
+          argfunction = temp_function;}
         token_end = close_brace+1;
         break;}
       case '}': throw Mismatched_brace_t(src.substr(0, token_end+1));
@@ -188,6 +203,8 @@ std::string Arg_script_t::str(void) const {
 // produce a destination Argv from the source Argv according to this script
 Argv_t Arg_script_t::interpret(const Argv_t& src) const {
   Argv_t result(myout);
+  if (myout == default_stream_p && src.myout() != default_stream_p)
+    result.set_myout(src.myout());
   if (!argfunction_level) {
     for (const_iterator i = begin(); i != end(); ++i) 
       i->interpret(src, std::back_inserter(result));

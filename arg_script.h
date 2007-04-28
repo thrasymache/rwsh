@@ -6,9 +6,11 @@ enum Arg_type_t {FIXED, VARIABLE, STAR_VAR, SELECTION, SELECT_VAR,
 class Arg_spec_t {
   Arg_type_t type;
   unsigned reference_level;
+  Function_t* substitution;
   std::string text;
  public:
   Arg_spec_t(const std::string& script);
+  Arg_spec_t(Function_t* substitution);
   std::string str(void) const;
   template<class Out> void interpret(const Argv_t& src, Out dest) const; };
 

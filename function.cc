@@ -41,13 +41,19 @@ Function_t* Function_t::apply(const Argv_t& argv) const {
       result->script.push_back(i->apply(argv));}
     return result;}}
   
-// run the given function
 int Function_t::operator() (const Argv_t& src_argv) {
+  return operator()(src_argv, 0);}
+
+// run the given function
+int Function_t::operator() (const Argv_t& src_argv, 
+                            Rwsh_stream_t* override_stream) {
   if (increment_nesting(src_argv)) return dollar_question;
   int ret;
   for (std::vector<Arg_script_t>::const_iterator i = script.begin();
        i != script.end(); ++i) {
     Argv_t dest_argv = i->interpret(src_argv);
+    if (override_stream && dest_argv.myout() == default_stream_p)
+      dest_argv.set_myout(override_stream);
     ret = executable_map.run(dest_argv);
     if (unwind_stack()) break;}
   last_return = ret;

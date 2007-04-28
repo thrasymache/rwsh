@@ -27,6 +27,30 @@ w {}
 e text that doesn't have a prompt appended
 m {e again}
 
+# arg_script tests
+%set A /bin
+e 5 4 3 2 1
+e $A $0 @$A
+e 1 2 $* 3 4
+e $*2 1 2
+e A $1 1 $$3 $$$3
+e A 1 2 3 4 5 6 7 $$$$$$$$$8
+e @//usr
+# rwsh.selection_not_found
+e @/*is*
+e @/bin
+e @/usr/*bin
+e @/usr/lib*
+e @/usr/s*e
+e @/usr/*d*
+%set FIGNORE include
+e @/usr/*d*
+e @/usr/*l*i*b*x*e*
+%return &{%return 0}
+%return &{e 0}
+%return &{%echo 0}
+%unset A
+
 # builtin tests
 # %cd
 %cd
@@ -284,28 +308,8 @@ e $A
 %version_compatible 1.0
 
 # binary test implicitly tests Old_argv_t
-/bin/echo 1 2 3
 /bn/echo 1 2 3
-
-# arg_script tests
-%set A /bin
-e 5 4 3 2 1
-e $A $0 @$A
-e 1 2 $* 3 4
-e $*2 1 2
-e A $1 1 $$3 $$$3
-e A 1 2 3 4 5 6 7 $$$$$$$$$8
-e @//usr
-# rwsh.selection_not_found
-e @/*is*
-e @/bin
-e @/usr/*bin
-e @/usr/lib*
-e @/usr/s*e
-e @/usr/*d*
-%set FIGNORE include
-e @/usr/*d*
-e @/usr/*l*i*b*x*e*
+/bin/echo 1 2 3
 
 # internal functions 
 # rwsh.after_command rwsh.raw_command rwsh.prompt

@@ -9,3 +9,4 @@ struct Default_stream_t : public Rwsh_stream_t {
   Rwsh_stream_t& operator<<(const std::string& r);
   Rwsh_stream_t& operator<<(int r);
   void flush(void);};
+

@@ -23,6 +23,7 @@ class Argv_t : private std::vector<std::string> {
   std::string str(void) const;
   Function_t* argfunction(void) const {return argfunction_v;};
   Rwsh_stream_t* myout(void) const {return myout_v;};
+  void set_myout(Rwsh_stream_t* val) {myout_v = val;};
   void set_argfunction(Function_t* val) {argfunction_v = val;};
 
 // variables
