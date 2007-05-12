@@ -44,19 +44,19 @@ Executable_map_t::Executable_map_t(void) {
                              "rwsh.sigquit rwsh.sigpipe rwsh.sigterm "
                              "rwsh.sigstp rwsh.sigcont rwsh.siginfo "
                              "rwsh.sigusr1 rwsh.sigusr2 rwsh.unreadable_dir}; "
-                         "%else {%append_to_errno ARGS; %return -1}}"));
+                         "%else {%append_to_errno ARGS; %return -1}}", 0));
   set(new Function_t("%internal_features", 
                      "%error_unit $* {"
                          "%if %test_equal $# 1 {"
                              "%echo rwsh.after_command rwsh.before_command "
                              "rwsh.prompt rwsh.raw_command rwsh.run_logic "
                              "rwsh.shutdown rwsh.vars}; "
-                         "%else {%append_to_errno ARGS; %return -1}}"));
+                         "%else {%append_to_errno ARGS; %return -1}}", 0));
   set(new Function_t("%internal_vars", 
                      "%error_unit $* {"
                          "%if %test_equal $# 1 {"
                              "%echo CWD ERRNO FIGNORE IF_TEST MAX_NESTING}; "
-                         "%else {%append_to_errno ARGS; %return -1}}"));
+                         "%else {%append_to_errno ARGS; %return -1}}", 0));
   set(new Builtin_t("%ls", ls_bi));
   set(new Builtin_t("%newline", newline_bi));
   set(new Builtin_t("%nop", nop_bi));
@@ -132,6 +132,6 @@ int Executable_map_t::run(Argv_t& argv) {
   if (i) return (*i)(argv);
   set(new Function_t("rwsh.executable_not_found", // reset executable_not_found
                      "%echo $1 : command not found ( $* ); %newline; "
-                     "%return -1"));
+                     "%return -1", 0));
   return (*find(argv))(argv);}
 

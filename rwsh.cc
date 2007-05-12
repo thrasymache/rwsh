@@ -46,10 +46,10 @@ void register_signals(void) {
 int main(int argc, char *argv[]) {
   Argv_t external_command_line(&argv[0], &argv[argc], 0, default_stream_p);
   Command_stream_t command_stream(std::cin);
-  executable_map.set(new Function_t("rwsh.init", init_str));
+  executable_map.set(new Function_t("rwsh.init", init_str, 0));
   executable_map.run_if_exists("rwsh.init", external_command_line);
   register_signals();
-  Arg_script_t script("");
+  Arg_script_t script("", 0);
   Argv_t prompt(default_stream_p);
   while (command_stream) {
     executable_map.run_if_exists("rwsh.prompt", prompt);

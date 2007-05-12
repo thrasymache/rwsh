@@ -302,7 +302,7 @@ int source_bi(const Argv_t& argv) {
   std::ifstream src(argv[1].c_str(), std::ios_base::in);
   Argv_t script_arg(argv);
   Command_stream_t command_stream(src);
-  Arg_script_t script("");
+  Arg_script_t script("", 0);
   int ret = -1;
   while (command_stream && !Executable_t::unwind_stack()) {
     Argv_t command(0);
@@ -450,7 +450,7 @@ int autofunction_bi(const Argv_t& argv) {
       std::string script;
       for (Argv_t::const_iterator j = lookup.begin()+1; j != lookup.end(); 
            ++j) script += " " + *j;
-      executable_map.set(new Function_t(lookup[0], test + script));
+      executable_map.set(new Function_t(lookup[0], test + script, 0));
       return 0;}}
   return 1;} // executable does not exist
 

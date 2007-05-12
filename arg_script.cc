@@ -32,19 +32,27 @@
 #include "util.h"
 #include "variable_map.h"
 
-Arg_spec_t::Arg_spec_t(const std::string& script) : reference_level(0),
-      substitution(0) {
+Arg_spec_t::Arg_spec_t(const std::string& script, unsigned max_soon) : 
+      soon_level(0), ref_level(0), substitution(0) {
   if (!script.length()) type=FIXED;
   else if (script[0] == '$') {
-    if (script.length() < 2) type=VARIABLE;
+    if (script.length() < 2) type=REFERENCE;
     else {
       int i = 1;
-      while (i < script.length() && script[i] == '$') ++reference_level, ++i;
+      while (i < script.length() && script[i] == '$') ++ref_level, ++i;
       if (script[i] == '*') {
-        type=STAR_VAR;
+        type=STAR_REF;
         if (script.length() - i > 1) text=script.substr(i+1);
         else text="1";}
-      else {type=VARIABLE; text=script.substr(i);}}}
+      else {type=REFERENCE; text=script.substr(i);}}}
+  else if (script[0] == '&') {
+    if (script.length() < 2) type=SOON;
+    else {
+      int i = 1;
+      while (i < script.length() && script[i] == '&') ++soon_level, ++i;
+      while (i < script.length() && script[i] == '$') ++ref_level, ++i;
+      if (soon_level > max_soon) throw Not_soon_enough_t(script);
+      type=SOON; text=script.substr(i);}}
   else if (script[0] == '@') {
     if (script.length() < 2) type=SELECTION;
     else if (script[1] == '$') {
@@ -58,27 +66,42 @@ Arg_spec_t::Arg_spec_t(const std::string& script) : reference_level(0),
   else if (script[0] == '\\') {type=FIXED; text=script.substr(1);}
   else {type=FIXED; text=script;}};
 
-Arg_spec_t::Arg_spec_t(Function_t* substitution_i) : type(SUBSTITUTION), 
-  reference_level(0), substitution(substitution_i), text() {}
+Arg_spec_t::Arg_spec_t(Function_t* substitution_i, unsigned max_soon) : 
+  type(SUBSTITUTION), soon_level(0), ref_level(0), 
+  substitution(substitution_i), text() {}
+
+void Arg_spec_t::apply(const Argv_t& src) {
+  switch(type) {
+    case SOON: 
+      if (soon_level) --soon_level;
+      else {
+        text = src.get_var(text);
+        for (unsigned i = 0; i < ref_level; ++i) text = src.get_var(text);
+        type = FIXED;
+      break;}
+  default: break;}}  // most types are not affected by apply
 
 // create a string from Arg_spec. inverse of constructor.
 std::string Arg_spec_t::str(void) const {
   std::string base;
-  for (int i=0; i < reference_level; ++i) base += '$';
+  for (int i=0; i < soon_level; ++i) base += '&';
+  for (int i=0; i < ref_level; ++i) base += '$';
   switch(type) {
     case FIXED: 
       if (!text.length()) return "\\ ";
       else if(text[0] == '$' || text[0] == '@' || text[0] == '\\')
         return "\\" + text;
       else return text;
-    case VARIABLE: return base + "$" + text;
-    case STAR_VAR: 
+    case SOON: return "&" + base + text;
+    case REFERENCE: return "$" + base + text;
+    case STAR_REF: 
       if (text == "1") return base + "$*";
       else return base + "$*" + text;
     case SELECTION: return "@" + text;
     case SELECT_VAR: return "@$" + text;
     case SELECT_STAR_VAR: return "@$*" + text;
-    case SUBSTITUTION: return "&" + substitution->str();}}
+    case SUBSTITUTION: return "&" + substitution->str();
+    default: assert(0);}}
 
 // produce one or more strings for destination Argv from Arg_spec and source
 // Argv
@@ -86,12 +109,13 @@ template<class Out>
 void Arg_spec_t::interpret(const Argv_t& src, Out res) const {
   switch(type) {
     case FIXED:      *res++ = text; break;
-    case VARIABLE: {
+    case REFERENCE: case SOON: {
+      assert(!soon_level); // constructor guarantees SOONs are already done
       std::string next = src.get_var(text);
-      for (unsigned i = 0; i < reference_level; ++i) next = src.get_var(next);
+      for (unsigned i = 0; i < ref_level; ++i) next = src.get_var(next);
       *res++ = next;
       break;}
-    case STAR_VAR:   res = src.star_var(text, reference_level, res); break;
+    case STAR_REF:   res = src.star_var(text, ref_level, res); break;
     case SELECTION:  selection_read(text, res); break;
     case SELECT_VAR: selection_read(src.get_var(text), res); break;
     case SELECT_STAR_VAR: 
@@ -100,10 +124,13 @@ void Arg_spec_t::interpret(const Argv_t& src, Out res) const {
       Substitution_stream_t override_stream;
       (*substitution)(src, &override_stream); 
       *res++ = override_stream.str();
-      break;}}}
+      break;}
+    default: assert(0);}}
 
-Arg_spec_t& construct_arg_spec(const std::string& src) {
-  return *(new Arg_spec_t(src));}
+#if 0
+Arg_spec_t& construct_arg_spec(const std::string& src, unsigned max_soon) {
+  return *(new Arg_spec_t(src, max_soon));}
+#endif
 
 Arguments_to_argfunction_t::Arguments_to_argfunction_t(
       const std::string& argfunction_type) : Argv_t(default_stream_p) {
@@ -121,29 +148,37 @@ Mismatched_brace_t::Mismatched_brace_t(const std::string& prefix) :
   push_back(prefix);}
 
 Multiple_argfunctions_t::Multiple_argfunctions_t() : Argv_t(default_stream_p) {
-      push_back("rwsh.multiple_argfunctions");}
+  push_back("rwsh.multiple_argfunctions");}
 
-Arg_script_t::Arg_script_t(const std::string& src) :
+Not_soon_enough_t::Not_soon_enough_t(const std::string& argument) : 
+      Argv_t(default_stream_p) {
+  push_back("rwsh.not_soon_enough");
+  push_back(argument);}
+
+Arg_script_t::Arg_script_t(const std::string& src, unsigned max_soon) :
       argfunction(0), argfunction_level(0), myout(default_stream_p) {
   std::string::size_type token_start = src.find_first_not_of(" "); 
   while (token_start != std::string::npos) {
     std::string::size_type token_end = src.find_first_of("{} ", token_start); 
     if (token_end == std::string::npos) 
-      push_back(Arg_spec_t(src.substr(token_start, std::string::npos)));
-    else switch (src[token_end]) {
+      push_back(Arg_spec_t(src.substr(token_start, std::string::npos), 
+                           max_soon));
+    else switch (src[token_end]) {                           // add one argument
       case ' ': 
-        push_back(Arg_spec_t(src.substr(token_start, token_end-token_start))); 
+        push_back(Arg_spec_t(src.substr(token_start, token_end-token_start),
+                             max_soon)); 
         break;
       case '{': {
         std::string::size_type close_brace = find_close_brace(src, token_end);
         if (close_brace == std::string::npos)
           throw Mismatched_brace_t(src.substr(0, token_end+1));
         std::string f_str = src.substr(token_end+1, close_brace-token_end-1);
-        Function_t* temp_function = new Function_t("rwsh.argfunction", f_str);
+        Function_t* temp_function = 
+              new Function_t("rwsh.argfunction", f_str, max_soon+1);
         if (token_start != token_end) {
           std::string style = src.substr(token_start, token_end-token_start);
           if (style != "&") throw Bad_argfunction_style_t(style);
-          else push_back(Arg_spec_t(temp_function));}
+          else push_back(Arg_spec_t(temp_function, max_soon));}
         else {
           if (argfunction) {
             delete temp_function;
@@ -154,8 +189,8 @@ Arg_script_t::Arg_script_t(const std::string& src) :
       case '}': throw Mismatched_brace_t(src.substr(0, token_end+1));
       default: assert(0);} // error in std::string::find_first_of
     token_start = src.find_first_not_of(" ", token_end);}
-  if (!size()) push_back(Arg_spec_t(""));
-  if (is_argfunction_name(front().str()) && 
+  if (!size()) push_back(Arg_spec_t("", max_soon));
+  if (is_argfunction_name(front().str()) &&        // argfunction_level handling
       front().str() != "rwsh.mapped_argfunction") {
     if (size() != 1 || argfunction) 
       throw Arguments_to_argfunction_t(front().str());
@@ -225,7 +260,9 @@ Argv_t Arg_script_t::interpret(const Argv_t& src) const {
 Arg_script_t Arg_script_t::apply(const Argv_t& src) const {
   Arg_script_t result(*this);
   if (result.argfunction_level) --result.argfunction_level;  
-  if (this->argfunction) result.argfunction = this->argfunction->apply(src);
+  else {
+    for (iterator i = result.begin(); i != result.end(); ++i) i->apply(src);
+    if (this->argfunction) result.argfunction = this->argfunction->apply(src);}
   return result;}
 
 void Arg_script_t::clear(void) {

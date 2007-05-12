@@ -35,6 +35,10 @@ e 1 2 $* 3 4
 e $*2 1 2
 e A $1 1 $$3 $$$3
 e A 1 2 3 4 5 6 7 $$$$$$$$$8
+e &&A
+m {e &&&A}
+e &A
+m {%set A not_bin; e &A &&A $A; m {%set A otherwise; e &A &&A &&&A $A}}
 e @//usr
 # rwsh.selection_not_found
 e @/*is*

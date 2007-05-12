@@ -1,18 +1,20 @@
 // Copyright (C) 2006, 2007 Samuel Newbold
 
-enum Arg_type_t {FIXED, VARIABLE, STAR_VAR, SELECTION, SELECT_VAR,
+enum Arg_type_t {FIXED, REFERENCE, SOON, STAR_REF, SELECTION, SELECT_VAR,
                  SELECT_STAR_VAR, SUBSTITUTION};
 
 class Arg_spec_t {
   Arg_type_t type;
-  unsigned reference_level;
+  unsigned soon_level;
+  unsigned ref_level;
   Function_t* substitution;
   std::string text;
  public:
-  Arg_spec_t(const std::string& script);
-  Arg_spec_t(Function_t* substitution);
-  std::string str(void) const;
-  template<class Out> void interpret(const Argv_t& src, Out dest) const; };
+  Arg_spec_t(const std::string& script, unsigned max_soon);
+  Arg_spec_t(Function_t* substitution, unsigned max_soon);
+  void apply(const Argv_t& src);
+  template<class Out> void interpret(const Argv_t& src, Out dest) const;
+  std::string str(void) const; };
 
 struct Arguments_to_argfunction_t : public Argv_t {
   Arguments_to_argfunction_t(const std::string& argfunction_type);};
@@ -25,6 +27,9 @@ struct Mismatched_brace_t : public Argv_t {
 
 struct Multiple_argfunctions_t : public Argv_t {Multiple_argfunctions_t();};
 
+struct Not_soon_enough_t : public Argv_t {
+  Not_soon_enough_t(const std::string& argument);};
+
 class Arg_script_t : private std::vector<Arg_spec_t> {
   typedef std::vector<Arg_spec_t> Base;
   Function_t* argfunction;
@@ -34,14 +39,14 @@ class Arg_script_t : private std::vector<Arg_spec_t> {
   void add_tokens(const std::string& s);
 
  public:
-  Arg_script_t(const std::string& src);
+  Arg_script_t(const std::string& src, unsigned max_soon);
   Arg_script_t(const Arg_script_t& src);
   Arg_script_t& operator=(const Arg_script_t& src);
   ~Arg_script_t(void);
   Argv_t argv(void) const;
+  Arg_script_t apply(const Argv_t& src) const;
   std::string str(void) const;
   Argv_t interpret(const Argv_t& src) const;
-  Arg_script_t apply(const Argv_t& src) const;
   bool is_argfunction(void) const {return argfunction_level == 1;};
 
 // vector semantics
