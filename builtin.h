@@ -1,7 +1,6 @@
 // Copyright (C) 2006 Samuel Newbold
 
 int append_to_errno_bi(const Argv_t& argv);
-int autofunction_bi(const Argv_t& argv);
 int cd_bi(const Argv_t& argv);
 int echo_bi(const Argv_t& argv);
 int if_bi(const Argv_t& argv);

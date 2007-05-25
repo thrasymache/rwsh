@@ -6,6 +6,8 @@
 // value_type is not std::pair<key_type, mapped_type>
 class Executable_map_t : private std::map<std::string, Executable_t*> {
   typedef std::map<std::string, Executable_t*> Base;
+  bool in_autofunction;
+  int not_found(Argv_t& argv);                    // doesn't catch unwind_stack
  public:
   Executable_map_t(void);
   size_type erase (const std::string& key);

@@ -11,7 +11,10 @@ class Arg_spec_t {
   std::string text;
  public:
   Arg_spec_t(const std::string& script, unsigned max_soon);
-  Arg_spec_t(Function_t* substitution, unsigned max_soon);
+  Arg_spec_t(const std::string& style, const std::string& function, 
+             unsigned max_soon);
+  Arg_spec_t(const Arg_spec_t& src);
+  ~Arg_spec_t();
   void apply(const Argv_t& src);
   template<class Out> void interpret(const Argv_t& src, Out dest) const;
   std::string str(void) const; };

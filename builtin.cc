@@ -434,26 +434,6 @@ int which_path_bi(const Argv_t& argv) {
       return 0;}}
   return 1;} // executable does not exist
 
-// insert into the executable map a function with name $1 that runs the binary 
-// in $PATH with filename $1 with arguments $*2
-int autofunction_bi(const Argv_t& argv) {
-  if (argv.size() < 2) {argv.append_to_errno("ARGS"); return -1;}
-  Argv_t lookup(argv.begin()+1, argv.end(), 0, 0);
-  std::vector<std::string> path;
-  tokenize_strict(argv.get_var("PATH"), std::back_inserter(path), 
-                  std::bind2nd(std::equal_to<char>(), ':'));
-  for (std::vector<std::string>::iterator i = path.begin(); i != path.end();
-       ++i) {
-    std::string test = *i + '/' + lookup[0];
-    struct stat sb;
-    if (!stat(test.c_str(), &sb)) {
-      std::string script;
-      for (Argv_t::const_iterator j = lookup.begin()+1; j != lookup.end(); 
-           ++j) script += " " + *j;
-      executable_map.set(new Function_t(lookup[0], test + script, 0));
-      return 0;}}
-  return 1;} // executable does not exist
-
 // prints the last return value of the executable with named $1
 int which_return_bi(const Argv_t& argv) {
   if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}

@@ -37,8 +37,14 @@ e A $1 1 $$3 $$$3
 e A 1 2 3 4 5 6 7 $$$$$$$$$8
 e &&A
 m {e &&&A}
+e &{e &&A}
 e &A
 m {%set A not_bin; e &A &&A $A; m {%set A otherwise; e &A &&A &&&A $A}}
+%set A /bin
+m {%set A not_bin; e &{%echo $A} &&{%echo $A} $A; m {%set A otherwise; e &{%echo $A} &&{%echo $A} &&&{%echo $A} $A}}
+%set A /bin
+m {%set A not_bin; e &{%echo &A} &&{%echo &A &&A}}
+m &{%echo $A} {e $1 &1}
 e @//usr
 # rwsh.selection_not_found
 e @/*is*
@@ -270,6 +276,13 @@ wrapper 1 2
 %which_return j
 %which_return #
 
+# %which_path
+%which_path
+%which_path false
+%global PATH /bin:/usr/bin
+%which_path flse
+%which_path false
+
 # %while
 %function tf {%test_not_equal $A $N}
 %set A 0
@@ -329,13 +342,15 @@ f rwsh.before_command {%echo $*0; %newline}
 /bn
 f rwsh.before_command
 
-# rwsh.autofunction %autofunction %which_path
-%global PATH /bin:/usr/bin
-f rwsh.autofunction {%autofunction $1 \$*}
-w false
-%which_path false
-false
-w false
+# rwsh.autofunction
+w z
+f rwsh.autofunction {e $*0}
+z 1 2 3
+w z
+f rwsh.autofunction {f $1 {e $*}}
+z 1 2 3
+w z
+f rwsh.autofunction
 
 # rwsh.executable_not_found
 f rwsh.executable_not_found

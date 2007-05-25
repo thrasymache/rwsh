@@ -57,7 +57,7 @@
 %function unselect {%set SELECT $CWD; %selection_set SELECT /}
 
 # internal functions
-%function rwsh.autofunction {if_only %autofunction $1 \$* {%echo added &&1 to executable map; %newline}}
+%function rwsh.autofunction {if_only %which_path $1 {%function &&1 {&&&{%which_path &&1} $*}; %echo \ added to executable map as &&1; %newline}}
 %function rwsh.arguments_for_argfunction {%echo cannot specify arguments for $1 directly; %newline; %return -1}
 %function rwsh.binary_not_found {%echo $1 : could not run binary; %newline; %return -1}
 %function rwsh.excessive_nesting {%newline; %echo function exceeded MAX_NESTING ( $MAX_NESTING ). call stack: $*; %newline}

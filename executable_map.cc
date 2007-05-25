@@ -16,9 +16,8 @@
 #include "executable_map.h"
 #include "function.h"
 
-Executable_map_t::Executable_map_t(void) {
+Executable_map_t::Executable_map_t(void) : in_autofunction(false) {
   set(new Builtin_t("%append_to_errno", append_to_errno_bi));
-  set(new Builtin_t("%autofunction", autofunction_bi));
   set(new Builtin_t("%cd", cd_bi));
   set(new Builtin_t("%echo", echo_bi));
   set(new Builtin_t("%else", else_bi));
@@ -124,11 +123,17 @@ int Executable_map_t::run(Argv_t& argv) {
     set(new Binary_t(argv[0]));
     return (*find(argv))(argv);}
   if (!is_argfunction_name(argv[0])) {                  // try autofunction
+    if (in_autofunction) return not_found(argv);          // nested autofunction
+    in_autofunction = true;
     run_if_exists("rwsh.autofunction", argv);
+    in_autofunction = false;
     i = find(argv);                                     // second check for key
     if (i) return (*i)(argv);}
+  return not_found(argv);}
+
+int Executable_map_t::not_found(Argv_t& argv) {
   argv.push_front("rwsh.executable_not_found");         // executable_not_found
-  i = find(argv);
+  Executable_t* i = find(argv);
   if (i) return (*i)(argv);
   set(new Function_t("rwsh.executable_not_found", // reset executable_not_found
                      "%echo $1 : command not found ( $* ); %newline; "

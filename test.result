@@ -137,6 +137,10 @@ $m {e &&&A}
 rwsh.not_soon_enough : command not found ( rwsh.not_soon_enough &&&A )
 
 -1
+$e &{e &&A}
+rwsh.not_soon_enough : command not found ( rwsh.not_soon_enough &&A )
+
+-1
 $e &A
 /bin
 
@@ -144,6 +148,25 @@ $e &A
 $m {%set A not_bin; e &A &&A $A; m {%set A otherwise; e &A &&A &&&A $A}}
 /bin not_bin not_bin
 /bin not_bin otherwise otherwise
+
+0
+$%set A /bin
+
+0
+$m {%set A not_bin; e &{%echo $A} &&{%echo $A} $A; m {%set A otherwise; e &{%echo $A} &&{%echo $A} &&&{%echo $A} $A}}
+/bin not_bin not_bin
+/bin not_bin otherwise otherwise
+
+0
+$%set A /bin
+
+0
+$m {%set A not_bin; e &{%echo &A} &&{%echo &A &&A}}
+/bin /bin not_bin
+
+0
+$m &{%echo $A} {e $1 &1}
+not_bin &{%echo $A}
 
 0
 $e @//usr
@@ -993,6 +1016,28 @@ $%which_return #
 $
 
 0
+$# %which_path
+
+0
+$%which_path
+
+-1
+ERRNO set to ARGS
+$%which_path false
+
+1
+$%global PATH /bin:/usr/bin
+
+0
+$%which_path flse
+
+1
+$%which_path false
+/usr/bin/false
+0
+$
+
+0
 $# %while
 
 0
@@ -1200,26 +1245,35 @@ rwsh.before_command f rwsh.before_command
 $
 
 0
-$# rwsh.autofunction %autofunction %which_path
+$# rwsh.autofunction
 
 0
-$%global PATH /bin:/usr/bin
-
-0
-$f rwsh.autofunction {%autofunction $1 \$*}
-
-0
-$w false
+$w z
 
 1
-$%which_path false
-/usr/bin/false
-0
-$false
+$f rwsh.autofunction {e $*0}
 
-256
-$w false
-%function false {/usr/bin/false $*}
+0
+$z 1 2 3
+rwsh.autofunction z 1 2 3
+z : command not found ( z 1 2 3 )
+
+-1
+$w z
+
+1
+$f rwsh.autofunction {f $1 {e $*}}
+
+0
+$z 1 2 3
+1 2 3
+
+0
+$w z
+%function z {e $*}
+0
+$f rwsh.autofunction
+
 0
 $
 
