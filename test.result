@@ -169,6 +169,26 @@ $m &{%echo $A} {e $1 &1}
 not_bin &{%echo $A}
 
 0
+$m &{%return 1} {}
+rwsh.failed_substitution : command not found ( rwsh.failed_substitution &{%return 1} )
+
+-1
+$m {e &{%return 1}}
+rwsh.failed_substitution : command not found ( rwsh.failed_substitution &{%return 1} )
+
+-1
+$m {e &&{%return 1}; e after}
+rwsh.failed_substitution : command not found ( rwsh.failed_substitution &{%return 1} )
+after
+
+0
+$f rwsh.failed_substitution {e &&{%return 1}}
+
+0
+$m {e &&{%return 1}; e after}
+rwsh.excessive_nesting : command not found ( rwsh.excessive_nesting rwsh.failed_substitution rwsh.failed_substitution rwsh.failed_substitution rwsh.failed_substitution rwsh.failed_substitution rwsh.mapped_argfunction m )
+
+-1
 $e @//usr
 /usr
 
@@ -1256,6 +1276,17 @@ $f rwsh.autofunction {e $*0}
 0
 $z 1 2 3
 rwsh.autofunction z 1 2 3
+z : command not found ( z 1 2 3 )
+
+-1
+$w z
+
+1
+$f rwsh.autofunction {y $*0}
+
+0
+$z 1 2 3
+y : command not found ( y rwsh.autofunction z 1 2 3 )
 z : command not found ( z 1 2 3 )
 
 -1

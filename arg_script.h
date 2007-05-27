@@ -25,6 +25,9 @@ struct Arguments_to_argfunction_t : public Argv_t {
 struct Bad_argfunction_style_t : public Argv_t {
   Bad_argfunction_style_t(const std::string& argfunction_style);};
 
+struct Failed_substitution_t : public Argv_t {
+  Failed_substitution_t(const std::string& function);};
+
 struct Mismatched_brace_t : public Argv_t {
   Mismatched_brace_t(const std::string& prefix);};
 
@@ -33,6 +36,9 @@ struct Multiple_argfunctions_t : public Argv_t {Multiple_argfunctions_t();};
 struct Not_soon_enough_t : public Argv_t {
   Not_soon_enough_t(const std::string& argument);};
 
+struct Undefined_variable_t : public Argv_t {
+  Undefined_variable_t(const std::string& variable);};
+  
 class Arg_script_t : private std::vector<Arg_spec_t> {
   typedef std::vector<Arg_spec_t> Base;
   Function_t* argfunction;

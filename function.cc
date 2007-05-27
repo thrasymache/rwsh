@@ -51,7 +51,9 @@ int Function_t::operator() (const Argv_t& src_argv,
   int ret;
   for (std::vector<Arg_script_t>::const_iterator i = script.begin();
        i != script.end(); ++i) {
-    Argv_t dest_argv = i->interpret(src_argv);
+    Argv_t dest_argv(0);
+    try {dest_argv = i->interpret(src_argv);}
+    catch (Argv_t error) {dest_argv = error;}
     if (override_stream && dest_argv.myout() == default_stream_p)
       dest_argv.set_myout(override_stream);
     ret = executable_map.run(dest_argv);

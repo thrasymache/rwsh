@@ -117,17 +117,17 @@ bool Executable_map_t::run_if_exists(const std::string& key, Argv_t& argv) {
     return false;}}
 
 int Executable_map_t::run(Argv_t& argv) {
-  Executable_t* i = find(argv);                         // first check for key
+  Executable_t* i = find(argv);                       // first check for key
   if (i) return (*i)(argv);
-  else if (argv[0][0] == '/') {                         // insert a binary
+  else if (argv[0][0] == '/') {                       // insert a binary
     set(new Binary_t(argv[0]));
     return (*find(argv))(argv);}
-  if (!is_argfunction_name(argv[0])) {                  // try autofunction
-    if (in_autofunction) return not_found(argv);          // nested autofunction
+  if (!is_argfunction_name(argv[0])) {                // try autofunction
+    if (in_autofunction) return not_found(argv);        // nested autofunction
     in_autofunction = true;
     run_if_exists("rwsh.autofunction", argv);
     in_autofunction = false;
-    i = find(argv);                                     // second check for key
+    i = find(argv);                                   // second check for key
     if (i) return (*i)(argv);}
   return not_found(argv);}
 

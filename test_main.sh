@@ -45,6 +45,11 @@ m {%set A not_bin; e &{%echo $A} &&{%echo $A} $A; m {%set A otherwise; e &{%echo
 %set A /bin
 m {%set A not_bin; e &{%echo &A} &&{%echo &A &&A}}
 m &{%echo $A} {e $1 &1}
+m &{%return 1} {}
+m {e &{%return 1}}
+m {e &&{%return 1}; e after}
+f rwsh.failed_substitution {e &&{%return 1}}
+m {e &&{%return 1}; e after}
 e @//usr
 # rwsh.selection_not_found
 e @/*is*
@@ -345,6 +350,9 @@ f rwsh.before_command
 # rwsh.autofunction
 w z
 f rwsh.autofunction {e $*0}
+z 1 2 3
+w z
+f rwsh.autofunction {y $*0}
 z 1 2 3
 w z
 f rwsh.autofunction {f $1 {e $*}}

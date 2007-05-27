@@ -99,7 +99,8 @@ void Arg_spec_t::apply(const Argv_t& src) {
       if (soon_level) --soon_level;
       else {
         Substitution_stream_t override_stream;
-        (*substitution)(src, &override_stream);
+        if ((*substitution)(src, &override_stream)) 
+          throw Failed_substitution_t(str());
         delete substitution;
         substitution = 0;
         text = override_stream.str();
@@ -149,7 +150,8 @@ void Arg_spec_t::interpret(const Argv_t& src, Out res) const {
     case SUBSTITUTION: {
       assert(!soon_level); // constructor guarantees SOONs are already done
       Substitution_stream_t override_stream;
-      (*substitution)(src, &override_stream); 
+      if ((*substitution)(src, &override_stream)) 
+        throw Failed_substitution_t(str()); 
       *res++ = override_stream.str();
       break;}
     default: assert(0);}}
@@ -164,6 +166,11 @@ Bad_argfunction_style_t::Bad_argfunction_style_t(
   push_back("rwsh.bad_argfunction_style");
   push_back(argfunction_style);}
 
+Failed_substitution_t::Failed_substitution_t(const std::string& function) :
+      Argv_t(default_stream_p) {
+  push_back("rwsh.failed_substitution");
+  push_back(function);}
+
 Mismatched_brace_t::Mismatched_brace_t(const std::string& prefix) : 
       Argv_t(default_stream_p) {
   push_back("rwsh.mismatched_brace");
@@ -177,6 +184,11 @@ Not_soon_enough_t::Not_soon_enough_t(const std::string& argument) :
   push_back("rwsh.not_soon_enough");
   push_back(argument);}
 
+Undefined_variable_t::Undefined_variable_t(const std::string& variable) :
+      Argv_t(default_stream_p) {
+  push_back("rwsh.undefined_variable");
+  push_back(variable);}
+  
 Arg_script_t::Arg_script_t(const std::string& src, unsigned max_soon) :
       argfunction(0), argfunction_level(0), myout(default_stream_p) {
   std::string::size_type token_start = src.find_first_not_of(" "); 
