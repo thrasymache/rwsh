@@ -142,7 +142,7 @@ void Arg_spec_t::interpret(const Argv_t& src, Out res) const {
       for (unsigned i = 0; i < ref_level; ++i) next = src.get_var(next);
       *res++ = next;
       break;}
-    case STAR_REF:   res = src.star_var(text, ref_level, res); break;
+    case STAR_REF: res = src.star_var(text, ref_level, res); break;
     case SELECTION:  selection_read(text, res); break;
     case SELECT_VAR: selection_read(src.get_var(text), res); break;
     case SELECT_STAR_VAR: 
@@ -311,14 +311,19 @@ bool is_argfunction_name(const std::string& focus) {
 // test whether an executable name corresponds to a binary executable
 // (i.e. filesystem path)
 bool is_binary_name(const std::string& focus) {
-  return !focus.empty() && focus[0] == '/';}
+  return !focus.compare(0, 1, "/");}
 
 // test whether an executable name is possible for a builtin, does not test 
 // whether this builtin exists
 bool is_builtin_name(const std::string& focus) {
-  return !focus.empty() && focus[0] == '%';}
+  return !focus.compare(0, 1, "%");}
+
+// test whether this is an appropriate name for an internal function
+bool is_internal_function_name(const std::string& focus) {
+  return !focus.compare(0, 5, "rwsh.");}
 
 // test whether an executable name is possible for a function
 bool is_function_name(const std::string& focus) {
-  return !is_binary_name(focus) && !is_builtin_name(focus);}
+  return !is_binary_name(focus) && !is_builtin_name(focus) && 
+    !is_internal_function_name(focus);}
 

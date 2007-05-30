@@ -2,7 +2,6 @@
 
 class Executable_t {
  private:
-  static Argv_t call_stack;
   static int global_nesting;
   static bool excessive_nesting;
   static bool in_signal_handler;
@@ -19,9 +18,11 @@ class Executable_t {
 
   static const int SIGNONE   =  0;
   static const int SIGEXNEST = -1;
+  static const int SIGVAR    = -2;
   bool increment_nesting(const Argv_t& argv);
   bool decrement_nesting(const Argv_t& argv);
   static int caught_signal;
+  static Argv_t call_stack;
   static bool unwind_stack(void) {return caught_signal != SIGNONE;}
   static void signal_handler(void);
 

@@ -1,6 +1,6 @@
 // Copyright (C) 2006, 2007 Samuel Newbold
 
-enum Arg_type_t {FIXED, REFERENCE, SOON, STAR_REF, SELECTION, SELECT_VAR,
+enum Arg_type_t {FIXED, REFERENCE, SOON, STAR_REF, SELECTION, SELECT_VAR, 
                  SELECT_STAR_VAR, SUBSTITUTION};
 
 class Arg_spec_t {
@@ -86,4 +86,5 @@ class Arg_script_t : private std::vector<Arg_spec_t> {
 bool is_argfunction_name(const std::string& focus);
 bool is_binary_name(const std::string& focus);
 bool is_builtin_name(const std::string& focus);
+bool is_internal_function_name(const std::string& focus);
 bool is_function_name(const std::string& focus);

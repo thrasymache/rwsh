@@ -4,12 +4,13 @@
 
 # set up environment
 %importenv_preserve
-%global OLD_ERRNO /
-%global REGEX /
+%global OLD_ERRNO \
+%global ERRINFO \
+%global REGEX \
 %global SELECT $HOME
-%global TEMP1 /
-%global TEMP2 /
-%selection_set SELECT /
+%global TEMP1 \
+%global TEMP2 \
+%selection_set SELECT \
 %set FIGNORE .*
 
 # builtin wrappers
@@ -57,17 +58,19 @@
 %function unselect {%set SELECT $CWD; %selection_set SELECT /}
 
 # internal functions
-%function rwsh.autofunction {if_only %which_path $1 {%function &&1 {&&&{%which_path &&1} $*}; %echo \ added to executable map as &&1; %newline}}
+%function rwsh.autofunction {%function $1 {&&{%which_path &&1} $*}; if_only %return 0 {%echo added &&1 to executable map; %newline}}
 %function rwsh.arguments_for_argfunction {%echo cannot specify arguments for $1 directly; %newline; %return -1}
 %function rwsh.binary_not_found {%echo $1 : could not run binary; %newline; %return -1}
 %function rwsh.excessive_nesting {%newline; %echo function exceeded MAX_NESTING ( $MAX_NESTING ). call stack: $*; %newline}
+%function rwsh.failed_substitution {%append_to_errno ESUBSTITUTION; %set ERRINFO $1}
 %function rwsh.mismatched_brace {%echo mismatched brace: $1; %newline; %return -1}
 %function rwsh.multiple_argfunctions {%echo multiple argfunctions not supported at this time; %newline; %return -1}
 %function rwsh.prompt {%echo $SELECT \$}
 %function rwsh.selection_not_found {%echo no file matching pattern $1; if_only_not %test_equal $1 $2 {%echo \ for selection &&2}; %newline}
 %function rwsh.shutdown {%newline}
+%function rwsh.undefined_variable {%echo $1 was undefined with call stack $*2; %newline}
 %function rwsh.unreadable_dir {%echo cannot read directory $1; %newline}
-%function rwsh.vars {%internal_vars; %newline; echo HOME $HOME; echo REGEX $REGEX; echo SELECT $SELECT}
+%function rwsh.vars {%internal_vars; %newline; echo ERRINFO $ERRINFO; echo HOME $HOME; echo OLDERRNO $OLDERRNO; echo REGEX $REGEX; echo SELECT $SELECT}
 
 # misc
 %function ! {if $* {%return 1}; else {%return 0}}
@@ -76,10 +79,11 @@
 %function st {/bin/bash /usr/bin/test_rwsh}
 
 # final setup and individual configuration
+%global rc \
 %selection_set rc $HOME /.rwshrc
 %source $rc
 %unset rc
-%function rwsh.after_command {%set TEMP1 $?; %if_errno {echo ERRNO is set to $ERRNO; %set OLD_ERRNO $ERRNO; %unset ERRNO}; if_only_not %test_equal $TEMP1 0 {echo &&1 returned $TEMP1}}
+%function rwsh.after_command {%set TEMP1 $?; %if_errno {%set OLD_ERRNO $ERRNO; %unset ERRNO; %if %test_equal $OLD_ERRNO ESUBSTITUTION {echo substitution $ERRINFO failed}; %else {echo ERRNO is set to $OLD_ERRNO}}; if_only_not %test_equal $TEMP1 0 {echo &&1 returned $TEMP1}}
 %echo rwsh v
 %version
 %newline

@@ -10,6 +10,8 @@
 #include <vector>
 
 #include "argv.h"
+#include "arg_script.h"
+#include "executable.h"
 #include "variable_map.h"
 
 char** env;
@@ -46,7 +48,10 @@ const std::string& Variable_map_t::get(const std::string& key) {
     tmp <<dollar_question;
     (*this)["?"] = tmp.str();}
   std::map<std::string, std::string>::const_iterator i = find(key);
-  if (i == end()) return empty_str;
+  if (i == end()) {
+    Executable_t::caught_signal = Executable_t::SIGVAR;
+    Executable_t::call_stack.push_back(key);
+    throw Undefined_variable_t(key);}
   else return i->second;}
 
 int Variable_map_t::set(const std::string& key, const std::string& value) {

@@ -53,7 +53,8 @@ int Function_t::operator() (const Argv_t& src_argv,
        i != script.end(); ++i) {
     Argv_t dest_argv(0);
     try {dest_argv = i->interpret(src_argv);}
-    catch (Argv_t error) {dest_argv = error;}
+    catch (Failed_substitution_t error) {dest_argv = error;}
+    catch (Undefined_variable_t error) {break;}
     if (override_stream && dest_argv.myout() == default_stream_p)
       dest_argv.set_myout(override_stream);
     ret = executable_map.run(dest_argv);

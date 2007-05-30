@@ -23,7 +23,7 @@ f w {%which_executable $1 {rwsh.argfunction}}
 f e {%echo $*; %newline}
 f m {rwsh.argfunction}
 w e
-w {}
+w \ {}
 e text that doesn't have a prompt appended
 m {e again}
 
@@ -99,9 +99,10 @@ m {%global ERRNO X; %error_unit {%var_exists ERRNO; %global ERRNO Y}}
 a 1 2 3
 %function a
 %which_executable a
+%global A \
 %function a {e 9 $A $1 @//usr}
 %which_executable a
-a
+a \
 a 1
 a 1 2
 %function a {e $*5 $* $*0}
@@ -283,8 +284,9 @@ wrapper 1 2
 
 # %which_path
 %which_path
+%global PATH \
 %which_path false
-%global PATH /bin:/usr/bin
+%set PATH /bin:/usr/bin
 %which_path flse
 %which_path false
 
@@ -303,6 +305,7 @@ wrapper 1 2
 # %var_add
 %var_add
 %var_add A 1 2
+%var_add B 1
 %set A A
 %var_add A 2 
 %set A 3000000000
@@ -317,7 +320,7 @@ e $A
 %var_add A 2147483647
 %var_add A -2147483648
 e $A
-%var_add A $x
+%var_add A \
 e $A
 
 # %version %version_available %version_compatible
@@ -387,6 +390,10 @@ f rwsh.run_logic {%if %return $1; %else_if $*2; %else}
 1 e do print
 1 f rwsh.run_logic
 1 e executable not found
+
+# rwsh.undefined_variable
+e $WRONG $WWRONG
+e &WWRONG
 
 # rwsh.vars
 rwsh.vars

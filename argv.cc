@@ -52,7 +52,10 @@ std::string Argv_t::get_var(const std::string& key) const {
               case '8': case '9': case '0': {
       int n = std::atoi(key.c_str());
       if (size() > n) return (*this)[n];
-      else return "";}
+      else return std::string();} //{
+        //Executable_t::caught_signal = Executable_t::SIGVAR;
+        //Executable_t::call_stack.push_back(key);
+        //throw Undefined_variable_t(key);}}
     default: return var_map->get(key);}}
 
 int Argv_t::set_var(const std::string& key, const std::string& value) const {

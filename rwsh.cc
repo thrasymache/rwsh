@@ -25,8 +25,7 @@ Rwsh_stream_t* default_stream_p = &default_stream;
 namespace {
 std::string init_str =
   "%set MAX_NESTING 4;"
-  "%global rc $2;"
-  "%if %test_not_empty $rc {%source $rc};"
+  "%if %test_equal $# 3 {%source &2};"
   "%else {%source /etc/rwshrc}";
 
 void signal_starter(int sig) {Executable_t::caught_signal = sig;}
@@ -55,7 +54,7 @@ int main(int argc, char *argv[]) {
     executable_map.run_if_exists("rwsh.prompt", prompt);
     Argv_t command(0);
     try {
-      command_stream >> script;
+      if (!(command_stream >> script)) break;
       command = script.interpret(script.argv());}
     catch (Argv_t exception) {command = exception;}
     executable_map.run_if_exists("rwsh.before_command", command);

@@ -52,6 +52,7 @@ void Executable_t::signal_handler(void) {
   extern Variable_map_t* vars;
   Argv_t call_stack_copy(default_stream_p);                 //need for a copy: 
   switch (caught_signal) {
+    case SIGVAR: call_stack_copy.push_back("rwsh.undefined_variable"); break;
     case SIGEXNEST: call_stack_copy.push_back("rwsh.excessive_nesting"); break;
     case SIGHUP: call_stack_copy.push_back("rwsh.sighup"); break;
     case SIGINT: call_stack_copy.push_back("rwsh.sigint"); break;

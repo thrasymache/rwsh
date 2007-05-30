@@ -85,7 +85,7 @@ $f m {rwsh.argfunction}
 $w e
 %function e {%echo $*; %newline}
 0
-$w {}
+$w \ {}
 %function  {%nop}
 0
 $e text that doesn't have a prompt appended
@@ -366,13 +366,16 @@ $%function a
 $%which_executable a
 
 1
+$%global A \
+
+0
 $%function a {e 9 $A $1 @//usr}
 
 0
 $%which_executable a
 %function a {e 9 $A $1 @//usr}
 0
-$a
+$a \
 9   /usr
 
 0
@@ -671,12 +674,12 @@ $# %printenv %set
 0
 $%printenv
 ?=0
+A=
 CWD=/bin
 FIGNORE=include
 MAX_NESTING=5
 N=
 last_command_return=0
-rc=/usr/share/rwsh/test_init.sh
 
 0
 $%printenv A
@@ -820,7 +823,7 @@ $# %source is tested by having test_init.sh define #
 
 -1
 $w rwsh.init
-%function rwsh.init {%set MAX_NESTING 4; %global rc $2; %if %test_not_empty $rc {%source $rc}; %else {%source /etc/rwshrc}}
+%function rwsh.init {%set MAX_NESTING 4; %if %test_equal $# 3 {%source &2}; %else {%source /etc/rwshrc}}
 0
 $
 
@@ -1043,10 +1046,13 @@ $%which_path
 
 -1
 ERRNO set to ARGS
+$%global PATH \
+
+0
 $%which_path false
 
 1
-$%global PATH /bin:/usr/bin
+$%set PATH /bin:/usr/bin
 
 0
 $%which_path flse
@@ -1113,6 +1119,10 @@ $%var_add A 1 2
 
 -1
 ERRNO set to ARGS
+$%var_add B 1
+rwsh.undefined_variable : command not found ( rwsh.undefined_variable B %var_add )
+
+-1
 $%set A A
 
 0
@@ -1163,7 +1173,7 @@ $e $A
 -2
 
 0
-$%var_add A $x
+$%var_add A \
 
 -1
 ERRNO set to CONST_NAN
@@ -1403,6 +1413,16 @@ $1 e executable not found
 $
 
 0
+$# rwsh.undefined_variable
+
+0
+$e $WRONG $WWRONG
+rwsh.undefined_variable : command not found ( rwsh.undefined_variable WRONG )
+$e &WWRONG
+rwsh.undefined_variable : command not found ( rwsh.undefined_variable WWRONG )
+$
+
+0
 $# rwsh.vars
 
 0
@@ -1424,7 +1444,6 @@ MAX_NESTING=5
 N=4
 PATH=/bin:/usr/bin
 last_command_return=0
-rc=/usr/share/rwsh/test_init.sh
 
 0
 $

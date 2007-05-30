@@ -122,7 +122,7 @@ int Executable_map_t::run(Argv_t& argv) {
   else if (argv[0][0] == '/') {                       // insert a binary
     set(new Binary_t(argv[0]));
     return (*find(argv))(argv);}
-  if (!is_argfunction_name(argv[0])) {                // try autofunction
+  if (is_function_name(argv[0])) {                    // try autofunction
     if (in_autofunction) return not_found(argv);        // nested autofunction
     in_autofunction = true;
     run_if_exists("rwsh.autofunction", argv);

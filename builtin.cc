@@ -274,7 +274,8 @@ int return_bi(const Argv_t& argv) {
 int selection_set_bi(const Argv_t& argv) {
   if (argv.size() < 3) {argv.append_to_errno("ARGS"); return -1;}
   std::vector<Entry_pattern_t> focus;
-  str_to_entry_pattern_vector(argv.get_var(argv[1]), focus);
+  try {str_to_entry_pattern_vector(argv.get_var(argv[1]), focus);}
+  catch (Undefined_variable_t error) {return -1;}
   for (Argv_t::const_iterator i = argv.begin()+2; i != argv.end(); ++i) 
     str_to_entry_pattern_vector(*i, focus);
   argv.set_var(argv[1], entry_pattern_vector_to_str(focus));
@@ -327,7 +328,10 @@ int stepwise_bi(const Argv_t& argv) {
   int ret = -1;
   for (Function_t::const_iterator i = f->script.begin(); 
        i != f->script.end(); ++i) {
-    Argv_t body = i->interpret(lookup);
+    Argv_t body(0);
+    try {body = i->interpret(lookup);}
+    catch (Failed_substitution_t error) {body = error;}
+    catch (Undefined_variable_t error) {break;}
     body.push_front("rwsh.mapped_argfunction");
     ret  = (*argv.argfunction())(body);
     if (Executable_t::unwind_stack() || argv.var_exists("ERRNO")) {
@@ -357,10 +361,11 @@ int unset_bi(const Argv_t& argv) {
 
 int var_add_bi(const Argv_t& argv) {
   if (argv.size() != 3) {argv.append_to_errno("ARGS"); return -1;}
-  const std::string& var_str = argv.get_var(argv[1]);
-  if (var_str == "") return 1; // variable does not exist
   int var_term;
-  try {var_term = my_strtoi(var_str);}
+  try {
+    const std::string& var_str = argv.get_var(argv[1]);
+    var_term = my_strtoi(var_str);}
+  catch (Undefined_variable_t error) {return -1;}
   catch (E_generic_t) {argv.append_to_errno("VAR_ADD_ERROR"); return -1;}
   catch (E_nan_t) {argv.append_to_errno("VAR_NAN"); return -1;}
   catch (E_range_t) {argv.append_to_errno("VAR_RANGE"); return -1;}
