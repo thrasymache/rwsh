@@ -6,6 +6,8 @@
 
 
 
+
+  
   
   
   
@@ -17,6 +19,8 @@
 
 
 
+
+  
   
   
   
@@ -27,6 +31,7 @@
 
 
 <body>
+
 
 
 
@@ -43,12 +48,15 @@ for shell functions.<br>
 
 
 
+
 <br>
 
 
 
 
+
 <h3>%autofunction</h3>
+
 
 
 
@@ -65,7 +73,18 @@ done.<br>
 
 
 
+
+<h3>%append_to_errno</h3>
+Because of the way that ERRNO affects control flow, the one thing that
+you generally want to do when there's an error (create ERRNO if it
+doesn't exist, and add a new error on the end if it does), requres
+several commands with the standard variable builtins. %append_to_errno
+was created to fix this, and encourage good error handling. It takes
+one or more&nbsp;arguments which will be the new value of ERRNO if it
+did not previously exist, or which will be placed on the end if it
+already has a value.
 <h3>%cd</h3>
+
 
 
 
@@ -74,6 +93,7 @@ The %cd changes the current working directory to the path given as its
 argument. If successful it sets CWD to the argument that was passed to
 it. It returns the value returned by chdir.
 <h3>%echo</h3>
+
 
 
 
@@ -88,7 +108,9 @@ the %newline builtin.<br>
 
 
 
+
 <h3>%exit</h3>
+
 
 
 
@@ -104,7 +126,9 @@ terminates.<br>
 
 
 
+
 <h3>%if</h3>
+
 
 
 
@@ -120,11 +144,14 @@ to true if its arguments returned 0, and to false otherwise.<br>
 
 
 
+
 <h3>%if_errno</h3>
+
 
 
 %if_errno takes no arguments. &nbsp;It runs its argument function if the variable ERRNO is not the empty string.
 <h3>%else_if</h3>
+
 
 
 
@@ -138,7 +165,9 @@ between %if and %else.<br>
 
 
 
+
 <h3>%else_if_not</h3>
+
 
 
 
@@ -150,7 +179,9 @@ arguments returns nonzero.<br>
 
 
 
+
 <h3>%else</h3>
+
 
 
 
@@ -166,7 +197,9 @@ without a %else.
 
 
 
+
 %function inserts its argument function into the executable map. The first argument is used as the name for the new function.<br>
+
 
 
 
@@ -178,13 +211,16 @@ without a %else.
 
 
 
+
 %importenv causes the environment that rwsh was run in to be imported into the variable map.<br>
 
 
 
 
 
+
 <h3>%internal_errors</h3>
+
 
 
 
@@ -196,14 +232,17 @@ rwsh.init they are all reporting errors themselves.
 
 
 
+
 %internal_features takes no arguments. It prints a list of those internal functions which are run only if they exist.
 <h3>%internal_vars</h3>
+
 
 
 
 %internal_vars takes no arguments. It prints a list of those variables
 that are written by the shell itself or affect the running of builtins.
 <h3>%ls</h3>
+
 
 
 
@@ -218,7 +257,9 @@ use /bin/ls rather than %ls.<br>
 
 
 
+
 <h3>%newline</h3>
+
 
 
 
@@ -230,7 +271,9 @@ use /bin/ls rather than %ls.<br>
 
 
 
+
 <br>
+
 
 
 
@@ -241,12 +284,15 @@ use /bin/ls rather than %ls.<br>
 
 
 
+
 %nop ignores its arguments, and leaves $? unchanged<br>
 
 
 
 
+
 <h3>%printenv</h3>
+
 
 
 
@@ -259,7 +305,9 @@ it is given an argument, then it prints out the value of that variable.<br>
 
 
 
+
 <h3>%return</h3>
+
 
 
 
@@ -270,7 +318,9 @@ returns that value. It has more error conditions than any other builtin.<br>
 
 
 
+
 <h3>%set</h3>
+
 
 
 
@@ -284,7 +334,9 @@ variable.<br>
 
 
 
+
 <h3>%selection_set</h3>
+
 
 
 
@@ -298,7 +350,9 @@ path that should be modified by the second argument.<br>
 
 
 
+
 <h3>%stepwise</h3>
+
 %stepwise treats its arguments as a function call, looks up this
 function and interprets it with the given arguments, but rather than
 running this function, it passes each statement in turn to its argument
@@ -310,6 +364,7 @@ and function runs another function, stopping after the first statement
 that fails. &nbsp;This is equivalent to rewriting a function in another
 shell replacing each ";" with "||", and "&amp;&amp;" respectively.
 <h3>%source</h3>
+
 
 
 
@@ -327,14 +382,17 @@ returned by the script it ran.
 
 
 
+
 %test_equal takes two arguments. It returns 0 if those two arguments are the same string
 <h3>%test_not_empty</h3>
 
 
 
 
+
 %test_not_empty takes one argument. It returns 0 if that argument is not the empty string.
 <h3>%which</h3>
+
 
 
 
@@ -355,7 +413,9 @@ and are printed with just their enclosing braces.<br>
 
 
 
+
 <h3>%while</h3>
+
 
 %while runs its arguments as a command, and for each time that they
 return 0, it runs its argument function. &nbsp;Note: a loop of the form
@@ -369,7 +429,9 @@ value of X, it cannot change the value that it used to have.
 
 
 
+
 %version prints out the version of rwsh that is currently running<br>
+
 
 
 
@@ -379,8 +441,10 @@ value of X, it cannot change the value that it used to have.
 
 
 
+
 %version_compatible takes one argument, and returns 0 if that argument is an rwsh version number compatible with this one.
 <h3>%version_available</h3>
+
 
 
 

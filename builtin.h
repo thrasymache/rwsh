@@ -5,6 +5,7 @@ int cd_bi(const Argv_t& argv);
 int echo_bi(const Argv_t& argv);
 int if_bi(const Argv_t& argv);
 int if_errno_bi(const Argv_t& argv);
+int if_errno_is_bi(const Argv_t& argv);
 int else_if_bi(const Argv_t& argv);
 int else_if_not_bi(const Argv_t& argv);
 int else_bi(const Argv_t& argv);

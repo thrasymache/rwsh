@@ -30,32 +30,35 @@ Executable_map_t::Executable_map_t(void) : in_autofunction(false) {
   set(new Builtin_t("%global", global_bi));
   set(new Builtin_t("%if", if_bi));
   set(new Builtin_t("%if_errno", if_errno_bi));
+  set(new Builtin_t("%if_errno_is", if_errno_is_bi));
   set(new Builtin_t("%importenv_overwrite", importenv_overwrite_bi));
   set(new Builtin_t("%importenv_preserve", importenv_preserve_bi));
   set(new Function_t("%internal_errors", 
-                     "%error_unit $* {"
-                         "%if %test_equal $# 1 {"
-                             "%echo rwsh.arguments_for_argfunction "
-                             "rwsh.binary_not_found rwsh.executable_not_found "
-                             "rwsh.excessive_nesting rwsh.mismatched_brace "
-                             "rwsh.multiple_argfunctions rwsh.init "
-                             "rwsh.selection_not_found rwsh.sighup rwsh.sigint "
-                             "rwsh.sigquit rwsh.sigpipe rwsh.sigterm "
-                             "rwsh.sigstp rwsh.sigcont rwsh.siginfo "
-                             "rwsh.sigusr1 rwsh.sigusr2 rwsh.unreadable_dir}; "
-                         "%else {%append_to_errno ARGS; %return -1}}", 0));
+      "%error_unit $* {"
+          "%if %test_equal $# 1 {"
+              "%echo rwsh.arguments_for_argfunction rwsh.bad_argfunction_style "
+              "rwsh.binary_not_found rwsh.executable_not_found "
+              "rwsh.failed_substitution rwsh.excessive_nesting "
+              "rwsh.mismatched_brace rwsh.multiple_argfunctions "
+              "rwsh.not_soon_enough rwsh.init "
+              "rwsh.selection_not_found rwsh.sighup rwsh.sigint "
+              "rwsh.sigquit rwsh.sigpipe rwsh.sigterm "
+              "rwsh.sigstp rwsh.sigcont rwsh.siginfo "
+              "rwsh.sigusr1 rwsh.sigusr2 rwsh.undefined_variable "
+              "rwsh.unreadable_dir}; "
+          "%else {%append_to_errno ARGS; %return -1}}", 0));
   set(new Function_t("%internal_features", 
-                     "%error_unit $* {"
-                         "%if %test_equal $# 1 {"
-                             "%echo rwsh.after_command rwsh.before_command "
-                             "rwsh.prompt rwsh.raw_command rwsh.run_logic "
-                             "rwsh.shutdown rwsh.vars}; "
-                         "%else {%append_to_errno ARGS; %return -1}}", 0));
+      "%error_unit $* {"
+          "%if %test_equal $# 1 {"
+              "%echo rwsh.after_command rwsh.before_command "
+              "rwsh.prompt rwsh.raw_command rwsh.run_logic "
+              "rwsh.shutdown rwsh.vars}; "
+          "%else {%append_to_errno ARGS; %return -1}}", 0));
   set(new Function_t("%internal_vars", 
-                     "%error_unit $* {"
-                         "%if %test_equal $# 1 {"
-                             "%echo CWD ERRNO FIGNORE IF_TEST MAX_NESTING}; "
-                         "%else {%append_to_errno ARGS; %return -1}}", 0));
+      "%error_unit $* {"
+          "%if %test_equal $# 1 {"
+              "%echo CWD ERRNO FIGNORE IF_TEST MAX_NESTING}; "
+          "%else {%append_to_errno ARGS; %return -1}}", 0));
   set(new Builtin_t("%ls", ls_bi));
   set(new Builtin_t("%newline", newline_bi));
   set(new Builtin_t("%nop", nop_bi));

@@ -154,10 +154,24 @@ int if_bi(const Argv_t& argv) {
     return -1;}}
 
 // run argfunction if ERRNO is set
-// returns the (second?) return value from argfunction
+// returns the return value from argfunction
 int if_errno_bi(const Argv_t& argv) {
   if (argv.size() != 1) argv.append_to_errno("ARGS");
   if (argv.var_exists("ERRNO") && argv.argfunction()) {
+    Argv_t mapped_argv(argv.myout());
+    mapped_argv.push_back("rwsh.mapped_argfunction");
+    return (*argv.argfunction())(mapped_argv);}
+  else return 0;}
+
+// run argfunction if ERRNO is set to the given value
+// returns the return value from argfunction
+int if_errno_is_bi(const Argv_t& argv) {
+  bool immediate_error = false;
+  if (argv.size() < 2) {
+    argv.append_to_errno("ARGS");
+    immediate_error = true;}
+  if (argv.var_exists("ERRNO") && argv.argfunction() && 
+      (argv.get_var("ERRNO") == argv[1] || immediate_error)) {
     Argv_t mapped_argv(argv.myout());
     mapped_argv.push_back("rwsh.mapped_argfunction");
     return (*argv.argfunction())(mapped_argv);}
@@ -423,16 +437,15 @@ int which_executable_bi(const Argv_t& argv) {
     return 0;}
   else return 1;} // executable does not exist
 
-// find the binary in $PATH with filename $1
+// find the binary in $2 with filename $1
 int which_path_bi(const Argv_t& argv) {
-  if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
-  Argv_t lookup(argv.begin()+1, argv.end(), 0, 0);
+  if (argv.size() != 3) {argv.append_to_errno("ARGS"); return -1;}
   std::vector<std::string> path;
-  tokenize_strict(argv.get_var("PATH"), std::back_inserter(path), 
+  tokenize_strict(argv[2], std::back_inserter(path), 
                   std::bind2nd(std::equal_to<char>(), ':'));
   for (std::vector<std::string>::iterator i = path.begin(); i != path.end();
        ++i) {
-    std::string test = *i + '/' + lookup[0];
+    std::string test = *i + '/' + argv[1];
     struct stat sb;
     if (!stat(test.c_str(), &sb)) {
       *argv.myout() <<test;

@@ -1,8 +1,10 @@
 rwsh v0.3 -
-  * builtins: %append_to_errno, %for, %error_unit, %importenv_overwrite, 
-      %importenv_preserve, %stepwise, %test_not_equal, %which_executable, 
-      %which_test, %which_path, %which_return, %while, %var_add 
-      %version_available, %version_compatible
+  * builtins: %append_to_errno, %error_unit, %for, %if_errno, %if_errno_is, 
+      %importenv_overwrite, %importenv_preserve, %stepwise, %test_not_equal, 
+      %which_executable, %which_test, %which_path, %which_return, %while, 
+      %var_add %version_available, %version_compatible
+  * internal_functions: rwsh.bad_argfunction_style, rwsh.not_soon_enough,
+      rwsh.failed_substitution, rwsh.undefined_variable
   * evaluate soon: &x is the value of x at the start of the function,
       &&x is the value of x at the start of the outermost argfunction
   * command substitution z &{x y} - executes x y and makes its output an

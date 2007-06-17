@@ -164,8 +164,9 @@ e $x
 %if %return 0 {%else_if %return 0 {e nested syntax; %return 14}}
 %else {e already tested; %return 15}
 
-# %if_errno %append_to_errno
+# %if_errno %if_errno_is %append_to_errno
 rwsh.mapped_argfunction {%if_errno {e no error}; %append_to_errno x; %if_errno {e invented error $ERRNO}; %if_errno %return 0 {e doubled error $ERRNO}}
+rwsh.mapped_argfunction {%if_errno_is x {e no error}; %if_errno_is {e invocation error $ERRNO}; %unset ERRNO; %append_to_errno x; %if_errno_is y {e invented error $ERRNO matches y}; %if_errno_is x {e invented error $ERRNO matches x}; %if_errno_is {e doubled error $ERRNO}}
 
 # %internal_errors %internal_features %internal_vars
 %internal_errors 1
@@ -283,12 +284,10 @@ wrapper 1 2
 %which_return #
 
 # %which_path
-%which_path
-%global PATH \
 %which_path false
-%set PATH /bin:/usr/bin
-%which_path flse
-%which_path false
+%which_path false \
+%which_path flse /bin:/usr/bin
+%which_path false /bin:/usr/bin
 
 # %while
 %function tf {%test_not_equal $A $N}

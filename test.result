@@ -589,11 +589,18 @@ $%else {e already tested; %return 15}
 $
 
 -1
-$# %if_errno %append_to_errno
+$# %if_errno %if_errno_is %append_to_errno
 
 -1
 $rwsh.mapped_argfunction {%if_errno {e no error}; %append_to_errno x; %if_errno {e invented error $ERRNO}; %if_errno %return 0 {e doubled error $ERRNO}}
 invented error x
+doubled error x ARGS
+
+0
+ERRNO set to x ARGS
+$rwsh.mapped_argfunction {%if_errno_is x {e no error}; %if_errno_is {e invocation error $ERRNO}; %unset ERRNO; %append_to_errno x; %if_errno_is y {e invented error $ERRNO matches y}; %if_errno_is x {e invented error $ERRNO matches x}; %if_errno_is {e doubled error $ERRNO}}
+invocation error ARGS
+invented error x matches x
 doubled error x ARGS
 
 0
@@ -617,7 +624,7 @@ $%internal_vars 1
 -1
 ERRNO set to ARGS
 $%internal_errors
-rwsh.arguments_for_argfunction rwsh.binary_not_found rwsh.executable_not_found rwsh.excessive_nesting rwsh.mismatched_brace rwsh.multiple_argfunctions rwsh.init rwsh.selection_not_found rwsh.sighup rwsh.sigint rwsh.sigquit rwsh.sigpipe rwsh.sigterm rwsh.sigstp rwsh.sigcont rwsh.siginfo rwsh.sigusr1 rwsh.sigusr2 rwsh.unreadable_dir
+rwsh.arguments_for_argfunction rwsh.bad_argfunction_style rwsh.binary_not_found rwsh.executable_not_found rwsh.failed_substitution rwsh.excessive_nesting rwsh.mismatched_brace rwsh.multiple_argfunctions rwsh.not_soon_enough rwsh.init rwsh.selection_not_found rwsh.sighup rwsh.sigint rwsh.sigquit rwsh.sigpipe rwsh.sigterm rwsh.sigstp rwsh.sigcont rwsh.siginfo rwsh.sigusr1 rwsh.sigusr2 rwsh.undefined_variable rwsh.unreadable_dir
 0
 $%internal_features
 rwsh.after_command rwsh.before_command rwsh.prompt rwsh.raw_command rwsh.run_logic rwsh.shutdown rwsh.vars
@@ -1042,23 +1049,17 @@ $
 $# %which_path
 
 0
-$%which_path
+$%which_path false
 
 -1
 ERRNO set to ARGS
-$%global PATH \
-
-0
-$%which_path false
+$%which_path false \
 
 1
-$%set PATH /bin:/usr/bin
-
-0
-$%which_path flse
+$%which_path flse /bin:/usr/bin
 
 1
-$%which_path false
+$%which_path false /bin:/usr/bin
 /usr/bin/false
 0
 $
@@ -1442,7 +1443,6 @@ CWD=/bin
 FIGNORE=include
 MAX_NESTING=5
 N=4
-PATH=/bin:/usr/bin
 last_command_return=0
 
 0
