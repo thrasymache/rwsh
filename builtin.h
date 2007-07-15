@@ -19,7 +19,6 @@ int importenv_preserve_bi(const Argv_t& argv);
 int ls_bi(const Argv_t& argv);
 int newline_bi(const Argv_t& argv);
 int nop_bi(const Argv_t& argv);
-int printenv_bi(const Argv_t& argv);
 int return_bi(const Argv_t& argv);
 int set_bi(const Argv_t& argv);
 int selection_set_bi(const Argv_t& argv);

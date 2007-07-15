@@ -62,7 +62,6 @@ Executable_map_t::Executable_map_t(void) : in_autofunction(false) {
   set(new Builtin_t("%ls", ls_bi));
   set(new Builtin_t("%newline", newline_bi));
   set(new Builtin_t("%nop", nop_bi));
-  set(new Builtin_t("%printenv", printenv_bi));
   set(new Builtin_t("%return", return_bi));
   set(new Builtin_t("%set", set_bi));
   set(new Builtin_t("%selection_set", selection_set_bi));

@@ -676,43 +676,6 @@ $%nop 1 2 3 4 5
 $
 
 0
-$# %printenv %set
-
-0
-$%printenv
-?=0
-A=
-CWD=/bin
-FIGNORE=include
-MAX_NESTING=5
-N=
-last_command_return=0
-
-0
-$%printenv A
-
-
-0
-$%set A
-
--1
-ERRNO set to ARGS
-$%set Z 1
-
-1
-$%set 1 1
-
-2
-$%set A 1
-
-0
-$%printenv A
-1
-
-0
-$
-
-0
 $# %return
 
 0
@@ -1436,7 +1399,7 @@ $
 $# check for extraneous variables
 
 0
-$%printenv
+$/usr/bin/printenv
 ?=0
 A=-2
 CWD=/bin
@@ -1458,21 +1421,21 @@ $%global SHELL /bin/rwsh
 $%importenv_preserve
 
 0
-$%printenv SHELL
+$e $SHELL
 /bin/rwsh
 
 0
 $%set SHELL /bin/rwsh
 
 0
-$%printenv SHELL
+$e $SHELL
 /bin/rwsh
 
 0
 $%importenv_overwrite
 
 0
-$%printenv SHELL
+$e $SHELL
 /bin/bash
 
 0

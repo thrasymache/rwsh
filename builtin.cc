@@ -263,19 +263,6 @@ int newline_bi(const Argv_t& argv) {
 // ignore arguments, and then do nothing
 int nop_bi(const Argv_t& argv) {return dollar_question;}
 
-// builtin function for printing the variable map
-int printenv_bi(const Argv_t& argv) {
-  extern Variable_map_t* vars;
-  vars->get("?");
-  if (argv.size() < 2) {
-    for (Variable_map_t::const_iterator i = vars->begin(); 
-         i != vars->end(); ++i)
-      *argv.myout() <<i->first <<"=" <<i->second <<"\n";}
-  else {
-    *argv.myout() <<(*vars)[argv[1]] <<"\n";}
-  argv.myout()->flush();
-  return 0;}
-
 // return the value given by the argument
 int return_bi(const Argv_t& argv) {
   if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}

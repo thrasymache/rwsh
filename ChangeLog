@@ -1,4 +1,4 @@
-rwsh v0.3 -
+rwsh v0.3u - command substitution
   * builtins: %append_to_errno, %error_unit, %for, %if_errno, %if_errno_is, 
       %importenv_overwrite, %importenv_preserve, %stepwise, %test_not_equal, 
       %which_executable, %which_test, %which_path, %which_return, %while, 
@@ -13,6 +13,7 @@ rwsh v0.3 -
   * ERRNO prevents execution of control flow builtins
   * reference variables - $$X prints the value of the variable named by X
   * fixed rwsh.mapped_argfunction {$*} crash
+  * removed %autofunction, %false, %importenv, %printenv, %true
 
 rwsh v0.2 - scripts
   * can source scripts

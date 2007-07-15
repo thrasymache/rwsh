@@ -20,7 +20,7 @@
 %function elif {%else_if $* {rwsh.argfunction}}
 %function else {%else {rwsh.argfunction}}
 %function exit {%exit}
-%function fn {%function $1 $*2 {rwsh.argfunction}; %set TEMP1 $?; %if %test_equal $TEMP1 1 {echo cannot set paths as functions}; %else_if %test_equal $TEMP1 2 {echo cannot set builtins as functions}; %else_if %test_equal $TEMP1 3 {echo cannot set argfunctions in executable map}; %else_if %test_equal $TEMP1 4 {echo function did not exist to be erased}; %else {%return $TEMP1}}
+%function fn {%function $* {rwsh.argfunction}; %set TEMP1 $?; %if %test_equal $TEMP1 1 {echo cannot set paths as functions}; %else_if %test_equal $TEMP1 2 {echo cannot set builtins as functions}; %else_if %test_equal $TEMP1 3 {echo cannot set argfunctions in executable map}; %else_if %test_equal $TEMP1 4 {echo function did not exist to be erased}; %else {%return $TEMP1}}
 %function if {%if $* {rwsh.argfunction}}
 %function if_only {%if $* {rwsh.argfunction}; %else}
 %function if_only_not {%if $*; %else {rwsh.argfunction}}
@@ -52,13 +52,15 @@
 %function regrep {%selection_set SELECT $1; /usr/bin/grep $REGEX @$SELECT}
 %function regrepl {%selection_set SELECT $1; /usr/bin/grep -l $REGEX @$SELECT}
 %function rm {%selection_set SELECT $1; /bin/rm @$SELECT}
+%function sfn {fn $* {%selection_set SELECT $1; &&{%which_path &&1 $PATH} @$SELECT}}
 %function vi {%selection_set SELECT $1; /usr/bin/vi @$SELECT}
 %function vim {%selection_set SELECT $1; /usr/bin/vim @$SELECT}
 %function wc {%selection_set SELECT $1; /usr/bin/wc @$SELECT}
 %function unselect {%set SELECT $CWD; %selection_set SELECT /}
 
 # internal functions
-%function rwsh.autofunction {%function $1 {&&{%which_path &&1 $PATH} $*}; if_only %return 0 {%echo added &&1 to executable map; %newline}}
+%function rwsh.after_command {%set TEMP1 $?; %if_errno {%set OLD_ERRNO $ERRNO; %unset ERRNO; %if %test_equal $OLD_ERRNO ESUBSTITUTION {echo substitution $ERRINFO failed}; %else {echo ERRNO is set to $OLD_ERRNO}}; if_only_not %test_equal $TEMP1 0 {echo &&1 returned $TEMP1}}
+%function rwsh.autofunction {%function $1 {&&{%which_path &&1 $PATH} $*}; if_only %return 0 {%echo added &&1 to executable map; %newline}; %if_errno_is ESUBSTITUTION {%unset ERRNO}}
 %function rwsh.arguments_for_argfunction {%echo cannot specify arguments for $1 directly; %newline; %return -1}
 %function rwsh.bad_argfunction_style {%echo $1 is neither an argfunction nor a substitution; %newline}
 %function rwsh.binary_not_found {%echo $1 : could not run binary; %newline; %return -1}
@@ -85,7 +87,6 @@
 %selection_set rc $HOME /.rwshrc
 %source $rc
 %unset rc
-%function rwsh.after_command {%set TEMP1 $?; %if_errno {%set OLD_ERRNO $ERRNO; %unset ERRNO; %if %test_equal $OLD_ERRNO ESUBSTITUTION {echo substitution $ERRINFO failed}; %else {echo ERRNO is set to $OLD_ERRNO}}; if_only_not %test_equal $TEMP1 0 {echo &&1 returned $TEMP1}}
 %echo rwsh v
 %version
 %newline

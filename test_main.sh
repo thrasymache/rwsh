@@ -66,6 +66,21 @@ e @/usr/*l*i*b*x*e*
 %return &{%echo 0}
 %unset A
 
+# soon level promotion
+%global A 0
+%set MAX_NESTING 50
+f x {%var_add A 1; m {%var_add A 1; m {%var_add A 1; m {%var_add A 1; m {%var_add A 1; m {rwsh.argfunction}}}}}}
+x {e &A &&A $A}
+%set A 0
+x {x {e &A &&A &&&A $A}}
+%set A 0
+x {x {x {e &A &&A &&&A &&&&A $A}}}
+%set A 0
+x {x {x {x {e &A &&A &&&A &&&&A &&&&&A $A}}}}
+f x
+%set MAX_NESTING 5
+%unset A
+
 # builtin tests
 # %cd
 %cd
@@ -187,15 +202,6 @@ rwsh.mapped_argfunction {%if_errno_is x {e no error}; %if_errno_is {e invocation
 # %nop
 %nop
 %nop 1 2 3 4 5
-
-# %printenv %set
-%printenv
-%printenv A
-%set A
-%set Z 1
-%set 1 1
-%set A 1
-%printenv A
 
 # %return
 %return
@@ -398,16 +404,16 @@ e &WWRONG
 rwsh.vars
 
 # check for extraneous variables
-%printenv
+/usr/bin/printenv
 
 # %importenv_preserve %importenv_overwrite
 %global SHELL /bin/rwsh
 %importenv_preserve
-%printenv SHELL
+e $SHELL
 %set SHELL /bin/rwsh
-%printenv SHELL
+e $SHELL
 %importenv_overwrite
-%printenv SHELL
+e $SHELL
 
 # exiting rwsh.shutdown
 f rwsh.shutdown {e rwsh is now terminating}
