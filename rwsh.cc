@@ -1,6 +1,6 @@
 // The main function for rwsh and the definition of rwsh.init
 //
-// Copyright (C) 2005, 2006 Samuel Newbold
+// Copyright (C) 2005, 2006, 2007 Samuel Newbold
 
 #include <iostream>
 #include <map>

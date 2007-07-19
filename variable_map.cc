@@ -1,7 +1,7 @@
 // Functions to implement a variable map, and permit it to be exported as the
 // environment for child processes.
 //
-// Copyright (C) 2006 Samuel Newbold
+// Copyright (C) 2006, 2007 Samuel Newbold
 
 #include <map>
 #include <stdlib.h>

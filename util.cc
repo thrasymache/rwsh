@@ -1,6 +1,6 @@
 // Utility function to find the next close brace at the same nesting level. 
 //
-// Copyright (C) 2006 Samuel Newbold
+// Copyright (C) 2006, 2007 Samuel Newbold
 
 #include <sys/errno.h>
 #include <string>

@@ -1,7 +1,7 @@
 // The definition of the Argv_t class, which contains the arguments that may
 // be passed to an executable.
 //
-// Copyright (C) 2005, 2006 Samuel Newbold
+// Copyright (C) 2005, 2006, 2007 Samuel Newbold
 
 #include <map>
 #include <sstream>

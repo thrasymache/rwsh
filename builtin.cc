@@ -1,6 +1,6 @@
 // The functions that implement each of the builtin executables
 //
-// Copyright (C) 2006 Samuel Newbold
+// Copyright (C) 2006, 2007 Samuel Newbold
 
 #include <dirent.h>
 #include <fcntl.h>
@@ -23,8 +23,8 @@ extern char** environ;
 #include "executable.h"
 #include "executable_map.h"
 #include "function.h"
-#include "rwsh_stream.h"
 #include "read_dir.cc"
+#include "rwsh_stream.h"
 #include "selection.h"
 #include "tokenize.cc"
 #include "util.h"
@@ -388,7 +388,7 @@ int var_exists_bi(const Argv_t& argv) {
   if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
   else return !argv.var_exists(argv[1]);}
 
-static const std::string version_str("0.2+");
+static const std::string version_str("0.3u");
 
 // write to standard output the version of rwsh
 int version_bi(const Argv_t& argv) {

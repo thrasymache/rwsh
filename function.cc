@@ -2,7 +2,7 @@
 // arguments passed to an executable and/or tie several other executables into
 // a single executable.
 //
-// Copyright (C) 2006 Samuel Newbold
+// Copyright (C) 2006, 2007 Samuel Newbold
 
 #include <iterator>
 #include <map>
@@ -32,13 +32,14 @@ Function_t::Function_t(const std::string& name_i, const std::string& src,
   
 // generate a new function by unescaping argument functions and replacing
 // unescaped_argfunction with the argument function in argv
-Function_t* Function_t::apply(const Argv_t& argv) const {
-  if (script[0].is_argfunction()) return argv.argfunction()->copy_pointer();
+Function_t* Function_t::apply(const Argv_t& argv, unsigned nesting) const {
+  if (script[0].is_argfunction()) 
+    return argv.argfunction()->promote_soons(nesting);
   else {
     Function_t* result = new Function_t(name());
-    for (std::vector<Arg_script_t>::const_iterator i = script.begin();
-         i != script.end(); ++i) {
-      result->script.push_back(i->apply(argv));}
+    std::back_insert_iterator<std::vector<Arg_script_t> > ins(result->script);
+    for (const_iterator i = script.begin(); i != script.end(); ++i) {
+      i->apply(argv, nesting, ins);}
     return result;}}
   
 int Function_t::operator() (const Argv_t& src_argv) {
@@ -49,8 +50,7 @@ int Function_t::operator() (const Argv_t& src_argv,
                             Rwsh_stream_t* override_stream) {
   if (increment_nesting(src_argv)) return dollar_question;
   int ret;
-  for (std::vector<Arg_script_t>::const_iterator i = script.begin();
-       i != script.end(); ++i) {
+  for (const_iterator i = script.begin(); i != script.end(); ++i) {
     Argv_t dest_argv(0);
     try {dest_argv = i->interpret(src_argv);}
     catch (Failed_substitution_t error) {dest_argv = error;}
@@ -63,12 +63,19 @@ int Function_t::operator() (const Argv_t& src_argv,
   if (decrement_nesting(src_argv)) ret = dollar_question;
   return ret;}
 
+Function_t* Function_t::promote_soons(unsigned nesting) const {
+  if (!this) return 0;
+  Function_t* result = new Function_t(name_v, script);
+  for (iterator i = result->script.begin(); i != result->script.end(); ++i) 
+    i->promote_soons(nesting);
+  return result;}
+
 // convert the function to a string. except for the handling of the name this
 // is the inverse of the string constructor.
 std::string Function_t::str() const {
     std::string body;
-    for (std::vector<Arg_script_t>::const_iterator i = script.begin();
-         i != script.end()-1; ++i) body += i->str() + "; ";
+    for (const_iterator i = script.begin(); i != script.end()-1; ++i) 
+      body += i->str() + "; ";
     body += script.back().str();
     if (name() == "rwsh.argfunction") return "{" + body + "}";
     else return "%function " + name_v + " {" + body + "}";}

@@ -3,7 +3,7 @@
 // key so that it can return argument functions which are part of the Argv_t
 // object.
 //
-// Copyright (C) 2005, 2006 Samuel Newbold
+// Copyright (C) 2005, 2006, 2007 Samuel Newbold
 
 #include <map>
 #include <string>

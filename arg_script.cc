@@ -83,7 +83,7 @@ Arg_spec_t::Arg_spec_t(const Arg_spec_t& src) :
 
 Arg_spec_t::~Arg_spec_t() {delete substitution;}
 
-void Arg_spec_t::apply(const Argv_t& src) {
+void Arg_spec_t::apply(const Argv_t& src, unsigned nesting) {
   switch(type) {
     case SOON: 
       if (soon_level) --soon_level;
@@ -93,7 +93,7 @@ void Arg_spec_t::apply(const Argv_t& src) {
         type = FIXED;}
       break;
     case SUBSTITUTION: {
-      Function_t* temp = substitution->apply(src);
+      Function_t* temp = substitution->apply(src, nesting+1);
       delete substitution;
       substitution = temp;
       if (soon_level) --soon_level;
@@ -155,6 +155,15 @@ void Arg_spec_t::interpret(const Argv_t& src, Out res) const {
       *res++ = override_stream.str();
       break;}
     default: assert(0);}}
+
+void Arg_spec_t::promote_soons(unsigned nesting) {
+  switch(type) {
+    case SOON: soon_level += nesting; break;
+    case SUBSTITUTION:
+      soon_level += nesting;
+      Function_t* temp = substitution->promote_soons(nesting);
+      delete substitution;
+      substitution = temp; break;}}
 
 Arguments_to_argfunction_t::Arguments_to_argfunction_t(
       const std::string& argfunction_type) : Argv_t(default_stream_p) {
@@ -273,7 +282,7 @@ Argv_t Arg_script_t::interpret(const Argv_t& src) const {
     for (const_iterator i = begin(); i != end(); ++i) 
       i->interpret(src, std::back_inserter(result));
     if (!result.size()) result.push_back("");
-    if (argfunction) result.set_argfunction(argfunction->apply(src));}
+    if (argfunction) result.set_argfunction(argfunction->apply(src, 0));}
   else if (is_argfunction()) {
     result.push_back("rwsh.mapped_argfunction");
     copy(src.begin()+1, src.end(), std::back_inserter(result));
@@ -286,19 +295,28 @@ Argv_t Arg_script_t::interpret(const Argv_t& src) const {
 
 // produce a new Arg_script by unescaping argument functions and replacing
 // unescaped_argfunction with argv.argfunction
-Arg_script_t Arg_script_t::apply(const Argv_t& src) const {
+void Arg_script_t::apply(const Argv_t& src, unsigned nesting,
+             std::back_insert_iterator<std::vector<Arg_script_t> > res) const {
   Arg_script_t result(*this);
   if (result.argfunction_level) --result.argfunction_level;  
   else {
-    for (iterator i = result.begin(); i != result.end(); ++i) i->apply(src);
-    if (this->argfunction) result.argfunction = this->argfunction->apply(src);}
-  return result;}
+    for (iterator i = result.begin(); i != result.end(); ++i) 
+      i->apply(src, nesting);
+    if (argfunction) result.argfunction = argfunction->apply(src, nesting+1);}
+  *res++ = result;}
 
 void Arg_script_t::clear(void) {
   delete argfunction; 
   argfunction = 0;
   myout=0; 
   Base::clear();}
+
+void Arg_script_t::promote_soons(unsigned nesting) {
+  for (iterator i = begin(); i != end(); ++i) i->promote_soons(nesting);
+  if (argfunction) {
+    Function_t* temp = argfunction->promote_soons(nesting);
+    delete argfunction;
+    argfunction = temp;}}
 
 // test whether an executable name corresponds to one of those used for
 // argument functions.

@@ -1,7 +1,7 @@
 // The template used to open a directory, and copy its entries into the 
 // container specified by dest.
 //
-// Copyright (C) 2005, 2006 Samuel Newbold
+// Copyright (C) 2005, 2006, 2007 Samuel Newbold
 
 template<class Out> int read_dir(const std::string& filename, Out dest) {
   std::string file = filename + '/';

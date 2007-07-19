@@ -1,4 +1,4 @@
-// Copyright (C) 2006 Samuel Newbold
+// Copyright (C) 2006, 2007 Samuel Newbold
 
 int append_to_errno_bi(const Argv_t& argv);
 int cd_bi(const Argv_t& argv);

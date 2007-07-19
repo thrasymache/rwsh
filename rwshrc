@@ -20,7 +20,7 @@
 %function elif {%else_if $* {rwsh.argfunction}}
 %function else {%else {rwsh.argfunction}}
 %function exit {%exit}
-%function fn {%function $* {rwsh.argfunction}; %set TEMP1 $?; %if %test_equal $TEMP1 1 {echo cannot set paths as functions}; %else_if %test_equal $TEMP1 2 {echo cannot set builtins as functions}; %else_if %test_equal $TEMP1 3 {echo cannot set argfunctions in executable map}; %else_if %test_equal $TEMP1 4 {echo function did not exist to be erased}; %else {%return $TEMP1}}
+%function fn {%function $* {rwsh.argfunction}; %set TEMP1 $?; %if %test_equal $TEMP1 1 {echo cannot set paths as functions}; %else_if %test_equal $TEMP1 2 {echo cannot set builtins as functions}; %else_if %test_equal $TEMP1 3 {echo cannot set argfunctions in executable map}; %else_if %test_equal $TEMP1 4 {echo function &&1 did not exist to be erased}; %else {%return $TEMP1}}
 %function if {%if $* {rwsh.argfunction}}
 %function if_only {%if $* {rwsh.argfunction}; %else}
 %function if_only_not {%if $*; %else {rwsh.argfunction}}

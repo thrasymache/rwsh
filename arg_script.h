@@ -15,8 +15,9 @@ class Arg_spec_t {
              unsigned max_soon);
   Arg_spec_t(const Arg_spec_t& src);
   ~Arg_spec_t();
-  void apply(const Argv_t& src);
+  void apply(const Argv_t& src, unsigned nesting);
   template<class Out> void interpret(const Argv_t& src, Out dest) const;
+  void promote_soons(unsigned nesting);
   std::string str(void) const; };
 
 struct Arguments_to_argfunction_t : public Argv_t {
@@ -53,9 +54,11 @@ class Arg_script_t : private std::vector<Arg_spec_t> {
   Arg_script_t& operator=(const Arg_script_t& src);
   ~Arg_script_t(void);
   Argv_t argv(void) const;
-  Arg_script_t apply(const Argv_t& src) const;
+  void apply(const Argv_t& src, unsigned nesting,
+             std::back_insert_iterator<std::vector<Arg_script_t> > res) const;
   std::string str(void) const;
   Argv_t interpret(const Argv_t& src) const;
+  void promote_soons(unsigned);
   bool is_argfunction(void) const {return argfunction_level == 1;};
 
 // vector semantics

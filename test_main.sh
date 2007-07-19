@@ -68,15 +68,15 @@ e @/usr/*l*i*b*x*e*
 
 # soon level promotion
 %global A 0
-%set MAX_NESTING 50
+%set MAX_NESTING 44
 f x {%var_add A 1; m {%var_add A 1; m {%var_add A 1; m {%var_add A 1; m {%var_add A 1; m {rwsh.argfunction}}}}}}
 x {e &A &&A $A}
 %set A 0
-x {x {e &A &&A &&&A $A}}
-%set A 0
-x {x {x {e &A &&A &&&A &&&&A $A}}}
-%set A 0
 x {x {x {x {e &A &&A &&&A &&&&A &&&&&A $A}}}}
+%set A 0
+x {e &{%echo &A $A} &&{%echo &A &&A $A} $A}
+%set A 0
+x {x {x {x {e &{%echo &A $A} &&{%echo &A &&A $A} &&&{%echo &A &&A &&&A $A} &&&&{%echo &A &&A &&&A &&&&A $A} &&&&&{%echo &A &&A &&&A &&&&A &&&&&A $A} $A}}}}
 f x
 %set MAX_NESTING 5
 %unset A
@@ -336,6 +336,7 @@ e $A
 %version
 %version_available
 %version_compatible 1.0
+%version_compatible 0.3u
 
 # binary test implicitly tests Old_argv_t
 /bn/echo 1 2 3

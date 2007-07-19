@@ -1,4 +1,4 @@
-// Copyright (C) 2005, 2006 Samuel Newbold
+// Copyright (C) 2005, 2006, 2007 Samuel Newbold
 
 class Command_stream_t {
   std::istream& src;

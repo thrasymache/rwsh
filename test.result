@@ -250,6 +250,55 @@ $%unset A
 $
 
 0
+$# soon level promotion
+
+0
+$%global A 0
+
+0
+$%set MAX_NESTING 44
+
+0
+$f x {%var_add A 1; m {%var_add A 1; m {%var_add A 1; m {%var_add A 1; m {%var_add A 1; m {rwsh.argfunction}}}}}}
+
+0
+$x {e &A &&A $A}
+0 5 5
+
+0
+$%set A 0
+
+0
+$x {x {x {x {e &A &&A &&&A &&&&A &&&&&A $A}}}}
+0 5 10 15 20 20
+
+0
+$%set A 0
+
+0
+$x {e &{%echo &A $A} &&{%echo &A &&A $A} $A}
+0 0 0 5 5 5
+
+0
+$%set A 0
+
+0
+$x {x {x {x {e &{%echo &A $A} &&{%echo &A &&A $A} &&&{%echo &A &&A &&&A $A} &&&&{%echo &A &&A &&&A &&&&A $A} &&&&&{%echo &A &&A &&&A &&&&A &&&&&A $A} $A}}}}
+0 0 0 5 5 0 5 10 10 0 5 10 15 15 0 5 10 15 20 20 20
+
+0
+$f x
+
+0
+$%set MAX_NESTING 5
+
+0
+$%unset A
+
+0
+$
+
+0
 $# builtin tests
 
 0
@@ -1168,20 +1217,23 @@ $%version_compatible 1.0 1.0
 -1
 ERRNO set to ARGS
 $%version
-0.2+
+0.3u
 0
 $%version_available
-0.2+
+0.3u
 0
 $%version_compatible 1.0
 
 1
+$%version_compatible 0.3u
+
+0
 $
 
-1
+0
 $# binary test implicitly tests Old_argv_t
 
-1
+0
 $/bn/echo 1 2 3
 rwsh.binary_not_found : command not found ( rwsh.binary_not_found /bn/echo )
 

@@ -2,7 +2,7 @@
 // external programs, the latter executes commands that are implemented by
 // functions in builtin.cc.
 //
-// Copyright (C) 2005, 2006 Samuel Newbold
+// Copyright (C) 2005, 2006, 2007 Samuel Newbold
 
 #include <string>
 #include <signal.h>

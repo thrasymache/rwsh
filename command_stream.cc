@@ -2,7 +2,7 @@
 // standard stream and defines an input operator for Argv_t objects. It also
 // handles the calling of rwsh.prompt.
 //
-// Copyright (C) 2005, 2006 Samuel Newbold
+// Copyright (C) 2005, 2006, 2007 Samuel Newbold
 
 #include <iostream>
 #include <map>

@@ -1,4 +1,4 @@
-// Copyright (C) 2005, 2006 Samuel Newbold
+// Copyright (C) 2005, 2006, 2007 Samuel Newbold
 
 class Function_t : public Executable_t {
   std::string name_v;
@@ -18,8 +18,9 @@ class Function_t : public Executable_t {
     else return new Function_t(name_v, script);};
   int operator() (const Argv_t& src_argv);
   int operator() (const Argv_t& src_argv, Rwsh_stream_t* override_stream);
-  Function_t* apply(const Argv_t& argv) const ;
+  Function_t* apply(const Argv_t& argv, unsigned nesting) const ;
   const std::string& name(void) const {return name_v;};
+  Function_t* promote_soons(unsigned nesting) const;
   std::string str() const; 
 
   // vector semantics for argument scripts

@@ -1,7 +1,7 @@
 // The definition of selection_write and the Entry_pattern_t class which is 
 // used to implement selections.
 //
-// Copyright (C) 2005, 2006 Samuel Newbold
+// Copyright (C) 2005, 2006, 2007 Samuel Newbold
 
 #include <dirent.h>
 #include <fcntl.h>
