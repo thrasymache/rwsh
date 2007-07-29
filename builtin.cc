@@ -117,6 +117,8 @@ int function_bi(const Argv_t& argv) {
     executable_map.set(new Function_t(argv[1], argv.argfunction()));
     return 0;}}
 
+// add a variable to the variable map that will remain after the enclosing
+// function terminates
 int global_bi(const Argv_t& argv) {
   if (argv.size() != 3) {argv.append_to_errno("ARGS"); return -1;}
   else return argv.global_var(argv[1], argv[2]);}
@@ -356,6 +358,10 @@ int test_not_equal_bi(const Argv_t& argv) {
   if (argv.size() != 3) {argv.append_to_errno("ARGS"); return -1;}
   else return argv[1] == argv[2];}
 
+// removes the given variable from the variable map. you could be really 
+// pedantic and throw an rwsh.undefined_variable if it doesn't exist, but the
+// fact is that the requested state (one where this variable isn't set) is
+// already the case, so it's hard to say what you're protecting people from.
 int unset_bi(const Argv_t& argv) {
   if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
   else return argv.unset_var(argv[1]);}

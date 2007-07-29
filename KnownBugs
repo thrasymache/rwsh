@@ -42,3 +42,7 @@ many simple tasks (such as setf) require the use of global variable, which, besi
 You cannot use binary executables within a command substitution.
 
 Referencing positional parameters that do not exist does not result in an error
+
+%which_path will return files which are not executable
+
+undefined variables in a command name give a blank call stack, there should be something like "<interpretation>" at the beginning, or much better documentation

@@ -71,8 +71,8 @@ Arg_spec_t::Arg_spec_t(const std::string& style, const std::string& function,
       type(SUBSTITUTION), soon_level(0), ref_level(0), substitution(0), text() {
   unsigned i = 1;
   while (i < style.length() && style[i] == '&') ++soon_level, ++i;
-  if (i != style.length()) {
-    throw Bad_argfunction_style_t(style);}
+  if (i != style.length() || style[0] != '&') {
+    throw Bad_argfunction_style_t(style + "{" + function + "}");}
   if (soon_level > max_soon) 
     throw Not_soon_enough_t(style + "{" + function + "}");
   substitution = new Function_t("rwsh.argfunction", function, soon_level);}

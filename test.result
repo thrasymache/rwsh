@@ -189,6 +189,13 @@ $m {e &&{%return 1}; e after}
 rwsh.excessive_nesting : command not found ( rwsh.excessive_nesting rwsh.failed_substitution rwsh.failed_substitution rwsh.failed_substitution rwsh.failed_substitution rwsh.failed_substitution rwsh.mapped_argfunction m )
 
 -1
+$# bad_argfunction_style
+
+-1
+$e x{e x}
+rwsh.bad_argfunction_style : command not found ( rwsh.bad_argfunction_style x{e x} )
+
+-1
 $e @//usr
 /usr
 
@@ -566,7 +573,7 @@ $%return 0
 $
 
 0
-$# %if %else_if %else
+$# %if %else_if %else_if_not %else
 
 0
 $%if
@@ -603,36 +610,62 @@ $%else_if %return 0 {e not this one; %return 6}
 
 -1
 ERRNO set to ELSE_WITHOUT_IF
-$%if %return 1 {e nor this; %return 7}
+$%else_if_not %return 1 {e not this one; %return 7}
+
+-1
+ERRNO set to ELSE_WITHOUT_IF
+$%if %return 1 {e nor this; %return 8}
 
 0
-$%else_if %return 0 {e but this; %return 8}
+$%else_if %return 1 {e nor this; %return 9}
+
+0
+$%else_if %return 0 {e but this; %return 10}
 but this
 
-8
-$%else_if %return 0 {e this should be skipped; %return 9}
+10
+$%else_if %return 0 {e this should be skipped; %return 11}
 
-8
-$%else_if %return 1 {e and certainly this; %return 10}
+10
+$%else_if %return 1 {e and certainly this; %return 12}
 
-8
-$%else {e nor this; %return 11}
+10
+$%else {e nor this; %return 13}
 
-8
-$%if %return 0 {%if %return 1 {not to be printed; %return 11}; %else_if %return 0 {e nested else_if; %return 12}}
+10
+$%if %return 1 {e nor this; %return 14}
+
+0
+$%else_if_not %return 0 {e nor this; %return 15}
+
+0
+$%else_if_not %return 1 {e but this; %return 16}
+but this
+
+16
+$%else_if_not %return 1 {e this should be skipped; %return 17}
+
+16
+$%else_if_not %return 0 {e and certainly this; %return 18}
+
+16
+$%else {e nor this; %return 19}
+
+16
+$%if %return 0 {%if %return 1 {not to be printed; %return 20}; %else_if %return 0 {e nested else_if; %return 21}}
 nested else_if
 
 -1
 ERRNO set to BAD_IF_NEST
-$%else {e else_if failed to appropriately set IF_TEST on exit; %return 13}
+$%else {e else_if failed to appropriately set IF_TEST on exit; %return 22}
 
 -1
 ERRNO set to ELSE_WITHOUT_IF
-$%if %return 0 {%else_if %return 0 {e nested syntax; %return 14}}
+$%if %return 0 {%else_if %return 0 {e nested syntax; %return 23}}
 
 -1
 ERRNO set to ELSE_WITHOUT_IF
-$%else {e already tested; %return 15}
+$%else {e already tested; %return 24}
 
 -1
 $
@@ -815,6 +848,33 @@ $%selection_set A /local/../../bin
 0
 $e $A
 /bin
+
+0
+$
+
+0
+$# %set
+
+0
+$%set A
+
+-1
+ERRNO set to ARGS
+$%set B x
+
+1
+$%set IF_TEST x
+
+2
+$e $A
+/bin
+
+0
+$%set A x
+
+0
+$e $A
+x
 
 0
 $

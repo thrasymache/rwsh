@@ -7,6 +7,8 @@
 
 
 
+
+  
   
   
   
@@ -20,6 +22,8 @@
 
 
 
+
+  
   
   
   
@@ -31,6 +35,7 @@
 
 
 <body>
+
 
 
 
@@ -49,32 +54,10 @@ for shell functions.<br>
 
 
 
-<br>
-
-
-
-
-
-<h3>%autofunction</h3>
-
-
-
-
-
-
-%autofunction searches for files in $PATH with the same name as its
-argument. If one is found, then it is inserted into the executable map
-with the remaining arguments as its argument script. This is a hack so
-that rwsh can be usable while I get around to implementing command
-substitution. There will be a much better way to do this once that is
-done.<br>
-
-
-
-
 
 
 <h3>%append_to_errno</h3>
+
 Because of the way that ERRNO affects control flow, the one thing that
 you generally want to do when there's an error (create ERRNO if it
 doesn't exist, and add a new error on the end if it does), requres
@@ -89,10 +72,12 @@ already has a value.
 
 
 
+
 The %cd changes the current working directory to the path given as its
 argument. If successful it sets CWD to the argument that was passed to
 it. It returns the value returned by chdir.
 <h3>%echo</h3>
+
 
 
 
@@ -109,7 +94,60 @@ the %newline builtin.<br>
 
 
 
+<h3>%else</h3>
+
+
+
+
+
+
+%else does not take any arguments, it runs its argfunction if IF_TEST
+is false, and then sets IF_TEST to the empty string. It is a syntax
+error for %else to occur except following %if and zero or more %else_if
+or %else_if_not commands, or for a sequence of those commands to occur
+without a %else.
+<h3>%else_if</h3>
+
+
+
+
+
+
+%else_if returns 0 immediately if IF_TEST is true. Otherwise it runs
+its arguments, setting IF_TEST to true, and running any argfunction if
+they return 0. It is a syntax error for %else_if to occur except
+between %if and %else.<br>
+
+
+
+
+
+
+
+<h3>%else_if_not</h3>
+
+
+
+
+
+
+%else_if_not is identical to %else_if except that it sets IF_TEST to
+true and runs its argfunction only if the result of running its
+arguments returns nonzero.
+
+
+
+
+
+
+<h3>%error_unit</h3>
+%error_unit runs its argfunction with ERRNO unset. If ERRNO was
+previously set, after the completion of the argfunction, the original
+value of ERRNO is prepended to its current value. ERRNO is left unset
+only if it was unset both before %error_unit was called, and after the
+completion of the argfunction<br>
 <h3>%exit</h3>
+
 
 
 
@@ -120,14 +158,33 @@ the %newline builtin.<br>
 from the user. It does not terminate any function (i.e. commands after
 %exit in a function will be run). After any enclosing functions
 complete, rwsh.shutdown will be run before the shell actually
-terminates.<br>
+terminates.
+<h3>%for</h3>
+%for runs its argfunction once for each of its arguments, passing the argument to the argfunction each time as $1.<br>
+<h3>%function</h3>
 
 
 
 
 
 
+
+%function inserts its argument function into the executable map. The first argument is used as the name for the new function.<br>
+
+
+
+
+
+
+
+<h3>%global</h3>
+%global takes two arguments, a variable name and a value. If the
+variable does not exist it is added to the variable_map with the given
+value, if the variable does exist, then %global returns 1 and does not
+change the variable map. Variables created in this way remain set after
+the termination of the enclosing function.<br>
 <h3>%if</h3>
+
 
 
 
@@ -145,74 +202,29 @@ to true if its arguments returned 0, and to false otherwise.<br>
 
 
 
+
 <h3>%if_errno</h3>
 
 
 
-%if_errno takes no arguments. &nbsp;It runs its argument function if the variable ERRNO is not the empty string.
-<h3>%else_if</h3>
 
-
-
-
-
-%else_if returns 0 immediately if IF_TEST is true. Otherwise it runs
-its arguments, setting IF_TEST to true, and running any argfunction if
-they return 0. It is a syntax error for %else_if to occur except
-between %if and %else.<br>
+%if_errno takes no arguments. &nbsp;It runs its argument function if the variable ERRNO is set.
 
 
 
 
 
 
-<h3>%else_if_not</h3>
-
-
-
-
-
-%else_if_not is identical to %else_if except that it sets IF_TEST to
-true and runs its argfunction only if the result of running its
-arguments returns nonzero.<br>
-
-
-
-
-
-<h3>%else</h3>
-
-
-
-
-
-%else does not take any arguments, it runs its argfunction if IF_TEST
-is false, and then sets IF_TEST to the empty string. It is a syntax
-error for %else to occur except following %if and zero or more %else_if
-or %else_if_not commands, or for a sequence of those commands to occur
-without a %else.
-<h3>%function</h3>
-
-
-
-
-
-
-%function inserts its argument function into the executable map. The first argument is used as the name for the new function.<br>
-
-
-
-
-
-
-<h3>%importenv</h3>
-
-
-
-
-
-
-%importenv causes the environment that rwsh was run in to be imported into the variable map.<br>
+<h3>%if_errno_is</h3>
+%if_errno_is takes one argument. Its argfunction is run if ERRNO is set to the same value as this argument.<br>
+<h3>%importenv_overwrite</h3>
+%importenv causes the environment that rwsh was run in to be imported
+into the variable map. If a variable exists in both environments, the
+external value is taken.<br>
+<h3>%importenv_preserve</h3>
+%importenv causes the environment that rwsh was run in to be imported
+into the variable map. If a variable exists in both environments, the
+internal value is taken.
 
 
 
@@ -220,6 +232,7 @@ without a %else.
 
 
 <h3>%internal_errors</h3>
+
 
 
 
@@ -233,8 +246,10 @@ rwsh.init they are all reporting errors themselves.
 
 
 
+
 %internal_features takes no arguments. It prints a list of those internal functions which are run only if they exist.
 <h3>%internal_vars</h3>
+
 
 
 
@@ -242,6 +257,7 @@ rwsh.init they are all reporting errors themselves.
 %internal_vars takes no arguments. It prints a list of those variables
 that are written by the shell itself or affect the running of builtins.
 <h3>%ls</h3>
+
 
 
 
@@ -258,7 +274,9 @@ use /bin/ls rather than %ls.<br>
 
 
 
+
 <h3>%newline</h3>
+
 
 
 
@@ -272,7 +290,9 @@ use /bin/ls rather than %ls.<br>
 
 
 
+
 <br>
+
 
 
 
@@ -285,21 +305,9 @@ use /bin/ls rather than %ls.<br>
 
 
 
+
 %nop ignores its arguments, and leaves $? unchanged<br>
 
-
-
-
-
-<h3>%printenv</h3>
-
-
-
-
-
-
-%printenv prints out the entire variable map if given no arguments. If
-it is given an argument, then it prints out the value of that variable.<br>
 
 
 
@@ -312,8 +320,10 @@ it is given an argument, then it prints out the value of that variable.<br>
 
 
 
+
 %return takes one argument, which it converts to an integer, and then
 returns that value. It has more error conditions than any other builtin.<br>
+
 
 
 
@@ -326,7 +336,8 @@ returns that value. It has more error conditions than any other builtin.<br>
 
 
 
-%set writes a variable to the variable map. the first argument is the
+
+%set changes the value of a variable in the variable map. the first argument is the
 name of the variable, its second and any additional arguments are the value of the
 variable.<br>
 
@@ -335,7 +346,9 @@ variable.<br>
 
 
 
+
 <h3>%selection_set</h3>
+
 
 
 
@@ -351,7 +364,9 @@ path that should be modified by the second argument.<br>
 
 
 
+
 <h3>%stepwise</h3>
+
 
 %stepwise treats its arguments as a function call, looks up this
 function and interprets it with the given arguments, but rather than
@@ -369,6 +384,7 @@ shell replacing each ";" with "||", and "&amp;&amp;" respectively.
 
 
 
+
 %source attempts to run its first argument as a shell script. The
 remaining arguments are passed to that shell script as its arguments.
 Before the script is run, rwsh.before_script is run with the same
@@ -378,20 +394,26 @@ run with all of the internal functions that apply to the command line.
 (this will change in a future version.) %source returns the value
 returned by the script it ran.
 <h3>%test_equal</h3>
+%test_equal takes two arguments. It returns 0 if those two arguments
+are the same string. It returns 1 if those two arguments are different
+strings.
 
-
-
-
-
-%test_equal takes two arguments. It returns 0 if those two arguments are the same string
 <h3>%test_not_empty</h3>
 
 
 
 
 
+
 %test_not_empty takes one argument. It returns 0 if that argument is not the empty string.
-<h3>%which</h3>
+<h3>%test_not_equal</h3>
+%test_not_equal takes two arguments. It returns 0 if those two
+arguments are different strings. It returns 1 if those two arguments
+are the same string.<br>
+<h3>%unset</h3>
+%unset takes one argument, the name of a variable to remove from the variable map.<br>
+<h3>%which_executable</h3>
+
 
 
 
@@ -408,13 +430,30 @@ map, whether or not the file exists and is executable.
 rwsh.mapped_argfunction and rwsh.argfunction are both recognized as
 names for whatever argument function might have been passed to %which,
 and are printed with just their enclosing braces.<br>
+<br>
+<h3>%which_path</h3>
+%which_path takes two arguments. The first is the name of the
+executable to search for, the second is the colon-separated search path
+within which to look for it. If an executable is found, it is printed,
+otherwise an error is returned.
 
 
 
 
 
 
+<h3>%which_return</h3>
+%which_return takes one argument, the name of an executable in the
+executable map. If the executable is found, then it prints the last
+value returned by that executable, and then returns 0. If the
+executable is not found, then it returns 1. If the executable name is
+rwsh.argfunction or rwsh.mapped_argfunction, then it returns 2.
+<h3>%which_test</h3>
+%which_test takes one argument, the name of an executable to look up in
+the executable map. If one is found it returns 0. Otherwise it returns
+1. It does not print any text.<br>
 <h3>%while</h3>
+
 
 
 %while runs its arguments as a command, and for each time that they
@@ -423,6 +462,14 @@ return 0, it runs its argument function. &nbsp;Note: a loop of the form
 infinitely or not at all. &nbsp;$X is interpretted once, before the
 statement is run, and however the argument function might change the
 value of X, it cannot change the value that it used to have.
+<h3>%var_add</h3>
+%var_add takes two arguments, the name of a variable and an integer
+value to add to this variable. The set of errors is VAR_ADD_ERROR,
+VAR_NAN, VAR_RANGE, CONST_NAN, CONST_RANGE, SUM_RANGE.
+<h3>%var_exists</h3>
+%var_exists takes one argument, the name of a variable in the variable
+map. If the variable is set then it returns 0. If the variable is not
+set it returns 1.<br>
 <h3>%version</h3>
 
 
@@ -430,7 +477,16 @@ value of X, it cannot change the value that it used to have.
 
 
 
-%version prints out the version of rwsh that is currently running<br>
+
+%version prints out the version of rwsh that is currently running
+<h3>%version_available</h3>
+
+
+
+
+
+
+%version_available takes no arguments, and prints out a list of those that would return true if passed to %version_compatible.
 
 
 
@@ -442,13 +498,7 @@ value of X, it cannot change the value that it used to have.
 
 
 
+
 %version_compatible takes one argument, and returns 0 if that argument is an rwsh version number compatible with this one.
-<h3>%version_available</h3>
-
-
-
-
-
-%version_available takes no arguments, and prints out a list of those that would return true if passed to %version_compatible.
 </body>
 </html>

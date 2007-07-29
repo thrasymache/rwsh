@@ -50,6 +50,8 @@ m {e &{%return 1}}
 m {e &&{%return 1}; e after}
 f rwsh.failed_substitution {e &&{%return 1}}
 m {e &&{%return 1}; e after}
+# bad_argfunction_style
+e x{e x}
 e @//usr
 # rwsh.selection_not_found
 e @/*is*
@@ -159,7 +161,7 @@ e $x
 %var_exists x
 %return 0
 
-# %if %else_if %else
+# %if %else_if %else_if_not %else
 %if
 %else_if
 %else_if_not
@@ -169,15 +171,23 @@ e $x
 %if %return 1 {e if false; %return 4}
 %else {e else false; %return 5}
 %else_if %return 0 {e not this one; %return 6}
-%if %return 1 {e nor this; %return 7}
-%else_if %return 0 {e but this; %return 8}
-%else_if %return 0 {e this should be skipped; %return 9}
-%else_if %return 1 {e and certainly this; %return 10}
-%else {e nor this; %return 11}
-%if %return 0 {%if %return 1 {not to be printed; %return 11}; %else_if %return 0 {e nested else_if; %return 12}}
-%else {e else_if failed to appropriately set IF_TEST on exit; %return 13}
-%if %return 0 {%else_if %return 0 {e nested syntax; %return 14}}
-%else {e already tested; %return 15}
+%else_if_not %return 1 {e not this one; %return 7}
+%if %return 1 {e nor this; %return 8}
+%else_if %return 1 {e nor this; %return 9}
+%else_if %return 0 {e but this; %return 10}
+%else_if %return 0 {e this should be skipped; %return 11}
+%else_if %return 1 {e and certainly this; %return 12}
+%else {e nor this; %return 13}
+%if %return 1 {e nor this; %return 14}
+%else_if_not %return 0 {e nor this; %return 15}
+%else_if_not %return 1 {e but this; %return 16}
+%else_if_not %return 1 {e this should be skipped; %return 17}
+%else_if_not %return 0 {e and certainly this; %return 18}
+%else {e nor this; %return 19}
+%if %return 0 {%if %return 1 {not to be printed; %return 20}; %else_if %return 0 {e nested else_if; %return 21}}
+%else {e else_if failed to appropriately set IF_TEST on exit; %return 22}
+%if %return 0 {%else_if %return 0 {e nested syntax; %return 23}}
+%else {e already tested; %return 24}
 
 # %if_errno %if_errno_is %append_to_errno
 rwsh.mapped_argfunction {%if_errno {e no error}; %append_to_errno x; %if_errno {e invented error $ERRNO}; %if_errno %return 0 {e doubled error $ERRNO}}
@@ -228,6 +238,14 @@ e $A
 %selection_set A \
 e $A
 %selection_set A /local/../../bin
+e $A
+
+# %set
+%set A
+%set B x
+%set IF_TEST x
+e $A
+%set A x
 e $A
 
 # %source

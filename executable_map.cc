@@ -65,8 +65,8 @@ Executable_map_t::Executable_map_t(void) : in_autofunction(false) {
   set(new Builtin_t("%return", return_bi));
   set(new Builtin_t("%set", set_bi));
   set(new Builtin_t("%selection_set", selection_set_bi));
-  set(new Builtin_t("%stepwise", stepwise_bi));
   set(new Builtin_t("%source", source_bi));
+  set(new Builtin_t("%stepwise", stepwise_bi));
   set(new Builtin_t("%test_equal", test_equal_bi));
   set(new Builtin_t("%test_not_empty", test_not_empty_bi));
   set(new Builtin_t("%test_not_equal", test_not_equal_bi));
