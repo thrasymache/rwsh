@@ -1,4 +1,8 @@
-rwsh v0.3u - command substitution
+rwsh v0.2.2 -
+  * builtins: %is_default_output
+  * file redirection
+
+rwsh v0.2.1 - command substitution
   * builtins: %append_to_errno, %error_unit, %for, %if_errno, %if_errno_is, 
       %importenv_overwrite, %importenv_preserve, %stepwise, %test_not_equal, 
       %which_executable, %which_test, %which_path, %which_return, %while, 

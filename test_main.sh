@@ -50,6 +50,7 @@ m {e &{%return 1}}
 m {e &&{%return 1}; e after}
 f rwsh.failed_substitution {e &&{%return 1}}
 m {e &&{%return 1}; e after}
+f rwsh.failed_substitution
 # bad_argfunction_style
 e x{e x}
 e @//usr
@@ -67,6 +68,12 @@ e @/usr/*l*i*b*x*e*
 %return &{e 0}
 %return &{%echo 0}
 %unset A
+
+# file redirection
+%if %ls dummy_file
+%else {e >dummy_file hi}
+/bin/cat dummy_file
+/bin/rm dummy_file
 
 # soon level promotion
 %global A 0
@@ -200,6 +207,11 @@ rwsh.mapped_argfunction {%if_errno_is x {e no error}; %if_errno_is {e invocation
 %internal_errors
 %internal_features
 %internal_vars
+
+# %is_default_output
+%is_default_output 1
+e &{%is_default_output; %echo $?}
+m {%is_default_output}
 
 # %ls
 %ls
@@ -354,7 +366,7 @@ e $A
 %version
 %version_available
 %version_compatible 1.0
-%version_compatible 0.3u
+%version_compatible 0.2.1+
 
 # binary test implicitly tests Old_argv_t
 /bn/echo 1 2 3

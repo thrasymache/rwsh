@@ -248,14 +248,22 @@ int importenv_preserve_bi(const Argv_t& argv) {
       argv.global_var(src.substr(0, div), src.substr(div+1));}
   return 0;}
 
+// returns one if the output stream is not the default_stream
+int is_default_output_bi(const Argv_t& argv) {
+  if(argv.size() != 1) {argv.append_to_errno("ARGS"); return -1;}
+  return argv.myout() != default_stream_p;}
+
 // list the files specified by the arguments if they exist
 int ls_bi(const Argv_t& argv) {
   if (argv.size() < 2) {argv.append_to_errno("ARGS"); return -1;}
   struct stat sb;
+  int ret = 1;
   for (Argv_t::const_iterator i=argv.begin(); i != argv.end(); ++i) 
-    if (!stat(i->c_str(), &sb)) *argv.myout() <<*i <<"\n";
+    if (!stat(i->c_str(), &sb)) {
+      *argv.myout() <<*i <<"\n";
+      ret = 0;}
   argv.myout()->flush();
-  return 0;}
+  return ret;}
 
 // write a newline to the standard output
 int newline_bi(const Argv_t& argv) {
@@ -394,7 +402,7 @@ int var_exists_bi(const Argv_t& argv) {
   if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
   else return !argv.var_exists(argv[1]);}
 
-static const std::string version_str("0.3u");
+static const std::string version_str("0.2.1+");
 
 // write to standard output the version of rwsh
 int version_bi(const Argv_t& argv) {

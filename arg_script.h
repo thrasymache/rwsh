@@ -9,6 +9,8 @@ class Arg_spec_t {
   unsigned ref_level;
   Function_t* substitution;
   std::string text;
+
+  void add_function_spec(const std::string& src);
  public:
   Arg_spec_t(const std::string& script, unsigned max_soon);
   Arg_spec_t(const std::string& style, const std::string& function, 

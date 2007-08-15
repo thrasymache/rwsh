@@ -9,7 +9,9 @@
 
 #include <assert.h>
 #include <dirent.h>
+#include <exception>
 #include <fcntl.h>
+#include <fstream>
 #include <iterator>
 #include <list>
 #include <map>
@@ -31,6 +33,8 @@
 #include "substitution_stream.h"
 #include "util.h"
 #include "variable_map.h"
+
+#include "file_stream.h"
 
 Arg_spec_t::Arg_spec_t(const std::string& script, unsigned max_soon) : 
       soon_level(0), ref_level(0), substitution(0) {
@@ -206,6 +210,9 @@ Arg_script_t::Arg_script_t(const std::string& src, unsigned max_soon) :
     if (token_end == std::string::npos) 
       push_back(Arg_spec_t(src.substr(token_start, std::string::npos), 
                            max_soon));
+    else if (src[token_start] == '>') 
+      if (myout != default_stream_p) throw std::exception(); //"double redirection"
+      else myout = new File_stream_t(src.substr(token_start+1, token_end-token_start-1));
     else switch (src[token_end]) {                           // add one argument
       case ' ': 
         push_back(Arg_spec_t(src.substr(token_start, token_end-token_start),
@@ -236,6 +243,7 @@ Arg_script_t::Arg_script_t(const std::string& src, unsigned max_soon) :
     else if (front().str() == "rwsh.argfunction") argfunction_level = 2;
     else if (front().str() == "rwsh.escaped_argfunction") argfunction_level = 3;
     else assert(0);}}                            // unhandled argfunction level
+
 
 Arg_script_t::Arg_script_t(const Arg_script_t& src) : 
   Base(src), argfunction(src.argfunction->copy_pointer()),

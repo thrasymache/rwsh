@@ -189,9 +189,12 @@ $m {e &&{%return 1}; e after}
 rwsh.excessive_nesting : command not found ( rwsh.excessive_nesting rwsh.failed_substitution rwsh.failed_substitution rwsh.failed_substitution rwsh.failed_substitution rwsh.failed_substitution rwsh.mapped_argfunction m )
 
 -1
+$f rwsh.failed_substitution
+
+0
 $# bad_argfunction_style
 
--1
+0
 $e x{e x}
 rwsh.bad_argfunction_style : command not found ( rwsh.bad_argfunction_style x{e x} )
 
@@ -252,6 +255,25 @@ $%return &{%echo 0}
 
 0
 $%unset A
+
+0
+$
+
+0
+$# file redirection
+
+0
+$%if %ls dummy_file
+
+0
+$%else {e >dummy_file hi}
+
+0
+$/bin/cat dummy_file
+hi
+
+0
+$/bin/rm dummy_file
 
 0
 $
@@ -713,6 +735,23 @@ rwsh.after_command rwsh.before_command rwsh.prompt rwsh.raw_command rwsh.run_log
 0
 $%internal_vars
 CWD ERRNO FIGNORE IF_TEST MAX_NESTING
+0
+$
+
+0
+$# %is_default_output
+
+0
+$%is_default_output 1
+
+-1
+ERRNO set to ARGS
+$e &{%is_default_output; %echo $?}
+1
+
+0
+$m {%is_default_output}
+
 0
 $
 
@@ -1277,15 +1316,15 @@ $%version_compatible 1.0 1.0
 -1
 ERRNO set to ARGS
 $%version
-0.3u
+0.2.1+
 0
 $%version_available
-0.3u
+0.2.1+
 0
 $%version_compatible 1.0
 
 1
-$%version_compatible 0.3u
+$%version_compatible 0.2.1+
 
 0
 $

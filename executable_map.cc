@@ -59,6 +59,7 @@ Executable_map_t::Executable_map_t(void) : in_autofunction(false) {
           "%if %test_equal $# 1 {"
               "%echo CWD ERRNO FIGNORE IF_TEST MAX_NESTING}; "
           "%else {%append_to_errno ARGS; %return -1}}", 0));
+  set(new Builtin_t("%is_default_output", is_default_output_bi));
   set(new Builtin_t("%ls", ls_bi));
   set(new Builtin_t("%newline", newline_bi));
   set(new Builtin_t("%nop", nop_bi));

@@ -6,7 +6,7 @@ struct Rwsh_stream_t {
   virtual void flush(void) = 0;};
 
 struct Default_stream_t : public Rwsh_stream_t {
-  Rwsh_stream_t& operator<<(const std::string& r);
-  Rwsh_stream_t& operator<<(int r);
-  void flush(void);};
+  virtual Rwsh_stream_t& operator<<(const std::string& r);
+  virtual Rwsh_stream_t& operator<<(int r);
+  virtual void flush(void);};
 
