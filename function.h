@@ -17,7 +17,6 @@ class Function_t : public Executable_t {
     if (!this) return 0;
     else return new Function_t(name_v, script);};
   int operator() (const Argv_t& src_argv);
-  int operator() (const Argv_t& src_argv, Rwsh_stream_t* override_stream);
   Function_t* apply(const Argv_t& argv, unsigned nesting) const ;
   const std::string& name(void) const {return name_v;};
   Function_t* promote_soons(unsigned nesting) const;

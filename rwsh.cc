@@ -49,10 +49,10 @@ int main(int argc, char *argv[]) {
   executable_map.run_if_exists("rwsh.init", external_command_line);
   register_signals();
   Arg_script_t script("", 0);
-  Argv_t prompt(default_stream_p);
+  Argv_t prompt;
   while (command_stream) {
     executable_map.run_if_exists("rwsh.prompt", prompt);
-    Argv_t command(0);
+    Argv_t command;
     try {
       if (!(command_stream >> script)) break;
       command = script.interpret(script.argv());}

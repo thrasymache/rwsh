@@ -42,6 +42,7 @@
 %function cvs {%selection_set SELECT $2; /usr/bin/cvs $1 @$SELECT}
 %function du {%selection_set SELECT $1; /usr/bin/du -hsc @$SELECT}
 %function grep {%set REGEX $1; %selection_set SELECT $2; /usr/bin/grep $REGEX @$SELECT}
+%function grepc {%set REGEX $1; %selection_set SELECT $2; /usr/bin/grep -c $REGEX @$SELECT}
 %function grepl {%set REGEX $1; %selection_set SELECT $2; /usr/bin/grep -l $REGEX @$SELECT}
 %function home {%set SELECT $HOME; cd}
 %function ignore {%set FIGNORE $*}

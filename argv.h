@@ -2,7 +2,6 @@
 
 class Function_t;
 class Rwsh_stream_t;
-extern Rwsh_stream_t* default_stream_p;
 class Variable_map_t;
 
 class Argv_t : private std::vector<std::string> {
@@ -12,7 +11,7 @@ class Argv_t : private std::vector<std::string> {
   static Variable_map_t* var_map;
 
  public:
-  Argv_t(Rwsh_stream_t* myout_i) : argfunction_v(0), myout_v(myout_i) {};
+  Argv_t(void);
   template <class In> Argv_t(In first, In last, Function_t* argfunction_i, 
                              Rwsh_stream_t* myout_i) :
     Base(first, last), argfunction_v(argfunction_i->copy_pointer()), 

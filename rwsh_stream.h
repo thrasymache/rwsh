@@ -10,3 +10,4 @@ struct Default_stream_t : public Rwsh_stream_t {
   virtual Rwsh_stream_t& operator<<(int r);
   virtual void flush(void);};
 
+extern Rwsh_stream_t* default_stream_p;

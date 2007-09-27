@@ -38,7 +38,7 @@ void selection_read(const std::string& src, Out res) {
         if (stat(j->c_str(), &sb)) {j = partial.erase(j); --j;}}
     else partial_match_children(partial, *i, ignore);
     if (!partial.size()) {
-      Argv_t argv(default_stream_p);
+      Argv_t argv;
       argv.push_back("rwsh.selection_not_found");
       argv.push_back("");
       for (std::vector<Entry_pattern_t>::iterator j=focus.begin(); j!=i+1; ++j)

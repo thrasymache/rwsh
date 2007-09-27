@@ -65,7 +65,7 @@ int echo_bi(const Argv_t& argv) {
 // unset ERRNO while running argfunction, then merge errors
 int error_unit_bi(const Argv_t& argv) {
   if (!argv.argfunction()) {argv.append_to_errno("ARGFUNCTION"); return -1;}
-  Argv_t inner_args(default_stream_p);
+  Argv_t inner_args;
   inner_args.push_back("rwsh.mapped_argfunction");
   copy(argv.begin()+1, argv.end(), std::back_inserter(inner_args));
   std::string saved_errno;
@@ -93,7 +93,7 @@ int exit_bi(const Argv_t& argv) {
 int for_bi(const Argv_t& argv) {
   if (argv.size() < 2) {argv.append_to_errno("ARGS"); return -1;}
   int ret = -1;
-  Argv_t body(default_stream_p);
+  Argv_t body;
   body.push_back("rwsh.mapped_argfunction");
   body.push_back("");
   for (Argv_t::const_iterator i = ++argv.begin(); i != argv.end(); ++i) {
@@ -130,8 +130,9 @@ static int if_core(const Argv_t& argv, bool logic) {
     argv.unset_var("IF_TEST");
     int ret;
     if (argv.argfunction()) {
-      Argv_t mapped_argv(argv.myout());
+      Argv_t mapped_argv;
       mapped_argv.push_back("rwsh.mapped_argfunction");
+      mapped_argv.set_myout(argv.myout());
       ret = (*argv.argfunction())(mapped_argv);}
     else ret = 0;
     if (argv.var_exists("IF_TEST")) {
@@ -160,8 +161,9 @@ int if_bi(const Argv_t& argv) {
 int if_errno_bi(const Argv_t& argv) {
   if (argv.size() != 1) argv.append_to_errno("ARGS");
   if (argv.var_exists("ERRNO") && argv.argfunction()) {
-    Argv_t mapped_argv(argv.myout());
+    Argv_t mapped_argv;
     mapped_argv.push_back("rwsh.mapped_argfunction");
+    mapped_argv.set_myout(argv.myout());
     return (*argv.argfunction())(mapped_argv);}
   else return 0;}
 
@@ -174,8 +176,9 @@ int if_errno_is_bi(const Argv_t& argv) {
     immediate_error = true;}
   if (argv.var_exists("ERRNO") && argv.argfunction() && 
       (argv.get_var("ERRNO") == argv[1] || immediate_error)) {
-    Argv_t mapped_argv(argv.myout());
+    Argv_t mapped_argv;
     mapped_argv.push_back("rwsh.mapped_argfunction");
+    mapped_argv.set_myout(argv.myout());
     return (*argv.argfunction())(mapped_argv);}
   else return 0;}
 
@@ -213,8 +216,9 @@ int else_bi(const Argv_t& argv) {
   else if (argv.get_var("IF_TEST") == "false") 
     if (argv.argfunction()) {
       argv.unset_var("IF_TEST");
-      Argv_t mapped_argv(argv.myout());
+      Argv_t mapped_argv;
       mapped_argv.push_back("rwsh.mapped_argfunction");
+      mapped_argv.set_myout(argv.myout());
       (*argv.argfunction())(mapped_argv);
       if (argv.var_exists("IF_TEST")) {
         argv.append_to_errno("BAD_IF_NEST"); ret = -1;}
@@ -317,7 +321,7 @@ int source_bi(const Argv_t& argv) {
   Arg_script_t script("", 0);
   int ret = -1;
   while (command_stream && !Executable_t::unwind_stack()) {
-    Argv_t command(0);
+    Argv_t command;
     try {
       if (!(command_stream >> script)) break;
       command = script.interpret(script.argv());}
@@ -339,7 +343,7 @@ int stepwise_bi(const Argv_t& argv) {
   int ret = -1;
   for (Function_t::const_iterator i = f->script.begin(); 
        i != f->script.end(); ++i) {
-    Argv_t body(0);
+    Argv_t body;
     try {body = i->interpret(lookup);}
     catch (Failed_substitution_t error) {body = error;}
     catch (Undefined_variable_t error) {break;}
@@ -483,8 +487,9 @@ int while_bi(const Argv_t& argv) {
   while (!executable_map.run(lookup)) {
     if (Executable_t::unwind_stack() || argv.var_exists("ERRNO")) return -1;
     if (argv.argfunction()) {
-      Argv_t mapped_argv(argv.myout());
+      Argv_t mapped_argv;
       mapped_argv.push_back("rwsh.mapped_argfunction");
+      mapped_argv.set_myout(argv.myout());
       ret = (*argv.argfunction())(mapped_argv);
       if (Executable_t::unwind_stack() || argv.var_exists("ERRNO"))
         return -1;}

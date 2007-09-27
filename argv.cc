@@ -17,6 +17,8 @@
 extern Variable_map_t* vars;
 Variable_map_t* Argv_t::var_map = vars;
 
+Argv_t::Argv_t(void) : argfunction_v(0), myout_v(default_stream_p) {};
+
 Argv_t::Argv_t(const Argv_t& src) : Base(src), argfunction_v(0), 
       myout_v(src.myout_v) {
   argfunction_v = src.argfunction()->copy_pointer();}

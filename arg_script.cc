@@ -103,7 +103,9 @@ void Arg_spec_t::apply(const Argv_t& src, unsigned nesting) {
       if (soon_level) --soon_level;
       else {
         Substitution_stream_t override_stream;
-        if ((*substitution)(src, &override_stream)) 
+        Argv_t temp_argv(src.begin(), src.end(), src.argfunction(), 
+                         &override_stream);
+        if ((*substitution)(temp_argv)) 
           throw Failed_substitution_t(str());
         delete substitution;
         substitution = 0;
@@ -154,7 +156,9 @@ void Arg_spec_t::interpret(const Argv_t& src, Out res) const {
     case SUBSTITUTION: {
       assert(!soon_level); // constructor guarantees SOONs are already done
       Substitution_stream_t override_stream;
-      if ((*substitution)(src, &override_stream)) 
+      Argv_t temp_argv(src.begin(), src.end(), src.argfunction(), 
+                       &override_stream);
+      if ((*substitution)(temp_argv)) 
         throw Failed_substitution_t(str()); 
       *res++ = override_stream.str();
       break;}
@@ -170,35 +174,35 @@ void Arg_spec_t::promote_soons(unsigned nesting) {
       substitution = temp; break;}}
 
 Arguments_to_argfunction_t::Arguments_to_argfunction_t(
-      const std::string& argfunction_type) : Argv_t(default_stream_p) {
+      const std::string& argfunction_type) : Argv_t() {
   push_back("rwsh.arguments_for_argfunction");
   push_back(argfunction_type);}
 
 Bad_argfunction_style_t::Bad_argfunction_style_t(
-      const std::string& argfunction_style) : Argv_t(default_stream_p) {
+      const std::string& argfunction_style) : Argv_t() {
   push_back("rwsh.bad_argfunction_style");
   push_back(argfunction_style);}
 
 Failed_substitution_t::Failed_substitution_t(const std::string& function) :
-      Argv_t(default_stream_p) {
+      Argv_t() {
   push_back("rwsh.failed_substitution");
   push_back(function);}
 
 Mismatched_brace_t::Mismatched_brace_t(const std::string& prefix) : 
-      Argv_t(default_stream_p) {
+      Argv_t() {
   push_back("rwsh.mismatched_brace");
   push_back(prefix);}
 
-Multiple_argfunctions_t::Multiple_argfunctions_t() : Argv_t(default_stream_p) {
+Multiple_argfunctions_t::Multiple_argfunctions_t() : Argv_t() {
   push_back("rwsh.multiple_argfunctions");}
 
 Not_soon_enough_t::Not_soon_enough_t(const std::string& argument) : 
-      Argv_t(default_stream_p) {
+      Argv_t() {
   push_back("rwsh.not_soon_enough");
   push_back(argument);}
 
 Undefined_variable_t::Undefined_variable_t(const std::string& variable) :
-      Argv_t(default_stream_p) {
+      Argv_t() {
   push_back("rwsh.undefined_variable");
   push_back(variable);}
   
@@ -260,10 +264,11 @@ Arg_script_t::~Arg_script_t(void) {delete argfunction;}
 
 // naively create an Argv_t from Arg_script. string constructor for Argv_t.
 Argv_t Arg_script_t::argv(void) const {
-  Argv_t result(myout);
+  Argv_t result;
   if (!argfunction_level) {
     for(const_iterator i=begin(); i != end(); ++i) result.push_back(i->str());
-    result.set_argfunction(argfunction->copy_pointer());}
+    result.set_argfunction(argfunction->copy_pointer());
+    result.set_myout(myout);}
   else if (argfunction_level == 1) result.push_back("rwsh.argfunction");
   else if (argfunction_level == 2) result.push_back("rwsh.escaped_argfunction");
   else assert(0);
@@ -283,9 +288,9 @@ std::string Arg_script_t::str(void) const {
 
 // produce a destination Argv from the source Argv according to this script
 Argv_t Arg_script_t::interpret(const Argv_t& src) const {
-  Argv_t result(myout);
-  if (myout == default_stream_p && src.myout() != default_stream_p)
-    result.set_myout(src.myout());
+  Argv_t result;
+  if (myout != default_stream_p) result.set_myout(myout);
+  else if (src.myout() != default_stream_p) result.set_myout(src.myout());
   if (!argfunction_level) {
     for (const_iterator i = begin(); i != end(); ++i) 
       i->interpret(src, std::back_inserter(result));
