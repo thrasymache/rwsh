@@ -124,7 +124,7 @@ int global_bi(const Argv_t& argv) {
   else return argv.global_var(argv[1], argv[2]);}
 
 static int if_core(const Argv_t& argv, bool logic) {
-  Argv_t lookup(argv.begin()+1, argv.end(), 0, argv.myout());
+  Argv_t lookup(argv.begin()+1, argv.end(), 0, argv.myout()->child_stream());
   if (logic == !executable_map.run(lookup)) {
     if (Executable_t::unwind_stack()) return -1;
     argv.unset_var("IF_TEST");
@@ -132,7 +132,7 @@ static int if_core(const Argv_t& argv, bool logic) {
     if (argv.argfunction()) {
       Argv_t mapped_argv;
       mapped_argv.push_back("rwsh.mapped_argfunction");
-      mapped_argv.set_myout(argv.myout());
+      mapped_argv.set_myout(argv.myout()->child_stream());
       ret = (*argv.argfunction())(mapped_argv);}
     else ret = 0;
     if (argv.var_exists("IF_TEST")) {
@@ -163,7 +163,7 @@ int if_errno_bi(const Argv_t& argv) {
   if (argv.var_exists("ERRNO") && argv.argfunction()) {
     Argv_t mapped_argv;
     mapped_argv.push_back("rwsh.mapped_argfunction");
-    mapped_argv.set_myout(argv.myout());
+    mapped_argv.set_myout(argv.myout()->child_stream());
     return (*argv.argfunction())(mapped_argv);}
   else return 0;}
 
@@ -178,7 +178,7 @@ int if_errno_is_bi(const Argv_t& argv) {
       (argv.get_var("ERRNO") == argv[1] || immediate_error)) {
     Argv_t mapped_argv;
     mapped_argv.push_back("rwsh.mapped_argfunction");
-    mapped_argv.set_myout(argv.myout());
+    mapped_argv.set_myout(argv.myout()->child_stream());
     return (*argv.argfunction())(mapped_argv);}
   else return 0;}
 
@@ -218,7 +218,7 @@ int else_bi(const Argv_t& argv) {
       argv.unset_var("IF_TEST");
       Argv_t mapped_argv;
       mapped_argv.push_back("rwsh.mapped_argfunction");
-      mapped_argv.set_myout(argv.myout());
+      mapped_argv.set_myout(argv.myout()->child_stream());
       (*argv.argfunction())(mapped_argv);
       if (argv.var_exists("IF_TEST")) {
         argv.append_to_errno("BAD_IF_NEST"); ret = -1;}
@@ -334,7 +334,7 @@ int source_bi(const Argv_t& argv) {
 int stepwise_bi(const Argv_t& argv) {
   if (argv.size() < 2) {argv.append_to_errno("ARGS"); return -1;}
   if (!argv.argfunction()) {argv.append_to_errno("ARGFUNCTION"); return -1;}
-  Argv_t lookup(argv.begin()+1, argv.end(), 0, argv.myout());
+  Argv_t lookup(argv.begin()+1, argv.end(), 0, argv.myout()->child_stream());
   Executable_t* e = executable_map.find(lookup);
   if (!e) return 1;  // executable not found
   Function_t* f = dynamic_cast<Function_t*>(e);
@@ -433,7 +433,8 @@ int version_compatible_bi(const Argv_t& argv) {
 // key $1
 int which_executable_bi(const Argv_t& argv) {
   if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
-  Argv_t lookup(argv.begin()+1, argv.end(), argv.argfunction(), 0);
+  Argv_t lookup(argv.begin()+1, argv.end(), argv.argfunction(), 
+                default_stream_p->copy_pointer());
   if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
   Executable_t* focus = executable_map.find(lookup);
   if (focus) {
@@ -460,7 +461,8 @@ int which_path_bi(const Argv_t& argv) {
 // prints the last return value of the executable with named $1
 int which_return_bi(const Argv_t& argv) {
   if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
-  Argv_t lookup(argv.begin()+1, argv.end(), 0, 0);
+  Argv_t lookup(argv.begin()+1, argv.end(), 0, 
+                default_stream_p->copy_pointer());
   if (lookup[0] == "rwsh.mapped_argfunction" || 
             lookup[0] == "rwsh.argfunction") 
     return 2; // return values not stored for argfunctions
@@ -474,7 +476,8 @@ int which_return_bi(const Argv_t& argv) {
 // return true if ther is an executable in the executable map with key $1
 int which_test_bi(const Argv_t& argv) {
   if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
-  Argv_t lookup(argv.begin()+1, argv.end(), argv.argfunction(), 0);
+  Argv_t lookup(argv.begin()+1, argv.end(), argv.argfunction(), 
+                default_stream_p->copy_pointer());
   if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
   return !executable_map.find(lookup);}
 
@@ -483,13 +486,13 @@ int which_test_bi(const Argv_t& argv) {
 int while_bi(const Argv_t& argv) {
   if (argv.size() < 2) {argv.append_to_errno("ARGS"); return -1;}
   int ret = -1;
-  Argv_t lookup(argv.begin()+1, argv.end(), 0, argv.myout());
+  Argv_t lookup(argv.begin()+1, argv.end(), 0, argv.myout()->child_stream());
   while (!executable_map.run(lookup)) {
     if (Executable_t::unwind_stack() || argv.var_exists("ERRNO")) return -1;
     if (argv.argfunction()) {
       Argv_t mapped_argv;
       mapped_argv.push_back("rwsh.mapped_argfunction");
-      mapped_argv.set_myout(argv.myout());
+      mapped_argv.set_myout(argv.myout()->child_stream());
       ret = (*argv.argfunction())(mapped_argv);
       if (Executable_t::unwind_stack() || argv.var_exists("ERRNO"))
         return -1;}

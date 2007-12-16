@@ -22,8 +22,8 @@ class Argv_t : private std::vector<std::string> {
   std::string str(void) const;
   Function_t* argfunction(void) const {return argfunction_v;};
   Rwsh_stream_t* myout(void) const {return myout_v;};
-  void set_myout(Rwsh_stream_t* val) {myout_v = val;};
-  void set_argfunction(Function_t* val) {argfunction_v = val;};
+  void set_myout(Rwsh_stream_t* val);
+  void set_argfunction(Function_t* val);
 
 // variables
   void append_to_errno(const std::string& value) const;
@@ -71,6 +71,32 @@ class Argv_t : private std::vector<std::string> {
   std::string& operator[] (int i) {return Base::operator[](i);};
   const std::string& operator[] (int i) const {return Base::operator[](i);}; };
 
+struct Arguments_to_argfunction_t : public Argv_t {
+  Arguments_to_argfunction_t(const std::string& argfunction_type);};
+
+struct Bad_argfunction_style_t : public Argv_t {
+  Bad_argfunction_style_t(const std::string& argfunction_style);};
+
+struct Double_redirection_t : public Argv_t {
+  Double_redirection_t(const std::string& first, const std::string& second);};
+
+struct File_open_failure_t : public Argv_t {
+  File_open_failure_t(const std::string& file_name);};
+
+struct Failed_substitution_t : public Argv_t {
+  Failed_substitution_t(const std::string& function);};
+
+struct Mismatched_brace_t : public Argv_t {
+  Mismatched_brace_t(const std::string& prefix);};
+
+struct Multiple_argfunctions_t : public Argv_t {Multiple_argfunctions_t();};
+
+struct Not_soon_enough_t : public Argv_t {
+  Not_soon_enough_t(const std::string& argument);};
+
+struct Undefined_variable_t : public Argv_t {
+  Undefined_variable_t(const std::string& variable);};
+  
 class Old_argv_t {
   char** focus;
   int argc_v;

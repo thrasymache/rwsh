@@ -69,9 +69,12 @@ e @/usr/*l*i*b*x*e*
 %return &{%echo 0}
 %unset A
 
-# file redirection
-%if %ls dummy_file
-%else {e >dummy_file hi}
+# file redirection (but don't overwrite files that exist)
+%if %ls dummy_file {%exit}
+%else {e hi >dummy_file}
+/bin/cat dummy_file
+%if %return 0 {>dummy_file /bin/echo there}
+%else
 /bin/cat dummy_file
 /bin/rm dummy_file
 
@@ -309,7 +312,7 @@ wrapper 1 2
 %which_executable
 %which_executable j
 %which_executable #
-%which_executable rwsh.mapped_argfunction {%nop 1 \ \$ \@ $A $$A $0 $$$1 $# $* $*2 @a @$a @$1 @$* @$*2}
+%which_executable rwsh.mapped_argfunction {%nop 1 \ \$ \@ $A $$A $0 $$$1 $# $* $*2 @a @$a @$1 @$* @$*2 >dummy_file}
 %which_executable rwsh.mapped_argfunction
 %which_executable rwsh.mapped_argfunction {rwsh.argfunction}
 %which_return
@@ -398,6 +401,11 @@ f rwsh.autofunction {f $1 {e $*}}
 z 1 2 3
 w z
 f rwsh.autofunction
+
+# rwsh.double_redirection
+# m {e hi #>dummy_file >dummy_file}
+# m {e hi >dummy_file}
+# m {e &{e hi #>dummy_file}}
 
 # rwsh.executable_not_found
 f rwsh.executable_not_found

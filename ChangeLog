@@ -1,5 +1,6 @@
 rwsh v0.2.2 -
   * builtins: %is_default_output
+  * internal_functions: rwsh.double_redirection
   * file redirection
 
 rwsh v0.2.1 - command substitution

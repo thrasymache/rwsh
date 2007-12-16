@@ -96,11 +96,14 @@ void Executable_t::signal_handler(void) {
 
 Binary_t::Binary_t(const std::string& impl) : implementation(impl) {}
 
+#include <iostream>
 // run the given binary
 int Binary_t::operator() (const Argv_t& argv_i) {
   if (increment_nesting(argv_i)) return dollar_question;
   int ret;
   if (!fork()) {  
+    if (dup2(argv_i.myout()->fileno(), 1) < 0) 
+      std::cerr <<"dup2 didn't like that\n";
     Old_argv_t argv(argv_i);
     char **env = argv_i.export_env();
     int ret = execve(implementation.c_str(), argv.argv(), env);

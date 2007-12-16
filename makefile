@@ -2,7 +2,7 @@
 
 objects = argv.o arg_script.o builtin.o command_stream.o executable.o \
 	executable_map.o file_stream.o function.o rwsh.o rwsh_stream.o \
-        selection.o util.o substitution_stream.o variable_map.o \
+        selection.o substitution_stream.o util.o variable_map.o \
 	
 CXXFLAGS = -g
 CC = g++

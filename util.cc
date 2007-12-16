@@ -7,14 +7,6 @@
 
 #include "util.h"
 
-std::string::size_type find_close_brace(const std::string& focus,
-                                        std::string::size_type i) {
-  unsigned nesting = 1;
-  while (nesting && (i = focus.find_first_of("{}", i+1)) != std::string::npos) {
-    if (focus[i] == '{') ++nesting;
-    else --nesting;}
-  return i;}
-
 int my_strtoi(const std::string& src) {
   const char* focus = src.c_str();
   char* endptr;

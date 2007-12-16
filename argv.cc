@@ -19,25 +19,32 @@ Variable_map_t* Argv_t::var_map = vars;
 
 Argv_t::Argv_t(void) : argfunction_v(0), myout_v(default_stream_p) {};
 
-Argv_t::Argv_t(const Argv_t& src) : Base(src), argfunction_v(0), 
-      myout_v(src.myout_v) {
-  argfunction_v = src.argfunction()->copy_pointer();}
+Argv_t::Argv_t(const Argv_t& src) : Base(src), 
+  argfunction_v(src.argfunction()->copy_pointer()), 
+  myout_v(src.myout()->copy_pointer()) {;}
 
 Argv_t& Argv_t::operator=(const Argv_t& src) {
   clear();
   std::copy(src.begin(), src.end(), std::back_inserter(*this));
-  argfunction_v = src.argfunction()->copy_pointer();
-  myout_v = src.myout_v;}
+  myout_v = src.myout()->copy_pointer();
+  argfunction_v = src.argfunction()->copy_pointer();}
 
-Argv_t::~Argv_t(void) {delete argfunction_v;}
+Argv_t::~Argv_t(void) {
+  if (myout_v != default_stream_p) delete myout_v;
+  delete argfunction_v;}
 
 // convert to a string. inverse of constructor.
 std::string Argv_t::str(void) const {
   std::string result;
   for (const_iterator i=begin(); i != end()-1; ++i) result += *i + ' ';
   result += back();
+  if (myout_v->str() != "") result += " " + myout_v->str();
   if (argfunction()) result += " " + argfunction()->str();
   return result;}
+
+void Argv_t::set_myout(Rwsh_stream_t* val) {myout_v = val;};
+
+void Argv_t::set_argfunction(Function_t* val) {argfunction_v = val;};
 
 void Argv_t::append_to_errno(const std::string& value) const {
   var_map->append_to_errno(value);}
@@ -93,7 +100,11 @@ unsigned Argv_t::max_nesting(void) const {return var_map->max_nesting();}
 char** Argv_t::export_env(void) const {return var_map->export_env();}
 
 void Argv_t::clear(void) {
-  Base::clear(); delete argfunction_v; argfunction_v=0;}
+  Base::clear(); 
+  delete argfunction_v; argfunction_v=0; 
+  if (myout_v != default_stream_p) {
+    delete myout_v; 
+    myout_v=default_stream_p;}}
 
 // algorithm that is the meat of Old_argv constructor
 template<class In>char** copy_to_cstr(In first, In last, char** res) {
@@ -103,6 +114,49 @@ template<class In>char** copy_to_cstr(In first, In last, char** res) {
   *res = 0;
   return res;}
 
+Arguments_to_argfunction_t::Arguments_to_argfunction_t(
+      const std::string& argfunction_type) : Argv_t() {
+  push_back("rwsh.arguments_for_argfunction");
+  push_back(argfunction_type);}
+
+Bad_argfunction_style_t::Bad_argfunction_style_t(
+      const std::string& argfunction_style) : Argv_t() {
+  push_back("rwsh.bad_argfunction_style");
+  push_back(argfunction_style);}
+
+Double_redirection_t::Double_redirection_t(const std::string& first, 
+      const std::string& second) : Argv_t() {
+  push_back("rwsh.double_redirection");
+  push_back(first);
+  push_back(second);}
+
+Failed_substitution_t::Failed_substitution_t(const std::string& function) :
+      Argv_t() {
+  push_back("rwsh.failed_substitution");
+  push_back(function);}
+
+File_open_failure_t::File_open_failure_t(const std::string& file_name) {
+  push_back("rwsh.file_open_failure");
+  push_back(file_name);}
+
+Mismatched_brace_t::Mismatched_brace_t(const std::string& prefix) : 
+      Argv_t() {
+  push_back("rwsh.mismatched_brace");
+  push_back(prefix);}
+
+Multiple_argfunctions_t::Multiple_argfunctions_t() : Argv_t() {
+  push_back("rwsh.multiple_argfunctions");}
+
+Not_soon_enough_t::Not_soon_enough_t(const std::string& argument) : 
+      Argv_t() {
+  push_back("rwsh.not_soon_enough");
+  push_back(argument);}
+
+Undefined_variable_t::Undefined_variable_t(const std::string& variable) :
+      Argv_t() {
+  push_back("rwsh.undefined_variable");
+  push_back(variable);}
+  
 Old_argv_t::Old_argv_t(const Argv_t& src) : argc_v(src.size()) {
   focus = new char*[src.size()+1];
   copy_to_cstr(src.begin(), src.end(), focus);}

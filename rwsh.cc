@@ -18,9 +18,9 @@
 #include "rwsh_stream.h"
 #include "variable_map.h"
 
-Executable_map_t executable_map;
 Default_stream_t default_stream;
 Rwsh_stream_t* default_stream_p = &default_stream;
+Executable_map_t executable_map;
 
 namespace {
 std::string init_str =

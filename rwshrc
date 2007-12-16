@@ -65,6 +65,7 @@
 %function rwsh.arguments_for_argfunction {%echo cannot specify arguments for $1 directly; %newline; %return -1}
 %function rwsh.bad_argfunction_style {%echo $1 is neither an argfunction nor a substitution; %newline}
 %function rwsh.binary_not_found {%echo $1 : could not run binary; %newline; %return -1}
+%function rwsh.double_redirection {%echo double redirection is not supported at this time: $1 and $2; %newline}
 %function rwsh.excessive_nesting {%newline; %echo function exceeded MAX_NESTING ( $MAX_NESTING ). call stack: $*; %newline}
 %function rwsh.failed_substitution {%append_to_errno ESUBSTITUTION; %set ERRINFO $1}
 %function rwsh.mismatched_brace {%echo mismatched brace: $1; %newline; %return -1}
