@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 
+#include "rwsh_stream.h"
+
 #include "argv.h"
 #include "arg_script.h"
 #include "command_stream.h"
@@ -15,11 +17,8 @@
 #include "executable.h"
 #include "executable_map.h"
 #include "function.h"
-#include "rwsh_stream.h"
 #include "variable_map.h"
 
-Default_stream_t default_stream;
-Rwsh_stream_t* default_stream_p = &default_stream;
 Executable_map_t executable_map;
 
 namespace {
@@ -43,7 +42,7 @@ void register_signals(void) {
   signal(SIGUSR2, signal_starter);} } // end unnamed namespace
 
 int main(int argc, char *argv[]) {
-  Argv_t external_command_line(&argv[0], &argv[argc], 0, default_stream_p);
+  Argv_t external_command_line(&argv[0], &argv[argc], 0, Rwsh_stream_p());
   Command_stream_t command_stream(std::cin);
   executable_map.set(new Function_t("rwsh.init", init_str, 0));
   executable_map.run_if_exists("rwsh.init", external_command_line);

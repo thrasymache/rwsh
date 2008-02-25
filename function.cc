@@ -9,12 +9,13 @@
 #include <string>
 #include <vector>
 
+#include "rwsh_stream.h"
+
 #include "argv.h"
 #include "arg_script.h"
 #include "executable.h"
 #include "executable_map.h"
 #include "function.h"
-#include "rwsh_stream.h"
 #include "tokenize.cc"
 #include "variable_map.h"
 
@@ -27,7 +28,7 @@ Function_t::Function_t(const std::string& name_i, const std::string& src,
        i != commands.end(); ++i) {
     script.push_back(Arg_script_t(*i, max_soon));
     if (commands.size() != 1 && script.back().is_argfunction())
-      *default_stream_p <<"rwsh.argfunction cannot occur as one of several "
+      Rwsh_stream_p() <<"rwsh.argfunction cannot occur as one of several "
                   "commands\n";}}
   
 // generate a new function by unescaping argument functions and replacing

@@ -12,6 +12,7 @@ int else_bi(const Argv_t& argv);
 int error_unit_bi(const Argv_t& argv);
 int exit_bi(const Argv_t& argv);
 int for_bi(const Argv_t& argv);
+int for_each_line_bi(const Argv_t& argv);
 int function_bi(const Argv_t& argv);
 int global_bi(const Argv_t& argv);
 int importenv_overwrite_bi(const Argv_t& argv);

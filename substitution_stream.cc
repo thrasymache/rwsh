@@ -9,7 +9,7 @@
 #include "substitution_stream.h"
 
 Rwsh_stream_t* Substitution_stream_t::copy_pointer(void) {
-  assert(0);} // substitution streams aren't used like this (i don't think)
+  assert(0);} // substitution streams are not used in this way
 
 Rwsh_stream_t& Substitution_stream_t::operator<<(const std::string& r) {
   buffer <<r; 

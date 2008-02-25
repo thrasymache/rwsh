@@ -9,6 +9,8 @@
 #include <string>
 #include <vector>
 
+#include "rwsh_stream.h"
+
 #include "argv.h"
 #include "arg_script.h"
 #include "executable.h"

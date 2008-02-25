@@ -10,6 +10,8 @@
 #include <sstream>
 #include <vector>
 
+#include "rwsh_stream.h"
+
 #include "argv.h"
 #include "arg_script.h"
 #include "command_stream.h"

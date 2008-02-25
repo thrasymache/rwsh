@@ -1,28 +1,28 @@
 // Copyright (C) 2005, 2006, 2007 Samuel Newbold
 
 class Function_t;
-class Rwsh_stream_t;
 class Variable_map_t;
 
 class Argv_t : private std::vector<std::string> {
   typedef std::vector<std::string> Base;
   Function_t* argfunction_v;
-  Rwsh_stream_t* myout_v;
+  mutable Rwsh_stream_p myout_v;
+  std::vector<Rwsh_stream_p> streams;
   static Variable_map_t* var_map;
 
  public:
   Argv_t(void);
-  template <class In> Argv_t(In first, In last, Function_t* argfunction_i, 
-                             Rwsh_stream_t* myout_i) :
-    Base(first, last), argfunction_v(argfunction_i->copy_pointer()), 
-    myout_v(myout_i) {};
+  template <class String_it> Argv_t(String_it first_string, String_it last_string, Function_t* argfunction_i, 
+         const Rwsh_stream_p& myout_i) :
+    Base(first_string, last_string), argfunction_v(argfunction_i->copy_pointer()), 
+    myout_v(myout_i.child_stream()) {};
   Argv_t(const Argv_t& src);
   ~Argv_t(void);
   Argv_t& operator=(const Argv_t& src);
   std::string str(void) const;
   Function_t* argfunction(void) const {return argfunction_v;};
-  Rwsh_stream_t* myout(void) const {return myout_v;};
-  void set_myout(Rwsh_stream_t* val);
+  Rwsh_stream_p& myout(void) const {return myout_v;};
+  void set_myout(const Rwsh_stream_p& val);
   void set_argfunction(Function_t* val);
 
 // variables

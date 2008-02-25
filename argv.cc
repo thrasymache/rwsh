@@ -7,30 +7,30 @@
 #include <sstream>
 #include <vector>
 
+#include "rwsh_stream.h"
+
 #include "argv.h"
 #include "arg_script.h"
 #include "executable.h"
 #include "function.h"
-#include "rwsh_stream.h"
 #include "variable_map.h"
 
 extern Variable_map_t* vars;
 Variable_map_t* Argv_t::var_map = vars;
 
-Argv_t::Argv_t(void) : argfunction_v(0), myout_v(default_stream_p) {};
+Argv_t::Argv_t(void) : argfunction_v(0), myout_v() {};
 
 Argv_t::Argv_t(const Argv_t& src) : Base(src), 
   argfunction_v(src.argfunction()->copy_pointer()), 
-  myout_v(src.myout()->copy_pointer()) {;}
+  myout_v(src.myout()) {;}
 
 Argv_t& Argv_t::operator=(const Argv_t& src) {
   clear();
   std::copy(src.begin(), src.end(), std::back_inserter(*this));
-  myout_v = src.myout()->copy_pointer();
+  myout_v = src.myout();
   argfunction_v = src.argfunction()->copy_pointer();}
 
 Argv_t::~Argv_t(void) {
-  if (myout_v != default_stream_p) delete myout_v;
   delete argfunction_v;}
 
 // convert to a string. inverse of constructor.
@@ -38,11 +38,11 @@ std::string Argv_t::str(void) const {
   std::string result;
   for (const_iterator i=begin(); i != end()-1; ++i) result += *i + ' ';
   result += back();
-  if (myout_v->str() != "") result += " " + myout_v->str();
+  if (myout_v.str() != "") result += " " + myout_v.str();
   if (argfunction()) result += " " + argfunction()->str();
   return result;}
 
-void Argv_t::set_myout(Rwsh_stream_t* val) {myout_v = val;};
+void Argv_t::set_myout(const Rwsh_stream_p& val) {myout_v = val;};
 
 void Argv_t::set_argfunction(Function_t* val) {argfunction_v = val;};
 
@@ -102,9 +102,7 @@ char** Argv_t::export_env(void) const {return var_map->export_env();}
 void Argv_t::clear(void) {
   Base::clear(); 
   delete argfunction_v; argfunction_v=0; 
-  if (myout_v != default_stream_p) {
-    delete myout_v; 
-    myout_v=default_stream_p;}}
+  myout_v = Rwsh_stream_p();}
 
 // algorithm that is the meat of Old_argv constructor
 template<class In>char** copy_to_cstr(In first, In last, char** res) {

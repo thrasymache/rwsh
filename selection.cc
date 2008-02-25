@@ -14,6 +14,8 @@
 #include <sys/types.h>
 #include <vector>
 
+#include "rwsh_stream.h"
+
 #include "argv.h"
 #include "selection.h"
 #include "tokenize.cc"

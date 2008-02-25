@@ -9,11 +9,12 @@
 #include <map>
 #include <vector>
 
+#include "rwsh_stream.h"
+
 #include "argv.h"
 #include "builtin.h"
 #include "executable.h"
 #include "executable_map.h"
-#include "rwsh_stream.h"
 #include "variable_map.h"
 
 int Executable_t::global_nesting(0);
@@ -76,14 +77,15 @@ void Executable_t::signal_handler(void) {
   vars->unset("IF_TEST");
   executable_map.run(call_stack_copy);
   if (unwind_stack()) {
-    *default_stream_p <<"signal handler itself triggered signal\n";
+    Rwsh_stream_p default_stream;
+    default_stream <<"signal handler itself triggered signal\n";
     call_stack.push_front("%echo");
     echo_bi(call_stack);
-    *default_stream_p <<"\noriginal call stack:\n";
+    default_stream <<"\noriginal call stack:\n";
     call_stack_copy[0] = "%echo";
     echo_bi(call_stack_copy);
-    *default_stream_p <<"\n";
-    default_stream_p->flush();
+    default_stream <<"\n";
+    default_stream.flush();
     dollar_question = -1;
     call_stack.clear();
     caught_signal = SIGNONE;
@@ -102,7 +104,7 @@ int Binary_t::operator() (const Argv_t& argv_i) {
   if (increment_nesting(argv_i)) return dollar_question;
   int ret;
   if (!fork()) {  
-    if (dup2(argv_i.myout()->fileno(), 1) < 0) 
+    if (dup2(argv_i.myout().fileno(), 1) < 0) 
       std::cerr <<"dup2 didn't like that\n";
     Old_argv_t argv(argv_i);
     char **env = argv_i.export_env();

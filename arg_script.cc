@@ -20,6 +20,8 @@
 #include <sys/stat.h>
 #include <vector>
 
+#include "rwsh_stream.h"
+
 #include "argv.h"
 #include "argv_star_var.cc"
 #include "arg_script.h"
@@ -27,7 +29,6 @@
 #include "executable_map.h"
 #include "function.h"
 #include "read_dir.cc"
-#include "rwsh_stream.h"
 #include "selection.h"
 #include "selection_read.cc"
 #include "substitution_stream.h"
@@ -102,14 +103,12 @@ void Arg_spec_t::apply(const Argv_t& src, unsigned nesting) {
       substitution = temp;
       if (soon_level) --soon_level;
       else {
-        Substitution_stream_t* override_stream = new Substitution_stream_t;
+        Substitution_stream_t override_stream;
         Argv_t temp_argv(src.begin(), src.end(), src.argfunction(), 
-                         override_stream);
+                         override_stream.child_stream());
         if ((*substitution)(temp_argv)) 
           throw Failed_substitution_t(str());
-        delete substitution;
-        substitution = 0;
-        text = override_stream->value();
+        text = override_stream.value();
         type = FIXED;}
       break;}
     default: break;}}  // most types are not affected by apply
@@ -152,15 +151,15 @@ void Arg_spec_t::interpret(const Argv_t& src, Out res) const {
     case SELECTION:  selection_read(text, res); break;
     case SELECT_VAR: selection_read(src.get_var(text), res); break;
     case SELECT_STAR_VAR: 
-      *default_stream_p <<"@$* not implemented yet\n"; break;
+      Rwsh_stream_p() <<"@$* not implemented yet\n"; break;
     case SUBSTITUTION: {
       assert(!soon_level); // constructor guarantees SOONs are already done
-      Substitution_stream_t *override_stream = new Substitution_stream_t;
+      Substitution_stream_t override_stream;
       Argv_t temp_argv(src.begin(), src.end(), src.argfunction(), 
-                       override_stream);
+                       override_stream.child_stream());
       if ((*substitution)(temp_argv)) 
         throw Failed_substitution_t(str()); 
-      *res++ = override_stream->value();
+      *res++ = override_stream.value();
       break;}
     default: assert(0);}}
 
@@ -174,7 +173,7 @@ void Arg_spec_t::promote_soons(unsigned nesting) {
       substitution = temp; break;}}
 
 Arg_script_t::Arg_script_t(const std::string& src, unsigned max_soon) :
-      argfunction(0), argfunction_level(0), myout(default_stream_p) {
+      argfunction(0), argfunction_level(0), myout() {
   std::string::size_type token_start = src.find_first_not_of(" "); 
   while (token_start != std::string::npos) {
     std::string::size_type token_end = src.find_first_of("{} ", token_start);
@@ -209,8 +208,10 @@ Arg_script_t::Arg_script_t(const std::string& src, unsigned max_soon) :
 
 void Arg_script_t::add_token(const std::string& src, unsigned max_soon) {
   if (src[0] == '>')
-    if (myout != default_stream_p) throw Double_redirection_t(myout->str(),src);
-    else myout = new File_stream_t(src.substr(1, std::string::npos));
+    if (!myout.is_default()) throw Double_redirection_t(myout.str(), src);
+    else {
+      std::string name(src.substr(1, std::string::npos));
+      myout = Rwsh_stream_p(new File_stream_t(name), false);}
   else push_back(Arg_spec_t(src, max_soon));}
 
 void Arg_script_t::add_function(const std::string& style, 
@@ -231,17 +232,16 @@ Arg_script_t::find_close_brace(const std::string& focus,
 
 Arg_script_t::Arg_script_t(const Arg_script_t& src) : 
   Base(src), argfunction(src.argfunction->copy_pointer()),
- argfunction_level(src.argfunction_level), myout(src.myout->copy_pointer()) {}
+  argfunction_level(src.argfunction_level), myout(src.myout) {}
 
 Arg_script_t& Arg_script_t::operator=(const Arg_script_t& src) {
   this->clear();
   copy(src.begin(), src.end(), std::back_inserter(*this));
   argfunction = src.argfunction->copy_pointer();
   argfunction_level = src.argfunction_level;
-  myout = src.myout->copy_pointer();}
+  myout = src.myout;}
 
 Arg_script_t::~Arg_script_t(void) {
-  if (myout != default_stream_p) delete myout;
   delete argfunction;}
 
 // naively create an Argv_t from Arg_script. string constructor for Argv_t.
@@ -250,7 +250,7 @@ Argv_t Arg_script_t::argv(void) const {
   if (!argfunction_level) {
     for(const_iterator i=begin(); i != end(); ++i) result.push_back(i->str());
     result.set_argfunction(argfunction->copy_pointer());
-    result.set_myout(myout->copy_pointer());}
+    result.set_myout(myout);}
   else if (argfunction_level == 1) result.push_back("rwsh.argfunction");
   else if (argfunction_level == 2) result.push_back("rwsh.escaped_argfunction");
   else assert(0); // unhandled argfunction_level
@@ -262,7 +262,7 @@ std::string Arg_script_t::str(void) const {
     std::string result;
     for(const_iterator i=begin(); i != end()-1; ++i) result += i->str() + ' ';
     result += back().str();
-    if (myout->str() != "") result += " " + myout->str();
+    if (myout.str() != "") result += " " + myout.str();
     if (argfunction) result += " " + argfunction->str();
     return result;}
   else if (argfunction_level == 1) return "rwsh.argfunction";
@@ -272,8 +272,8 @@ std::string Arg_script_t::str(void) const {
 // produce a destination Argv from the source Argv according to this script
 Argv_t Arg_script_t::interpret(const Argv_t& src) const {
   Argv_t result;
-  if (myout != default_stream_p) result.set_myout(myout->copy_pointer());
-  else result.set_myout(src.myout()->child_stream());
+  if (!myout.is_default()) result.set_myout(myout);
+  else result.set_myout(src.myout().child_stream());
   if (!argfunction_level) {
     for (const_iterator i = begin(); i != end(); ++i) 
       i->interpret(src, std::back_inserter(result));
@@ -304,9 +304,7 @@ void Arg_script_t::apply(const Argv_t& src, unsigned nesting,
 void Arg_script_t::clear(void) {
   delete argfunction; 
   argfunction = 0;
-  if (myout != default_stream_p) {
-    delete myout;
-    myout = default_stream_p;}
+  myout = Rwsh_stream_p();
   Base::clear();}
 
 void Arg_script_t::promote_soons(unsigned nesting) {

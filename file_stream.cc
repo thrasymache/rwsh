@@ -5,8 +5,9 @@
 #include <string>
 #include <vector>
 
-#include "argv.h"
 #include "rwsh_stream.h"
+
+#include "argv.h"
 #include "file_stream.h"
 
 File_stream_t::File_stream_t(const std::string& name_i) : name(name_i),
