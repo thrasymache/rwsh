@@ -1,12 +1,13 @@
 // Copyright (C) 2007 Samuel Newbold
 
+#include <assert.h>
 #include <iostream>
 #include <string>
 
 #include "rwsh_stream.h"
 
 struct Default_stream_t : public Rwsh_stream_t {
-  virtual Rwsh_stream_t* copy_pointer(void) {return this; return new Default_stream_t;};
+  virtual Rwsh_stream_t* copy_pointer(void) {assert(0);}; // not needed
   virtual Rwsh_stream_t& operator<<(const std::string& r);
   virtual Rwsh_stream_t& operator<<(int r);
   virtual int fileno(void);

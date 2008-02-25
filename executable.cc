@@ -104,7 +104,7 @@ int Binary_t::operator() (const Argv_t& argv_i) {
   if (increment_nesting(argv_i)) return dollar_question;
   int ret;
   if (!fork()) {  
-    if (dup2(argv_i.myout().fileno(), 1) < 0) 
+    if (dup2(argv_i.out().fileno(), 1) < 0) 
       std::cerr <<"dup2 didn't like that\n";
     Old_argv_t argv(argv_i);
     char **env = argv_i.export_env();

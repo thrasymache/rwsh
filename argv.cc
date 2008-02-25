@@ -18,16 +18,17 @@
 extern Variable_map_t* vars;
 Variable_map_t* Argv_t::var_map = vars;
 
-Argv_t::Argv_t(void) : argfunction_v(0), myout_v() {};
+Argv_t::Argv_t(void) : argfunction_v(0), streams(3) {}
 
 Argv_t::Argv_t(const Argv_t& src) : Base(src), 
   argfunction_v(src.argfunction()->copy_pointer()), 
-  myout_v(src.myout()) {;}
+  streams(src.streams.begin(), src.streams.end()) {;}
 
 Argv_t& Argv_t::operator=(const Argv_t& src) {
   clear();
   std::copy(src.begin(), src.end(), std::back_inserter(*this));
-  myout_v = src.myout();
+  std::copy(src.streams.begin(), src.streams.end(), 
+            streams.begin());
   argfunction_v = src.argfunction()->copy_pointer();}
 
 Argv_t::~Argv_t(void) {
@@ -38,11 +39,15 @@ std::string Argv_t::str(void) const {
   std::string result;
   for (const_iterator i=begin(); i != end()-1; ++i) result += *i + ' ';
   result += back();
-  if (myout_v.str() != "") result += " " + myout_v.str();
+  for (std::vector<Rwsh_stream_p>::const_iterator i = streams.begin();
+       i != streams.end(); ++i) if (!i->is_default())
+    result += " " + i->str();
   if (argfunction()) result += " " + argfunction()->str();
   return result;}
 
-void Argv_t::set_myout(const Rwsh_stream_p& val) {myout_v = val;};
+void Argv_t::set_stream(int fileno, const Rwsh_stream_p& val) {
+  assert(fileno >= 0 && fileno < streams.size());
+  streams[fileno] = val;};
 
 void Argv_t::set_argfunction(Function_t* val) {argfunction_v = val;};
 
@@ -102,7 +107,9 @@ char** Argv_t::export_env(void) const {return var_map->export_env();}
 void Argv_t::clear(void) {
   Base::clear(); 
   delete argfunction_v; argfunction_v=0; 
-  myout_v = Rwsh_stream_p();}
+  streams[0] = Rwsh_stream_p();
+  streams[1] = Rwsh_stream_p();
+  streams[2] = Rwsh_stream_p();}
 
 // algorithm that is the meat of Old_argv constructor
 template<class In>char** copy_to_cstr(In first, In last, char** res) {
