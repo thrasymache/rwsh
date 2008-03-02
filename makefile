@@ -1,8 +1,8 @@
 # makefile for rwsh
 
-objects = argv.o arg_script.o builtin.o command_stream.o executable.o \
-	executable_map.o file_stream.o function.o rwsh.o rwsh_stream.o \
-        selection.o substitution_stream.o util.o variable_map.o \
+objects = argv.o arg_script.o builtin.o command_stream.o default_stream.o \
+	executable.o executable_map.o file_stream.o function.o rwsh.o \
+	rwsh_stream.o selection.o substitution_stream.o util.o variable_map.o \
 	
 CXXFLAGS = -g
 CC = g++
@@ -19,6 +19,7 @@ builtin.o: argv.h arg_script.h builtin.h executable.h executable_map.h \
 	variable_map.h
 command_stream.o: argv.h arg_script.h command_stream.h executable.h \
 	executable_map.h variable_map.h
+default_stream.o: default_stream.h rwsh_stream.h
 executable.o: argv.h builtin.h executable.h executable_map.h rwsh_stream.h \
 	variable_map.h
 executable_map.o: argv.h arg_script.h builtin.h executable.h executable_map.h \

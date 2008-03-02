@@ -6,33 +6,27 @@ class Variable_map_t;
 class Argv_t : private std::vector<std::string> {
   typedef std::vector<std::string> Base;
   Function_t* argfunction_v;
-  mutable std::vector<Rwsh_stream_p> streams;
   static Variable_map_t* var_map;
 
  public:
   Argv_t(void);
   template <class String_it> 
   Argv_t(String_it first_string, String_it last_string,
-         Function_t* argfunction_i, const Rwsh_stream_p& output) :
-    Base(first_string, last_string),
-    argfunction_v(argfunction_i->copy_pointer()) { 
-    streams.resize(3);
-    streams[1] = output;};
-  template <class String_it, class Stream_it> 
-  Argv_t(String_it first_string, String_it last_string,
          Function_t* argfunction_i, 
-         Stream_it first_stream, Stream_it last_stream) :
+         Rwsh_istream_p input_i, Rwsh_ostream_p output_i,
+         Rwsh_ostream_p error_i) :
     Base(first_string, last_string),
     argfunction_v(argfunction_i->copy_pointer()), 
-    streams(first_stream, last_stream) {};
+    input(input_i), output(output_i), error(error_i) {};
   Argv_t(const Argv_t& src);
   ~Argv_t(void);
   Argv_t& operator=(const Argv_t& src);
   std::string str(void) const;
   Function_t* argfunction(void) const {return argfunction_v;};
-  Rwsh_stream_p& out(void) const {return streams[1];};
-  void set_stream(int fileno, const Rwsh_stream_p& val);
   void set_argfunction(Function_t* val);
+
+  mutable Rwsh_istream_p input;
+  mutable Rwsh_ostream_p output, error;
 
 // variables
   void append_to_errno(const std::string& value) const;
@@ -72,7 +66,6 @@ class Argv_t : private std::vector<std::string> {
   iterator erase(iterator key) {return Base::erase(key);}
   iterator erase(iterator first, iterator last) {
     return Base::erase(first, last);}
-  void clear(void);
   void push_front(const std::string& x) {Base::insert(Base::begin(), x);};
   void pop_front(void) {Base::erase(Base::begin());};
   void push_back(const std::string& x) {Base::push_back(x);};

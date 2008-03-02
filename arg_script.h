@@ -26,7 +26,8 @@ class Arg_script_t : private std::vector<Arg_spec_t> {
   typedef std::vector<Arg_spec_t> Base;
   Function_t* argfunction;
   unsigned argfunction_level;
-  std::vector<Rwsh_stream_p> streams;
+  Rwsh_istream_p input;
+  Rwsh_ostream_p output, error;
 
   void add_token(const std::string& src, unsigned max_soon);
   void add_function(const std::string& style, const std::string& f_str,

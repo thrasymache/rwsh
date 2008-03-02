@@ -58,9 +58,9 @@ int cd_bi(const Argv_t& argv) {
 int echo_bi(const Argv_t& argv) {
   if (argv.size() < 2) {argv.append_to_errno("ARGS"); return -1;}
   for (Argv_t::const_iterator i = argv.begin()+1; i != argv.end()-1; ++i)
-    argv.out() <<*i <<" ";
-  argv.out() <<argv.back();
-  argv.out().flush();
+    argv.output <<*i <<" ";
+  argv.output <<argv.back();
+  argv.output.flush();
   return 0;}
 
 // unset ERRNO while running argfunction, then merge errors
@@ -108,11 +108,20 @@ int for_bi(const Argv_t& argv) {
 
 // run the argfunction for line of input, passing that line as the argv
 // returns the value returned by the argfunction
-int for_each_line(const Argv_t& argv) {
-  //std::string line;
-  //return Variable_map_t::exit_requested || src.fail();} 
-  //getline(src, line);
-}
+int for_each_line_bi(const Argv_t& argv) {
+  if (argv.size() != 1) {argv.append_to_errno("ARGS"); return -1;}
+  if (!argv.argfunction()) {argv.append_to_errno("ARGS"); return -1;}
+  int ret = -1;
+  while(!argv.input.fail()) { 
+    std::string line;
+    Argv_t body;
+    body.push_back("rwsh.mapped_argfunction");
+    argv.input.getline(line);
+    if (argv.input.fail() && !line.size()) break;
+    tokenize(line, std::back_inserter(body), 
+             std::bind2nd(std::equal_to<char>(), ' '));
+    ret = (*argv.argfunction())(body);}
+  return ret;}
 
 // add argfunction to executable map with name $1
 int function_bi(const Argv_t& argv) {
@@ -133,7 +142,8 @@ int global_bi(const Argv_t& argv) {
   else return argv.global_var(argv[1], argv[2]);}
 
 static int if_core(const Argv_t& argv, bool logic) {
-  Argv_t lookup(argv.begin()+1, argv.end(), 0, argv.out().child_stream());
+  Argv_t lookup(argv.begin()+1, argv.end(), 0,
+                argv.input, argv.output.child_stream(), argv.error);
   if (logic == !executable_map.run(lookup)) {
     if (Executable_t::unwind_stack()) return -1;
     argv.unset_var("IF_TEST");
@@ -141,7 +151,7 @@ static int if_core(const Argv_t& argv, bool logic) {
     if (argv.argfunction()) {
       Argv_t mapped_argv;
       mapped_argv.push_back("rwsh.mapped_argfunction");
-      mapped_argv.set_stream(1, argv.out().child_stream());
+      mapped_argv.output = argv.output.child_stream();
       ret = (*argv.argfunction())(mapped_argv);}
     else ret = 0;
     if (argv.var_exists("IF_TEST")) {
@@ -172,7 +182,7 @@ int if_errno_bi(const Argv_t& argv) {
   if (argv.var_exists("ERRNO") && argv.argfunction()) {
     Argv_t mapped_argv;
     mapped_argv.push_back("rwsh.mapped_argfunction");
-    mapped_argv.set_stream(1, argv.out().child_stream());
+    mapped_argv.output = argv.output.child_stream();
     return (*argv.argfunction())(mapped_argv);}
   else return 0;}
 
@@ -187,7 +197,7 @@ int if_errno_is_bi(const Argv_t& argv) {
       (argv.get_var("ERRNO") == argv[1] || immediate_error)) {
     Argv_t mapped_argv;
     mapped_argv.push_back("rwsh.mapped_argfunction");
-    mapped_argv.set_stream(1, argv.out().child_stream());
+    mapped_argv.output = argv.output.child_stream();
     return (*argv.argfunction())(mapped_argv);}
   else return 0;}
 
@@ -227,7 +237,7 @@ int else_bi(const Argv_t& argv) {
       argv.unset_var("IF_TEST");
       Argv_t mapped_argv;
       mapped_argv.push_back("rwsh.mapped_argfunction");
-      mapped_argv.set_stream(1, argv.out().child_stream());
+      mapped_argv.output = argv.output.child_stream();
       (*argv.argfunction())(mapped_argv);
       if (argv.var_exists("IF_TEST")) {
         argv.append_to_errno("BAD_IF_NEST"); ret = -1;}
@@ -264,7 +274,7 @@ int importenv_preserve_bi(const Argv_t& argv) {
 // returns one if the output stream is not the default_stream
 int is_default_output_bi(const Argv_t& argv) {
   if(argv.size() != 1) {argv.append_to_errno("ARGS"); return -1;}
-  return !argv.out().is_default();}
+  return !argv.output.is_default();}
 
 // list the files specified by the arguments if they exist
 int ls_bi(const Argv_t& argv) {
@@ -273,15 +283,15 @@ int ls_bi(const Argv_t& argv) {
   int ret = 1;
   for (Argv_t::const_iterator i=argv.begin(); i != argv.end(); ++i) 
     if (!stat(i->c_str(), &sb)) {
-      argv.out() <<*i <<"\n";
+      argv.output <<*i <<"\n";
       ret = 0;}
-  argv.out().flush();
+  argv.output.flush();
   return ret;}
 
 // write a newline to the standard output
 int newline_bi(const Argv_t& argv) {
   if (argv.size() != 1) {argv.append_to_errno("ARGS"); return -1;}
-  else {argv.out() <<"\n"; argv.out().flush(); return 0;}}
+  else {argv.output <<"\n"; argv.output.flush(); return 0;}}
 
 // ignore arguments, and then do nothing
 int nop_bi(const Argv_t& argv) {return dollar_question;}
@@ -343,7 +353,8 @@ int source_bi(const Argv_t& argv) {
 int stepwise_bi(const Argv_t& argv) {
   if (argv.size() < 2) {argv.append_to_errno("ARGS"); return -1;}
   if (!argv.argfunction()) {argv.append_to_errno("ARGFUNCTION"); return -1;}
-  Argv_t lookup(argv.begin()+1, argv.end(), 0, argv.out().child_stream());
+  Argv_t lookup(argv.begin()+1, argv.end(), 0,
+                argv.input, argv.output.child_stream(), argv.error);
   Executable_t* e = executable_map.find(lookup);
   if (!e) return 1;  // executable not found
   Function_t* f = dynamic_cast<Function_t*>(e);
@@ -420,15 +431,15 @@ static const std::string version_str("0.2.1+");
 // write to standard output the version of rwsh
 int version_bi(const Argv_t& argv) {
   if (argv.size() != 1) {argv.append_to_errno("ARGS"); return -1;}
-  argv.out() <<version_str;
+  argv.output <<version_str;
   return 0;}
 
 // write to standard output a list of the version with which this shell is 
 // compatible
 int version_available_bi(const Argv_t& argv) {
   if (argv.size() != 1) {argv.append_to_errno("ARGS"); return -1;}
-  argv.out() <<version_str;
-  argv.out().flush();
+  argv.output <<version_str;
+  argv.output.flush();
   return 0;}
 
 // return true if the given version string is compatible with the version
@@ -443,12 +454,12 @@ int version_compatible_bi(const Argv_t& argv) {
 int which_executable_bi(const Argv_t& argv) {
   if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
   Argv_t lookup(argv.begin()+1, argv.end(), argv.argfunction(), 
-                Rwsh_stream_p());
+                default_input, default_output, default_error);
   if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
   Executable_t* focus = executable_map.find(lookup);
   if (focus) {
-    argv.out() <<focus->str();
-    argv.out().flush();
+    argv.output <<focus->str();
+    argv.output.flush();
     return 0;}
   else return 1;} // executable does not exist
 
@@ -463,21 +474,22 @@ int which_path_bi(const Argv_t& argv) {
     std::string test = *i + '/' + argv[1];
     struct stat sb;
     if (!stat(test.c_str(), &sb)) {
-      argv.out() <<test;
+      argv.output <<test;
       return 0;}}
   return 1;} // executable does not exist
 
 // prints the last return value of the executable with named $1
 int which_return_bi(const Argv_t& argv) {
   if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
-  Argv_t lookup(argv.begin()+1, argv.end(), 0, Rwsh_stream_p());
+  Argv_t lookup(argv.begin()+1, argv.end(), 0,
+                default_input, default_output, default_error);
   if (lookup[0] == "rwsh.mapped_argfunction" || 
             lookup[0] == "rwsh.argfunction") 
     return 2; // return values not stored for argfunctions
   Executable_t* focus = executable_map.find(lookup);
   if (focus) {
-    argv.out() <<focus->last_ret();
-    argv.out().flush();
+    argv.output <<focus->last_ret();
+    argv.output.flush();
     return 0;}
   else return 1;} // executable does not exist
 
@@ -485,7 +497,7 @@ int which_return_bi(const Argv_t& argv) {
 int which_test_bi(const Argv_t& argv) {
   if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
   Argv_t lookup(argv.begin()+1, argv.end(), argv.argfunction(), 
-                Rwsh_stream_p());
+                default_input, default_output, default_error);
   if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
   return !executable_map.find(lookup);}
 
@@ -494,13 +506,14 @@ int which_test_bi(const Argv_t& argv) {
 int while_bi(const Argv_t& argv) {
   if (argv.size() < 2) {argv.append_to_errno("ARGS"); return -1;}
   int ret = -1;
-  Argv_t lookup(argv.begin()+1, argv.end(), 0, argv.out().child_stream());
+  Argv_t lookup(argv.begin()+1, argv.end(), 0,
+                argv.input, argv.output.child_stream(), argv.error);
   while (!executable_map.run(lookup)) {
     if (Executable_t::unwind_stack() || argv.var_exists("ERRNO")) return -1;
     if (argv.argfunction()) {
       Argv_t mapped_argv;
       mapped_argv.push_back("rwsh.mapped_argfunction");
-      mapped_argv.set_stream(1, argv.out().child_stream());
+      mapped_argv.output = argv.output.child_stream();
       ret = (*argv.argfunction())(mapped_argv);
       if (Executable_t::unwind_stack() || argv.var_exists("ERRNO"))
         return -1;}

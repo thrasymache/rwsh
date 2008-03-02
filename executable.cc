@@ -71,23 +71,22 @@ void Executable_t::signal_handler(void) {
       call_stack_copy.push_back("%echo");}
   std::copy(call_stack.begin(), call_stack.end(), 
             std::back_inserter(call_stack_copy));
-  call_stack.clear();
+  call_stack = Argv_t();
   in_signal_handler = true;
   caught_signal = SIGNONE;
   vars->unset("IF_TEST");
   executable_map.run(call_stack_copy);
   if (unwind_stack()) {
-    Rwsh_stream_p default_stream;
-    default_stream <<"signal handler itself triggered signal\n";
+    default_output <<"signal handler itself triggered signal\n";
     call_stack.push_front("%echo");
     echo_bi(call_stack);
-    default_stream <<"\noriginal call stack:\n";
+    default_output <<"\noriginal call stack:\n";
     call_stack_copy[0] = "%echo";
     echo_bi(call_stack_copy);
-    default_stream <<"\n";
-    default_stream.flush();
+    default_output <<"\n";
+    default_output.flush();
     dollar_question = -1;
-    call_stack.clear();
+    call_stack = Argv_t();
     caught_signal = SIGNONE;
     vars->unset("IF_TEST");}
   in_signal_handler = false;}
@@ -104,8 +103,12 @@ int Binary_t::operator() (const Argv_t& argv_i) {
   if (increment_nesting(argv_i)) return dollar_question;
   int ret;
   if (!fork()) {  
-    if (dup2(argv_i.out().fileno(), 1) < 0) 
-      std::cerr <<"dup2 didn't like that\n";
+    if (dup2(argv_i.input.fileno(), 0) < 0) 
+      std::cerr <<"dup2 didn't like changing input\n";
+    if (dup2(argv_i.output.fileno(), 1) < 0) 
+      std::cerr <<"dup2 didn't like changing output\n";
+    if (dup2(argv_i.error.fileno(), 2) < 0) 
+      std::cerr <<"dup2 didn't like changing error\n";
     Old_argv_t argv(argv_i);
     char **env = argv_i.export_env();
     int ret = execve(implementation.c_str(), argv.argv(), env);

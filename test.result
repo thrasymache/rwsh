@@ -263,6 +263,9 @@ $
 $# file redirection (but don't overwrite files that exist)
 
 0
+$# %for_each_line
+
+0
 $%if %ls dummy_file {%exit}
 
 0
@@ -281,6 +284,30 @@ $%else
 0
 $/bin/cat dummy_file
 there
+
+0
+$%if %return 0 {rwsh.mapped_argfunction >dummy_file {e line 1; e line 2 longer; %newline; e ending}}
+
+0
+$%else
+
+0
+$/bin/cat <dummy_file
+line 1
+line 2 longer
+
+ending
+
+0
+$%for_each_line x {}
+
+-1
+ERRNO set to ARGS
+$%for_each_line <dummy_file {e line of $# ( $* )}
+line of 3 ( line 1 )
+line of 4 ( line 2 longer )
+line of 1 ( )
+line of 2 ( ending )
 
 0
 $/bin/rm dummy_file

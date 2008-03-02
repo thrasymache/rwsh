@@ -104,8 +104,8 @@ void Arg_spec_t::apply(const Argv_t& src, unsigned nesting) {
       if (soon_level) --soon_level;
       else {
         Substitution_stream_t override_stream;
-        Argv_t temp_argv(src.begin(), src.end(), src.argfunction(), 
-                         override_stream.child_stream());
+        Argv_t temp_argv(src);
+        temp_argv.output = override_stream.child_stream();
         if ((*substitution)(temp_argv)) 
           throw Failed_substitution_t(str());
         text = override_stream.value();
@@ -151,12 +151,12 @@ void Arg_spec_t::interpret(const Argv_t& src, Out res) const {
     case SELECTION:  selection_read(text, res); break;
     case SELECT_VAR: selection_read(src.get_var(text), res); break;
     case SELECT_STAR_VAR: 
-      Rwsh_stream_p() <<"@$* not implemented yet\n"; break;
+      default_output <<"@$* not implemented yet\n"; break;
     case SUBSTITUTION: {
       assert(!soon_level); // constructor guarantees SOONs are already done
       Substitution_stream_t override_stream;
-      Argv_t temp_argv(src.begin(), src.end(), src.argfunction(), 
-                       override_stream.child_stream());
+      Argv_t temp_argv(src);
+      temp_argv.output = override_stream.child_stream();
       if ((*substitution)(temp_argv)) 
         throw Failed_substitution_t(str()); 
       *res++ = override_stream.value();
@@ -173,7 +173,8 @@ void Arg_spec_t::promote_soons(unsigned nesting) {
       substitution = temp; break;}}
 
 Arg_script_t::Arg_script_t(const std::string& src, unsigned max_soon) :
-      argfunction(0), argfunction_level(0), streams(3) {
+  argfunction(0), argfunction_level(0),
+  input(default_input), output(default_output), error(default_error) {
   std::string::size_type token_start = src.find_first_not_of(" "); 
   while (token_start != std::string::npos) {
     std::string::size_type token_end = src.find_first_of("{} ", token_start);
@@ -207,12 +208,18 @@ Arg_script_t::Arg_script_t(const std::string& src, unsigned max_soon) :
     else assert(0);}}                            // unhandled argfunction level
 
 void Arg_script_t::add_token(const std::string& src, unsigned max_soon) {
-  if (src[0] == '>')
-    if (!streams[1].is_default())
-      throw Double_redirection_t(streams[1].str(), src);
+  if (src[0] == '<')
+    if (!input.is_default())
+      throw Double_redirection_t(input.str(), src);
     else {
       std::string name(src.substr(1, std::string::npos));
-      streams[1] = Rwsh_stream_p(new File_stream_t(name), false);}
+      input = Rwsh_istream_p(new File_istream_t(name), false, false);}
+  else if (src[0] == '>')
+    if (!output.is_default())
+      throw Double_redirection_t(output.str(), src);
+    else {
+      std::string name(src.substr(1, std::string::npos));
+      output = Rwsh_ostream_p(new File_ostream_t(name), false, false);}
   else push_back(Arg_spec_t(src, max_soon));}
 
 void Arg_script_t::add_function(const std::string& style, 
@@ -233,14 +240,17 @@ Arg_script_t::find_close_brace(const std::string& focus,
 
 Arg_script_t::Arg_script_t(const Arg_script_t& src) : 
   Base(src), argfunction(src.argfunction->copy_pointer()),
-  argfunction_level(src.argfunction_level), streams(src.streams) {}
+  argfunction_level(src.argfunction_level), input(src.input), 
+  output(src.output), error(src.error) {}
 
 Arg_script_t& Arg_script_t::operator=(const Arg_script_t& src) {
   this->clear();
   copy(src.begin(), src.end(), std::back_inserter(*this));
   argfunction = src.argfunction->copy_pointer();
   argfunction_level = src.argfunction_level;
-  streams = src.streams;}
+  input = src.input;
+  output = src.output;
+  error = src.error;}
 
 Arg_script_t::~Arg_script_t(void) {
   delete argfunction;}
@@ -251,9 +261,9 @@ Argv_t Arg_script_t::argv(void) const {
   if (!argfunction_level) {
     for(const_iterator i=begin(); i != end(); ++i) result.push_back(i->str());
     result.set_argfunction(argfunction->copy_pointer());
-    result.set_stream(0, streams[0]);
-    result.set_stream(1, streams[1]);
-    result.set_stream(2, streams[2]);}
+    result.input = input;
+    result.output = output;
+    result.error = error;}
   else if (argfunction_level == 1) result.push_back("rwsh.argfunction");
   else if (argfunction_level == 2) result.push_back("rwsh.escaped_argfunction");
   else assert(0); // unhandled argfunction_level
@@ -265,9 +275,9 @@ std::string Arg_script_t::str(void) const {
     std::string result;
     for(const_iterator i=begin(); i != end()-1; ++i) result += i->str() + ' ';
     result += back().str();
-    for (std::vector<Rwsh_stream_p>::const_iterator i = streams.begin();
-         i != streams.end(); ++i) if (!i->is_default())
-      result += " " + i->str();
+    if (!input.is_default()) result += " " + input.str();
+    if (!output.is_default()) result += " " + output.str();
+    if (!error.is_default()) result += " " + error.str();
     if (argfunction) result += " " + argfunction->str();
     return result;}
   else if (argfunction_level == 1) return "rwsh.argfunction";
@@ -277,8 +287,12 @@ std::string Arg_script_t::str(void) const {
 // produce a destination Argv from the source Argv according to this script
 Argv_t Arg_script_t::interpret(const Argv_t& src) const {
   Argv_t result;
-  if (!streams[1].is_default()) result.set_stream(1, streams[1]);
-  else result.set_stream(1, src.out().child_stream());
+  if (!input.is_default()) result.input = input;
+  else result.input = src.input.child_stream();
+  if (!output.is_default()) result.output = output;
+  else result.output = src.output.child_stream();
+  if (!error.is_default()) result.error = error;
+  else result.error = src.error.child_stream();
   if (!argfunction_level) {
     for (const_iterator i = begin(); i != end(); ++i) 
       i->interpret(src, std::back_inserter(result));
@@ -309,8 +323,9 @@ void Arg_script_t::apply(const Argv_t& src, unsigned nesting,
 void Arg_script_t::clear(void) {
   delete argfunction; 
   argfunction = 0;
-  streams.clear();
-  streams.resize(3);
+  input = default_input;
+  output = default_output;
+  error = default_error;
   Base::clear();}
 
 void Arg_script_t::promote_soons(unsigned nesting) {

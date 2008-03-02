@@ -8,19 +8,21 @@
 #include "rwsh_stream.h"
 #include "substitution_stream.h"
 
-Rwsh_stream_t* Substitution_stream_t::copy_pointer(void) {
+Rwsh_ostream_t* Substitution_stream_t::copy_pointer(void) {
   assert(0);} // substitution streams are not used in this way
 
-Rwsh_stream_t& Substitution_stream_t::operator<<(const std::string& r) {
+Rwsh_ostream_t& Substitution_stream_t::operator<<(const std::string& r) {
   buffer <<r; 
   return *this;}
 
-Rwsh_stream_t& Substitution_stream_t::operator<<(int r) {
+Rwsh_ostream_t& Substitution_stream_t::operator<<(int r) {
   buffer <<r; 
   return *this;}
+
+bool Substitution_stream_t::fail(void) {return false;}
 
 int Substitution_stream_t::fileno(void) {
   assert(0);}
 
 std::string Substitution_stream_t::str(void) const {
-  return "&{";}
+  return "&{}";}

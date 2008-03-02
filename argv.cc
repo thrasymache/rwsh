@@ -18,18 +18,21 @@
 extern Variable_map_t* vars;
 Variable_map_t* Argv_t::var_map = vars;
 
-Argv_t::Argv_t(void) : argfunction_v(0), streams(3) {}
+Argv_t::Argv_t(void) : argfunction_v(0), 
+  input(default_input), output(default_output), error(default_error) {}
 
 Argv_t::Argv_t(const Argv_t& src) : Base(src), 
   argfunction_v(src.argfunction()->copy_pointer()), 
-  streams(src.streams.begin(), src.streams.end()) {;}
+  input(default_input), output(default_output), error(default_error) {}
 
 Argv_t& Argv_t::operator=(const Argv_t& src) {
-  clear();
+  Base::clear(); 
   std::copy(src.begin(), src.end(), std::back_inserter(*this));
-  std::copy(src.streams.begin(), src.streams.end(), 
-            streams.begin());
-  argfunction_v = src.argfunction()->copy_pointer();}
+  delete argfunction_v;
+  argfunction_v = src.argfunction()->copy_pointer();
+  input = src.input;
+  output = src.output;
+  error = src.error;}
 
 Argv_t::~Argv_t(void) {
   delete argfunction_v;}
@@ -39,15 +42,11 @@ std::string Argv_t::str(void) const {
   std::string result;
   for (const_iterator i=begin(); i != end()-1; ++i) result += *i + ' ';
   result += back();
-  for (std::vector<Rwsh_stream_p>::const_iterator i = streams.begin();
-       i != streams.end(); ++i) if (!i->is_default())
-    result += " " + i->str();
+  if (!input.is_default()) result += " " + input.str();
+  if (!output.is_default()) result += " " + output.str();
+  if (!error.is_default()) result += " " + error.str();
   if (argfunction()) result += " " + argfunction()->str();
   return result;}
-
-void Argv_t::set_stream(int fileno, const Rwsh_stream_p& val) {
-  assert(fileno >= 0 && fileno < streams.size());
-  streams[fileno] = val;};
 
 void Argv_t::set_argfunction(Function_t* val) {argfunction_v = val;};
 
@@ -103,13 +102,6 @@ int Argv_t::unset_var(const std::string& key) const {
 unsigned Argv_t::max_nesting(void) const {return var_map->max_nesting();}
 
 char** Argv_t::export_env(void) const {return var_map->export_env();}
-
-void Argv_t::clear(void) {
-  Base::clear(); 
-  delete argfunction_v; argfunction_v=0; 
-  streams[0] = Rwsh_stream_p();
-  streams[1] = Rwsh_stream_p();
-  streams[2] = Rwsh_stream_p();}
 
 // algorithm that is the meat of Old_argv constructor
 template<class In>char** copy_to_cstr(In first, In last, char** res) {
