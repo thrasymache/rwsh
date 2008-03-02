@@ -2,7 +2,6 @@
 
 class Variable_map_t : private std::map<std::string, std::string> {
   typedef std::map<std::string, std::string> Base;
-  friend int printenv_bi(const Argv_t& argv);
 
   unsigned max_nesting_v;
 public:

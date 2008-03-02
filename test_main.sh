@@ -124,7 +124,7 @@ m {%global ERRNO X; %error_unit {%var_exists ERRNO; %global ERRNO Y}}
 
 # %function
 %function
-%function /bin/bash {%nop}
+%function /bin/echo {%echo $*; %newline}
 %function %function {%nop}
 %function rwsh.escaped_argfunction {%nop}
 %function a {%nop}
@@ -458,13 +458,14 @@ rwsh.vars
 /usr/bin/printenv
 
 # %importenv_preserve %importenv_overwrite
-%global SHELL /bin/rwsh
+%global TERM modified
 %importenv_preserve
-e $SHELL
-%set SHELL /bin/rwsh
-e $SHELL
+e $TERM
+e $TERM_PROGRAM
+%unset TERM_PROGRAM
 %importenv_overwrite
-e $SHELL
+e $TERM
+e $TERM_PROGRAM
 
 # exiting rwsh.shutdown
 %exit now

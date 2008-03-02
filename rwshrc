@@ -3,6 +3,7 @@
 %function # {%nop}
 
 # set up environment
+%global SHELL /bin/rwsh
 %importenv_preserve
 %global OLD_ERRNO \
 %global ERRINFO \
@@ -24,7 +25,6 @@
 %function if {%if $* {rwsh.argfunction}}
 %function if_only {%if $* {rwsh.argfunction}; %else}
 %function if_only_not {%if $*; %else {rwsh.argfunction}}
-%function printenv {%printenv $*}
 %function set {%set $1 $2 $*3}
 %function setf {%if %var_exists $1 {%set &&1 &&2}; %else {%global &&1 &&2}}
 %function unset {%unset $1}
@@ -82,7 +82,7 @@
 %function ! {if $* {%return 1}; else {%return 0}}
 %function and {%if %return 1; %stepwise $* {%else_if_not $*}; %else}
 %function or {%if %return 1; %stepwise $* {%else_if $*}; %else}
-%function st {/bin/bash /usr/bin/test_rwsh}
+%function st {/bin/rwsh /usr/share/rwsh/test_init.sh </usr/share/rwsh/test_main.sh >test.tmp; /usr/bin/diff -c /usr/share/rwsh/test.result test.tmp; /bin/rm test.tmp}
 %function to {/bin/rwsh /usr/share/rwsh/test_init.sh </usr/share/rwsh/test_main.sh}
 
 # final setup and individual configuration

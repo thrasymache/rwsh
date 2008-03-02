@@ -458,7 +458,7 @@ $%function
 
 -1
 ERRNO set to ARGS
-$%function /bin/bash {%nop}
+$%function /bin/echo {%echo $*; %newline}
 
 1
 $%function %function {%nop}
@@ -1639,28 +1639,32 @@ $
 $# %importenv_preserve %importenv_overwrite
 
 0
-$%global SHELL /bin/rwsh
+$%global TERM modified
 
 0
 $%importenv_preserve
 
 0
-$e $SHELL
-/bin/rwsh
+$e $TERM
+modified
 
 0
-$%set SHELL /bin/rwsh
+$e $TERM_PROGRAM
+Apple_Terminal
 
 0
-$e $SHELL
-/bin/rwsh
+$%unset TERM_PROGRAM
 
 0
 $%importenv_overwrite
 
 0
-$e $SHELL
-/bin/bash
+$e $TERM
+xterm-color
+
+0
+$e $TERM_PROGRAM
+Apple_Terminal
 
 0
 $
