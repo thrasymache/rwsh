@@ -83,6 +83,7 @@
 %function and {%if %return 1; %stepwise $* {%else_if_not $*}; %else}
 %function or {%if %return 1; %stepwise $* {%else_if $*}; %else}
 %function st {/bin/bash /usr/bin/test_rwsh}
+%function to {/bin/rwsh /usr/share/rwsh/test_init.sh </usr/share/rwsh/test_main.sh}
 
 # final setup and individual configuration
 %global rc \

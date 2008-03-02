@@ -76,7 +76,9 @@ void internal_init(void) {
           "%if %test_equal $# 1 {"
               "%echo CWD ERRNO FIGNORE IF_TEST MAX_NESTING}; "
           "%else {%append_to_errno ARGS; %return -1}}", 0));
+  executable_map.set(new Builtin_t("%is_default_input", is_default_input_bi));
   executable_map.set(new Builtin_t("%is_default_output", is_default_output_bi));
+  executable_map.set(new Builtin_t("%is_default_error", is_default_error_bi));
   executable_map.set(new Builtin_t("%ls", ls_bi));
   executable_map.set(new Builtin_t("%newline", newline_bi));
   executable_map.set(new Builtin_t("%nop", nop_bi));

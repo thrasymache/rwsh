@@ -6,6 +6,7 @@ class Default_istream_t : public Rwsh_istream_t {
 
  public:
   Default_istream_t(int fileno_i);
+  virtual ~Default_istream_t(void) {};
   virtual Rwsh_istream_t* copy_pointer(void);
   virtual bool fail(void);
   virtual Rwsh_istream_t& getline(std::string& dest);
@@ -18,6 +19,7 @@ class Default_ostream_t : public Rwsh_ostream_t {
 
  public:
   Default_ostream_t(int fileno_i);
+  virtual ~Default_ostream_t(void) {};
   virtual Rwsh_ostream_t* copy_pointer(void);
   virtual Rwsh_ostream_t& operator<<(const std::string& r);
   virtual Rwsh_ostream_t& operator<<(int r);

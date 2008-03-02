@@ -271,10 +271,20 @@ int importenv_preserve_bi(const Argv_t& argv) {
       argv.global_var(src.substr(0, div), src.substr(div+1));}
   return 0;}
 
+// returns one if the input stream is not the default_stream
+int is_default_input_bi(const Argv_t& argv) {
+  if(argv.size() != 1) {argv.append_to_errno("ARGS"); return -1;}
+  return !argv.input.is_default();}
+
 // returns one if the output stream is not the default_stream
 int is_default_output_bi(const Argv_t& argv) {
   if(argv.size() != 1) {argv.append_to_errno("ARGS"); return -1;}
   return !argv.output.is_default();}
+
+// returns one if the error stream is not the default_stream
+int is_default_error_bi(const Argv_t& argv) {
+  if(argv.size() != 1) {argv.append_to_errno("ARGS"); return -1;}
+  return !argv.error.is_default();}
 
 // list the files specified by the arguments if they exist
 int ls_bi(const Argv_t& argv) {

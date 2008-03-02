@@ -10,24 +10,16 @@
 #include "argv.h"
 #include "file_stream.h"
 
-#include <iostream>
 File_istream_t::File_istream_t(const std::string& name_i) : name(name_i),
-    file_descriptor(-1), dest(NULL), fail_v(false) {
-//std::cout <<"Constructing " <<name <<std::endl;
-}
+    file_descriptor(-1), dest(NULL), fail_v(false) {}
 
 void File_istream_t::open(void) {
-  //std::cout <<"Opening " <<name <<std::endl;
   file_descriptor = ::open(name.c_str(), O_RDONLY, S_IWUSR|S_IRUSR);
   dest = fdopen(file_descriptor, "r");
   if (!dest) throw File_open_failure_t(name);}
 
 File_istream_t::~File_istream_t() {
-  if(dest) {fclose(dest);
-  //std::cout <<"Closed " <<name <<std::endl;
-  }
-  //std::cout <<"Destructed " <<name <<std::endl;
-;}
+  if(dest) fclose(dest);}
 
 bool File_istream_t::fail(void) {return fail_v;}
 
@@ -43,7 +35,7 @@ int File_istream_t::fileno(void) {
   return file_descriptor;}
 
 std::string File_istream_t::str(void) const {
-  return ">" + name;}
+  return "<" + name;}
 
 File_ostream_t::File_ostream_t(const std::string& name_i) : name(name_i),
     file_descriptor(-1), dest(NULL) {}

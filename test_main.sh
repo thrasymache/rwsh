@@ -217,10 +217,16 @@ rwsh.mapped_argfunction {%if_errno_is x {e no error}; %if_errno_is {e invocation
 %internal_features
 %internal_vars
 
-# %is_default_output
+# %is_default_input %is_default_output %is_default_error
+%is_default_input 1
+m {%is_default_input <dummy_file}
+m {%is_default_input}
 %is_default_output 1
 e &{%is_default_output; %echo $?}
+m {%is_default_output >dummy_file}
 m {%is_default_output}
+%is_default_error 1
+m {%is_default_error}
 
 # %ls
 %ls
@@ -461,7 +467,6 @@ e $SHELL
 e $SHELL
 
 # exiting rwsh.shutdown
-f rwsh.shutdown {e rwsh is now terminating}
 %exit now
 %exit
 %echo 1 2 3

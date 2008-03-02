@@ -1,6 +1,7 @@
 // Copyright (C) 2007 Samuel Newbold
 
 struct Rwsh_istream_t {
+  virtual ~Rwsh_istream_t(void) {};
   virtual Rwsh_istream_t* copy_pointer(void) = 0;
   virtual bool fail(void) = 0;
   virtual Rwsh_istream_t& getline(std::string& dest) = 0;
@@ -27,6 +28,7 @@ class Rwsh_istream_p {
   bool is_default(void) const {return is_default_v;}; };
 
 struct Rwsh_ostream_t {
+  virtual ~Rwsh_ostream_t(void) {};
   virtual Rwsh_ostream_t* copy_pointer(void) = 0;
   virtual Rwsh_ostream_t& operator<<(const std::string& r) = 0;
   virtual Rwsh_ostream_t& operator<<(int r) = 0;

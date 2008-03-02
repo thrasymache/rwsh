@@ -1,5 +1,6 @@
 rwsh v0.2.2 -
-  * builtins: %is_default_output
+  * builtins: %for_each_line, %is_default_input, %is_default_output,
+      %is_default_error
   * internal_functions: rwsh.double_redirection
   * file redirection
 
