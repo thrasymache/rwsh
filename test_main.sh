@@ -67,20 +67,23 @@ e @/usr/*l*i*b*x*e*
 %return &{%return 0}
 %return &{e 0}
 %return &{%echo 0}
+e nevermore &{/bin/echo quoth the raven} 
 %unset A
 
 # file redirection (but don't overwrite files that exist)
 # %for_each_line
 %if %ls dummy_file {%exit}
-%else {e hi >dummy_file}
+%else {}
+m {e hi >dummy_file >another}
+m {e hi >dummy_file}
 /bin/cat dummy_file
 %if %return 0 {>dummy_file /bin/echo there}
 %else
 /bin/cat dummy_file
-%if %return 0 {rwsh.mapped_argfunction >dummy_file {e line 1; e line 2 longer; %newline; e ending}}
-%else
+m {m >dummy_file {e line 1; e line 2 longer; %newline; e ending}}
 /bin/cat <dummy_file
 %for_each_line x {}
+%for_each_line <dummy_file <another {}
 %for_each_line <dummy_file {e line of $# ( $* )}
 /bin/rm dummy_file
 

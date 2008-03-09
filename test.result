@@ -255,6 +255,11 @@ ERRNO set to NAN
 $%return &{%echo 0}
 
 0
+$e nevermore &{/bin/echo quoth the raven} 
+nevermore quoth the raven
+
+
+0
 $%unset A
 
 0
@@ -270,7 +275,14 @@ $# %for_each_line
 $%if %ls dummy_file {%exit}
 
 0
-$%else {e hi >dummy_file}
+$%else {}
+
+0
+$m {e hi >dummy_file >another}
+rwsh.double_redirection : command not found ( rwsh.double_redirection >dummy_file >another )
+
+-1
+$m {e hi >dummy_file}
 
 0
 $/bin/cat dummy_file
@@ -287,10 +299,7 @@ $/bin/cat dummy_file
 there
 
 0
-$%if %return 0 {rwsh.mapped_argfunction >dummy_file {e line 1; e line 2 longer; %newline; e ending}}
-
-0
-$%else
+$m {m >dummy_file {e line 1; e line 2 longer; %newline; e ending}}
 
 0
 $/bin/cat <dummy_file
@@ -304,6 +313,10 @@ $%for_each_line x {}
 
 -1
 ERRNO set to ARGS
+$%for_each_line <dummy_file <another {}
+rwsh.double_redirection : command not found ( rwsh.double_redirection <dummy_file <another )
+
+-1
 $%for_each_line <dummy_file {e line of $# ( $* )}
 line of 3 ( line 1 )
 line of 4 ( line 2 longer )

@@ -36,14 +36,10 @@ Rwsh_ostream_p Rwsh_ostream_p::child_stream(void) const {
 
 Rwsh_ostream_p& Rwsh_ostream_p::operator=(const Rwsh_ostream_p& src) {
   if (!inherited) delete implementation;
-  if (src.inherited) {
-    implementation = src.implementation;
-    inherited = true;
-    is_default_v = src.is_default_v;}
-  else {
-    implementation = src.implementation->copy_pointer();
-    inherited = false;
-    is_default_v = src.is_default_v;}} // guaranteed to be false
+  if (src.inherited) implementation = src.implementation;
+  else implementation = src.implementation->copy_pointer();
+  inherited = src.inherited;
+  is_default_v = src.is_default_v;}
 
 Rwsh_ostream_p::~Rwsh_ostream_p(void) {
   if (!inherited) delete implementation;}

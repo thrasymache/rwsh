@@ -27,6 +27,7 @@
 #include "arg_script.h"
 #include "executable.h"
 #include "executable_map.h"
+#include "file_stream.h"
 #include "function.h"
 #include "read_dir.cc"
 #include "selection.h"
@@ -35,7 +36,6 @@
 #include "util.h"
 #include "variable_map.h"
 
-#include "file_stream.h"
 
 Arg_spec_t::Arg_spec_t(const std::string& script, unsigned max_soon) : 
       soon_level(0), ref_level(0), substitution(0) {

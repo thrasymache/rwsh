@@ -68,6 +68,7 @@
 %function rwsh.double_redirection {%echo double redirection is not supported at this time: $1 and $2; %newline}
 %function rwsh.excessive_nesting {%newline; %echo function exceeded MAX_NESTING ( $MAX_NESTING ). call stack: $*; %newline}
 %function rwsh.failed_substitution {%append_to_errno ESUBSTITUTION; %set ERRINFO $1}
+%function rwsh.help {%echo this is the default configuration for rwsh (or something copied from it), documentation should be available at rwsh.sf.net; %newline}
 %function rwsh.mismatched_brace {%echo mismatched brace: $1; %newline; %return -1}
 %function rwsh.multiple_argfunctions {%echo multiple argfunctions not supported at this time; %newline; %return -1}
 %function rwsh.not_soon_enough {%echo $1 attempts to substitute after the command has been run; %newline}
@@ -84,6 +85,8 @@
 %function or {%if %return 1; %stepwise $* {%else_if $*}; %else}
 %function st {/bin/rwsh /usr/share/rwsh/test_init.sh </usr/share/rwsh/test_main.sh >test.tmp; /usr/bin/diff -c /usr/share/rwsh/test.result test.tmp; /bin/rm test.tmp}
 %function to {/bin/rwsh /usr/share/rwsh/test_init.sh </usr/share/rwsh/test_main.sh}
+fn test_var_not_equal {%test_not_equal $$1 $2}
+fn ntimes {%set TEMP1 0; %while test_var_not_equal TEMP1 $1 {%var_add TEMP1 1; rwsh.mapped_argfunction {rwsh.argfunction}}}
 
 # final setup and individual configuration
 %global rc \

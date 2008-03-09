@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <fcntl.h>
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -19,7 +20,8 @@ void File_istream_t::open(void) {
   if (!dest) throw File_open_failure_t(name);}
 
 File_istream_t::~File_istream_t() {
-  if(dest) fclose(dest);}
+  if(dest) if (fclose(dest))
+    std::cerr <<"failed fclose with errno " <<errno <<std::endl;}
 
 bool File_istream_t::fail(void) {return fail_v;}
 
@@ -47,16 +49,19 @@ void File_ostream_t::open(void) {
   if (!dest) throw File_open_failure_t(name);}
 
 File_ostream_t::~File_ostream_t() {
-  if(dest) fclose(dest);}
+  if(dest) if (fclose(dest))
+    std::cerr <<"failed fclose with errno " <<errno <<std::endl;}
 
 Rwsh_ostream_t& File_ostream_t::operator<<(const std::string& r) {
   if (!dest) open();
-  fprintf(dest, "%s", r.c_str());
+  if (fprintf(dest, "%s", r.c_str()) < 0)
+    std::cerr <<"failed fprintf with errno " <<errno <<std::endl;
   return *this;}
 
 Rwsh_ostream_t& File_ostream_t::operator<<(int r) {
   if (!dest) open();
-  fprintf(dest, "%d", r);
+  if (fprintf(dest, "%d", r) < 0)
+    std::cerr <<"failed fprintf with errno " <<errno <<std::endl;
   return *this;}
 
 bool File_ostream_t::fail(void) {
@@ -70,7 +75,8 @@ int File_ostream_t::fileno(void) {
 
 void File_ostream_t::flush(void) {
   if (!dest) open();
-  fflush(dest);}
+  if (fflush(dest) < 0)
+    std::cerr <<"failed fflush with errno " <<errno <<std::endl;}
 
 std::string File_ostream_t::str(void) const {
   return ">" + name;}

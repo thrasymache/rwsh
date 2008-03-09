@@ -15,6 +15,7 @@
 #include "builtin.h"
 #include "executable.h"
 #include "executable_map.h"
+#include "plumber.h"
 #include "variable_map.h"
 
 int Executable_t::global_nesting(0);
@@ -101,14 +102,14 @@ Binary_t::Binary_t(const std::string& impl) : implementation(impl) {}
 // run the given binary
 int Binary_t::operator() (const Argv_t& argv_i) {
   if (increment_nesting(argv_i)) return dollar_question;
-  int ret;
+  int ret,
+      input = argv_i.input.fileno(),
+      output = argv_i.output.fileno(),
+      error = argv_i.error.fileno();
   if (!fork()) {  
-    if (dup2(argv_i.input.fileno(), 0) < 0) 
-      std::cerr <<"dup2 didn't like changing input\n";
-    if (dup2(argv_i.output.fileno(), 1) < 0) 
-      std::cerr <<"dup2 didn't like changing output\n";
-    if (dup2(argv_i.error.fileno(), 2) < 0) 
-      std::cerr <<"dup2 didn't like changing error\n";
+    if (dup2(input, 0) < 0) std::cerr <<"dup2 didn't like changing input\n";
+    if (dup2(output, 1) < 0) std::cerr <<"dup2 didn't like changing output\n";
+    if (dup2(error, 2) < 0) std::cerr <<"dup2 didn't like changing error\n";
     Old_argv_t argv(argv_i);
     char **env = argv_i.export_env();
     int ret = execve(implementation.c_str(), argv.argv(), env);
@@ -117,7 +118,7 @@ int Binary_t::operator() (const Argv_t& argv_i) {
     error_argv.push_back(argv_i[0]); 
     executable_map.run(error_argv);
     exit(ret);}
-  else wait(&ret);
+  else plumber.wait(&ret);
   dollar_question = last_return = ret;
   if (decrement_nesting(argv_i)) ret = dollar_question;
   return ret;}

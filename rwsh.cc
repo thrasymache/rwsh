@@ -15,10 +15,10 @@
 #include "builtin.h"
 #include "command_stream.h"
 #include "default_stream.h"
-#include "selection.h"
 #include "executable.h"
 #include "executable_map.h"
 #include "function.h"
+#include "selection.h"
 #include "variable_map.h"
 
 Rwsh_istream_p default_input(new Default_istream_t(0), true, true);
