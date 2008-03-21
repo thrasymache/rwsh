@@ -25,9 +25,16 @@
 %function if {%if $* {rwsh.argfunction}}
 %function if_only {%if $* {rwsh.argfunction}; %else}
 %function if_only_not {%if $*; %else {rwsh.argfunction}}
+%function ex_count {%which_execution_count $*; %newline}
+%function last_time {%which_last_execution_time $*; %newline}
+%function total_time {%which_total_execution_time $*; %newline}
 %function set {%set $1 $2 $*3}
 %function setf {%if %var_exists $1 {%set &&1 &&2}; %else {%global &&1 &&2}}
 %function unset {%unset $1}
+%function user_shell_ratio {%set TEMP1 &{%waiting_for_user}; %var_divide TEMP1 &{%waiting_for_shell}; %echo $TEMP1; %newline}
+%function wait_bin {%waiting_for_binary; %newline}
+%function wait_shell {%waiting_for_shell; %newline}
+%function wait_user {%waiting_for_user; %newline}
 %function which {%which_executable $1 {rwsh.argfunction}; %if %test_equal $? 0 {%newline}; %else {echo no &&1}}
 %function whichp {%which_path $1 $PATH; %if %test_equal $? 0; %else {echo &&1 not found in $PATH}}
 %function while {%while $* {rwsh.argfunction}}

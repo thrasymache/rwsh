@@ -22,6 +22,7 @@ int Executable_t::global_nesting(0);
 int Executable_t::caught_signal(0);
 bool Executable_t::in_signal_handler(false);
 Argv_t Executable_t::call_stack;
+struct timezone Executable_t::no_timezone = {0, 0};
 
 bool Executable_t::increment_nesting(const Argv_t& argv) {
   if (global_nesting > argv.max_nesting()+1) caught_signal = SIGEXNEST;
@@ -102,6 +103,9 @@ Binary_t::Binary_t(const std::string& impl) : implementation(impl) {}
 // run the given binary
 int Binary_t::operator() (const Argv_t& argv_i) {
   if (increment_nesting(argv_i)) return dollar_question;
+  struct timeval start_time;
+  gettimeofday(&start_time, &no_timezone);
+  ++execution_count_v;
   int ret,
       input = argv_i.input.fileno(),
       output = argv_i.output.fileno(),
@@ -120,6 +124,10 @@ int Binary_t::operator() (const Argv_t& argv_i) {
     exit(ret);}
   else plumber.wait(&ret);
   dollar_question = last_return = ret;
+  struct timeval end_time;
+  gettimeofday(&end_time, &no_timezone);
+  last_execution_time_v = timeval_sub(end_time, start_time);
+  timeval_add(total_execution_time_v, last_execution_time_v);
   if (decrement_nesting(argv_i)) ret = dollar_question;
   return ret;}
 
@@ -130,8 +138,14 @@ Builtin_t::Builtin_t(const std::string& name_i,
 // run the given builtin
 int Builtin_t::operator() (const Argv_t& argv) {
   if (increment_nesting(argv)) return dollar_question;
-  dollar_question = last_return = (*implementation)(argv);
-  int ret = last_return;
+  struct timeval start_time;
+  gettimeofday(&start_time, &no_timezone);
+  ++execution_count_v;
+  int ret = dollar_question = last_return = (*implementation)(argv);
+  struct timeval end_time;
+  gettimeofday(&end_time, &no_timezone);
+  last_execution_time_v = timeval_sub(end_time, start_time);
+  timeval_add(total_execution_time_v, last_execution_time_v);
   if (decrement_nesting(argv)) ret = dollar_question;
   return ret;}
 

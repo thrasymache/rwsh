@@ -28,6 +28,7 @@ class File_ostream_t : public Rwsh_ostream_t {
   virtual Rwsh_ostream_t* copy_pointer() {return new File_ostream_t(name);};
   virtual Rwsh_ostream_t& operator<<(const std::string& r);
   virtual Rwsh_ostream_t& operator<<(int r);
+  virtual Rwsh_ostream_t& operator<<(struct timeval r);
   virtual bool fail(void);
   virtual int fileno(void);
   virtual void flush(void);

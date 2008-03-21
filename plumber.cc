@@ -33,7 +33,7 @@ class filedes_handler :
     else {
       *focus.second <<std::string(buffer, n);
       return false;}}; };
-    
+
 void Plumber::proxy_output(int fileno, Rwsh_ostream_t* destination) {
   std::pair<int, Rwsh_ostream_t*> focus(fileno, destination);
   output_handlers.push_back(focus);}

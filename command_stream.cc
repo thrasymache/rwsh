@@ -19,11 +19,25 @@
 #include "executable_map.h"
 #include "variable_map.h"
 
+struct timeval Command_stream_t::waiting_for_binary_v = {0, 0};
+struct timeval Command_stream_t::waiting_for_shell_v = {0, 0};
+struct timeval Command_stream_t::waiting_for_user_v = {0, 0};
+
+Command_stream_t::Command_stream_t(std::istream& s) : src(s) {
+  gettimeofday(&after_input, &Executable_t::no_timezone);}
+
 // write the next command to dest. run rwsh.prompt as appropriate
 Command_stream_t& Command_stream_t::operator>> (Arg_script_t& dest) {
   if (operator!()) return *this;
   std::string line;
+  struct timeval old_after_input = after_input;
+  gettimeofday(&before_input, &Executable_t::no_timezone);
   getline(src, line);
+  gettimeofday(&after_input, &Executable_t::no_timezone);
+  Executable_t::timeval_add(waiting_for_shell_v,
+                      Executable_t::timeval_sub(before_input, old_after_input));
+  Executable_t::timeval_add(waiting_for_user_v,
+                      Executable_t::timeval_sub(after_input, before_input));
   if (operator!()) return *this;
   Argv_t raw_command;
   raw_command.push_back(line);

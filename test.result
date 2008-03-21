@@ -1168,7 +1168,10 @@ $%test_not_empty x
 $
 
 0
-$# %which_executable %which_test %which_return
+$# %which_executable %which_execution_count %which_last_execution_time 
+
+0
+$# %which_total_execution_time %which_test %which_return
 
 0
 $%which_test
@@ -1206,6 +1209,50 @@ $%which_executable rwsh.mapped_argfunction
 $%which_executable rwsh.mapped_argfunction {rwsh.argfunction}
 {rwsh.argfunction}
 0
+$%which_execution_count
+
+-1
+ERRNO set to ARGS
+$%which_execution_count j
+
+1
+$%which_execution_count #
+36
+0
+$%which_last_execution_time
+
+-1
+ERRNO set to ARGS
+$# %which_last_execution_time j
+
+-1
+$# %which_last_execution_time #
+
+-1
+$%which_total_execution_time
+
+-1
+ERRNO set to ARGS
+$# %which_total_execution_time j
+
+-1
+$# %which_total_execution_time #
+
+-1
+$%waiting_for_shell j
+
+-1
+ERRNO set to ARGS
+$# %waiting_for_shell
+
+-1
+$%waiting_for_user j
+
+-1
+ERRNO set to ARGS
+$# %waiting_for_user
+
+-1
 $%which_return
 
 -1
@@ -1223,7 +1270,7 @@ $%which_return j
 
 1
 $%which_return #
-0
+-1
 0
 $
 
@@ -1362,6 +1409,60 @@ $%var_add A \
 ERRNO set to CONST_NAN
 $e $A
 -2
+
+0
+$
+
+0
+$# %var_divide
+
+0
+$%var_divide A
+
+-1
+ERRNO set to ARGS
+$%var_divide A 1 2
+
+-1
+ERRNO set to ARGS
+$%var_divide B 1
+rwsh.undefined_variable : command not found ( rwsh.undefined_variable B %var_divide )
+
+-1
+$%set A A
+
+0
+$%var_divide A 2 
+
+-1
+ERRNO set to VAR_NAN
+$%set A 3000000000
+
+0
+$%var_divide A 2 
+
+-1
+ERRNO set to VAR_RANGE
+$%set A 8
+
+0
+$%var_divide A A
+
+-1
+ERRNO set to CONST_NAN
+$%var_divide A 3000000000
+
+-1
+ERRNO set to CONST_RANGE
+$%var_divide A 0 
+
+-1
+ERRNO set to DIVIDE_ZERO
+$%var_divide A 2 
+
+0
+$e $A
+4
 
 0
 $
@@ -1638,7 +1739,7 @@ $# check for extraneous variables
 0
 $/usr/bin/printenv
 ?=0
-A=-2
+A=4
 CWD=/bin
 FIGNORE=include
 MAX_NESTING=5

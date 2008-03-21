@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <unistd.h>
@@ -21,6 +22,10 @@ Rwsh_ostream_t& Substitution_stream_t::operator<<(const std::string& r) {
 
 Rwsh_ostream_t& Substitution_stream_t::operator<<(int r) {
   buffer <<r; 
+  return *this;}
+
+Rwsh_ostream_t& Substitution_stream_t::operator<<(struct timeval r) {
+  buffer <<r.tv_sec <<"." <<std::setw(6) <<std::setfill('0') <<r.tv_usec;
   return *this;}
 
 bool Substitution_stream_t::fail(void) {return false;}

@@ -91,12 +91,21 @@ void internal_init(void) {
   executable_map.set(new Builtin_t("%test_not_empty", test_not_empty_bi));
   executable_map.set(new Builtin_t("%test_not_equal", test_not_equal_bi));
   executable_map.set(new Builtin_t("%unset", unset_bi));
+  executable_map.set(new Builtin_t("%waiting_for_shell", waiting_for_shell_bi));
+  executable_map.set(new Builtin_t("%waiting_for_user", waiting_for_user_bi));
   executable_map.set(new Builtin_t("%which_executable", which_executable_bi));
+  executable_map.set(new Builtin_t("%which_execution_count",
+                                   which_execution_count_bi));
+  executable_map.set(new Builtin_t("%which_last_execution_time",
+                                   which_last_execution_time_bi));
+  executable_map.set(new Builtin_t("%which_total_execution_time",
+                                   which_total_execution_time_bi));
   executable_map.set(new Builtin_t("%which_path", which_path_bi));
   executable_map.set(new Builtin_t("%which_return", which_return_bi));
   executable_map.set(new Builtin_t("%which_test", which_test_bi));
   executable_map.set(new Builtin_t("%while", while_bi));
   executable_map.set(new Builtin_t("%var_add", var_add_bi));
+  executable_map.set(new Builtin_t("%var_divide", var_divide_bi));
   executable_map.set(new Builtin_t("%var_exists", var_exists_bi));
   executable_map.set(new Builtin_t("%version", version_bi));
   executable_map.set(new Builtin_t("%version_available", version_available_bi));

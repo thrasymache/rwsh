@@ -318,7 +318,8 @@ wrapper 1 2
 %test_not_empty \
 %test_not_empty x
 
-# %which_executable %which_test %which_return
+# %which_executable %which_execution_count %which_last_execution_time 
+# %which_total_execution_time %which_test %which_return
 %which_test
 %which_test j
 %which_test #
@@ -330,6 +331,19 @@ wrapper 1 2
 %which_executable rwsh.mapped_argfunction {%nop 1 \ \$ \@ $A $$A $0 $$$1 $# $* $*2 @a @$a @$1 @$* @$*2 >dummy_file}
 %which_executable rwsh.mapped_argfunction
 %which_executable rwsh.mapped_argfunction {rwsh.argfunction}
+%which_execution_count
+%which_execution_count j
+%which_execution_count #
+%which_last_execution_time
+# %which_last_execution_time j
+# %which_last_execution_time #
+%which_total_execution_time
+# %which_total_execution_time j
+# %which_total_execution_time #
+%waiting_for_shell j
+# %waiting_for_shell
+%waiting_for_user j
+# %waiting_for_user
 %which_return
 %which_return rwsh.mapped_argfunction
 %which_return rwsh.mapped_argfunction {rwsh.argfunction}
@@ -374,6 +388,21 @@ e $A
 %var_add A -2147483648
 e $A
 %var_add A \
+e $A
+
+# %var_divide
+%var_divide A
+%var_divide A 1 2
+%var_divide B 1
+%set A A
+%var_divide A 2 
+%set A 3000000000
+%var_divide A 2 
+%set A 8
+%var_divide A A
+%var_divide A 3000000000
+%var_divide A 0 
+%var_divide A 2 
 e $A
 
 # %version %version_available %version_compatible

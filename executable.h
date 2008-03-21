@@ -9,12 +9,26 @@ class Executable_t {
 
  protected:
   int last_return;
+  unsigned execution_count_v;
+  struct timeval last_execution_time_v;
+  struct timeval total_execution_time_v;
 
  public:
-  Executable_t(void) : executable_nesting(0), del_on_term(false) {};
-  int last_ret(void) const {return last_return;};
-  bool is_running(void) const {return !!executable_nesting;};
   bool del_on_term;
+
+  Executable_t(void) : executable_nesting(0), last_return(0),
+    execution_count_v(0), del_on_term(false) {
+    last_execution_time_v.tv_sec = 0;
+    last_execution_time_v.tv_usec = 0;
+    total_execution_time_v.tv_sec = 0;
+    total_execution_time_v.tv_usec = 0;};
+  int last_ret(void) const {return last_return;};
+  unsigned execution_count(void) const {return execution_count_v;};
+  struct timeval last_execution_time(void) const {
+    return last_execution_time_v;};
+  struct timeval total_execution_time(void) const {
+    return total_execution_time_v;};
+  bool is_running(void) const {return !!executable_nesting;};
 
   static const int SIGNONE   =  0;
   static const int SIGEXNEST = -1;
@@ -25,6 +39,18 @@ class Executable_t {
   static Argv_t call_stack;
   static bool unwind_stack(void) {return caught_signal != SIGNONE;}
   static void signal_handler(void);
+  static struct timezone no_timezone;
+  static void timeval_add(struct timeval& lhs, const struct timeval& rhs) {
+    lhs.tv_sec += rhs.tv_sec;
+    lhs.tv_usec += rhs.tv_usec;
+    if (lhs.tv_usec >= 1000000) {lhs.tv_usec -= 1000000; ++lhs.tv_sec;}};
+  static struct timeval timeval_sub(const struct timeval& lhs,
+                                    const struct timeval& rhs) {
+    struct timeval ret;
+    ret.tv_sec = lhs.tv_sec - rhs.tv_sec;
+    if (lhs.tv_usec >= rhs.tv_usec) ret.tv_usec = lhs.tv_usec - rhs.tv_usec;
+    else {--ret.tv_sec; ret.tv_usec = 1000000 + lhs.tv_usec - rhs.tv_usec;}
+    return ret;};
 
   virtual int operator() (const Argv_t& argv) = 0;
   virtual const std::string& name(void) const = 0;

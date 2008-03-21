@@ -432,6 +432,28 @@ int var_add_bi(const Argv_t& argv) {
   argv.set_var(argv[1], tmp.str());
   return 0;}
 
+int var_divide_bi(const Argv_t& argv) {
+  if (argv.size() != 3) {argv.append_to_errno("ARGS"); return -1;}
+  int var_term;
+  try {
+    const std::string& var_str = argv.get_var(argv[1]);
+    var_term = my_strtoi(var_str);}
+  catch (Undefined_variable_t error) {return -1;}
+  catch (E_generic_t) {argv.append_to_errno("VAR_DIVIDE_ERROR"); return -1;}
+  catch (E_nan_t) {argv.append_to_errno("VAR_NAN"); return -1;}
+  catch (E_range_t) {argv.append_to_errno("VAR_RANGE"); return -1;}
+  int const_term;
+  try {const_term = my_strtoi(argv[2]);}
+  catch (E_generic_t) {argv.append_to_errno("VAR_DIVIDE_ERROR"); return -1;}
+  catch (E_nan_t) {argv.append_to_errno("CONST_NAN"); return -1;}
+  catch (E_range_t) {argv.append_to_errno("CONST_RANGE"); return -1;}
+  if (const_term == 0) {argv.append_to_errno("DIVIDE_ZERO"); return -1;}
+  int quotient = var_term / const_term;
+  std::ostringstream tmp; 
+  tmp <<quotient;
+  argv.set_var(argv[1], tmp.str());
+  return 0;}
+
 int var_exists_bi(const Argv_t& argv) {
   if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
   else return !argv.var_exists(argv[1]);}
@@ -459,6 +481,28 @@ int version_compatible_bi(const Argv_t& argv) {
   else if (argv[1] == version_str) return 0;
   else return 1;}
 
+// prints the total amount of time the shell has not been waiting for user input
+int waiting_for_binary_bi(const Argv_t& argv) {
+  if (argv.size() != 1) {argv.append_to_errno("ARGS"); return -1;}
+  argv.output <<Command_stream_t::waiting_for_binary();
+  argv.output.flush();
+  return 0;}
+
+// prints the total amount of time that has passed and the shell has not been
+// waiting for other processes or the user
+int waiting_for_shell_bi(const Argv_t& argv) {
+  if (argv.size() != 1) {argv.append_to_errno("ARGS"); return -1;}
+  argv.output <<Command_stream_t::waiting_for_shell();
+  argv.output.flush();
+  return 0;}
+
+// prints the total amount of time the shell has been waiting for user input
+int waiting_for_user_bi(const Argv_t& argv) {
+  if (argv.size() != 1) {argv.append_to_errno("ARGS"); return -1;}
+  argv.output <<Command_stream_t::waiting_for_user();
+  argv.output.flush();
+  return 0;}
+
 // print the string corresponding to the executable in the executable map with
 // key $1
 int which_executable_bi(const Argv_t& argv) {
@@ -469,6 +513,50 @@ int which_executable_bi(const Argv_t& argv) {
   Executable_t* focus = executable_map.find(lookup);
   if (focus) {
     argv.output <<focus->str();
+    argv.output.flush();
+    return 0;}
+  else return 1;} // executable does not exist
+
+// print the number of times that the executable in the executable map with
+// key $1 has been run
+int which_execution_count_bi(const Argv_t& argv) {
+  if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
+  Argv_t lookup(argv.begin()+1, argv.end(), argv.argfunction(), 
+                default_input, default_output, default_error);
+  if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
+  Executable_t* focus = executable_map.find(lookup);
+  if (focus) {
+    argv.output <<focus->execution_count();
+    argv.output.flush();
+    return 0;}
+  else return 1;} // executable does not exist
+
+// print the number of times that the executable in the executable map with
+// key $1 has been run
+int which_last_execution_time_bi(const Argv_t& argv) {
+  if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
+  Argv_t lookup(argv.begin()+1, argv.end(), argv.argfunction(), 
+                default_input, default_output, default_error);
+  if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
+  Executable_t* focus = executable_map.find(lookup);
+  if (focus) {
+    struct timeval val = focus->last_execution_time();
+    argv.output <<val;
+    argv.output.flush();
+    return 0;}
+  else return 1;} // executable does not exist
+
+// print the number of times that the executable in the executable map with
+// key $1 has been run
+int which_total_execution_time_bi(const Argv_t& argv) {
+  if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
+  Argv_t lookup(argv.begin()+1, argv.end(), argv.argfunction(), 
+                default_input, default_output, default_error);
+  if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
+  Executable_t* focus = executable_map.find(lookup);
+  if (focus) {
+    struct timeval val = focus->total_execution_time();
+    argv.output <<val;
     argv.output.flush();
     return 0;}
   else return 1;} // executable does not exist

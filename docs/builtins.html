@@ -10,6 +10,12 @@
 
 
 
+
+
+
+  
+  
+  
   
   
   
@@ -29,6 +35,12 @@
 
 
 
+
+
+
+  
+  
+  
   
   
   
@@ -43,6 +55,9 @@
 
 
 <body>
+
+
+
 
 
 
@@ -68,7 +83,13 @@ for shell functions.<br>
 
 
 
+
+
+
 <h3>%append_to_errno</h3>
+
+
+
 
 
 
@@ -81,6 +102,9 @@ one or more&nbsp;arguments which will be the new value of ERRNO if it
 did not previously exist, or which will be placed on the end if it
 already has a value.
 <h3>%cd</h3>
+
+
+
 
 
 
@@ -102,6 +126,9 @@ it. It returns the value returned by chdir.
 
 
 
+
+
+
 The %echo command prints its arguments separated by a single space. It
 does not append a newline. An echo function that prints its arguments
 followed by a newline can easily be created from the %echo builtin and
@@ -114,7 +141,13 @@ the %newline builtin.<br>
 
 
 
+
+
+
 <h3>%else</h3>
+
+
+
 
 
 
@@ -137,6 +170,9 @@ without a %else.
 
 
 
+
+
+
 %else_if returns 0 immediately if IF_TEST is true. Otherwise it runs
 its arguments, setting IF_TEST to true, and running any argfunction if
 they return 0. It is a syntax error for %else_if to occur except
@@ -150,7 +186,13 @@ between %if and %else.<br>
 
 
 
+
+
+
 <h3>%else_if_not</h3>
+
+
+
 
 
 
@@ -171,6 +213,9 @@ arguments returns nonzero.
 <h3>%error_unit</h3>
 
 
+
+
+
 %error_unit runs its argfunction with ERRNO unset. If ERRNO was
 previously set, after the completion of the argfunction, the original
 value of ERRNO is prepended to its current value. ERRNO is left unset
@@ -178,7 +223,13 @@ only if it was unset both before %error_unit was called, and after the
 completion of the argfunction<br>
 
 
+
+
+
 <h3>%exit</h3>
+
+
+
 
 
 
@@ -196,12 +247,24 @@ terminates.
 <h3>%for</h3>
 
 
+
+
+
 %for runs its argfunction once for each of its arguments, passing the argument to the argfunction each time as $1.<br>
 
 
+
+
+
 <h3>%for_each_line</h3>
+
+
+
 %for_each_line runs its argfunction once for each line of its input, passing the line as arguments to its argfunction.
 <h3>%function</h3>
+
+
+
 
 
 
@@ -221,7 +284,13 @@ terminates.
 
 
 
+
+
+
 <h3>%global</h3>
+
+
+
 
 
 %global takes two arguments, a variable name and a value. If the
@@ -231,7 +300,13 @@ change the variable map. Variables created in this way remain set after
 the termination of the enclosing function.<br>
 
 
+
+
+
 <h3>%if</h3>
+
+
+
 
 
 
@@ -255,7 +330,13 @@ to true if its arguments returned 0, and to false otherwise.<br>
 
 
 
+
+
+
 <h3>%if_errno</h3>
+
+
+
 
 
 
@@ -272,10 +353,19 @@ to true if its arguments returned 0, and to false otherwise.<br>
 <h3>%if_errno_is</h3>
 
 
+
+
+
 %if_errno_is takes one argument. Its argfunction is run if ERRNO is set to the same value as this argument.<br>
 
 
+
+
+
 <h3>%importenv_overwrite</h3>
+
+
+
 
 
 %importenv causes the environment that rwsh was run in to be imported
@@ -283,7 +373,13 @@ into the variable map. If a variable exists in both environments, the
 external value is taken.<br>
 
 
+
+
+
 <h3>%importenv_preserve</h3>
+
+
+
 
 
 %importenv causes the environment that rwsh was run in to be imported
@@ -303,11 +399,17 @@ internal value is taken.
 
 
 
+
+
+
 %internal_errors takes no arguments. It prints a list of those internal
 functions which are run whether they exist or not (and will thus result
 in rwsh.executable_not_found errors if they do not exist). Except for
 rwsh.init they are all reporting errors themselves.
 <h3>%internal_features</h3>
+
+
+
 
 
 
@@ -324,18 +426,33 @@ rwsh.init they are all reporting errors themselves.
 
 
 
+
+
+
 %internal_vars takes no arguments. It prints a list of those variables
 that are written by the shell itself or affect the running of builtins.
 <h3>%is_default_input</h3>
 
+
+
+
 returns 1 if its input has been redirected away from the stdin of the shell
 <h3>%is_default_output</h3>
+
+
+
 
 returns 1 if its output has been redirected away from the stdout of the shell
 <h3>%is_default_error</h3>
 
+
+
+
 returns 1 if its error has been redirected away from the stdout of the shell
 <h3>%ls</h3>
+
+
+
 
 
 
@@ -358,7 +475,13 @@ use /bin/ls rather than %ls.<br>
 
 
 
+
+
+
 <h3>%newline</h3>
+
+
+
 
 
 
@@ -378,7 +501,13 @@ use /bin/ls rather than %ls.<br>
 
 
 
+
+
+
 <br>
+
+
+
 
 
 
@@ -397,7 +526,13 @@ use /bin/ls rather than %ls.<br>
 
 
 
+
+
+
 %nop ignores its arguments, and leaves $? unchanged<br>
+
+
+
 
 
 
@@ -416,6 +551,9 @@ use /bin/ls rather than %ls.<br>
 
 
 
+
+
+
 %return takes one argument, which it converts to an integer, and then
 returns that value. It has more error conditions than any other builtin.<br>
 
@@ -426,7 +564,13 @@ returns that value. It has more error conditions than any other builtin.<br>
 
 
 
+
+
+
 <h3>%set</h3>
+
+
+
 
 
 
@@ -448,7 +592,13 @@ variable.<br>
 
 
 
+
+
+
 <h3>%selection_set</h3>
+
+
+
 
 
 
@@ -470,7 +620,13 @@ path that should be modified by the second argument.<br>
 
 
 
+
+
+
 <h3>%stepwise</h3>
+
+
+
 
 
 
@@ -494,6 +650,9 @@ shell replacing each ";" with "||", and "&amp;&amp;" respectively.
 
 
 
+
+
+
 %source attempts to run its first argument as a shell script. The
 remaining arguments are passed to that shell script as its arguments.
 Before the script is run, rwsh.before_script is run with the same
@@ -503,6 +662,9 @@ run with all of the internal functions that apply to the command line.
 (this will change in a future version.) %source returns the value
 returned by the script it ran.
 <h3>%test_equal</h3>
+
+
+
 
 
 %test_equal takes two arguments. It returns 0 if those two arguments
@@ -518,8 +680,14 @@ strings.
 
 
 
+
+
+
 %test_not_empty takes one argument. It returns 0 if that argument is not the empty string.
 <h3>%test_not_equal</h3>
+
+
+
 
 
 %test_not_equal takes two arguments. It returns 0 if those two
@@ -527,12 +695,31 @@ arguments are different strings. It returns 1 if those two arguments
 are the same string.<br>
 
 
+
+
+
 <h3>%unset</h3>
 
 
-%unset takes one argument, the name of a variable to remove from the variable map.<br>
 
 
+
+%unset takes one argument, the name of a variable to remove from the variable map.
+<h3>%waiting_for_binary</h3>
+%waiting_for_binary prints the total amount of time that the shell has
+spent waiting for other processes that it has forked to terminate.
+<h3>%waiting_for_shell</h3>
+%waiting_for_shell prints the amount of time since
+startup that the shell has not been waiting for input from the user, or
+waiting for a binary to terminate, so that the sum of the three will
+exactly equal the wall time elapsed since startup. If it matters, all
+of the timing calculations are included within %waiting_for_shell
+
+
+
+
+<h3>%waiting_for_user</h3>
+%waiting_for_user prints the total amount of time that the shell has spent waiting for commands to be entered.
 <h3>%which_executable</h3>
 
 
@@ -543,7 +730,10 @@ are the same string.<br>
 
 
 
-%which prints the value stored in the executable map at the name given
+
+
+
+%which_executable prints the value stored in the executable map at the name given
 in its first argument. Functions are printed by giving the command that
 would create that function. Built-ins just print their name. Executable
 files are added to the executable map when they are run. If an
@@ -555,10 +745,61 @@ names for whatever argument function might have been passed to %which,
 and are printed with just their enclosing braces.<br>
 
 
+
+
+
 <br>
 
 
+
+
+
+<h3>%which_execution_count</h3>
+
+
+%which_execution_count prints the number of times that the executable
+specified by its first argument has been run. It returns 1 if the
+executable does not exist in the executable map.<br>
+
+
+
+
+
+<br>
+
+
+
+
+
+<h3>%which_last_execution_time</h3>
+
+%which_last_execution_time prints the amount of time that&nbsp;the
+executable
+specified by its first argument took to run the last time it was run.
+This is wall time as opposed to time that the shell was active. It
+returns 1 if the
+executable does not exist in the executable map.<br>
+
+
+
+
+
+<br>
+
+
+
+
+
+<h3>%which_total_execution_time</h3>
+
+
+%which_total_execution_time prints the amount of time that the executable
+specified by its first argument has taken to run since it was added to the executable map. It returns 1 if the
+executable does not exist in the executable map.
 <h3>%which_path</h3>
+
+
+
 
 
 %which_path takes two arguments. The first is the name of the
@@ -574,6 +815,9 @@ otherwise an error is returned.
 <h3>%which_return</h3>
 
 
+
+
+
 %which_return takes one argument, the name of an executable in the
 executable map. If the executable is found, then it prints the last
 value returned by that executable, and then returns 0. If the
@@ -582,12 +826,21 @@ rwsh.argfunction or rwsh.mapped_argfunction, then it returns 2.
 <h3>%which_test</h3>
 
 
+
+
+
 %which_test takes one argument, the name of an executable to look up in
 the executable map. If one is found it returns 0. Otherwise it returns
 1. It does not print any text.<br>
 
 
+
+
+
 <h3>%while</h3>
+
+
+
 
 
 
@@ -602,10 +855,16 @@ value of X, it cannot change the value that it used to have.
 <h3>%var_add</h3>
 
 
+
+
+
 %var_add takes two arguments, the name of a variable and an integer
 value to add to this variable. The set of errors is VAR_ADD_ERROR,
 VAR_NAN, VAR_RANGE, CONST_NAN, CONST_RANGE, SUM_RANGE.
 <h3>%var_exists</h3>
+
+
+
 
 
 %var_exists takes one argument, the name of a variable in the variable
@@ -613,7 +872,13 @@ map. If the variable is set then it returns 0. If the variable is not
 set it returns 1.<br>
 
 
+
+
+
 <h3>%version</h3>
+
+
+
 
 
 
@@ -633,6 +898,9 @@ set it returns 1.<br>
 
 
 
+
+
+
 %version_available takes no arguments, and prints out a list of those that would return true if passed to %version_compatible.
 
 
@@ -640,6 +908,9 @@ set it returns 1.<br>
 
 
 <h3>%version_compatible</h3>
+
+
+
 
 
 

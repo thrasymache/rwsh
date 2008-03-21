@@ -46,6 +46,9 @@ Function_t* Function_t::apply(const Argv_t& argv, unsigned nesting) const {
 // run the given function
 int Function_t::operator() (const Argv_t& src_argv) { 
   if (increment_nesting(src_argv)) return dollar_question;
+  struct timeval start_time;
+  gettimeofday(&start_time, &no_timezone);
+  ++execution_count_v;
   int ret;
   for (const_iterator i = script.begin(); i != script.end(); ++i) {
     Argv_t dest_argv;
@@ -55,6 +58,10 @@ int Function_t::operator() (const Argv_t& src_argv) {
     ret = executable_map.run(dest_argv);
     if (unwind_stack()) break;}
   last_return = ret;
+  struct timeval end_time;
+  gettimeofday(&end_time, &no_timezone);
+  last_execution_time_v = timeval_sub(end_time, start_time);
+  timeval_add(total_execution_time_v, last_execution_time_v);
   if (decrement_nesting(src_argv)) ret = dollar_question;
   return ret;}
 

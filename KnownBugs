@@ -46,3 +46,15 @@ Referencing positional parameters that do not exist does not result in an error
 %which_path will return files which are not executable
 
 undefined variables in a command name give a blank call stack, there should be something like "<interpretation>" at the beginning, or much better documentation
+
+if an executable needs to be added using rwsh.autofunction, output of rwsh.autofunction is redirected into whatever file the executable's output was redirected to.
+
+there is a small amount of time at startup that is not included in %waiting_for_shell
+
+%waiting_for_shell does not update until the shell is waiting either for a
+binary or for the user, but without any adverse impact on normal operation, a
+query to this value could include the increment since the timer started.
+
+%waiting_for_binary includes time that the shell is doing input and output to
+processes. So the shell may consume significant CPU resources while it is
+"waiting for a binary"
