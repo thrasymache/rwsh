@@ -10,10 +10,9 @@
 #include "rwsh_stream.h"
 
 #include "argv.h"
+#include "clock.h"
 #include "executable.h"
 #include "plumber.h"
-
-Plumber plumber;
 
 class filedes_handler : 
       public std::unary_function<std::pair<int, Rwsh_ostream_t*>, bool> {
@@ -54,6 +53,11 @@ void Plumber::wait(int *ret) {
                                         filedes_handler(buffer, sizeof buffer)))
     if (Executable_t::caught_signal) return;
   output_handlers.clear();
-  if (::wait(ret) < 0)
+  struct timeval before, after;
+  gettimeofday(&before, rwsh_clock.no_timezone);
+  int wait_return = ::wait(ret);
+  gettimeofday(&after, rwsh_clock.no_timezone);
+  rwsh_clock.binary_wait(before, after);
+  if (wait_return < 0)
     std::cerr <<"failing wait with errno " <<errno <<std::endl;}
 

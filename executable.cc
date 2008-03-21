@@ -13,6 +13,7 @@
 
 #include "argv.h"
 #include "builtin.h"
+#include "clock.h"
 #include "executable.h"
 #include "executable_map.h"
 #include "plumber.h"
@@ -22,7 +23,6 @@ int Executable_t::global_nesting(0);
 int Executable_t::caught_signal(0);
 bool Executable_t::in_signal_handler(false);
 Argv_t Executable_t::call_stack;
-struct timezone Executable_t::no_timezone = {0, 0};
 
 bool Executable_t::increment_nesting(const Argv_t& argv) {
   if (global_nesting > argv.max_nesting()+1) caught_signal = SIGEXNEST;
@@ -104,7 +104,7 @@ Binary_t::Binary_t(const std::string& impl) : implementation(impl) {}
 int Binary_t::operator() (const Argv_t& argv_i) {
   if (increment_nesting(argv_i)) return dollar_question;
   struct timeval start_time;
-  gettimeofday(&start_time, &no_timezone);
+  gettimeofday(&start_time, rwsh_clock.no_timezone);
   ++execution_count_v;
   int ret,
       input = argv_i.input.fileno(),
@@ -125,9 +125,9 @@ int Binary_t::operator() (const Argv_t& argv_i) {
   else plumber.wait(&ret);
   dollar_question = last_return = ret;
   struct timeval end_time;
-  gettimeofday(&end_time, &no_timezone);
-  last_execution_time_v = timeval_sub(end_time, start_time);
-  timeval_add(total_execution_time_v, last_execution_time_v);
+  gettimeofday(&end_time, rwsh_clock.no_timezone);
+  last_execution_time_v = Clock::timeval_sub(end_time, start_time);
+  Clock::timeval_add(total_execution_time_v, last_execution_time_v);
   if (decrement_nesting(argv_i)) ret = dollar_question;
   return ret;}
 
@@ -139,13 +139,13 @@ Builtin_t::Builtin_t(const std::string& name_i,
 int Builtin_t::operator() (const Argv_t& argv) {
   if (increment_nesting(argv)) return dollar_question;
   struct timeval start_time;
-  gettimeofday(&start_time, &no_timezone);
+  gettimeofday(&start_time, rwsh_clock.no_timezone);
   ++execution_count_v;
   int ret = dollar_question = last_return = (*implementation)(argv);
   struct timeval end_time;
-  gettimeofday(&end_time, &no_timezone);
-  last_execution_time_v = timeval_sub(end_time, start_time);
-  timeval_add(total_execution_time_v, last_execution_time_v);
+  gettimeofday(&end_time, rwsh_clock.no_timezone);
+  last_execution_time_v = Clock::timeval_sub(end_time, start_time);
+  Clock::timeval_add(total_execution_time_v, last_execution_time_v);
   if (decrement_nesting(argv)) ret = dollar_question;
   return ret;}
 

@@ -21,6 +21,7 @@ extern char** environ;
 #include "argv.h"
 #include "arg_script.h"
 #include "builtin.h"
+#include "clock.h"
 #include "command_stream.h"
 #include "executable.h"
 #include "executable_map.h"
@@ -484,7 +485,7 @@ int version_compatible_bi(const Argv_t& argv) {
 // prints the total amount of time the shell has not been waiting for user input
 int waiting_for_binary_bi(const Argv_t& argv) {
   if (argv.size() != 1) {argv.append_to_errno("ARGS"); return -1;}
-  argv.output <<Command_stream_t::waiting_for_binary();
+  argv.output <<rwsh_clock.waiting_for_binary();
   argv.output.flush();
   return 0;}
 
@@ -492,14 +493,14 @@ int waiting_for_binary_bi(const Argv_t& argv) {
 // waiting for other processes or the user
 int waiting_for_shell_bi(const Argv_t& argv) {
   if (argv.size() != 1) {argv.append_to_errno("ARGS"); return -1;}
-  argv.output <<Command_stream_t::waiting_for_shell();
+  argv.output <<rwsh_clock.waiting_for_shell();
   argv.output.flush();
   return 0;}
 
 // prints the total amount of time the shell has been waiting for user input
 int waiting_for_user_bi(const Argv_t& argv) {
   if (argv.size() != 1) {argv.append_to_errno("ARGS"); return -1;}
-  argv.output <<Command_stream_t::waiting_for_user();
+  argv.output <<rwsh_clock.waiting_for_user();
   argv.output.flush();
   return 0;}
 

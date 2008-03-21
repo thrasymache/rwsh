@@ -55,6 +55,6 @@ there is a small amount of time at startup that is not included in %waiting_for_
 binary or for the user, but without any adverse impact on normal operation, a
 query to this value could include the increment since the timer started.
 
-%waiting_for_binary includes time that the shell is doing input and output to
-processes. So the shell may consume significant CPU resources while it is
-"waiting for a binary"
+%waiting_for_binary does not include time that the shell is waiting to do input
+and output to processes. This time is included in %waiting_for_shell, though
+only the processing time in the shell should be included.

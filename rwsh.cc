@@ -13,18 +13,23 @@
 #include "argv.h"
 #include "arg_script.h"
 #include "builtin.h"
+#include "clock.h"
 #include "command_stream.h"
 #include "default_stream.h"
 #include "executable.h"
 #include "executable_map.h"
 #include "function.h"
+#include "plumber.h"
 #include "selection.h"
 #include "variable_map.h"
 
+struct timezone Clock::no_timezone_v = {0, 0};
+Clock rwsh_clock;
 Rwsh_istream_p default_input(new Default_istream_t(0), true, true);
 Rwsh_ostream_p default_output(new Default_ostream_t(1), true, true),
   default_error(new Default_ostream_t(2), true, true);
 Executable_map_t executable_map;
+Plumber plumber;
 
 namespace {
 std::string init_str =
@@ -91,6 +96,8 @@ void internal_init(void) {
   executable_map.set(new Builtin_t("%test_not_empty", test_not_empty_bi));
   executable_map.set(new Builtin_t("%test_not_equal", test_not_equal_bi));
   executable_map.set(new Builtin_t("%unset", unset_bi));
+  executable_map.set(new Builtin_t("%waiting_for_binary",
+                                   waiting_for_binary_bi));
   executable_map.set(new Builtin_t("%waiting_for_shell", waiting_for_shell_bi));
   executable_map.set(new Builtin_t("%waiting_for_user", waiting_for_user_bi));
   executable_map.set(new Builtin_t("%which_executable", which_executable_bi));

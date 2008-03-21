@@ -13,6 +13,7 @@
 
 #include "argv.h"
 #include "arg_script.h"
+#include "clock.h"
 #include "executable.h"
 #include "executable_map.h"
 #include "function.h"
@@ -47,7 +48,7 @@ Function_t* Function_t::apply(const Argv_t& argv, unsigned nesting) const {
 int Function_t::operator() (const Argv_t& src_argv) { 
   if (increment_nesting(src_argv)) return dollar_question;
   struct timeval start_time;
-  gettimeofday(&start_time, &no_timezone);
+  gettimeofday(&start_time, rwsh_clock.no_timezone);
   ++execution_count_v;
   int ret;
   for (const_iterator i = script.begin(); i != script.end(); ++i) {
@@ -59,9 +60,9 @@ int Function_t::operator() (const Argv_t& src_argv) {
     if (unwind_stack()) break;}
   last_return = ret;
   struct timeval end_time;
-  gettimeofday(&end_time, &no_timezone);
-  last_execution_time_v = timeval_sub(end_time, start_time);
-  timeval_add(total_execution_time_v, last_execution_time_v);
+  gettimeofday(&end_time, rwsh_clock.no_timezone);
+  last_execution_time_v = Clock::timeval_sub(end_time, start_time);
+  Clock::timeval_add(total_execution_time_v, last_execution_time_v);
   if (decrement_nesting(src_argv)) ret = dollar_question;
   return ret;}
 

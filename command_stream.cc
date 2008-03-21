@@ -14,30 +14,23 @@
 
 #include "argv.h"
 #include "arg_script.h"
+#include "clock.h"
 #include "command_stream.h"
 #include "executable.h"
 #include "executable_map.h"
 #include "variable_map.h"
 
-struct timeval Command_stream_t::waiting_for_binary_v = {0, 0};
-struct timeval Command_stream_t::waiting_for_shell_v = {0, 0};
-struct timeval Command_stream_t::waiting_for_user_v = {0, 0};
-
-Command_stream_t::Command_stream_t(std::istream& s) : src(s) {
-  gettimeofday(&after_input, &Executable_t::no_timezone);}
+Command_stream_t::Command_stream_t(std::istream& s) : src(s) {}
 
 // write the next command to dest. run rwsh.prompt as appropriate
 Command_stream_t& Command_stream_t::operator>> (Arg_script_t& dest) {
   if (operator!()) return *this;
   std::string line;
-  struct timeval old_after_input = after_input;
-  gettimeofday(&before_input, &Executable_t::no_timezone);
+  struct timeval before_input, after_input;
+  gettimeofday(&before_input, rwsh_clock.no_timezone);
   getline(src, line);
-  gettimeofday(&after_input, &Executable_t::no_timezone);
-  Executable_t::timeval_add(waiting_for_shell_v,
-                      Executable_t::timeval_sub(before_input, old_after_input));
-  Executable_t::timeval_add(waiting_for_user_v,
-                      Executable_t::timeval_sub(after_input, before_input));
+  gettimeofday(&after_input, rwsh_clock.no_timezone);
+  rwsh_clock.user_wait(before_input, after_input);
   if (operator!()) return *this;
   Argv_t raw_command;
   raw_command.push_back(line);

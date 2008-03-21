@@ -39,18 +39,6 @@ class Executable_t {
   static Argv_t call_stack;
   static bool unwind_stack(void) {return caught_signal != SIGNONE;}
   static void signal_handler(void);
-  static struct timezone no_timezone;
-  static void timeval_add(struct timeval& lhs, const struct timeval& rhs) {
-    lhs.tv_sec += rhs.tv_sec;
-    lhs.tv_usec += rhs.tv_usec;
-    if (lhs.tv_usec >= 1000000) {lhs.tv_usec -= 1000000; ++lhs.tv_sec;}};
-  static struct timeval timeval_sub(const struct timeval& lhs,
-                                    const struct timeval& rhs) {
-    struct timeval ret;
-    ret.tv_sec = lhs.tv_sec - rhs.tv_sec;
-    if (lhs.tv_usec >= rhs.tv_usec) ret.tv_usec = lhs.tv_usec - rhs.tv_usec;
-    else {--ret.tv_sec; ret.tv_usec = 1000000 + lhs.tv_usec - rhs.tv_usec;}
-    return ret;};
 
   virtual int operator() (const Argv_t& argv) = 0;
   virtual const std::string& name(void) const = 0;
