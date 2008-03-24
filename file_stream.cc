@@ -32,7 +32,7 @@ Rwsh_istream_t& File_istream_t::getline(std::string& dest_str) {
   if (c == EOF) fail_v = true;
   return *this;}
 
-int File_istream_t::fileno(void) {
+int File_istream_t::fd(void) {
   if (!dest) open();
   return file_descriptor;}
 
@@ -75,7 +75,7 @@ bool File_ostream_t::fail(void) {
   int ret = ferror(dest);
   return (bool) ret;}
 
-int File_ostream_t::fileno(void) {
+int File_ostream_t::fd(void) {
   if (!dest) open();
   return file_descriptor;}
 

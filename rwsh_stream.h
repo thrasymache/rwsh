@@ -5,7 +5,7 @@ struct Rwsh_istream_t {
   virtual Rwsh_istream_t* copy_pointer(void) = 0;
   virtual bool fail(void) = 0;
   virtual Rwsh_istream_t& getline(std::string& dest) = 0;
-  virtual int fileno(void) = 0;
+  virtual int fd(void) = 0;
   virtual std::string str(void) const = 0;};
 
 class Rwsh_istream_p {
@@ -23,7 +23,7 @@ class Rwsh_istream_p {
   virtual bool fail(void) {return implementation->fail();}
   virtual Rwsh_istream_t& getline(std::string& dest) {
     return implementation->getline(dest);};
-  int fileno(void) {return implementation->fileno();};
+  int fd(void) {return implementation->fd();};
   std::string str(void) const {return implementation->str();};
   bool is_default(void) const {return is_default_v;}; };
 
@@ -34,7 +34,7 @@ struct Rwsh_ostream_t {
   virtual Rwsh_ostream_t& operator<<(int r) = 0;
   virtual Rwsh_ostream_t& operator<<(struct timeval r) = 0;
   virtual bool fail(void) = 0;
-  virtual int fileno(void) = 0;
+  virtual int fd(void) = 0;
   virtual void flush(void) = 0;
   virtual std::string str(void) const = 0;};
 
@@ -60,7 +60,7 @@ class Rwsh_ostream_p {
     *implementation <<r;
     return *this;};
   virtual bool fail(void) {return implementation->fail();}
-  int fileno(void) {return implementation->fileno();};
+  int fd(void) {return implementation->fd();};
   void flush(void) {implementation->flush();};
   std::string str(void) const {return implementation->str();};
   bool is_default(void) const {return is_default_v;}; };

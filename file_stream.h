@@ -13,7 +13,7 @@ class File_istream_t : public Rwsh_istream_t {
   virtual Rwsh_istream_t* copy_pointer() {return new File_istream_t(name);};
   virtual bool fail(void);
   virtual Rwsh_istream_t& getline(std::string& dest_str);
-  virtual int fileno(void);
+  virtual int fd(void);
   virtual std::string str(void) const;};
 
 class File_ostream_t : public Rwsh_ostream_t {
@@ -30,6 +30,6 @@ class File_ostream_t : public Rwsh_ostream_t {
   virtual Rwsh_ostream_t& operator<<(int r);
   virtual Rwsh_ostream_t& operator<<(struct timeval r);
   virtual bool fail(void);
-  virtual int fileno(void);
+  virtual int fd(void);
   virtual void flush(void);
   virtual std::string str(void) const;};

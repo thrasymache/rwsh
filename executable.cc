@@ -107,9 +107,9 @@ int Binary_t::operator() (const Argv_t& argv_i) {
   gettimeofday(&start_time, rwsh_clock.no_timezone);
   ++execution_count_v;
   int ret,
-      input = argv_i.input.fileno(),
-      output = argv_i.output.fileno(),
-      error = argv_i.error.fileno();
+      input = argv_i.input.fd(),
+      output = argv_i.output.fd(),
+      error = argv_i.error.fd();
   if (!fork()) {  
     if (dup2(input, 0) < 0) std::cerr <<"dup2 didn't like changing input\n";
     if (dup2(output, 1) < 0) std::cerr <<"dup2 didn't like changing output\n";

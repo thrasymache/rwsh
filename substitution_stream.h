@@ -9,7 +9,7 @@ class Substitution_stream_t : public Rwsh_ostream_t {
   virtual Rwsh_ostream_t& operator<<(int r);
   virtual Rwsh_ostream_t& operator<<(struct timeval r);
   virtual bool fail(void);
-  virtual int fileno(void);
+  virtual int fd(void);
   virtual void flush(void) {};
   virtual std::string str(void) const;
 

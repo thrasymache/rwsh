@@ -10,8 +10,8 @@
 
 #include "default_stream.h"
 
-Default_istream_t::Default_istream_t(int fileno_i) : fileno_v(fileno_i) {
-  switch (fileno_v) {
+Default_istream_t::Default_istream_t(int fd_i) : fd_v(fd_i) {
+  switch (fd_v) {
     case 0: implementation = &std::cin; break;
     default: assert(0);}}
 
@@ -23,12 +23,12 @@ Rwsh_istream_t& Default_istream_t::getline(std::string& dest) {
   std::getline(*implementation, dest);
   return *this;}
 
-int Default_istream_t::fileno(void) {return fileno_v;}
+int Default_istream_t::fd(void) {return fd_v;}
 
 std::string Default_istream_t::str(void) const {return "";}
 
-Default_ostream_t::Default_ostream_t(int fileno_i) : fileno_v(fileno_i) {
-  switch (fileno_v) {
+Default_ostream_t::Default_ostream_t(int fd_i) : fd_v(fd_i) {
+  switch (fd_v) {
     case 1: implementation = &std::cout; break;
     case 2: implementation = &std::cerr; break;
     default: assert(0);}}
@@ -50,7 +50,7 @@ Rwsh_ostream_t& Default_ostream_t::operator<<(struct timeval r) {
 
 bool Default_ostream_t::fail(void) {return implementation->fail();}
 
-int Default_ostream_t::fileno(void) {return fileno_v;}
+int Default_ostream_t::fd(void) {return fd_v;}
 
 void Default_ostream_t::flush(void) {implementation->flush();}
 
