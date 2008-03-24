@@ -111,6 +111,7 @@ int Binary_t::operator() (const Argv_t& argv_i) {
       output = argv_i.output.fd(),
       error = argv_i.error.fd();
   if (!fork()) {  
+    plumber.after_fork();
     if (dup2(input, 0) < 0) std::cerr <<"dup2 didn't like changing input\n";
     if (dup2(output, 1) < 0) std::cerr <<"dup2 didn't like changing output\n";
     if (dup2(error, 2) < 0) std::cerr <<"dup2 didn't like changing error\n";

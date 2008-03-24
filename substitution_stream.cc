@@ -34,6 +34,7 @@ int Substitution_stream_t::fd(void) {
   int fds[2];
   if (pipe(fds)) std::cerr <<"failed pipe with errno " <<errno <<std::endl;
   plumber.proxy_output(fds[0], this);
+  plumber.close_on_fork(fds[0]);
   plumber.close_on_wait(fds[1]);
   return fds[1];}
 

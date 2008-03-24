@@ -24,7 +24,7 @@ class fd_handler :
     buffer(buffer_i), buffer_size(buffer_size_i) {};
   bool operator()(const std::pair<int, Rwsh_ostream_t*>& focus) {
     int n = read(focus.first, buffer, buffer_size);
-    if (n <= 0) {
+    if (n <= 0 || Executable_t::caught_signal) {
       int ret = ::close(focus.first);
       if (ret) std::cerr <<"failing close " <<focus.first <<"returned " <<ret 
                          <<std::endl;
@@ -33,26 +33,32 @@ class fd_handler :
       *focus.second <<std::string(buffer, n);
       return false;}}; };
 
+void Plumber::after_fork() {
+  for (std::vector<int>::const_iterator i = fds_to_close_on_fork.begin();
+       i != fds_to_close_on_fork.end(); ++i) {
+    int ret = ::close(*i);
+    if (ret) std::cerr <<"failing close " <<*i <<"returned " <<ret <<std::endl;}
+  fds_to_close_on_fork.clear();}
+
 void Plumber::proxy_output(int fd, Rwsh_ostream_t* destination) {
   std::pair<int, Rwsh_ostream_t*> focus(fd, destination);
   output_handlers.push_back(focus);}
 
-void Plumber::close_on_wait(int fd) {fds_to_close.push_back(fd);}
-
 void Plumber::wait(int *ret) {
-  for (std::vector<int>::const_iterator i = fds_to_close.begin();
-       i != fds_to_close.end(); ++i) {
+  for (std::vector<int>::const_iterator i = fds_to_close_on_wait.begin();
+       i != fds_to_close_on_wait.end(); ++i) {
     int ret = ::close(*i);
     if (ret) std::cerr <<"failing close " <<*i <<"returned " <<ret <<std::endl;}
-  fds_to_close.clear();
+  fds_to_close_on_wait.clear();
+  fds_to_close_on_fork.clear();
   for (std::vector<std::pair<int, Rwsh_ostream_t*> >::iterator 
        output_handlers_end = output_handlers.end();
        output_handlers_end != output_handlers.begin();
        output_handlers_end = std::remove_if(output_handlers.begin(),
                                         output_handlers.end(),
-                                        fd_handler(buffer, sizeof buffer)))
-    if (Executable_t::caught_signal) return;
+                                        fd_handler(buffer, sizeof buffer)));
   output_handlers.clear();
+  if (Executable_t::caught_signal) return;
   struct timeval before, after;
   gettimeofday(&before, rwsh_clock.no_timezone);
   int wait_return = ::wait(ret);
