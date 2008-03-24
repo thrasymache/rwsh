@@ -68,8 +68,8 @@
 
 # internal functions
 %function rwsh.after_command {%set TEMP1 $?; %if_errno {%set OLD_ERRNO $ERRNO; %unset ERRNO; %if %test_equal $OLD_ERRNO ESUBSTITUTION {echo substitution $ERRINFO failed}; %else {echo ERRNO is set to $OLD_ERRNO}}; if_only_not %test_equal $TEMP1 0 {echo &&1 returned $TEMP1}}
-%function rwsh.autofunction {%function $1 {&&{%which_path &&1 $PATH} $*}; if_only %return 0 {%echo added &&1 to executable map; %newline}; %if_errno_is ESUBSTITUTION {%unset ERRNO}}
 %function rwsh.arguments_for_argfunction {%echo cannot specify arguments for $1 directly; %newline; %return -1}
+%function rwsh.autofunction {%function $1 {&&{%which_path &&1 $PATH} $*}; if_only %return 0 {%echo added &&1 to executable map; %newline}; %if_errno_is ESUBSTITUTION {%unset ERRNO}}
 %function rwsh.bad_argfunction_style {%echo $1 is neither an argfunction nor a substitution; %newline}
 %function rwsh.binary_not_found {%echo $1 : could not run binary; %newline; %return -1}
 %function rwsh.double_redirection {%echo double redirection is not supported at this time: $1 and $2; %newline}
@@ -82,6 +82,15 @@
 %function rwsh.prompt {%echo $SELECT; %echo \$}
 %function rwsh.selection_not_found {%echo no file matching pattern $1; if_only_not %test_equal $1 $2 {%echo \ for selection &&2}; %newline}
 %function rwsh.shutdown {%newline}
+%function rwsh.sighup {%newline; %echo received SIGHUP: $*; %newline}
+%function rwsh.sigint {%newline; %echo received SIGINT: $*; %newline}
+%function rwsh.sigquit {%newline; %echo received SIGQUIT: $*; %newline}
+%function rwsh.sigpipe {%newline; %echo received SIGPIPE: $*; %newline}
+%function rwsh.sigterm {%newline; %echo received SIGTERM: $*; %newline}
+%function rwsh.sigtstp {%newline; %echo received SIGTSTP: $*; %newline}
+%function rwsh.siginfo {%newline; %echo received SIGINFO: $*; %newline}
+%function rwsh.sigusr1 {%newline; %echo received SIGUSR1: $*; %newline}
+%function rwsh.sigusr2 {%newline; %echo received SIGUSR2: $*; %newline}
 %function rwsh.undefined_variable {%echo $1 was undefined with call stack $*2; %newline}
 %function rwsh.unreadable_dir {%echo cannot read directory $1; %newline}
 %function rwsh.vars {%internal_vars; %newline; echo ERRINFO $ERRINFO; echo HOME $HOME; echo OLDERRNO $OLDERRNO; echo REGEX $REGEX; echo SELECT $SELECT}

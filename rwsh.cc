@@ -60,14 +60,13 @@ void internal_init(void) {
           "%if %test_equal $# 1 {"
               "%echo rwsh.arguments_for_argfunction rwsh.bad_argfunction_style "
               "rwsh.binary_not_found rwsh.double_redirection "
-              "rwsh.executable_not_found rwsh.failed_substitution "
-              "rwsh.excessive_nesting rwsh.mismatched_brace "
+              "rwsh.excessive_nesting rwsh.executable_not_found "
+              "rwsh.failed_substitution rwsh.mismatched_brace "
               "rwsh.multiple_argfunctions rwsh.not_soon_enough rwsh.init "
               "rwsh.selection_not_found rwsh.sighup rwsh.sigint "
               "rwsh.sigquit rwsh.sigpipe rwsh.sigterm "
-              "rwsh.sigstp rwsh.sigcont rwsh.siginfo "
-              "rwsh.sigusr1 rwsh.sigusr2 rwsh.undefined_variable "
-              "rwsh.unreadable_dir}; "
+              "rwsh.sigtstp rwsh.siginfo rwsh.sigusr1 rwsh.sigusr2 "
+              "rwsh.undefined_variable rwsh.unreadable_dir}; "
           "%else {%append_to_errno ARGS; %return -1}}", 0));
   executable_map.set(new Function_t("%internal_features", 
       "%error_unit $* {"
@@ -127,7 +126,6 @@ void register_signals(void) {
   signal(SIGPIPE, signal_starter);
   signal(SIGTERM, signal_starter);
   signal(SIGTSTP, signal_starter);
-  signal(SIGCONT, signal_starter);
   signal(SIGINFO, signal_starter);
   signal(SIGUSR1, signal_starter);
   signal(SIGUSR2, signal_starter);} } // end unnamed namespace
