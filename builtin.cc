@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <string>
 #include <sstream>
+#include <sys/errno.h>
 #include <sys/stat.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -306,6 +307,25 @@ int newline_bi(const Argv_t& argv) {
 
 // ignore arguments, and then do nothing
 int nop_bi(const Argv_t& argv) {return dollar_question;}
+
+// errors thrown by my_strtoi
+class E_generic_t {};
+class E_nan_t {};
+class E_range_t {};
+
+int my_strtoi(const std::string& src);
+
+int my_strtoi(const std::string& src) {
+  const char* focus = src.c_str();
+  char* endptr;
+  errno = 0;
+  long ret = strtol(focus, &endptr, 10);
+  if (!*focus || *endptr) throw E_nan_t();
+  if (errno == ERANGE) throw E_range_t();
+  else if (ret < INT_MIN) throw E_range_t();
+  else if (ret > INT_MAX) throw E_range_t();
+  else if (errno) throw E_generic_t();
+  else return ret;}
 
 // return the value given by the argument
 int return_bi(const Argv_t& argv) {
