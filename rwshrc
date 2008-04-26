@@ -62,7 +62,8 @@
 %function rm {%selection_set SELECT $1; /bin/rm @$SELECT}
 %function sfn {fn $* {%selection_set SELECT $1; &&{%which_path &&1 $PATH} @$SELECT}}
 %function vi {%selection_set SELECT $1; /usr/bin/vi @$SELECT}
-%function vim {%selection_set SELECT $1; /usr/bin/vim @$SELECT}
+%function vim {%set SHELL /bin/bash; %selection_set SELECT $1; /usr/bin/vim @$SELECT; %set SHELL /bin/rwsh}
+%function ovim {%set SHELL /bin/bash; /usr/bin/vim $*; %set SHELL /bin/rwsh}
 %function wc {%selection_set SELECT $1; /usr/bin/wc @$SELECT}
 %function unselect {%set SELECT $CWD; %selection_set SELECT /}
 
