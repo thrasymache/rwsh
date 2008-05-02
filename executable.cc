@@ -55,6 +55,7 @@ void Executable_t::signal_handler(void) {
   extern Variable_map_t* vars;
   Argv_t call_stack_copy;                                    //need for a copy: 
   switch (caught_signal) {
+    case SIGFILE: break;
     case SIGVAR: call_stack_copy.push_back("rwsh.undefined_variable"); break;
     case SIGEXNEST: call_stack_copy.push_back("rwsh.excessive_nesting"); break;
     case SIGHUP: call_stack_copy.push_back("rwsh.sighup"); break;
@@ -69,8 +70,8 @@ void Executable_t::signal_handler(void) {
     case SIGUSR1: call_stack_copy.push_back("rwsh.sigusr1"); break;
     case SIGUSR2: call_stack_copy.push_back("rwsh.sigusr2"); break;
     default: 
-      call_stack_copy.push_back("caught unknown signal in");
-      call_stack_copy.push_back("%echo");}
+      call_stack_copy.push_back("%echo");
+      call_stack_copy.push_back("caught unknown signal in");}
   std::copy(call_stack.begin(), call_stack.end(), 
             std::back_inserter(call_stack_copy));
   call_stack = Argv_t();
@@ -102,35 +103,41 @@ Binary_t::Binary_t(const std::string& impl) : implementation(impl) {}
 #include <iostream>
 // run the given binary
 int Binary_t::operator() (const Argv_t& argv_i) {
-  if (increment_nesting(argv_i)) return dollar_question;
-  struct timeval start_time;
-  gettimeofday(&start_time, rwsh_clock.no_timezone);
-  ++execution_count_v;
-  int ret,
-      input = argv_i.input.fd(),
-      output = argv_i.output.fd(),
-      error = argv_i.error.fd();
-  if (!fork()) {  
-    plumber.after_fork();
-    if (dup2(input, 0) < 0) std::cerr <<"dup2 didn't like changing input\n";
-    if (dup2(output, 1) < 0) std::cerr <<"dup2 didn't like changing output\n";
-    if (dup2(error, 2) < 0) std::cerr <<"dup2 didn't like changing error\n";
-    Old_argv_t argv(argv_i);
-    char **env = argv_i.export_env();
-    int ret = execve(implementation.c_str(), argv.argv(), env);
-    Argv_t error_argv;
-    error_argv.push_back("rwsh.binary_not_found");
-    error_argv.push_back(argv_i[0]); 
-    executable_map.run(error_argv);
-    exit(ret);}
-  else plumber.wait(&ret);
-  dollar_question = last_return = ret;
-  struct timeval end_time;
-  gettimeofday(&end_time, rwsh_clock.no_timezone);
-  last_execution_time_v = Clock::timeval_sub(end_time, start_time);
-  Clock::timeval_add(total_execution_time_v, last_execution_time_v);
-  if (decrement_nesting(argv_i)) ret = dollar_question;
-  return ret;}
+  try {
+    if (increment_nesting(argv_i)) return dollar_question;
+    struct timeval start_time;
+    gettimeofday(&start_time, rwsh_clock.no_timezone);
+    ++execution_count_v;
+    int ret,
+        input = argv_i.input.fd(),
+        output = argv_i.output.fd(),
+        error = argv_i.error.fd();
+    if (!fork()) {  
+      plumber.after_fork();
+      if (dup2(input, 0) < 0) std::cerr <<"dup2 didn't like changing input\n";
+      if (dup2(output, 1) < 0) std::cerr <<"dup2 didn't like changing output\n";
+      if (dup2(error, 2) < 0) std::cerr <<"dup2 didn't like changing error\n";
+      Old_argv_t argv(argv_i);
+      char **env = argv_i.export_env();
+      int ret = execve(implementation.c_str(), argv.argv(), env);
+      Argv_t error_argv;
+      error_argv.push_back("rwsh.binary_not_found");
+      error_argv.push_back(argv_i[0]); 
+      executable_map.run(error_argv);
+      exit(ret);}
+    else plumber.wait(&ret);
+    dollar_question = last_return = ret;
+    struct timeval end_time;
+    gettimeofday(&end_time, rwsh_clock.no_timezone);
+    last_execution_time_v = Clock::timeval_sub(end_time, start_time);
+    Clock::timeval_add(total_execution_time_v, last_execution_time_v);
+    if (decrement_nesting(argv_i)) ret = dollar_question;
+    return ret;}
+  catch (File_open_failure_t error) {
+    caught_signal = SIGFILE;
+    call_stack.push_back(error.str()); 
+    decrement_nesting(argv_i);
+    return -1;}}
 
 Builtin_t::Builtin_t(const std::string& name_i, 
                        int (*impl)(const Argv_t& argv)) : 
@@ -138,15 +145,21 @@ Builtin_t::Builtin_t(const std::string& name_i,
 
 // run the given builtin
 int Builtin_t::operator() (const Argv_t& argv) {
-  if (increment_nesting(argv)) return dollar_question;
-  struct timeval start_time;
-  gettimeofday(&start_time, rwsh_clock.no_timezone);
-  ++execution_count_v;
-  int ret = dollar_question = last_return = (*implementation)(argv);
-  struct timeval end_time;
-  gettimeofday(&end_time, rwsh_clock.no_timezone);
-  last_execution_time_v = Clock::timeval_sub(end_time, start_time);
-  Clock::timeval_add(total_execution_time_v, last_execution_time_v);
-  if (decrement_nesting(argv)) ret = dollar_question;
-  return ret;}
+  try {
+    if (increment_nesting(argv)) return dollar_question;
+    struct timeval start_time;
+    gettimeofday(&start_time, rwsh_clock.no_timezone);
+    ++execution_count_v;
+    int ret = dollar_question = last_return = (*implementation)(argv);
+    struct timeval end_time;
+    gettimeofday(&end_time, rwsh_clock.no_timezone);
+    last_execution_time_v = Clock::timeval_sub(end_time, start_time);
+    Clock::timeval_add(total_execution_time_v, last_execution_time_v);
+    if (decrement_nesting(argv)) ret = dollar_question;
+    return ret;}
+  catch (File_open_failure_t error) {
+    caught_signal = SIGFILE;
+    call_stack.push_back(error.str()); 
+    decrement_nesting(argv);
+    return -1;}}
 

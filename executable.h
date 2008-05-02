@@ -33,6 +33,7 @@ class Executable_t {
   static const int SIGNONE   =  0;
   static const int SIGEXNEST = -1;
   static const int SIGVAR    = -2;
+  static const int SIGFILE   = -3;
   bool increment_nesting(const Argv_t& argv);
   bool decrement_nesting(const Argv_t& argv);
   static int caught_signal;

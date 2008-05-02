@@ -112,7 +112,7 @@ int for_bi(const Argv_t& argv) {
 // returns the value returned by the argfunction
 int for_each_line_bi(const Argv_t& argv) {
   if (argv.size() != 1) {argv.append_to_errno("ARGS"); return -1;}
-  if (!argv.argfunction()) {argv.append_to_errno("ARGS"); return -1;}
+  if (!argv.argfunction()) {argv.append_to_errno("ARGFUNCTION"); return -1;}
   int ret = -1;
   while(!argv.input.fail()) { 
     std::string line;
@@ -355,7 +355,8 @@ int set_bi(const Argv_t& argv) {
   for (Argv_t::const_iterator i = argv.begin()+2; i != argv.end()-1; ++i) 
     dest += *i + ' ';
   dest += argv.back();
-  return argv.set_var(argv[1], dest);}
+  try {return argv.set_var(argv[1], dest);}
+  catch (Undefined_variable_t) {return -1;}}
 
 // run the first argument as if it was a script, passing additional arguments
 // to that script
@@ -366,7 +367,8 @@ int source_bi(const Argv_t& argv) {
   if (stat(argv[1].c_str(), &sb)) {argv.append_to_errno("NOENT"); return -1;}
   if (!(sb.st_mode & S_IXUSR)) {argv.append_to_errno("NOEXEC"); return -1;}
   std::ifstream src(argv[1].c_str(), std::ios_base::in);
-  Argv_t script_arg(argv);
+  Argv_t script_arg(argv.begin()+1, argv.end(), 0, argv.input,
+                    argv.output.child_stream(), argv.error);
   Command_stream_t command_stream(src);
   Arg_script_t script("", 0);
   int ret = -1;
@@ -374,7 +376,7 @@ int source_bi(const Argv_t& argv) {
     Argv_t command;
     try {
       if (!(command_stream >> script)) break;
-      command = script.interpret(script.argv());}
+      command = script.interpret(script_arg);}
     catch (Argv_t exception) {command = exception;}
     ret = executable_map.run(command);}
   return ret;}

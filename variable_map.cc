@@ -58,7 +58,10 @@ const std::string& Variable_map_t::get(const std::string& key) {
 
 int Variable_map_t::set(const std::string& key, const std::string& value) {
   std::map<std::string, std::string>::iterator i = find(key);
-  if (i == end()) return 1;
+  if (i == end()) {
+    Executable_t::caught_signal = Executable_t::SIGVAR;
+    Executable_t::call_stack.push_back(key);
+    throw Undefined_variable_t(key);}
   else {
     i->second = value;
     if (key == "MAX_NESTING") {

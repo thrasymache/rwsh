@@ -3,7 +3,7 @@ rwsh v0.2.2 -
       %is_default_error, %waiting_for_shell, %waiting_for_user,
       %which_execution_count, %which_last_execution_time,
       %which_total_execution_time
-  * internal_functions: rwsh.double_redirection
+  * internal_functions: rwsh.double_redirection rwsh.file_open_failure
   * file redirection
 
 rwsh v0.2.1 - command substitution

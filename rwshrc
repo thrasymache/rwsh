@@ -1,4 +1,6 @@
 %set MAX_NESTING 9
+%echo $*0 
+%newline
 %function \ {%nop}
 %function # {%nop}
 
