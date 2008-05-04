@@ -39,6 +39,10 @@ e &&A
 m {e &&&A}
 e &{e &&A}
 e &A
+%if %nop 1 2 3 {e &*}
+%else {}
+%if %nop 1 2 3 {e &*0}
+%else {}
 m {%set A not_bin; e &A &&A $A; m {%set A otherwise; e &A &&A &&&A $A}}
 %set A /bin
 m {%set A not_bin; e &{%echo $A} &&{%echo $A} $A; m {%set A otherwise; e &{%echo $A} &&{%echo $A} &&&{%echo $A} $A}}

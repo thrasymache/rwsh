@@ -1,0 +1,114 @@
+%function \ {%nop}
+%function # {%nop}
+
+# set up environment
+%global SHELL /bin/rwsh
+%importenv_preserve
+%global OLD_ERRNO \
+%global ERRINFO \
+%global REGEX \
+%global SELECT $HOME
+%global TEMP1 \
+%global TEMP2 \
+%selection_set SELECT \
+%set FIGNORE .*
+
+# builtin wrappers
+%function . {%source $*}
+%function af {rwsh.argfunction}
+%function echo {%echo $*; %newline}
+%function elif {%else_if $* {rwsh.argfunction}}
+%function else {%else {rwsh.argfunction}}
+%function exit {%exit}
+%function fn {%function $* {rwsh.argfunction}; %set TEMP1 $?; %if %test_equal $TEMP1 1 {echo cannot set paths as functions}; %else_if %test_equal $TEMP1 2 {echo cannot set builtins as functions}; %else_if %test_equal $TEMP1 3 {echo cannot set argfunctions in executable map}; %else_if %test_equal $TEMP1 4 {echo function &&1 did not exist to be erased}; %else {%return $TEMP1}}
+%function if {%if $* {rwsh.argfunction}}
+%function if_only {%if $* {rwsh.argfunction}; %else}
+%function if_only_not {%if $*; %else {rwsh.argfunction}}
+%function ex_count {%which_execution_count $*; %newline}
+%function last_time {%which_last_execution_time $*; %newline}
+%function total_time {%which_total_execution_time $*; %newline}
+%function set {%set $1 $2 $*3}
+%function setf {%if %var_exists $1 {%set &&1 &&2}; %else {%global &&1 &&2}}
+%function unset {%unset $1}
+%function user_shell_ratio {%set TEMP1 &{%waiting_for_user}; %var_divide TEMP1 &{%waiting_for_shell}; %echo $TEMP1; %newline}
+%function wait_bin {%waiting_for_binary; %newline}
+%function wait_shell {%waiting_for_shell; %newline}
+%function wait_user {%waiting_for_user; %newline}
+%function which {%which_executable $1 {rwsh.argfunction}; %if %test_equal $? 0 {%newline}; %else {echo no &&1}}
+%function whichp {%which_path $1 $PATH; %if %test_equal $? 0; %else {echo &&1 not found in $PATH}}
+%function while {%while $* {rwsh.argfunction}}
+%function var_exists {%var_exists $1}
+
+# selection commands
+%function cat {%selection_set SELECT $1; /bin/cat @$SELECT}
+%function cd {%selection_set SELECT $1; %cd @$SELECT; %selection_set SELECT /}
+%function chmod {%selection_set SELECT $2; /bin/chmod $1 @$SELECT}
+%function cp {/bin/cp @$SELECT $1}
+%function create {/usr/bin/touch $1; %selection_set SELECT $1}
+%function cvs {%selection_set SELECT $2; /usr/bin/cvs $1 @$SELECT}
+%function du {%selection_set SELECT $1; /usr/bin/du -hsc @$SELECT}
+%function grep {%set REGEX $1; %selection_set SELECT $2; /usr/bin/grep $REGEX @$SELECT}
+%function grepc {%set REGEX $1; %selection_set SELECT $2; /usr/bin/grep -c $REGEX @$SELECT}
+%function grepl {%set REGEX $1; %selection_set SELECT $2; /usr/bin/grep -l $REGEX @$SELECT}
+%function home {%set SELECT $HOME; cd}
+%function ignore {%set FIGNORE $*}
+%function ll {%selection_set SELECT $1; /bin/ls -l @$SELECT}
+%function mv {/bin/mv @$SELECT $1}
+%function ls {%selection_set SELECT $1; %ls @$SELECT}
+%function less {%selection_set SELECT $1; /usr/bin/less @$SELECT}
+%function regrep {%selection_set SELECT $1; /usr/bin/grep $REGEX @$SELECT}
+%function regrepl {%selection_set SELECT $1; /usr/bin/grep -l $REGEX @$SELECT}
+%function rm {%selection_set SELECT $1; /bin/rm @$SELECT}
+%function sfn {fn $* {%selection_set SELECT $1; &&{%which_path &&1 $PATH} @$SELECT}}
+%function vi {%selection_set SELECT $1; /usr/bin/vi @$SELECT}
+%function vim {%set SHELL /bin/bash; %selection_set SELECT $1; /usr/bin/vim @$SELECT; %set SHELL /bin/rwsh}
+%function ovim {%set SHELL /bin/bash; /usr/bin/vim $*; %set SHELL /bin/rwsh}
+%function wc {%selection_set SELECT $1; /usr/bin/wc @$SELECT}
+%function unselect {%set SELECT $CWD; %selection_set SELECT /}
+
+# internal functions
+%function rwsh.after_command {%set TEMP1 $?; %if_errno {%set OLD_ERRNO $ERRNO; %unset ERRNO; %if %test_equal $OLD_ERRNO ESUBSTITUTION {echo substitution $ERRINFO failed}; %else {echo ERRNO is set to $OLD_ERRNO}}; if_only_not %test_equal $TEMP1 0 {echo &&1 returned $TEMP1}}
+%function rwsh.arguments_for_argfunction {%echo cannot specify arguments for $1 directly; %newline; %return -1}
+%function rwsh.autofunction {%function $1 {&&{%which_path &&1 $PATH} $*}; if_only %return 0 {%echo added &&1 to executable map; %newline}; %if_errno_is ESUBSTITUTION {%unset ERRNO}}
+%function rwsh.bad_argfunction_style {%echo $1 is neither an argfunction nor a substitution; %newline}
+%function rwsh.binary_not_found {%echo $1 : could not run binary; %newline; %return -1}
+%function rwsh.double_redirection {%echo double redirection is not supported at this time: $1 and $2; %newline}
+%function rwsh.excessive_nesting {%newline; %echo function exceeded MAX_NESTING ( $MAX_NESTING ). call stack: $*; %newline}
+%function rwsh.failed_substitution {%append_to_errno ESUBSTITUTION; %set ERRINFO $1}
+%function rwsh.help {%echo this is the default configuration for rwsh (or something copied from it), documentation should be available at rwsh.sf.net; %newline}
+%function rwsh.mismatched_brace {%echo mismatched brace: $1; %newline; %return -1}
+%function rwsh.multiple_argfunctions {%echo multiple argfunctions not supported at this time; %newline; %return -1}
+%function rwsh.not_soon_enough {%echo $1 attempts to substitute after the command has been run; %newline}
+%function rwsh.prompt {%echo $SELECT; %echo \$}
+%function rwsh.selection_not_found {%echo no file matching pattern $1; if_only_not %test_equal $1 $2 {%echo \ for selection &&2}; %newline}
+%function rwsh.shutdown {%newline}
+%function rwsh.sighup {%newline; %echo received SIGHUP: $*; %newline}
+%function rwsh.sigint {%newline; %echo received SIGINT: $*; %newline}
+%function rwsh.sigquit {%newline; %echo received SIGQUIT: $*; %newline}
+%function rwsh.sigpipe {%newline; %echo received SIGPIPE: $*; %newline}
+%function rwsh.sigterm {%newline; %echo received SIGTERM: $*; %newline}
+%function rwsh.sigtstp {%newline; %echo received SIGTSTP: $*; %newline}
+%function rwsh.siginfo {%newline; %echo received SIGINFO: $*; %newline}
+%function rwsh.sigusr1 {%newline; %echo received SIGUSR1: $*; %newline}
+%function rwsh.sigusr2 {%newline; %echo received SIGUSR2: $*; %newline}
+%function rwsh.undefined_variable {%echo $1 was undefined with call stack $*2; %newline}
+%function rwsh.unreadable_dir {%echo cannot read directory $1; %newline}
+%function rwsh.vars {%internal_vars; %newline; echo ERRINFO $ERRINFO; echo HOME $HOME; echo OLDERRNO $OLDERRNO; echo REGEX $REGEX; echo SELECT $SELECT}
+
+# misc
+%function ! {if $* {%return 1}; else {%return 0}}
+%function and {%if %return 1; %stepwise $* {%else_if_not $*}; %else}
+%function or {%if %return 1; %stepwise $* {%else_if $*}; %else}
+%function st {/bin/rwsh /usr/share/rwsh/test_init.sh </usr/share/rwsh/test_main.sh >test.tmp; /usr/bin/diff -c /usr/share/rwsh/test.result test.tmp; /bin/rm test.tmp}
+%function to {/bin/rwsh /usr/share/rwsh/test_init.sh </usr/share/rwsh/test_main.sh}
+fn test_var_not_equal {%test_not_equal $$1 $2}
+fn ntimes {%set TEMP1 0; %while test_var_not_equal TEMP1 $1 {%var_add TEMP1 1; rwsh.mapped_argfunction {rwsh.argfunction}}}
+
+# final setup and individual configuration
+%global rc \
+%selection_set rc $HOME /.rwshrc
+%source $rc
+%unset rc
+%echo rwsh v
+%version
+%newline

@@ -34,9 +34,7 @@ Plumber plumber;
 namespace {
 std::string init_str =
   "%set MAX_NESTING 4;"
-  "rwsh.mapped_argfunction >/tmp/lcl {%echo &{%echo $*}; %newline};"
-  "%if %test_equal $# 3 {%source &2};"
-  "%else {%source /etc/rwshrc $*0}";
+  "%source /etc/rwshrc $*";
 
 void internal_init(void) {
   executable_map.set(new Builtin_t("%append_to_errno", append_to_errno_bi));

@@ -23,8 +23,8 @@
 #include "rwsh_stream.h"
 
 #include "argv.h"
-#include "argv_star_var.cc"
 #include "arg_script.h"
+#include "argv_star_var.cc"
 #include "executable.h"
 #include "executable_map.h"
 #include "file_stream.h"
@@ -36,14 +36,13 @@
 #include "util.h"
 #include "variable_map.h"
 
-
 Arg_spec_t::Arg_spec_t(const std::string& script, unsigned max_soon) : 
       soon_level(0), ref_level(0), substitution(0) {
   if (!script.length()) type=FIXED;
   else if (script[0] == '$') {
     if (script.length() < 2) type=REFERENCE;
     else {
-      int i = 1;
+      unsigned i = 1;
       while (i < script.length() && script[i] == '$') ++ref_level, ++i;
       if (script[i] == '*') {
         type=STAR_REF;
@@ -57,7 +56,11 @@ Arg_spec_t::Arg_spec_t(const std::string& script, unsigned max_soon) :
       while (i < script.length() && script[i] == '&') ++soon_level, ++i;
       while (i < script.length() && script[i] == '$') ++ref_level, ++i;
       if (soon_level > max_soon) throw Not_soon_enough_t(script);
-      type=SOON; text=script.substr(i);}}
+      if (script[i] == '*') {
+        type=STAR_SOON;
+        if (script.length() - i > 1) text=script.substr(i+1);
+        else text="1";}
+      else {type=SOON; text=script.substr(i);}}}
   else if (script[0] == '@') {
     if (script.length() < 2) type=SELECTION;
     else if (script[1] == '$') {
@@ -82,36 +85,47 @@ Arg_spec_t::Arg_spec_t(const std::string& style, const std::string& function,
     throw Not_soon_enough_t(style + "{" + function + "}");
   substitution = new Function_t("rwsh.argfunction", function, soon_level);}
 
+Arg_spec_t::Arg_spec_t(Arg_type_t type_i, unsigned soon_level_i,
+                       unsigned ref_level_i, Function_t* substitution_i,
+                       std::string text_i) :
+    type(type_i), soon_level(soon_level_i), ref_level(ref_level_i),
+    substitution(substitution_i), text(text_i) {}
+
 Arg_spec_t::Arg_spec_t(const Arg_spec_t& src) : 
   type(src.type), soon_level(src.soon_level), ref_level(src.ref_level), 
   substitution(src.substitution->copy_pointer()), text(src.text) {}
 
 Arg_spec_t::~Arg_spec_t() {delete substitution;}
 
-void Arg_spec_t::apply(const Argv_t& src, unsigned nesting) {
+void Arg_spec_t::apply(const Argv_t& src, unsigned nesting,
+                std::back_insert_iterator<std::vector<Arg_spec_t> > res) const {
   switch(type) {
     case SOON: 
-      if (soon_level) --soon_level;
+      if (soon_level)
+        *res++ = Arg_spec_t(type, soon_level-1, ref_level, substitution, text);
       else {
-        text = src.get_var(text);
-        for (unsigned i = 0; i < ref_level; ++i) text = src.get_var(text);
-        type = FIXED;}
+        std::string new_text = src.get_var(text);
+        for (unsigned i = 0; i < ref_level; ++i)
+          new_text = src.get_var(new_text);
+        *res++ = Arg_spec_t(FIXED, 0, 0, substitution, new_text);}
+      break;
+    case STAR_SOON: 
+      if (soon_level)
+        *res++ = Arg_spec_t(type, soon_level-1, ref_level, substitution, text);
+      else res = src.star_var(text, ref_level, res);
       break;
     case SUBSTITUTION: {
-      Function_t* temp = substitution->apply(src, nesting+1);
-      delete substitution;
-      substitution = temp;
-      if (soon_level) --soon_level;
+      Function_t* new_substitution = substitution->apply(src, nesting+1);
+      if (soon_level) *res++ = Arg_spec_t(type, soon_level-1, ref_level,
+                                          new_substitution, text);
       else {
         Substitution_stream_t override_stream;
         Argv_t temp_argv(src);
         temp_argv.output = override_stream.child_stream();
-        if ((*substitution)(temp_argv)) 
-          throw Failed_substitution_t(str());
-        text = override_stream.value();
-        type = FIXED;}
+        if ((*new_substitution)(temp_argv)) throw Failed_substitution_t(str());
+        *res++ = Arg_spec_t(FIXED, 0, 0, 0, override_stream.value());}
       break;}
-    default: break;}}  // most types are not affected by apply
+    default: *res++ = *this;}}  // most types are not affected by apply
 
 // create a string from Arg_spec. inverse of constructor.
 std::string Arg_spec_t::str(void) const {
@@ -129,6 +143,9 @@ std::string Arg_spec_t::str(void) const {
     case STAR_REF: 
       if (text == "1") return base + "$*";
       else return base + "$*" + text;
+    case STAR_SOON: 
+      if (text == "1") return base + "&*";
+      else return base + "&*" + text;
     case SELECTION: return "@" + text;
     case SELECT_VAR: return "@$" + text;
     case SELECT_STAR_VAR: return "@$*" + text;
@@ -147,7 +164,9 @@ void Arg_spec_t::interpret(const Argv_t& src, Out res) const {
       for (unsigned i = 0; i < ref_level; ++i) next = src.get_var(next);
       *res++ = next;
       break;}
-    case STAR_REF: res = src.star_var(text, ref_level, res); break;
+    case STAR_REF: case STAR_SOON:
+      assert(!soon_level); // constructor guarantees SOONs are already done
+      res = src.star_var(text, ref_level, res); break;
     case SELECTION:  selection_read(text, res); break;
     case SELECT_VAR: selection_read(src.get_var(text), res); break;
     case SELECT_STAR_VAR: 
@@ -165,12 +184,17 @@ void Arg_spec_t::interpret(const Argv_t& src, Out res) const {
 
 void Arg_spec_t::promote_soons(unsigned nesting) {
   switch(type) {
-    case SOON: soon_level += nesting; break;
+    case SOON: case STAR_SOON: soon_level += nesting; break;
     case SUBSTITUTION:
       soon_level += nesting;
       Function_t* temp = substitution->promote_soons(nesting);
       delete substitution;
       substitution = temp; break;}}
+
+Arg_script_t::Arg_script_t(const Rwsh_istream_p& input_i,
+    const Rwsh_ostream_p& output_i, const Rwsh_ostream_p& error_i) :
+  argfunction(0), argfunction_level(0), input(input_i), output(output_i),
+  error(error_i) {}
 
 Arg_script_t::Arg_script_t(const std::string& src, unsigned max_soon) :
   argfunction(0), argfunction_level(0),
@@ -197,14 +221,16 @@ Arg_script_t::Arg_script_t(const std::string& src, unsigned max_soon) :
         break;}
       case '}': throw Mismatched_brace_t(src.substr(0, token_end+1));
       default: assert(0);}} // error in std::string::find_first_of
-  if (!size()) push_back(Arg_spec_t("", max_soon));
-  if (is_argfunction_name(front().str()) &&        // argfunction_level handling
-      front().str() != "rwsh.mapped_argfunction") {
-    if (size() != 1 || argfunction) 
-      throw Arguments_to_argfunction_t(front().str());
-    if (front().str() == "rwsh.unescaped_argfunction") argfunction_level = 1;
-    else if (front().str() == "rwsh.argfunction") argfunction_level = 2;
-    else if (front().str() == "rwsh.escaped_argfunction") argfunction_level = 3;
+  if (!args.size()) args.push_back(Arg_spec_t("", max_soon));
+  if (is_argfunction_name(args.front().str()) &&  // argfunction_level handling
+      args.front().str() != "rwsh.mapped_argfunction") {
+    if (args.size() != 1 || argfunction) 
+      throw Arguments_to_argfunction_t(args.front().str());
+    if (args.front().str() == "rwsh.unescaped_argfunction")
+      argfunction_level = 1;
+    else if (args.front().str() == "rwsh.argfunction") argfunction_level = 2;
+    else if (args.front().str() == "rwsh.escaped_argfunction")
+      argfunction_level = 3;
     else assert(0);}}                            // unhandled argfunction level
 
 void Arg_script_t::add_token(const std::string& src, unsigned max_soon) {
@@ -220,11 +246,11 @@ void Arg_script_t::add_token(const std::string& src, unsigned max_soon) {
     else {
       std::string name(src.substr(1, std::string::npos));
       output = Rwsh_ostream_p(new File_ostream_t(name), false, false);}
-  else push_back(Arg_spec_t(src, max_soon));}
+  else args.push_back(Arg_spec_t(src, max_soon));}
 
 void Arg_script_t::add_function(const std::string& style, 
                                 const std::string& f_str, unsigned max_soon) {
-  if (style.size()) push_back(Arg_spec_t(style, f_str, max_soon));
+  if (style.size()) args.push_back(Arg_spec_t(style, f_str, max_soon));
   else
     if (argfunction) throw Multiple_argfunctions_t();
     else argfunction = new Function_t("rwsh.argfunction", f_str, max_soon+1);}
@@ -239,13 +265,14 @@ Arg_script_t::find_close_brace(const std::string& focus,
   return i;}
 
 Arg_script_t::Arg_script_t(const Arg_script_t& src) : 
-  Base(src), argfunction(src.argfunction->copy_pointer()),
+  args(src.args), argfunction(src.argfunction->copy_pointer()),
   argfunction_level(src.argfunction_level), input(src.input), 
   output(src.output), error(src.error) {}
 
 Arg_script_t& Arg_script_t::operator=(const Arg_script_t& src) {
-  this->clear();
-  copy(src.begin(), src.end(), std::back_inserter(*this));
+  args.clear();
+  copy(src.args.begin(), src.args.end(), std::back_inserter(args));
+  delete argfunction; 
   argfunction = src.argfunction->copy_pointer();
   argfunction_level = src.argfunction_level;
   input = src.input;
@@ -259,7 +286,8 @@ Arg_script_t::~Arg_script_t(void) {
 Argv_t Arg_script_t::argv(void) const {
   Argv_t result;
   if (!argfunction_level) {
-    for(const_iterator i=begin(); i != end(); ++i) result.push_back(i->str());
+    for(std::vector<Arg_spec_t>::const_iterator i=args.begin();
+      i != args.end(); ++i) result.push_back(i->str());
     result.set_argfunction(argfunction->copy_pointer());
     result.input = input;
     result.output = output;
@@ -273,8 +301,9 @@ Argv_t Arg_script_t::argv(void) const {
 std::string Arg_script_t::str(void) const {
   if (!argfunction_level) {
     std::string result;
-    for(const_iterator i=begin(); i != end()-1; ++i) result += i->str() + ' ';
-    result += back().str();
+    for(std::vector<Arg_spec_t>::const_iterator i=args.begin();
+      i != args.end()-1; ++i) result += i->str() + ' ';
+    result += args.back().str();
     if (!input.is_default()) result += " " + input.str();
     if (!output.is_default()) result += " " + output.str();
     if (!error.is_default()) result += " " + error.str();
@@ -294,7 +323,8 @@ Argv_t Arg_script_t::interpret(const Argv_t& src) const {
   if (!error.is_default()) result.error = error;
   else result.error = src.error.child_stream();
   if (!argfunction_level) {
-    for (const_iterator i = begin(); i != end(); ++i) 
+    for (std::vector<Arg_spec_t>::const_iterator i = args.begin();
+      i != args.end(); ++i) 
       i->interpret(src, std::back_inserter(result));
     if (!result.size()) result.push_back("");
     if (argfunction) result.set_argfunction(argfunction->apply(src, 0));}
@@ -312,24 +342,21 @@ Argv_t Arg_script_t::interpret(const Argv_t& src) const {
 // unescaped_argfunction with argv.argfunction
 void Arg_script_t::apply(const Argv_t& src, unsigned nesting,
              std::back_insert_iterator<std::vector<Arg_script_t> > res) const {
-  Arg_script_t result(*this);
-  if (result.argfunction_level) --result.argfunction_level;  
+  if (this->argfunction_level) {
+    Arg_script_t result(*this);
+    --result.argfunction_level;
+    *res++ = result;}
   else {
-    for (iterator i = result.begin(); i != result.end(); ++i) 
-      i->apply(src, nesting);
-    if (argfunction) result.argfunction = argfunction->apply(src, nesting+1);}
-  *res++ = result;}
-
-void Arg_script_t::clear(void) {
-  delete argfunction; 
-  argfunction = 0;
-  input = default_input;
-  output = default_output;
-  error = default_error;
-  Base::clear();}
+    Arg_script_t result(input, output, error);
+    for (std::vector<Arg_spec_t>::const_iterator i = args.begin();
+         i != args.end(); ++i) 
+      i->apply(src, nesting, std::back_inserter(result.args));
+    if (argfunction) result.argfunction = argfunction->apply(src, nesting+1);
+    *res++ = result;}}
 
 void Arg_script_t::promote_soons(unsigned nesting) {
-  for (iterator i = begin(); i != end(); ++i) i->promote_soons(nesting);
+  for (std::vector<Arg_spec_t>::iterator i = args.begin(); i != args.end();
+       ++i) i->promote_soons(nesting);
   if (argfunction) {
     Function_t* temp = argfunction->promote_soons(nesting);
     delete argfunction;

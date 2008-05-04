@@ -17,3 +17,15 @@ Out Argv_t::star_var(const std::string& key, unsigned reference_level,
     *res++ = next;}
   return res;}
 
+template<> std::back_insert_iterator<std::vector<Arg_spec_t> >
+Argv_t::star_var(const std::string& key, unsigned reference_level, 
+                std::back_insert_iterator<std::vector<Arg_spec_t> > res) const {
+  int n = std::atoi(key.c_str());
+  if (n < 0) n = 0;
+  else if (n >= size()) n = size();
+  for (const_iterator i = begin()+n; i != end(); ++i) {
+    std::string next = *i;
+    for (unsigned i = 0; i < reference_level; ++i) next = get_var(next);
+    *res++ = Arg_spec_t(FIXED, 0, 0, 0, next);}
+  return res;}
+

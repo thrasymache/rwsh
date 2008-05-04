@@ -5,6 +5,8 @@ rwsh v0.2.2 -
       %which_total_execution_time
   * internal_functions: rwsh.double_redirection rwsh.file_open_failure
   * file redirection
+  * &*
+  * /etc/rwshrc does all command-processing
 
 rwsh v0.2.1 - command substitution
   * builtins: %append_to_errno, %error_unit, %for, %if_errno, %if_errno_is, 

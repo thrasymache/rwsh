@@ -5,6 +5,7 @@
 %function rwsh.vars {%internal_vars}
 %function # {%nop}
 %function \ {%nop}
+%else {%source /etc/rwshrc-default}
 $# rwsh.init is tested by having test_init.sh define #
 
 -10
@@ -144,6 +145,20 @@ rwsh.not_soon_enough : command not found ( rwsh.not_soon_enough &&A )
 -1
 $e &A
 /bin
+
+0
+$%if %nop 1 2 3 {e &*}
+%nop 1 2 3
+
+0
+$%else {}
+
+0
+$%if %nop 1 2 3 {e &*0}
+%if %nop 1 2 3
+
+0
+$%else {}
 
 0
 $m {%set A not_bin; e &A &&A $A; m {%set A otherwise; e &A &&A &&&A $A}}
@@ -1025,7 +1040,7 @@ $# %source is tested by having test_init.sh define #
 
 -1
 $w rwsh.init
-%function rwsh.init {%set MAX_NESTING 4; rwsh.mapped_argfunction >/tmp/lcl {%echo &{%echo $*}; %newline}; %if %test_equal $# 3 {%source &2}; %else {%source /etc/rwshrc $*0}}
+%function rwsh.init {%set MAX_NESTING 4; %source /etc/rwshrc $*}
 0
 $
 
