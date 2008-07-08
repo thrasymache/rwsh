@@ -1,12 +1,13 @@
 rwsh v0.2.2 -
-  * builtins: %for_each_line, %is_default_input, %is_default_output,
-      %is_default_error, %waiting_for_shell, %waiting_for_user,
-      %which_execution_count, %which_last_execution_time,
+  * builtins: %exec, %for_each_line, %fork, %is_default_input,
+      %is_default_output, %is_default_error, %waiting_for_shell,
+      %waiting_for_user, %which_execution_count, %which_last_execution_time,
       %which_total_execution_time
   * internal_functions: rwsh.double_redirection rwsh.file_open_failure
   * file redirection
-  * &*
+  * &* and $VAR$
   * /etc/rwshrc does all command-processing
+  * /etc/rwshrc supports -c flag
 
 rwsh v0.2.1 - command substitution
   * builtins: %append_to_errno, %error_unit, %for, %if_errno, %if_errno_is, 

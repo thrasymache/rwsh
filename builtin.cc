@@ -85,6 +85,27 @@ int error_unit_bi(const Argv_t& argv) {
     else argv.global_var("ERRNO", saved_errno);
   return dollar_question;}
 
+#include <iostream>
+// replace the shell with the given binary
+int exec_bi(const Argv_t& argv) {
+  if (argv.size() < 2) {argv.append_to_errno("ARGS"); return -1;}
+  int input = argv.input.fd(),
+      output = argv.output.fd(),
+      error = argv.error.fd();
+  if (dup2(input, 0) < 0) std::cerr <<"dup2 didn't like changing input\n";
+  if (dup2(output, 1) < 0) std::cerr <<"dup2 didn't like changing output\n";
+  if (dup2(error, 2) < 0) std::cerr <<"dup2 didn't like changing error\n";
+  Argv_t lookup(argv.begin()+1, argv.end(), argv.argfunction(), 
+                default_input, default_output, default_error);
+  Old_argv_t old_argv(lookup);
+  char **env = argv.export_env();
+  int ret = execve(lookup[0].c_str(), old_argv.argv(), env);
+  Argv_t error_argv;
+  error_argv.push_back("rwsh.binary_not_found");
+  error_argv.push_back(argv[0]); 
+  executable_map.run(error_argv);
+  return ret;}
+
 // exit the shell
 int exit_bi(const Argv_t& argv) {
   if (argv.size() != 1) {argv.append_to_errno("ARGS"); return -1;}
@@ -125,6 +146,19 @@ int for_each_line_bi(const Argv_t& argv) {
     ret = (*argv.argfunction())(body);}
   return ret;}
 
+#include "plumber.h"
+int fork_bi(const Argv_t& argv) {
+  if (argv.size() < 2) {argv.append_to_errno("ARGS"); return -1;}
+  int ret = 0;
+  if (!fork()) {  
+    plumber.after_fork();
+    Argv_t lookup(argv.begin()+1, argv.end(), argv.argfunction(),
+                  argv.input, argv.output.child_stream(), argv.error);
+    ret = executable_map.run(lookup);}
+    exit(ret);}
+  else plumber.wait(&ret);
+  return ret;}
+
 // add argfunction to executable map with name $1
 int function_bi(const Argv_t& argv) {
   if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
@@ -143,7 +177,8 @@ int global_bi(const Argv_t& argv) {
   if (argv.size() != 3) {argv.append_to_errno("ARGS"); return -1;}
   else return argv.global_var(argv[1], argv[2]);}
 
-static int if_core(const Argv_t& argv, bool logic) {
+namespace {
+int if_core(const Argv_t& argv, bool logic) {
   Argv_t lookup(argv.begin()+1, argv.end(), 0,
                 argv.input, argv.output.child_stream(), argv.error);
   if (logic == !executable_map.run(lookup)) {
@@ -163,6 +198,7 @@ static int if_core(const Argv_t& argv, bool logic) {
     else argv.global_var("IF_TEST", "true");
     return ret;}
   else return 0;}
+}
 
 // run argfunction if $* returns true
 // returns the value returned by the argfunction

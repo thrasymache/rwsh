@@ -12,11 +12,11 @@ rwsh: $(objects)
 
 arg_script.o: rwsh_stream.h argv.h argv_star_var.cc arg_script.h executable.h \
 	executable_map.h file_stream.h function.h read_dir.cc selection.h \
-	selection_read.cc substitution_stream.h variable_map.h
+	selection_read.cc substitution_stream.h tokenize.cc variable_map.h
 argv.o: rwsh_stream.h argv.h arg_script.h executable.h function.h variable_map.h
 builtin.o: rwsh_stream.h argv.h arg_script.h builtin.h clock.h \
 	command_stream.h executable.h executable_map.h function.h \
-	read_dir.cc selection.h tokenize.cc variable_map.h
+	plumber.cc read_dir.cc selection.h tokenize.cc variable_map.h
 clock.o: clock.h
 command_stream.o: rwsh_stream.h argv.h arg_script.h clock.h command_stream.h \
 	executable.h executable_map.h variable_map.h

@@ -7,6 +7,7 @@ class Arg_spec_t {
   Arg_type_t type;
   unsigned soon_level;
   unsigned ref_level;
+  unsigned expand_count;
   Function_t* substitution;
   std::string text;
 
@@ -16,7 +17,7 @@ class Arg_spec_t {
   Arg_spec_t(const std::string& style, const std::string& function, 
              unsigned max_soon);
   Arg_spec_t(Arg_type_t type, unsigned soon_level, unsigned ref_level,
-             Function_t* substitution, std::string text);
+             unsigned expand_count, Function_t* substitution, std::string text);
   Arg_spec_t(const Arg_spec_t& src);
   ~Arg_spec_t();
   void apply(const Argv_t& src, unsigned nesting,

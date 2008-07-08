@@ -72,6 +72,9 @@ e @/usr/*l*i*b*x*e*
 %return &{e 0}
 %return &{%echo 0}
 e nevermore &{/bin/echo quoth the raven} 
+%set A one two three four five
+m $A {e $# $*}
+m $A$ {e $# $*}
 %unset A
 
 # file redirection (but don't overwrite files that exist)
@@ -126,6 +129,13 @@ f x
 %error_unit x y z {e $*0; %global ERRNO X}
 m {%global ERRNO X; %error_unit {%var_exists ERRNO}} 
 m {%global ERRNO X; %error_unit {%var_exists ERRNO; %global ERRNO Y}} 
+
+# %exec %fork
+%fork
+%fork e text
+%fork %return 1
+%exec
+%fork m {%exec /bin/echo something; /bin/echo else}
 
 # %for
 %for {e no arguments $1}
@@ -335,7 +345,7 @@ wrapper 1 2
 %which_executable
 %which_executable j
 %which_executable #
-%which_executable rwsh.mapped_argfunction {%nop 1 \ \$ \@ $A $$A $0 $$$1 $# $* $*2 @a @$a @$1 @$* @$*2 >dummy_file}
+%which_executable rwsh.mapped_argfunction {%nop 1 \ \$ \@ $A $$A $0 $$$1 $# $* $*2 $A$ $$*$$ $$$*12$ &&A &&0 &&* &&*3 &&$A$ &&*$$ &&*6$$$ @a @$a @$1 @$* @$*2 >dummy_file}
 %which_executable rwsh.mapped_argfunction
 %which_executable rwsh.mapped_argfunction {rwsh.argfunction}
 %which_execution_count

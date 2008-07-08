@@ -5,7 +5,9 @@
 %function rwsh.vars {%internal_vars}
 %function # {%nop}
 %function \ {%nop}
-%else {%source /etc/rwshrc-default}
+%else_if %test_equal $2 -c {rwsh.mapped_argfunction &3 {%source /etc/rwshrc-basic; $1$; %exit}}
+
+%else {%echo unexpected command line: &*; %newline; %source /etc/rwshrc-default}
 $# rwsh.init is tested by having test_init.sh define #
 
 -10
@@ -275,6 +277,17 @@ nevermore quoth the raven
 
 
 0
+$%set A one two three four five
+
+0
+$m $A {e $# $*}
+2 one two three four five
+
+0
+$m $A$ {e $# $*}
+6 one two three four five
+
+0
 $%unset A
 
 0
@@ -467,6 +480,31 @@ $m {%global ERRNO X; %error_unit {%var_exists ERRNO; %global ERRNO Y}}
 
 0
 ERRNO set to X Y
+$
+
+0
+$# %exec %fork
+
+0
+$%fork
+
+-1
+ERRNO set to ARGS
+$%fork e text
+text
+
+0
+$%fork %return 1
+
+256
+$%exec
+
+-1
+ERRNO set to ARGS
+$%fork m {%exec /bin/echo something; /bin/echo else}
+something
+
+0
 $
 
 0
@@ -1228,8 +1266,8 @@ $%which_executable j
 $%which_executable #
 %function # {%nop}
 0
-$%which_executable rwsh.mapped_argfunction {%nop 1 \ \$ \@ $A $$A $0 $$$1 $# $* $*2 @a @$a @$1 @$* @$*2 >dummy_file}
-{%nop 1 \  \$ \@ $A $$A $0 $$$1 $# $* $*2 @a @$a @$1 @$*1 @$*2 >dummy_file}
+$%which_executable rwsh.mapped_argfunction {%nop 1 \ \$ \@ $A $$A $0 $$$1 $# $* $*2 $A$ $$*$$ $$$*12$ &&A &&0 &&* &&*3 &&$A$ &&*$$ &&*6$$$ @a @$a @$1 @$* @$*2 >dummy_file}
+{%nop 1 \  \$ \@ $A $$A $0 $$$1 $# $* $*2 $A$ $$*$$ $$$*12$ &A &0 &* &*3 &$A$ &*$$ &*6$$$ @a @$a @$1 @$*1 @$*2 >dummy_file}
 0
 $%which_executable rwsh.mapped_argfunction
 
@@ -1245,7 +1283,7 @@ $%which_execution_count j
 
 1
 $%which_execution_count #
-36
+37
 0
 $%which_last_execution_time
 

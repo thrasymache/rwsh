@@ -44,9 +44,11 @@ void internal_init(void) {
   executable_map.set(new Builtin_t("%else_if", else_if_bi));
   executable_map.set(new Builtin_t("%else_if_not", else_if_not_bi));
   executable_map.set(new Builtin_t("%error_unit", error_unit_bi));
+  executable_map.set(new Builtin_t("%exec", exec_bi));
   executable_map.set(new Builtin_t("%exit", exit_bi));
   executable_map.set(new Builtin_t("%for", for_bi));
   executable_map.set(new Builtin_t("%for_each_line", for_each_line_bi));
+  executable_map.set(new Builtin_t("%fork", fork_bi));
   executable_map.set(new Builtin_t("%function", function_bi));
   executable_map.set(new Builtin_t("%global", global_bi));
   executable_map.set(new Builtin_t("%if", if_bi));
