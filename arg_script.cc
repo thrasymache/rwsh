@@ -224,7 +224,7 @@ Arg_script_t::Arg_script_t(const std::string& src, unsigned max_soon) :
       case '{': {
         std::string::size_type close_brace = find_close_brace(src, token_end);
         if (close_brace == std::string::npos)
-          throw Mismatched_brace_t(src.substr(0, token_end+1));
+          throw Unclosed_brace_t(src.substr(0, token_end+1));
         add_function(src.substr(token_start, token_end-token_start),
                      src.substr(token_end+1, close_brace-token_end-1), 
                      max_soon);

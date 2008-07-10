@@ -1,13 +1,28 @@
+%function # {%nop}
+%function \ {%nop}
+%global last_command_return -10
+%global A \
+%global N \
 %function rwsh.before_command {%return $last_command_return}
-%function rwsh.after_command {%set last_command_return $?; %newline; %echo $last_command_return; %newline; %if_errno {%echo ERRNO set to $ERRNO; %newline; %unset ERRNO}}
+
+# tests multi-line commands within a sourced script
+%function rwsh.after_command {
+  %set last_command_return $?
+  %newline
+  %echo $last_command_return
+  %newline
+  %if_errno {
+    %echo ERRNO set to $ERRNO
+    %newline
+    %unset ERRNO}}
 %function rwsh.prompt {%echo \$}
 %function rwsh.shutdown {e rwsh is now terminating}
 %function rwsh.vars {%internal_vars}
-%function # {%nop}
-%function \ {%nop}
-%else_if %test_equal $2 -c {rwsh.mapped_argfunction &3 {%source /etc/rwshrc-basic; $1$; %exit}}
-
-%else {%echo unexpected command line: &*; %newline; %source /etc/rwshrc-default}
+%else_if %test_equal $2 -c {
+  rwsh.mapped_argfunction &3 {%source /etc/rwshrc-basic; $1$; %exit}}
+%else {
+  %echo unexpected command line: &*; %newline
+  %source /etc/rwshrc-default}
 $# rwsh.init is tested by having test_init.sh define #
 
 -10
@@ -47,9 +62,9 @@ $# rwsh.mismatched_brace
 
 0
 $%which_executable rwsh.argfunction {
-rwsh.mismatched_brace : command not found ( rwsh.mismatched_brace %which_executable rwsh.argfunction { )
-
--1
+%which_executable rwsh.argfunction }
+{\ ; %which_executable rwsh.argfunction}
+0
 $%which_executable rwsh.argfunction }
 rwsh.mismatched_brace : command not found ( rwsh.mismatched_brace %which_executable rwsh.argfunction } )
 
@@ -171,7 +186,10 @@ $m {%set A not_bin; e &A &&A $A; m {%set A otherwise; e &A &&A &&&A $A}}
 $%set A /bin
 
 0
-$m {%set A not_bin; e &{%echo $A} &&{%echo $A} $A; m {%set A otherwise; e &{%echo $A} &&{%echo $A} &&&{%echo $A} $A}}
+$m {%set A not_bin
+   e &{%echo $A} &&{%echo $A} $A
+   m {%set A otherwise
+      e &{%echo $A} &&{%echo $A} &&&{%echo $A} $A}}
 /bin not_bin not_bin
 /bin not_bin otherwise otherwise
 
@@ -379,7 +397,12 @@ $%global A 0
 $%set MAX_NESTING 44
 
 0
-$f x {%var_add A 1; m {%var_add A 1; m {%var_add A 1; m {%var_add A 1; m {%var_add A 1; m {rwsh.argfunction}}}}}}
+$f x {%var_add A 1
+     m {%var_add A 1
+        m {%var_add A 1
+           m {%var_add A 1
+              m {%var_add A 1
+                 m {rwsh.argfunction}}}}}}
 
 0
 $x {e &A &&A $A}
@@ -790,7 +813,10 @@ $%else_if_not %return 0 {e and certainly this; %return 18}
 $%else {e nor this; %return 19}
 
 16
-$%if %return 0 {%if %return 1 {not to be printed; %return 20}; %else_if %return 0 {e nested else_if; %return 21}}
+$%if %return 0 {%if %return 1 {
+                   not to be printed; %return 20}
+               %else_if %return 0 {
+                   e nested else_if; %return 21}}
 nested else_if
 
 -1
@@ -812,13 +838,22 @@ $
 $# %if_errno %if_errno_is %append_to_errno
 
 -1
-$rwsh.mapped_argfunction {%if_errno {e no error}; %append_to_errno x; %if_errno {e invented error $ERRNO}; %if_errno %return 0 {e doubled error $ERRNO}}
+$m {%if_errno {e no error}
+   %append_to_errno x
+   %if_errno {e invented error $ERRNO}
+   %if_errno %return 0 {e doubled error $ERRNO}}
 invented error x
 doubled error x ARGS
 
 0
 ERRNO set to x ARGS
-$rwsh.mapped_argfunction {%if_errno_is x {e no error}; %if_errno_is {e invocation error $ERRNO}; %unset ERRNO; %append_to_errno x; %if_errno_is y {e invented error $ERRNO matches y}; %if_errno_is x {e invented error $ERRNO matches x}; %if_errno_is {e doubled error $ERRNO}}
+$m {%if_errno_is x {e no error}
+   %if_errno_is {e invocation error $ERRNO}
+   %unset ERRNO
+   %append_to_errno x
+   %if_errno_is y {e invented error $ERRNO matches y}
+   %if_errno_is x {e invented error $ERRNO matches x}
+   %if_errno_is {e doubled error $ERRNO}}
 invocation error ARGS
 invented error x matches x
 doubled error x ARGS
@@ -1283,7 +1318,7 @@ $%which_execution_count j
 
 1
 $%which_execution_count #
-37
+38
 0
 $%which_last_execution_time
 
@@ -1396,7 +1431,9 @@ in %while argfunction 3
 $%set A 0
 
 0
-$%while tf {%if %return $A {%set A 1}; %else {%function tf {%return 1}}; e in overwriting argfunction;}
+$%while tf {%if %return $A {%set A 1}
+           %else {%function tf {%return 1}}
+           e in overwriting argfunction}
 in overwriting argfunction
 in overwriting argfunction
 
@@ -1595,7 +1632,7 @@ $# following tests will fail.
 
 0
 $w rwsh.after_command
-%function rwsh.after_command {%set last_command_return $?; %newline; %echo $last_command_return; %newline; %if_errno {%echo ERRNO set to $ERRNO; %newline; %unset ERRNO}}
+%function rwsh.after_command {\ ; %set last_command_return $?; %newline; %echo $last_command_return; %newline; %if_errno {\ ; %echo ERRNO set to $ERRNO; %newline; %unset ERRNO}}
 0
 $w rwsh.prompt
 %function rwsh.prompt {%echo \$}
@@ -1723,7 +1760,9 @@ $rwsh.mapped_argfunction
 rwsh.mapped_argfunction : command not found ( rwsh.mapped_argfunction )
 
 -1
-$f g {w rwsh.argfunction {rwsh.unescaped_argfunction}; w rwsh.argfunction {rwsh.argfunction}; w rwsh.argfunction {rwsh.escaped_argfunction}}
+$f g {w rwsh.argfunction {rwsh.unescaped_argfunction}
+     w rwsh.argfunction {rwsh.argfunction}
+     w rwsh.argfunction {rwsh.escaped_argfunction}}
 
 0
 $g {}

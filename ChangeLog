@@ -8,6 +8,7 @@ rwsh v0.2.2 -
   * &* and $VAR$
   * /etc/rwshrc does all command-processing
   * /etc/rwshrc supports -c flag
+  * newlines supported within argfunctions
 
 rwsh v0.2.1 - command substitution
   * builtins: %append_to_errno, %error_unit, %for, %if_errno, %if_errno_is, 

@@ -149,6 +149,11 @@ Not_soon_enough_t::Not_soon_enough_t(const std::string& argument) :
   push_back("rwsh.not_soon_enough");
   push_back(argument);}
 
+Unclosed_brace_t::Unclosed_brace_t(const std::string& prefix) : 
+      Argv_t() {
+  push_back("rwsh.subprompt");
+  push_back(prefix);}
+
 Undefined_variable_t::Undefined_variable_t(const std::string& variable) :
       Argv_t() {
   push_back("rwsh.undefined_variable");

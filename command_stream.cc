@@ -20,23 +20,36 @@
 #include "executable_map.h"
 #include "variable_map.h"
 
-Command_stream_t::Command_stream_t(std::istream& s) : src(s) {}
+Command_stream_t::Command_stream_t(std::istream& s, bool subprompt_i) :
+    src(s), subprompt(subprompt_i) {}
 
 // write the next command to dest. run rwsh.prompt as appropriate
 Command_stream_t& Command_stream_t::operator>> (Arg_script_t& dest) {
   if (operator!()) return *this;
-  std::string line;
-  struct timeval before_input, after_input;
-  gettimeofday(&before_input, rwsh_clock.no_timezone);
-  getline(src, line);
-  gettimeofday(&after_input, rwsh_clock.no_timezone);
-  rwsh_clock.user_wait(before_input, after_input);
-  if (operator!()) return *this;
+  std::string cmd;
+  for (bool cmd_is_incomplete=true; cmd_is_incomplete;) {
+    std::string line;
+    struct timeval before_input, after_input;
+    gettimeofday(&before_input, rwsh_clock.no_timezone);
+    getline(src, line);
+    gettimeofday(&after_input, rwsh_clock.no_timezone);
+    rwsh_clock.user_wait(before_input, after_input);
+    if (operator!()) return *this;
+    cmd += line;
+    try {
+      dest = Arg_script_t(cmd, 0);
+      cmd_is_incomplete = false;}
+    catch (Unclosed_brace_t exception) {
+      cmd += '\n';}
+    catch (...) {
+      Argv_t raw_command;
+      raw_command.push_back(cmd);
+      executable_map.run_if_exists("rwsh.raw_command", raw_command);
+      throw;}}
   Argv_t raw_command;
-  raw_command.push_back(line);
+  raw_command.push_back(cmd);
   executable_map.run_if_exists("rwsh.raw_command", raw_command);
   if (Executable_t::unwind_stack()) return *this;
-  dest = Arg_script_t(line, 0);
   return *this;}
 
 // returns non-zero if the last command was read successfully

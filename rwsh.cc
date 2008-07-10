@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
   Argv_t external_command_line(&argv[0], &argv[argc], 0, 
                                default_input, default_output, default_error);
   internal_init();
-  Command_stream_t command_stream(std::cin);
+  Command_stream_t command_stream(std::cin, true);
   executable_map.set(new Function_t("rwsh.init", init_str, 0));
   executable_map.run_if_exists("rwsh.init", external_command_line);
   register_signals();

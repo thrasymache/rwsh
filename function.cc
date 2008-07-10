@@ -20,11 +20,15 @@
 #include "tokenize.cc"
 #include "variable_map.h"
 
+namespace {
+  struct Statement_terminator : public std::unary_function<char, bool> {
+    bool operator() (const char& x) const {return x == ';' || x =='\n';} };}
+
 Function_t::Function_t(const std::string& name_i, const std::string& src, 
       unsigned max_soon) : name_v(name_i) {
   std::vector<std::string> commands;
   tokenize_same_brace_level(src, std::back_inserter(commands), 
-                            std::bind2nd(std::equal_to<char>(), ';'));
+                            Statement_terminator());
   for (std::vector<std::string>::const_iterator i = commands.begin();
        i != commands.end(); ++i) {
     script.push_back(Arg_script_t(*i, max_soon));

@@ -154,7 +154,7 @@ int fork_bi(const Argv_t& argv) {
     plumber.after_fork();
     Argv_t lookup(argv.begin()+1, argv.end(), argv.argfunction(),
                   argv.input, argv.output.child_stream(), argv.error);
-    ret = executable_map.run(lookup);}
+    ret = executable_map.run(lookup);
     exit(ret);}
   else plumber.wait(&ret);
   return ret;}
@@ -405,7 +405,7 @@ int source_bi(const Argv_t& argv) {
   std::ifstream src(argv[1].c_str(), std::ios_base::in);
   Argv_t script_arg(argv.begin()+1, argv.end(), 0, argv.input,
                     argv.output.child_stream(), argv.error);
-  Command_stream_t command_stream(src);
+  Command_stream_t command_stream(src, false);
   Arg_script_t script("", 0);
   int ret = -1;
   while (command_stream && !Executable_t::unwind_stack()) {

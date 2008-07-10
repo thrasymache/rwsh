@@ -96,6 +96,9 @@ struct Multiple_argfunctions_t : public Argv_t {Multiple_argfunctions_t();};
 struct Not_soon_enough_t : public Argv_t {
   Not_soon_enough_t(const std::string& argument);};
 
+struct Unclosed_brace_t : public Argv_t {
+  Unclosed_brace_t(const std::string& prefix);};
+
 struct Undefined_variable_t : public Argv_t {
   Undefined_variable_t(const std::string& variable);};
   

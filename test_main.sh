@@ -12,6 +12,7 @@
 # rwsh.mismatched_brace
 %which_executable rwsh.argfunction {
 %which_executable rwsh.argfunction }
+%which_executable rwsh.argfunction }
 # rwsh.multiple_argfunctions
 %which_executable rwsh.argfunction {} {}
 %which_executable rwsh.argfunction {rwsh.argfunction {}}
@@ -45,7 +46,10 @@ e &A
 %else {}
 m {%set A not_bin; e &A &&A $A; m {%set A otherwise; e &A &&A &&&A $A}}
 %set A /bin
-m {%set A not_bin; e &{%echo $A} &&{%echo $A} $A; m {%set A otherwise; e &{%echo $A} &&{%echo $A} &&&{%echo $A} $A}}
+m {%set A not_bin
+   e &{%echo $A} &&{%echo $A} $A
+   m {%set A otherwise
+      e &{%echo $A} &&{%echo $A} &&&{%echo $A} $A}}
 %set A /bin
 m {%set A not_bin; e &{%echo &A} &&{%echo &A &&A}}
 m &{%echo $A} {e $1 &1}
@@ -100,7 +104,12 @@ m {m >dummy_file {e line 1; e line 2 longer; %newline; e ending}}
 # soon level promotion
 %global A 0
 %set MAX_NESTING 44
-f x {%var_add A 1; m {%var_add A 1; m {%var_add A 1; m {%var_add A 1; m {%var_add A 1; m {rwsh.argfunction}}}}}}
+f x {%var_add A 1
+     m {%var_add A 1
+        m {%var_add A 1
+           m {%var_add A 1
+              m {%var_add A 1
+                 m {rwsh.argfunction}}}}}}
 x {e &A &&A $A}
 %set A 0
 x {x {x {x {e &A &&A &&&A &&&&A &&&&&A $A}}}}
@@ -220,14 +229,26 @@ e $x
 %else_if_not %return 1 {e this should be skipped; %return 17}
 %else_if_not %return 0 {e and certainly this; %return 18}
 %else {e nor this; %return 19}
-%if %return 0 {%if %return 1 {not to be printed; %return 20}; %else_if %return 0 {e nested else_if; %return 21}}
+%if %return 0 {%if %return 1 {
+                   not to be printed; %return 20}
+               %else_if %return 0 {
+                   e nested else_if; %return 21}}
 %else {e else_if failed to appropriately set IF_TEST on exit; %return 22}
 %if %return 0 {%else_if %return 0 {e nested syntax; %return 23}}
 %else {e already tested; %return 24}
 
 # %if_errno %if_errno_is %append_to_errno
-rwsh.mapped_argfunction {%if_errno {e no error}; %append_to_errno x; %if_errno {e invented error $ERRNO}; %if_errno %return 0 {e doubled error $ERRNO}}
-rwsh.mapped_argfunction {%if_errno_is x {e no error}; %if_errno_is {e invocation error $ERRNO}; %unset ERRNO; %append_to_errno x; %if_errno_is y {e invented error $ERRNO matches y}; %if_errno_is x {e invented error $ERRNO matches x}; %if_errno_is {e doubled error $ERRNO}}
+m {%if_errno {e no error}
+   %append_to_errno x
+   %if_errno {e invented error $ERRNO}
+   %if_errno %return 0 {e doubled error $ERRNO}}
+m {%if_errno_is x {e no error}
+   %if_errno_is {e invocation error $ERRNO}
+   %unset ERRNO
+   %append_to_errno x
+   %if_errno_is y {e invented error $ERRNO matches y}
+   %if_errno_is x {e invented error $ERRNO matches x}
+   %if_errno_is {e doubled error $ERRNO}}
 
 # %internal_errors %internal_features %internal_vars
 %internal_errors 1
@@ -384,7 +405,9 @@ wrapper 1 2
 %set A 0
 %while tf {e in %while argfunction $A; %var_add A 1}
 %set A 0
-%while tf {%if %return $A {%set A 1}; %else {%function tf {%return 1}}; e in overwriting argfunction;}
+%while tf {%if %return $A {%set A 1}
+           %else {%function tf {%return 1}}
+           e in overwriting argfunction}
 
 # %var_add
 %var_add
@@ -479,7 +502,9 @@ w rwsh.executable_not_found
 # rwsh.escaped_argfunction
 rwsh.mapped_argfunction 1 2 3 {e a $* a}
 rwsh.mapped_argfunction
-f g {w rwsh.argfunction {rwsh.unescaped_argfunction}; w rwsh.argfunction {rwsh.argfunction}; w rwsh.argfunction {rwsh.escaped_argfunction}}
+f g {w rwsh.argfunction {rwsh.unescaped_argfunction}
+     w rwsh.argfunction {rwsh.argfunction}
+     w rwsh.argfunction {rwsh.escaped_argfunction}}
 g {}
 
 # rwsh.excessive_nesting
