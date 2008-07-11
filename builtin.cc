@@ -17,6 +17,7 @@
 #include <vector>
 extern char** environ;
 
+#include "arg_spec.h"
 #include "rwsh_stream.h"
 
 #include "argv.h"

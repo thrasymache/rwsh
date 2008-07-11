@@ -7,6 +7,7 @@
 #include <sstream>
 #include <vector>
 
+#include "arg_spec.h"
 #include "rwsh_stream.h"
 
 #include "argv.h"
