@@ -40,8 +40,12 @@ Arg_script_t::Arg_script_t(const std::string& src, unsigned max_soon) :
       break;}
     else switch (src[token_end]) {
       case ' ':
-        add_token(src.substr(token_start, token_end-token_start), max_soon);
-        token_start = src.find_first_not_of(" ", token_end);
+        if (src[token_start] == '(') {
+          add_literal(src, token_start, max_soon);
+          token_start = src.find_first_not_of(" ", token_start+1);}
+        else {
+          add_token(src.substr(token_start, token_end-token_start), max_soon);
+          token_start = src.find_first_not_of(" ", token_end);}
         break;
       case '{': {
         std::string::size_type close_brace = find_close_brace(src, token_end);
@@ -65,6 +69,20 @@ Arg_script_t::Arg_script_t(const std::string& src, unsigned max_soon) :
     else if (args.front().str() == "rwsh.escaped_argfunction")
       argfunction_level = 3;
     else assert(0);}}                            // unhandled argfunction level
+
+void Arg_script_t::add_literal(const std::string& src,
+                               std::string::size_type& token_start,
+                               unsigned max_soon) {
+  std::string::size_type token_end = src.find_first_of("()", token_start+1); 
+  for (unsigned nesting = 0;
+       token_end != std::string::npos && (nesting || src[token_end] == '(');
+       token_end = src.find_first_of("()", token_end+1))
+    if (src[token_end] == '(') ++nesting;
+    else --nesting;
+// handle mismatched
+  args.push_back(Arg_spec_t(src.substr(token_start+1, token_end-token_start-1),
+                 max_soon));
+  token_start = token_end;}
 
 void Arg_script_t::add_token(const std::string& src, unsigned max_soon) {
   if (src[0] == '<')

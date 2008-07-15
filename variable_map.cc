@@ -12,7 +12,6 @@
 #include "rwsh_stream.h"
 
 #include "argv.h"
-#include "arg_script.h"
 #include "executable.h"
 #include "variable_map.h"
 

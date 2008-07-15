@@ -76,7 +76,7 @@ int Executable_map_t::not_found(Argv_t& argv) {
   Executable_t* i = find(argv);
   if (i) return (*i)(argv);
   set(new Function_t("rwsh.executable_not_found", // reset executable_not_found
-                     "%echo $1 : command not found ( $* ); %newline; "
+                     "%echo $1 : command not found \\( $* \\); %newline; "
                      "%return -1", 0));
   return (*find(argv))(argv);}
 

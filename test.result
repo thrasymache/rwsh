@@ -306,6 +306,26 @@ $m $A$ {e $# $*}
 6 one two three four five
 
 0
+$e a (tight string created by parentheses $#) $#
+a tight string created by parentheses $# 4
+
+0
+$e a ( spaced string created by parentheses $# ) $#
+a  spaced string created by parentheses $#  4
+
+0
+$e some \( escaped $# \) \(parentheses\) $#
+some ( escaped 8 ) (parentheses\) 8
+
+0
+$e some (nested (parentheses) $#) $#
+some nested (parentheses) $# 4
+
+0
+$e some ((((((((((repeated))))) parentheses))))) $#
+some (((((((((repeated))))) parentheses)))) 4
+
+0
 $%unset A
 
 0
@@ -328,7 +348,7 @@ $/bin/cat <dummy_file
 rwsh.file_open_failure dummy_file : command not found ( rwsh.file_open_failure dummy_file /bin/cat )
 
 -1
-$%for_each_line <dummy_file {e line of $# ( $* )}
+$%for_each_line <dummy_file {e line of $# \( $* \)}
 rwsh.file_open_failure dummy_file : command not found ( rwsh.file_open_failure dummy_file %for_each_line )
 
 -1
@@ -375,7 +395,7 @@ $%for_each_line <dummy_file <another {}
 rwsh.double_redirection : command not found ( rwsh.double_redirection <dummy_file <another )
 
 -1
-$%for_each_line <dummy_file {e line of $# ( $* )}
+$%for_each_line <dummy_file {e line of $# \( $* \)}
 line of 3 ( line 1 )
 line of 4 ( line 2 longer )
 line of 1 ( )

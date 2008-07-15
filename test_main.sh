@@ -79,6 +79,11 @@ e nevermore &{/bin/echo quoth the raven}
 %set A one two three four five
 m $A {e $# $*}
 m $A$ {e $# $*}
+e a (tight string created by parentheses $#) $#
+e a ( spaced string created by parentheses $# ) $#
+e some \( escaped $# \) \(parentheses\) $#
+e some (nested (parentheses) $#) $#
+e some ((((((((((repeated))))) parentheses))))) $#
 %unset A
 
 # file redirection (but don't overwrite files that exist)
@@ -86,7 +91,7 @@ m $A$ {e $# $*}
 %if %ls dummy_file {%exit}
 %else {}
 /bin/cat <dummy_file
-%for_each_line <dummy_file {e line of $# ( $* )}
+%for_each_line <dummy_file {e line of $# \( $* \)}
 m {e hi >dummy_file >another}
 m {e hi >dummy_file}
 /bin/cat dummy_file
@@ -98,7 +103,7 @@ m {m >dummy_file {e line 1; e line 2 longer; %newline; e ending}}
 %for_each_line x {}
 %for_each_line <dummy_file
 %for_each_line <dummy_file <another {}
-%for_each_line <dummy_file {e line of $# ( $* )}
+%for_each_line <dummy_file {e line of $# \( $* \)}
 /bin/rm dummy_file
 
 # soon level promotion
