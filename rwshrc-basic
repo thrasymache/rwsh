@@ -7,6 +7,7 @@
 # builtin wrappers
 %function . {%source $*}
 %function af {rwsh.argfunction}
+%function e {%echo $*}
 %function echo {%echo $*; %newline}
 %function elif {%else_if $* {rwsh.argfunction}}
 %function else {%else {rwsh.argfunction}}

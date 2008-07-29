@@ -4,9 +4,10 @@
 //
 // Copyright (C) 2005, 2006, 2007 Samuel Newbold
 
+#include <map>
 #include <string>
 #include <signal.h>
-#include <map>
+#include <sys/time.h>
 #include <vector>
 
 #include "rwsh_stream.h"
@@ -18,11 +19,6 @@
 #include "executable_map.h"
 #include "plumber.h"
 #include "variable_map.h"
-
-int Executable_t::global_nesting(0);
-int Executable_t::caught_signal(0);
-bool Executable_t::in_signal_handler(false);
-Argv_t Executable_t::call_stack;
 
 bool Executable_t::increment_nesting(const Argv_t& argv) {
   if (global_nesting > argv.max_nesting()+1) caught_signal = SIGEXNEST;
@@ -66,7 +62,6 @@ void Executable_t::signal_handler(void) {
     case SIGTSTP: call_stack_copy.push_back("rwsh.sigtstp"); break;
     case SIGCONT: call_stack_copy.push_back("rwsh.sigcont"); break;
     case SIGCHLD: call_stack_copy.push_back("rwsh.sigchld"); break;
-    case SIGINFO: call_stack_copy.push_back("rwsh.siginfo"); break;
     case SIGUSR1: call_stack_copy.push_back("rwsh.sigusr1"); break;
     case SIGUSR2: call_stack_copy.push_back("rwsh.sigusr2"); break;
     default: 

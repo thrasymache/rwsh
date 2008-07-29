@@ -1,6 +1,7 @@
 // Copyright (C) 2007 Samuel Newbold
 
 #include <assert.h>
+#include <errno.h>
 #include <iostream>
 #include <iomanip>
 #include <sstream>

@@ -1,5 +1,4 @@
 %function # {%nop}
-%function \ {%nop}
 %global last_command_return -10
 %global A \
 %global N \
@@ -48,7 +47,7 @@ $%newline
 
 
 0
-$%echo  \    1                2       
+$%echo  ()    1                2       
  1 2
 0
 $%newline
@@ -58,30 +57,28 @@ $%newline
 $%which_executable rwsh.mapped_argfunction {%nop}
 {%nop}
 0
-$# rwsh.mismatched_brace
-
-0
 $%which_executable rwsh.argfunction {
-%which_executable rwsh.argfunction }
-{\ ; %which_executable rwsh.argfunction}
+  multiple line argfunction }
+{; multiple line argfunction}
 0
-$%which_executable rwsh.argfunction }
-rwsh.mismatched_brace : command not found ( rwsh.mismatched_brace %which_executable rwsh.argfunction } )
+$%nop rwsh.argfunction rwsh.mismatched_brace } 
+rwsh.mismatched_brace : command not found ( rwsh.mismatched_brace %nop rwsh.argfunction rwsh.mismatched_brace } )
 
 -1
-$# rwsh.multiple_argfunctions
-
--1
-$%which_executable rwsh.argfunction {} {}
+$%which_executable rwsh.argfunction {rwsh.multiple_argfunctions} {}
 rwsh.multiple_argfunctions : command not found ( rwsh.multiple_argfunctions )
 
 -1
-$%which_executable rwsh.argfunction {rwsh.argfunction {}}
+$%which_executable rwsh.argfunction {rwsh.argfunction with text args}
+rwsh.arguments_for_argfunction : command not found ( rwsh.arguments_for_argfunction rwsh.argfunction )
+
+-1
+$%which_executable rwsh.argfunction {rwsh.argfunction {with a function arg}}
 rwsh.arguments_for_argfunction : command not found ( rwsh.arguments_for_argfunction rwsh.argfunction )
 
 -1
 $%which_executable rwsh.argfunction {{{{{{{{{{{}}}}}}}}}}}
-{\  {\  {\  {\  {\  {\  {\  {\  {\  {\  {\ }}}}}}}}}}}
+{{{{{{{{{{{}}}}}}}}}}}
 0
 $
 
@@ -104,7 +101,7 @@ $f m {rwsh.argfunction}
 $w e
 %function e {%echo $*; %newline}
 0
-$w \ {}
+$w () {}
 %function  {%nop}
 0
 $e text that doesn't have a prompt appended
@@ -260,19 +257,19 @@ $e @/usr/lib*
 /usr/lib /usr/libexec
 
 0
-$e @/usr/s*e
-/usr/share /usr/standalone
+$e @/usr/i*u
+/usr/i686-pc-linux-gnu /usr/i486-pc-linux-gnu
 
 0
-$e @/usr/*d*
-/usr/include /usr/standalone
+$e @/usr/*r*
+/usr/src /usr/share /usr/portage
 
 0
-$%set FIGNORE include
+$%set FIGNORE portage
 
 0
-$e @/usr/*d*
-/usr/standalone
+$e @/usr/*r*
+/usr/src /usr/share
 
 0
 $e @/usr/*l*i*b*x*e*
@@ -326,6 +323,22 @@ $e some ((((((((((repeated))))) parentheses))))) $#
 some (((((((((repeated))))) parentheses)))) 4
 
 0
+$e a (multi-line parenthesis
+  enclosed string) $#
+a multi-line parenthesis
+  enclosed string 4
+
+0
+$e a )mismatched parenthesis
+rwsh.mismatched_parenthesis : command not found ( rwsh.mismatched_parenthesis e a ) )
+
+-1
+$e a (multi-line parenthesis
+  mismatch))
+rwsh.mismatched_parenthesis : command not found ( rwsh.mismatched_parenthesis e a (multi-line parenthesis
+  mismatch)) )
+
+-1
 $%unset A
 
 0
@@ -605,6 +618,9 @@ $%which_executable a
 1
 $%global A \
 
+0
+$%echo () A () A () $#
+ A  A  7
 0
 $%function a {e 9 $A $1 @//usr}
 
@@ -899,7 +915,7 @@ $%internal_vars 1
 -1
 ERRNO set to ARGS
 $%internal_errors
-rwsh.arguments_for_argfunction rwsh.bad_argfunction_style rwsh.binary_not_found rwsh.double_redirection rwsh.excessive_nesting rwsh.executable_not_found rwsh.failed_substitution rwsh.mismatched_brace rwsh.multiple_argfunctions rwsh.not_soon_enough rwsh.init rwsh.selection_not_found rwsh.sighup rwsh.sigint rwsh.sigquit rwsh.sigpipe rwsh.sigterm rwsh.sigtstp rwsh.siginfo rwsh.sigusr1 rwsh.sigusr2 rwsh.undefined_variable rwsh.unreadable_dir
+rwsh.arguments_for_argfunction rwsh.bad_argfunction_style rwsh.binary_not_found rwsh.double_redirection rwsh.excessive_nesting rwsh.executable_not_found rwsh.failed_substitution rwsh.mismatched_brace rwsh.multiple_argfunctions rwsh.not_soon_enough rwsh.init rwsh.selection_not_found rwsh.sighup rwsh.sigint rwsh.sigquit rwsh.sigpipe rwsh.sigterm rwsh.sigtstp rwsh.sigusr1 rwsh.sigusr2 rwsh.undefined_variable rwsh.unreadable_dir
 0
 $%internal_features
 rwsh.after_command rwsh.before_command rwsh.prompt rwsh.raw_command rwsh.run_logic rwsh.shutdown rwsh.vars
@@ -1321,8 +1337,20 @@ $%which_executable j
 $%which_executable #
 %function # {%nop}
 0
-$%which_executable rwsh.mapped_argfunction {%nop 1 \ \$ \@ $A $$A $0 $$$1 $# $* $*2 $A$ $$*$$ $$$*12$ &&A &&0 &&* &&*3 &&$A$ &&*$$ &&*6$$$ @a @$a @$1 @$* @$*2 >dummy_file}
-{%nop 1 \  \$ \@ $A $$A $0 $$$1 $# $* $*2 $A$ $$*$$ $$$*12$ &A &0 &* &*3 &$A$ &*$$ &*6$$$ @a @$a @$1 @$*1 @$*2 >dummy_file}
+$w rwsh.mapped_argfunction {%nop 1 () \ \\ \$ \@}
+{%nop 1 () \ \\ \$ \@}
+0
+$w rwsh.mapped_argfunction {$A $$A $0 $$$1 $# $* $*2 $A$ $$*$$ $$$*12$}
+{$A $$A $0 $$$1 $# $* $*2 $A$ $$*$$ $$$*12$}
+0
+$w rwsh.mapped_argfunction {&&A &&0 &&* &&*3 &&$A$ &&*$$ &&*6$$$}
+{&A &0 &* &*3 &$A$ &*$$ &*6$$$}
+0
+$w rwsh.mapped_argfunction {@a @$a @$1 @$* @$*2}
+{@a @$a @$1 @$*1 @$*2}
+0
+$w rwsh.mapped_argfunction {>dummy_file}
+{>dummy_file}
 0
 $%which_executable rwsh.mapped_argfunction
 
@@ -1338,7 +1366,7 @@ $%which_execution_count j
 
 1
 $%which_execution_count #
-38
+36
 0
 $%which_last_execution_time
 
@@ -1410,7 +1438,7 @@ $%which_path flse /bin:/usr/bin
 
 1
 $%which_path false /bin:/usr/bin
-/usr/bin/false
+/bin/false
 0
 $
 
@@ -1652,7 +1680,7 @@ $# following tests will fail.
 
 0
 $w rwsh.after_command
-%function rwsh.after_command {\ ; %set last_command_return $?; %newline; %echo $last_command_return; %newline; %if_errno {\ ; %echo ERRNO set to $ERRNO; %newline; %unset ERRNO}}
+%function rwsh.after_command {; %set last_command_return $?; %newline; %echo $last_command_return; %newline; %if_errno {; %echo ERRNO set to $ERRNO; %newline; %unset ERRNO}}
 0
 $w rwsh.prompt
 %function rwsh.prompt {%echo \$}
@@ -1786,7 +1814,7 @@ $f g {w rwsh.argfunction {rwsh.unescaped_argfunction}
 
 0
 $g {}
-{w rwsh.argfunction {\ }; w rwsh.argfunction {rwsh.argfunction}; w rwsh.argfunction {rwsh.escaped_argfunction}}{\ }{rwsh.argfunction}
+{w rwsh.argfunction {}; w rwsh.argfunction {rwsh.argfunction}; w rwsh.argfunction {rwsh.escaped_argfunction}}{}{rwsh.argfunction}
 0
 $
 
@@ -1866,7 +1894,7 @@ $/usr/bin/printenv
 ?=0
 A=4
 CWD=/bin
-FIGNORE=include
+FIGNORE=portage
 MAX_NESTING=5
 N=4
 last_command_return=0
@@ -1888,22 +1916,22 @@ $e $TERM
 modified
 
 0
-$e $TERM_PROGRAM
-Apple_Terminal
+$e $EDITOR
+/usr/bin/vim
 
 0
-$%unset TERM_PROGRAM
+$%unset EDITOR
 
 0
 $%importenv_overwrite
 
 0
 $e $TERM
-xterm-color
+xterm
 
 0
-$e $TERM_PROGRAM
-Apple_Terminal
+$e $EDITOR
+/usr/bin/vim
 
 0
 $

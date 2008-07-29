@@ -1,5 +1,6 @@
 // Copyright (C) 2007 Samuel Newbold
 
+#include <errno.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <iostream>

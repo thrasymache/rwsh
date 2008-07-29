@@ -16,12 +16,6 @@
 #include "variable_map.h"
 
 char** env;
-Variable_map_t root_variable_map(true);
-Variable_map_t* vars = &root_variable_map;
-const std::string empty_str;
-int Variable_map_t::dollar_question = -1;
-int& dollar_question = Variable_map_t::dollar_question;
-bool Variable_map_t::exit_requested = false;
 
 Variable_map_t::Variable_map_t(bool root) : max_nesting_v(0) {
   if(root) {
@@ -85,6 +79,8 @@ char** copy_to_char_star_star(In first, In last, char** res) {
     strcpy(*res + first->first.length() + 1, first->second.c_str());}
   *res = 0;
   return res;}
+
+extern Variable_map_t* vars;
 
 // return the variable map in a way that can be passed to child processes
 char** Variable_map_t::export_env(void) const {

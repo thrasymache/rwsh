@@ -3,6 +3,7 @@
 //
 // Copyright (C) 2006, 2007 Samuel Newbold
 
+#include <assert.h>
 #include <dirent.h>
 #include <fcntl.h>
 #include <list>
@@ -16,17 +17,18 @@
 #include "rwsh_stream.h"
 
 #include "argv.h"
-#include "argv_star_var.cc"
 #include "arg_script.h"
 #include "executable.h"
 #include "executable_map.h"
 #include "function.h"
 #include "read_dir.cc"
 #include "selection.h"
-#include "selection_read.cc"
 #include "substitution_stream.h"
 #include "tokenize.cc"
 #include "variable_map.h"
+
+#include "argv_star_var.cc"
+#include "selection_read.cc"
 
 Arg_spec_t::Arg_spec_t(const std::string& script, unsigned max_soon) : 
       soon_level(0), ref_level(0), expand_count(0), substitution(0) {
@@ -135,10 +137,10 @@ std::string Arg_spec_t::str(void) const {
   for (unsigned i=0; i < expand_count; ++i) tail += '$';
   switch(type) {
     case FIXED: 
-      if (!text.length()) return "\\ ";
-      else if(text[0] == '$' || text[0] == '@' || text[0] == '\\')
-        return "\\" + text;
-      else return text;
+      if (!text.length()) return "()";
+      switch(text[0]) {
+        case '$': case '@': case '\\': case ' ': return "\\" + text;
+        default: return text;}
     case SOON: return "&" + base + text + tail;
     case REFERENCE: return "$" + base + text + tail;
     case STAR_REF: 

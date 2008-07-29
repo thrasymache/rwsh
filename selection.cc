@@ -19,7 +19,6 @@
 #include "argv.h"
 #include "selection.h"
 #include "tokenize.cc"
-#include "util.h"
 
 Entry_pattern_t::Entry_pattern_t(const std::string& src) {
   std::string::size_type j = src.find_first_of('*');

@@ -11,7 +11,7 @@ class Arg_script_t {
                const Rwsh_ostream_p& error);
   void add_literal(const std::string& src, std::string::size_type& token_start,
                    unsigned max_soon);
-  void add_token(const std::string& src, unsigned max_soon);
+  void add_token(const std::string& src, std::string::size_type token_start, std::string::size_type token_length, unsigned max_soon);
   void add_function(const std::string& style, const std::string& f_str,
                     unsigned max_soon);
   std::string::size_type find_close_brace(const std::string& focus,

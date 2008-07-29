@@ -1,7 +1,6 @@
 %set MAX_NESTING 5
 %function rwsh.raw_command {%echo $1; %newline}
 %function # {%nop}
-%function \ {%nop}
 %global last_command_return -10
 %global A \
 %global N \

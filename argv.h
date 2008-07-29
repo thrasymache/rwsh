@@ -14,10 +14,7 @@ class Argv_t : private std::vector<std::string> {
   Argv_t(String_it first_string, String_it last_string,
          Function_t* argfunction_i, 
          Rwsh_istream_p input_i, Rwsh_ostream_p output_i,
-         Rwsh_ostream_p error_i) :
-    Base(first_string, last_string),
-    argfunction_v(argfunction_i->copy_pointer()), 
-    input(input_i), output(output_i), error(error_i) {};
+         Rwsh_ostream_p error_i);
   Argv_t(const Argv_t& src);
   ~Argv_t(void);
   Argv_t& operator=(const Argv_t& src);
@@ -49,7 +46,6 @@ class Argv_t : private std::vector<std::string> {
   typedef Base::const_iterator const_iterator;
   typedef Base::reverse_iterator reverse_iterator;
   typedef Base::const_reverse_iterator const_reverse_iterator;
-  typedef Base::reference reference;
   typedef Base::pointer pointer;
   typedef Base::const_pointer const_pointer;
   typedef Base::reference reference;
@@ -88,8 +84,13 @@ struct File_open_failure_t : public Argv_t {
 struct Failed_substitution_t : public Argv_t {
   Failed_substitution_t(const std::string& function);};
 
+struct Line_continuation_t : public Argv_t {Line_continuation_t();};
+
 struct Mismatched_brace_t : public Argv_t {
   Mismatched_brace_t(const std::string& prefix);};
+
+struct Mismatched_parenthesis_t : public Argv_t {
+  Mismatched_parenthesis_t(const std::string& prefix);};
 
 struct Multiple_argfunctions_t : public Argv_t {Multiple_argfunctions_t();};
 
@@ -98,6 +99,9 @@ struct Not_soon_enough_t : public Argv_t {
 
 struct Unclosed_brace_t : public Argv_t {
   Unclosed_brace_t(const std::string& prefix);};
+
+struct Unclosed_parenthesis_t : public Argv_t {
+  Unclosed_parenthesis_t(const std::string& prefix);};
 
 struct Undefined_variable_t : public Argv_t {
   Undefined_variable_t(const std::string& variable);};

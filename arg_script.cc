@@ -21,7 +21,6 @@
 #include "executable.h"
 #include "file_stream.h"
 #include "function.h"
-#include "util.h"
 #include "variable_map.h"
 
 Arg_script_t::Arg_script_t(const Rwsh_istream_p& input_i,
@@ -34,9 +33,14 @@ Arg_script_t::Arg_script_t(const std::string& src, unsigned max_soon) :
   input(default_input), output(default_output), error(default_error) {
   std::string::size_type token_start = src.find_first_not_of(" "); 
   while (token_start != std::string::npos) {
-    std::string::size_type token_end = src.find_first_of("{} ", token_start);
+    std::string::size_type token_end = src.find_first_of("{} \\", token_start);
+    for (; token_end != std::string::npos;
+         token_end = src.find_first_of("{} \\", token_end+2))
+      if (src[token_end] != '\\') break;
+      else if (token_end+1 == src.length()) {token_end = std::string::npos; break; throw Line_continuation_t();}
+      else;
     if (token_end == std::string::npos) {
-      add_token(src.substr(token_start, std::string::npos), max_soon);
+      add_token(src, token_start, std::string::npos, max_soon);
       break;}
     else switch (src[token_end]) {
       case ' ':
@@ -44,7 +48,7 @@ Arg_script_t::Arg_script_t(const std::string& src, unsigned max_soon) :
           add_literal(src, token_start, max_soon);
           token_start = src.find_first_not_of(" ", token_start+1);}
         else {
-          add_token(src.substr(token_start, token_end-token_start), max_soon);
+          add_token(src, token_start, token_end, max_soon);
           token_start = src.find_first_not_of(" ", token_end);}
         break;
       case '{': {
@@ -79,25 +83,35 @@ void Arg_script_t::add_literal(const std::string& src,
        token_end = src.find_first_of("()", token_end+1))
     if (src[token_end] == '(') ++nesting;
     else --nesting;
-// handle mismatched
-  args.push_back(Arg_spec_t(src.substr(token_start+1, token_end-token_start-1),
-                 max_soon));
+  if (token_end == std::string::npos)
+    throw Unclosed_parenthesis_t(src.substr(0, token_start+1));
+  else {
+    std::string literal = src.substr(token_start+1, token_end-token_start-1);
+    args.push_back(Arg_spec_t(literal, max_soon));}
   token_start = token_end;}
 
-void Arg_script_t::add_token(const std::string& src, unsigned max_soon) {
-  if (src[0] == '<')
+void Arg_script_t::add_token(const std::string& src,
+                             std::string::size_type token_start,
+                             std::string::size_type token_end,
+ unsigned max_soon) {
+  if (src[token_start] == '<')
     if (!input.is_default())
-      throw Double_redirection_t(input.str(), src);
+      throw Double_redirection_t(input.str(), src.substr(token_start, token_end-token_start));
     else {
-      std::string name(src.substr(1, std::string::npos));
+      std::string name(src.substr(token_start+1, token_end-token_start-1));
       input = Rwsh_istream_p(new File_istream_t(name), false, false);}
-  else if (src[0] == '>')
+  else if (src[token_start] == '>')
     if (!output.is_default())
-      throw Double_redirection_t(output.str(), src);
+      throw Double_redirection_t(output.str(), src.substr(token_start, token_end-token_start));
     else {
-      std::string name(src.substr(1, std::string::npos));
+      std::string name(src.substr(token_start+1, token_end-token_start-1));
       output = Rwsh_ostream_p(new File_ostream_t(name), false, false);}
-  else args.push_back(Arg_spec_t(src, max_soon));}
+  else if (src[token_start] == '(') {
+    add_literal(src, token_start, max_soon);
+    token_start = src.find_first_not_of(" ", token_start+1);}
+  else if (src[token_start] == ')')
+    throw Mismatched_parenthesis_t(src.substr(0, token_start+1));
+  else args.push_back(Arg_spec_t(src.substr(token_start, token_end-token_start), max_soon));}
 
 void Arg_script_t::add_function(const std::string& style, 
                                 const std::string& f_str, unsigned max_soon) {
@@ -151,14 +165,14 @@ Argv_t Arg_script_t::argv(void) const {
 // create a string from Arg_script. inverse of string constructor.
 std::string Arg_script_t::str(void) const {
   if (!argfunction_level) {
-    std::string result;
-    for(std::vector<Arg_spec_t>::const_iterator i=args.begin();
-      i != args.end()-1; ++i) result += i->str() + ' ';
-    result += args.back().str();
-    if (!input.is_default()) result += " " + input.str();
-    if (!output.is_default()) result += " " + output.str();
-    if (!error.is_default()) result += " " + error.str();
-    if (argfunction) result += " " + argfunction->str();
+    std::string result = args[0].str();
+    if (args.size() == 1 && result == "()") result.clear();
+    for(std::vector<Arg_spec_t>::const_iterator i=args.begin()+1;
+        i != args.end(); ++i) result += ' ' + i->str();
+    if (!input.is_default()) result += (result.size()?" ":"") + input.str();
+    if (!output.is_default()) result += (result.size()?" ":"") + output.str();
+    if (!error.is_default()) result += (result.size()?" ":"") + error.str();
+    if (argfunction) result += (result.size()?" ":"") + argfunction->str();
     return result;}
   else if (argfunction_level == 1) return "rwsh.argfunction";
   else if (argfunction_level == 2) return "rwsh.escaped_argfunction";

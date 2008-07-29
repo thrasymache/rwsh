@@ -7,6 +7,7 @@
 #include <iterator>
 #include <map>
 #include <string>
+#include <sys/time.h>
 #include <vector>
 
 #include "arg_spec.h"

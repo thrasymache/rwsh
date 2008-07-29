@@ -16,9 +16,6 @@
 #include "function.h"
 #include "variable_map.h"
 
-extern Variable_map_t* vars;
-Variable_map_t* Argv_t::var_map = vars;
-
 Argv_t::Argv_t(void) : argfunction_v(0), 
   input(default_input), output(default_output), error(default_error) {}
 
@@ -137,9 +134,17 @@ File_open_failure_t::File_open_failure_t(const std::string& file_name) {
   push_back("rwsh.file_open_failure");
   push_back(file_name);}
 
+Line_continuation_t::Line_continuation_t() : Argv_t() {
+  push_back("rwsh.line_continuation");}
+
 Mismatched_brace_t::Mismatched_brace_t(const std::string& prefix) : 
       Argv_t() {
   push_back("rwsh.mismatched_brace");
+  push_back(prefix);}
+
+Mismatched_parenthesis_t::Mismatched_parenthesis_t(const std::string& prefix) :
+      Argv_t() {
+  push_back("rwsh.mismatched_parenthesis");
   push_back(prefix);}
 
 Multiple_argfunctions_t::Multiple_argfunctions_t() : Argv_t() {
@@ -151,6 +156,11 @@ Not_soon_enough_t::Not_soon_enough_t(const std::string& argument) :
   push_back(argument);}
 
 Unclosed_brace_t::Unclosed_brace_t(const std::string& prefix) : 
+      Argv_t() {
+  push_back("rwsh.subprompt");
+  push_back(prefix);}
+
+Unclosed_parenthesis_t::Unclosed_parenthesis_t(const std::string& prefix) :
       Argv_t() {
   push_back("rwsh.subprompt");
   push_back(prefix);}

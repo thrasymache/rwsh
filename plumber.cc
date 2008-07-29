@@ -1,8 +1,10 @@
 //Copyright (C) 2008 Samuel Newbold
 
 #include <algorithm>
+#include <errno.h>
 #include <functional>
 #include <iostream>
+#include <sys/time.h>
 #include <sys/wait.h>
 #include <string>
 #include <vector>

@@ -6,16 +6,15 @@
 %nop 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
 %echo 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
 %newline
-%echo  \    1                2       
+%echo  ()    1                2       
 %newline
 %which_executable rwsh.mapped_argfunction {%nop}
-# rwsh.mismatched_brace
 %which_executable rwsh.argfunction {
-%which_executable rwsh.argfunction }
-%which_executable rwsh.argfunction }
-# rwsh.multiple_argfunctions
-%which_executable rwsh.argfunction {} {}
-%which_executable rwsh.argfunction {rwsh.argfunction {}}
+  multiple line argfunction }
+%nop rwsh.argfunction rwsh.mismatched_brace } 
+%which_executable rwsh.argfunction {rwsh.multiple_argfunctions} {}
+%which_executable rwsh.argfunction {rwsh.argfunction with text args}
+%which_executable rwsh.argfunction {rwsh.argfunction {with a function arg}}
 %which_executable rwsh.argfunction {{{{{{{{{{{}}}}}}}}}}}
 
 # ability of functions to immitate built-ins
@@ -24,7 +23,7 @@ f w {%which_executable $1 {rwsh.argfunction}}
 f e {%echo $*; %newline}
 f m {rwsh.argfunction}
 w e
-w \ {}
+w () {}
 e text that doesn't have a prompt appended
 m {e again}
 
@@ -67,10 +66,10 @@ e @/*is*
 e @/bin
 e @/usr/*bin
 e @/usr/lib*
-e @/usr/s*e
-e @/usr/*d*
-%set FIGNORE include
-e @/usr/*d*
+e @/usr/i*u
+e @/usr/*r*
+%set FIGNORE portage
+e @/usr/*r*
 e @/usr/*l*i*b*x*e*
 %return &{%return 0}
 %return &{e 0}
@@ -84,6 +83,11 @@ e a ( spaced string created by parentheses $# ) $#
 e some \( escaped $# \) \(parentheses\) $#
 e some (nested (parentheses) $#) $#
 e some ((((((((((repeated))))) parentheses))))) $#
+e a (multi-line parenthesis
+  enclosed string) $#
+e a )mismatched parenthesis
+e a (multi-line parenthesis
+  mismatch))
 %unset A
 
 # file redirection (but don't overwrite files that exist)
@@ -167,6 +171,7 @@ a 1 2 3
 %function a
 %which_executable a
 %global A \
+%echo () A () A () $#
 %function a {e 9 $A $1 @//usr}
 %which_executable a
 a \
@@ -371,7 +376,11 @@ wrapper 1 2
 %which_executable
 %which_executable j
 %which_executable #
-%which_executable rwsh.mapped_argfunction {%nop 1 \ \$ \@ $A $$A $0 $$$1 $# $* $*2 $A$ $$*$$ $$$*12$ &&A &&0 &&* &&*3 &&$A$ &&*$$ &&*6$$$ @a @$a @$1 @$* @$*2 >dummy_file}
+w rwsh.mapped_argfunction {%nop 1 () \ \\ \$ \@}
+w rwsh.mapped_argfunction {$A $$A $0 $$$1 $# $* $*2 $A$ $$*$$ $$$*12$}
+w rwsh.mapped_argfunction {&&A &&0 &&* &&*3 &&$A$ &&*$$ &&*6$$$}
+w rwsh.mapped_argfunction {@a @$a @$1 @$* @$*2}
+w rwsh.mapped_argfunction {>dummy_file}
 %which_executable rwsh.mapped_argfunction
 %which_executable rwsh.mapped_argfunction {rwsh.argfunction}
 %which_execution_count
@@ -540,11 +549,11 @@ rwsh.vars
 %global TERM modified
 %importenv_preserve
 e $TERM
-e $TERM_PROGRAM
-%unset TERM_PROGRAM
+e $EDITOR
+%unset EDITOR
 %importenv_overwrite
 e $TERM
-e $TERM_PROGRAM
+e $EDITOR
 
 # exiting rwsh.shutdown
 %exit now

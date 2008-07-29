@@ -8,6 +8,7 @@
 #include <map>
 #include <string>
 #include <sstream>
+#include <sys/time.h>
 #include <vector>
 
 #include "arg_spec.h"
@@ -40,6 +41,8 @@ Command_stream_t& Command_stream_t::operator>> (Arg_script_t& dest) {
     try {
       dest = Arg_script_t(cmd, 0);
       cmd_is_incomplete = false;}
+    catch (Unclosed_parenthesis_t exception) {
+      cmd += '\n';}
     catch (Unclosed_brace_t exception) {
       cmd += '\n';}
     catch (...) {

@@ -6,6 +6,7 @@
 #include <map>
 #include <signal.h>
 #include <string>
+#include <sys/time.h>
 #include <vector>
 
 #include "arg_spec.h"
@@ -24,14 +25,32 @@
 #include "selection.h"
 #include "variable_map.h"
 
+#include "argv_star_var.cc"
+
+// static initializers of basic types
 struct timezone Clock::no_timezone_v = {0, 0};
+int Executable_t::global_nesting(0);
+int Executable_t::caught_signal(0);
+bool Executable_t::in_signal_handler(false);
+
+// static initializers without dependancies
 Clock rwsh_clock;
+Executable_map_t executable_map;
+Plumber plumber;
 Rwsh_istream_p default_input(new Default_istream_t(0), true, true);
 Rwsh_ostream_p default_output(new Default_ostream_t(1), true, true),
   default_error(new Default_ostream_t(2), true, true);
-Executable_map_t executable_map;
-Plumber plumber;
+Variable_map_t root_variable_map(true);
+Variable_map_t* vars = &root_variable_map;
+int Variable_map_t::dollar_question = -1;
+int& dollar_question = Variable_map_t::dollar_question;
+bool Variable_map_t::exit_requested = false;
 
+// static initializers with cross-component dependancies
+Argv_t Executable_t::call_stack;
+Variable_map_t* Argv_t::var_map = vars;
+
+const std::string empty_str;
 namespace {
 std::string init_str =
   "%set MAX_NESTING 4;"
@@ -67,7 +86,7 @@ void internal_init(void) {
               "rwsh.multiple_argfunctions rwsh.not_soon_enough rwsh.init "
               "rwsh.selection_not_found rwsh.sighup rwsh.sigint "
               "rwsh.sigquit rwsh.sigpipe rwsh.sigterm "
-              "rwsh.sigtstp rwsh.siginfo rwsh.sigusr1 rwsh.sigusr2 "
+              "rwsh.sigtstp rwsh.sigusr1 rwsh.sigusr2 "
               "rwsh.undefined_variable rwsh.unreadable_dir}; "
           "%else {%append_to_errno ARGS; %return -1}}", 0));
   executable_map.set(new Function_t("%internal_features", 
@@ -128,7 +147,6 @@ void register_signals(void) {
   signal(SIGPIPE, signal_starter);
   signal(SIGTERM, signal_starter);
   signal(SIGTSTP, signal_starter);
-  signal(SIGINFO, signal_starter);
   signal(SIGUSR1, signal_starter);
   signal(SIGUSR2, signal_starter);} } // end unnamed namespace
 

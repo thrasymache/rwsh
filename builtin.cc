@@ -31,8 +31,9 @@ extern char** environ;
 #include "read_dir.cc"
 #include "selection.h"
 #include "tokenize.cc"
-#include "util.h"
 #include "variable_map.h"
+
+#include "argv_star_var.cc"
 
 // add the given string to the end of ERRNO, creating it if necessary
 int append_to_errno_bi(const Argv_t& argv) {

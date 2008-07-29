@@ -2,13 +2,13 @@
 
 # set up environment
 %global BUILT_EXECUTABLE /bin/rwsh
-%global ERRINFO \
-%global OLD_ERRNO \
-%global REGEX \
+%global ERRINFO ()
+%global OLD_ERRNO ()
+%global REGEX ()
 %global SELECT $HOME
-%selection_set SELECT \
-%global TEMP1 \
-%global TEMP2 \
+%selection_set SELECT /
+%global TEMP1 ()
+%global TEMP2 ()
 %set FIGNORE .*
 
 # selection commands
@@ -22,18 +22,23 @@
 %function gdb {
   if_only %test_equal $# 2 {%set BUILT_EXECUTABLE &&*}
   /usr/bin/gdb $BUILT_EXECUTABLE}
+%function gdb-bash {
+  if_only %test_equal $# 2 {%set BUILT_EXECUTABLE &&*}
+  %set SHELL /bin/bash
+  /usr/bin/gdb $BUILT_EXECUTABLE
+  %set SHELL /bin/rwsh}
 %function grep {
   %set REGEX $1
   %selection_set SELECT $2
-  /usr/bin/grep $REGEX @$SELECT}
+  &{whichp grep} $REGEX @$SELECT}
 %function grepc {
   %set REGEX $1
   %selection_set SELECT $2
-  /usr/bin/grep -c $REGEX @$SELECT}
+  &{whichp grep} -c $REGEX @$SELECT}
 %function grepl {
   %set REGEX $1
   %selection_set SELECT $2
-  /usr/bin/grep -l $REGEX @$SELECT}
+  &{whichp grep} -l $REGEX @$SELECT}
 %function home {%set SELECT $HOME; cd}
 %function ignore {%set FIGNORE $*}
 %function ll {%selection_set SELECT $1; /bin/ls -l @$SELECT}
@@ -43,10 +48,10 @@
 %function oless {/usr/bin/less $*}
 %function regrep {
   %selection_set SELECT $1
-  /usr/bin/grep $REGEX @$SELECT}
+  &{whichp grep} $REGEX @$SELECT}
 %function regrepl {
   %selection_set SELECT $1
-  /usr/bin/grep -l $REGEX @$SELECT}
+  &{whichp grep} -l $REGEX @$SELECT}
 %function rm {%selection_set SELECT $1; /bin/rm @$SELECT}
 %function sfn {
   fn $* {%selection_set SELECT $1; &&{%which_path &&1 $PATH} @$SELECT}}
@@ -86,7 +91,7 @@
   %echo double redirection is not supported at this time: $1 and $2; %newline}
 %function rwsh.excessive_nesting {
   %newline
-  %echo function exceeded MAX_NESTING ( $MAX_NESTING ). call stack: $*
+  %echo function exceeded MAX_NESTING \( $MAX_NESTING \). call stack: $*
   %newline}
 %function rwsh.failed_substitution {
   %append_to_errno ESUBSTITUTION
@@ -143,8 +148,8 @@ fn ntimes {
     rwsh.mapped_argfunction {rwsh.argfunction}}}
 
 # final setup and individual configuration
-%global rc \
-%selection_set rc $HOME /.rwshrc
+%global rc $HOME 
+%selection_set rc /.rwshrc
 %source $rc
 %unset rc
 %echo rwsh v
