@@ -2,7 +2,7 @@
 
 objects = argv.o arg_script.o arg_spec.o builtin.o clock.o command_stream.o \
 	default_stream.o executable.o executable_map.o file_stream.o \
-	function.o plumber.o rwsh.o rwsh_stream.o selection.o \
+	function.o plumber.o rwsh.o rwsh_init.o rwsh_stream.o selection.o \
 	substitution_stream.o variable_map.o
 	
 CXXFLAGS = -g
@@ -33,8 +33,11 @@ function.o: arg_spec.h rwsh_stream.h argv.h arg_script.h clock.h executable.h \
 	executable_map.h function.h tokenize.cc variable_map.h
 plumber.o: rwsh_stream.h argv.h clock.h executable.h plumber.h
 rwsh.o: arg_spec.h rwsh_stream.h argv.h argv_star_var.cc arg_script.h \
-	builtin.h clock.o command_stream.h default_stream.h executable.h \
-	executable_map.h function.h plumber.h selection.h variable_map.h
+	clock.o command_stream.h default_stream.h executable.h \
+	executable_map.h function.h plumber.h rwsh_init.h selection.h \
+	variable_map.h
+rwsh_init.o: arg_spec.h rwsh_stream.h arg_script.h argv.h rwsh_init.h \
+	builtin.h executable.h executable_map.h function.h
 rwsh_stream.o: rwsh_stream.h
 selection.o: rwsh_stream.h argv.h selection.h tokenize.cc
 substitution_stream.o: rwsh_stream.h plumber.h substitution_stream.h
