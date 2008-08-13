@@ -60,16 +60,16 @@ m {e &&{%return 1}; e after}
 f rwsh.failed_substitution
 # bad_argfunction_style
 e x{e x}
-e @//usr
+e @//etc
 # rwsh.selection_not_found
 e @/*is*
 e @/bin
 e @/usr/*bin
-e @/usr/lib*
-e @/usr/i*u
-e @/usr/*r*
-%set FIGNORE portage
-e @/usr/*r*
+e @/etc/rwsh*
+e @/etc/rw*ic
+e @/etc/rwsh*a*
+%set FIGNORE *de*
+e @/etc/rwsh*a*
 e @/usr/*l*i*b*x*e*
 %return &{%return 0}
 %return &{e 0}
@@ -404,10 +404,10 @@ w rwsh.mapped_argfunction {>dummy_file}
 %which_return #
 
 # %which_path
-%which_path false
-%which_path false \
-%which_path flse /bin:/usr/bin
-%which_path false /bin:/usr/bin
+%which_path cat
+%which_path cat \
+%which_path does<not>exist /bin:/usr/bin
+%which_path cat /bin:/usr/bin
 
 # %while
 %function tf {%test_not_equal $A $N}
@@ -546,14 +546,14 @@ rwsh.vars
 /usr/bin/printenv
 
 # %importenv_preserve %importenv_overwrite
-%global TERM modified
+%global SHELL unmodified
 %importenv_preserve
-e $TERM
-e $EDITOR
-%unset EDITOR
+e $TESTABILITY
+e $SHELL
+%unset TESTABILITY
 %importenv_overwrite
-e $TERM
-e $EDITOR
+e $TESTABILITY
+e $SHELL
 
 # exiting rwsh.shutdown
 %exit now

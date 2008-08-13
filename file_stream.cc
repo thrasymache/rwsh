@@ -65,6 +65,18 @@ Rwsh_ostream_t& File_ostream_t::operator<<(int r) {
     std::cerr <<"failed fprintf with errno " <<errno <<std::endl;
   return *this;}
 
+Rwsh_ostream_t& File_ostream_t::operator<<(unsigned int r) {
+  if (!dest) open();
+  if (fprintf(dest, "%u", r) < 0)
+    std::cerr <<"failed fprintf with errno " <<errno <<std::endl;
+  return *this;}
+
+Rwsh_ostream_t& File_ostream_t::operator<<(double r) {
+  if (!dest) open();
+  if (fprintf(dest, "%f", r) < 0)
+    std::cerr <<"failed fprintf with errno " <<errno <<std::endl;
+  return *this;}
+
 Rwsh_ostream_t& File_ostream_t::operator<<(struct timeval r) {
   if (!dest) open();
   if (fprintf(dest, "%d.%06d", r.tv_sec, r.tv_usec) < 0)

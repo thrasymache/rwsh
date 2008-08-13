@@ -2,13 +2,16 @@
 
 objects = argv.o arg_script.o arg_spec.o builtin.o clock.o command_stream.o \
 	default_stream.o executable.o executable_map.o file_stream.o \
-	function.o plumber.o rwsh.o rwsh_init.o rwsh_stream.o selection.o \
+	function.o plumber.o rwsh.o rwsh_stream.o selection.o \
 	substitution_stream.o variable_map.o
+local_objects = rwsh_init.o 
 	
 CXXFLAGS = -g
 CC = g++
 
-rwsh: $(objects)
+rwsh: $(objects) $(local_objects)
+librwsh.a: $(objects)
+	ar -ruv librwsh.a $(objects)
 
 arg_script.o: arg_spec.h rwsh_stream.h argv.h arg_script.h executable.h \
 	file_stream.h function.h variable_map.h

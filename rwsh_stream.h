@@ -32,6 +32,8 @@ struct Rwsh_ostream_t {
   virtual Rwsh_ostream_t* copy_pointer(void) = 0;
   virtual Rwsh_ostream_t& operator<<(const std::string& r) = 0;
   virtual Rwsh_ostream_t& operator<<(int r) = 0;
+  virtual Rwsh_ostream_t& operator<<(unsigned int r) = 0;
+  virtual Rwsh_ostream_t& operator<<(double r) = 0;
   virtual Rwsh_ostream_t& operator<<(struct timeval r) = 0;
   virtual bool fail(void) = 0;
   virtual int fd(void) = 0;
@@ -54,6 +56,12 @@ class Rwsh_ostream_p {
     *implementation <<r;
     return *this;};
   Rwsh_ostream_p& operator<<(int r) {
+    *implementation <<r;
+    return *this;};
+  Rwsh_ostream_p& operator<<(unsigned int r) {
+    *implementation <<r;
+    return *this;};
+  Rwsh_ostream_p& operator<<(double r) {
     *implementation <<r;
     return *this;};
   Rwsh_ostream_p& operator<<(struct timeval r) {

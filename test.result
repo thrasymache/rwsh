@@ -15,7 +15,7 @@
     %newline
     %unset ERRNO}}
 %function rwsh.prompt {%echo \$}
-%function rwsh.shutdown {e rwsh is now terminating}
+%function rwsh.shutdown {%newline; %echo now terminating normally; %newline}
 %function rwsh.vars {%internal_vars}
 %else_if %test_equal $2 -c {
   rwsh.mapped_argfunction &3 {%source /etc/rwshrc-basic; $1$; %exit}}
@@ -219,7 +219,7 @@ $f rwsh.failed_substitution {e &&{%return 1}}
 
 0
 $m {e &&{%return 1}; e after}
-rwsh.excessive_nesting : command not found ( rwsh.excessive_nesting rwsh.failed_substitution rwsh.failed_substitution rwsh.failed_substitution rwsh.failed_substitution rwsh.failed_substitution rwsh.mapped_argfunction m )
+rwsh.excessive_nesting : command not found ( rwsh.excessive_nesting rwsh.failed_substitution rwsh.failed_substitution rwsh.failed_substitution rwsh.failed_substitution rwsh.failed_substitution rwsh.failed_substitution rwsh.failed_substitution rwsh.mapped_argfunction m )
 
 -1
 $f rwsh.failed_substitution
@@ -232,8 +232,8 @@ $e x{e x}
 rwsh.bad_argfunction_style : command not found ( rwsh.bad_argfunction_style x{e x} )
 
 -1
-$e @//usr
-/usr
+$e @//etc
+/etc
 
 0
 $# rwsh.selection_not_found
@@ -253,23 +253,23 @@ $e @/usr/*bin
 /usr/bin /usr/sbin
 
 0
-$e @/usr/lib*
-/usr/lib /usr/libexec
+$e @/etc/rwsh*
+/etc/rwshrc /etc/rwshrc-basic /etc/rwshrc-default
 
 0
-$e @/usr/i*u
-/usr/i686-pc-linux-gnu /usr/i486-pc-linux-gnu
+$e @/etc/rw*ic
+/etc/rwshrc-basic
 
 0
-$e @/usr/*r*
-/usr/src /usr/share /usr/portage
+$e @/etc/rwsh*a*
+/etc/rwshrc-basic /etc/rwshrc-default
 
 0
-$%set FIGNORE portage
+$%set FIGNORE *de*
 
 0
-$e @/usr/*r*
-/usr/src /usr/share
+$e @/etc/rwsh*a*
+/etc/rwshrc-basic
 
 0
 $e @/usr/*l*i*b*x*e*
@@ -1427,18 +1427,18 @@ $
 $# %which_path
 
 0
-$%which_path false
+$%which_path cat
 
 -1
 ERRNO set to ARGS
-$%which_path false \
+$%which_path cat \
 
 1
-$%which_path flse /bin:/usr/bin
+$%which_path does<not>exist /bin:/usr/bin
 
 1
-$%which_path false /bin:/usr/bin
-/bin/false
+$%which_path cat /bin:/usr/bin
+/bin/cat
 0
 $
 
@@ -1894,7 +1894,7 @@ $/usr/bin/printenv
 ?=0
 A=4
 CWD=/bin
-FIGNORE=portage
+FIGNORE=*de*
 MAX_NESTING=5
 N=4
 last_command_return=0
@@ -1906,32 +1906,32 @@ $
 $# %importenv_preserve %importenv_overwrite
 
 0
-$%global TERM modified
+$%global SHELL unmodified
 
 0
 $%importenv_preserve
 
 0
-$e $TERM
-modified
+$e $TESTABILITY
+an external variable
 
 0
-$e $EDITOR
-/usr/bin/vim
+$e $SHELL
+unmodified
 
 0
-$%unset EDITOR
+$%unset TESTABILITY
 
 0
 $%importenv_overwrite
 
 0
-$e $TERM
-xterm
+$e $TESTABILITY
+an external variable
 
 0
-$e $EDITOR
-/usr/bin/vim
+$e $SHELL
+/bin/rwsh
 
 0
 $
@@ -1947,4 +1947,5 @@ ERRNO set to ARGS
 $%exit
 
 0
-rwsh is now terminating
+
+now terminating normally

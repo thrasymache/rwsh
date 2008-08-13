@@ -40,6 +40,7 @@
   %selection_set SELECT $2
   &{whichp grep} -l $REGEX @$SELECT}
 %function home {%set SELECT $HOME; cd}
+%function head {%selection_set SELECT $1; &{whichp head} @$SELECT}
 %function ignore {%set FIGNORE $*}
 %function ll {%selection_set SELECT $1; /bin/ls -l @$SELECT}
 %function mv {/bin/mv @$SELECT $1}
@@ -136,6 +137,7 @@
 %function ! {if $* {%return 1}; else {%return 0}}
 %function and {%if %return 1; %stepwise $* {%else_if_not $*}; %else}
 %function or {%if %return 1; %stepwise $* {%else_if $*}; %else}
+%global TESTABILITY (an external variable)
 %function st {/bin/rwsh /usr/share/rwsh/test_init.sh </usr/share/rwsh/test_main.sh >test.tmp
   /usr/bin/diff -c /usr/share/rwsh/test.result test.tmp
   /bin/rm test.tmp}

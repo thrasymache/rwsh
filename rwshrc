@@ -1,4 +1,4 @@
-%set MAX_NESTING 10
+%set MAX_NESTING 12
 %function () {%nop}
 rwsh.mapped_argfunction >/tmp/lcl {%echo &*0; %newline}
 %if %test_equal $# 2 {%source /etc/rwshrc-default}

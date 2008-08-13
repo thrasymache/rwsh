@@ -46,7 +46,7 @@
 %function whichp {
   %which_path $1 $PATH
   %if %test_equal $? 0
-  %else {echo &&1 not found in $PATH}}
+  %else {echo &&1 not found in $PATH; return 1}}
 %function while {%while $* {rwsh.argfunction}}
 %function var_exists {%var_exists $1}
 

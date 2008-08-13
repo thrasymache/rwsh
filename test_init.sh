@@ -1,4 +1,4 @@
-%set MAX_NESTING 5
+%set MAX_NESTING 7
 %function rwsh.raw_command {%echo $1; %newline}
 %function # {%nop}
 %global last_command_return -10
@@ -17,5 +17,5 @@
     %newline
     %unset ERRNO}}
 %function rwsh.prompt {%echo \$}
-%function rwsh.shutdown {e rwsh is now terminating}
+%function rwsh.shutdown {%newline; %echo now terminating normally; %newline}
 %function rwsh.vars {%internal_vars}

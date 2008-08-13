@@ -25,6 +25,14 @@ Rwsh_ostream_t& Substitution_stream_t::operator<<(int r) {
   buffer <<r; 
   return *this;}
 
+Rwsh_ostream_t& Substitution_stream_t::operator<<(unsigned int r) {
+  buffer <<r; 
+  return *this;}
+
+Rwsh_ostream_t& Substitution_stream_t::operator<<(double r) {
+  buffer <<r; 
+  return *this;}
+
 Rwsh_ostream_t& Substitution_stream_t::operator<<(struct timeval r) {
   buffer <<r.tv_sec <<"." <<std::setw(6) <<std::setfill('0') <<r.tv_usec;
   return *this;}

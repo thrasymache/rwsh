@@ -43,6 +43,14 @@ Rwsh_ostream_t& Default_ostream_t::operator<<(int r) {
   *implementation <<r; 
   return *this;}
 
+Rwsh_ostream_t& Default_ostream_t::operator<<(unsigned int r) {
+  *implementation <<r; 
+  return *this;}
+
+Rwsh_ostream_t& Default_ostream_t::operator<<(double r) {
+  *implementation <<r; 
+  return *this;}
+
 Rwsh_ostream_t& Default_ostream_t::operator<<(struct timeval r) {
   *implementation <<r.tv_sec <<"."
                   <<std::setw(6) <<std::setfill('0') <<r.tv_usec;
