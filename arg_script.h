@@ -9,11 +9,20 @@ class Arg_script_t {
 
   Arg_script_t(const Rwsh_istream_p& input, const Rwsh_ostream_p& output,
                const Rwsh_ostream_p& error);
-  void add_literal(const std::string& src, std::string::size_type& token_start,
-                   unsigned max_soon);
-  void add_token(const std::string& src, std::string::size_type token_start, std::string::size_type token_length, unsigned max_soon);
-  void add_function(const std::string& style, const std::string& f_str,
-                    unsigned max_soon);
+  std::string::size_type add_literal(const std::string& src,
+                                     std::string::size_type token_start,
+                                     unsigned max_soon);
+  std::string::size_type parse_token(const std::string& src,
+                                     std::string::size_type token_start,
+                                     unsigned max_soon);
+  std::string::size_type add_token(const std::string& src,
+                                   std::string::size_type token_start,
+                                   std::string::size_type token_end,
+                                   unsigned max_soon);
+  std::string::size_type add_function(const std::string& src,
+                                      std::string::size_type style_start,
+                                      std::string::size_type f_start,
+                                      unsigned max_soon);
   std::string::size_type find_close_brace(const std::string& focus,
                                           std::string::size_type i);
  public:
