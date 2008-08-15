@@ -9,8 +9,10 @@ class Function_t : public Executable_t {
  public:
   std::vector<Arg_script_t> script;
 
-  Function_t(const std::string& name, const std::string& src, 
+  Function_t(const std::string& name, const std::string& src,
              unsigned max_soon);
+  Function_t(const std::string& name, const std::string& src,
+             std::string::size_type& point, unsigned max_soon);
   Function_t(const std::string& name_i, const Function_t* src) :
     name_v(name_i), script(src->script) {};
   Function_t* copy_pointer(void) const {

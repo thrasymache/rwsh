@@ -23,6 +23,65 @@
 #include "function.h"
 #include "variable_map.h"
 
+namespace {
+std::string::size_type find_close_brace(const std::string& focus,
+                                        std::string::size_type i) {
+  unsigned nesting = 1;
+  while (nesting && (i = focus.find_first_of("{}", i+1)) != std::string::npos) {
+    if (focus[i] == '{') ++nesting;
+    else --nesting;}
+  return i;}
+
+std::string::size_type add_quote(const std::string& src,
+                                 std::string::size_type token_start,
+                                 unsigned max_soon,
+                                 Arg_script_t* dest) {
+  std::string::size_type token_end = src.find_first_of("()", token_start+1); 
+  for (unsigned nesting = 0;
+       token_end != std::string::npos && (nesting || src[token_end] == '(');
+       token_end = src.find_first_of("()", token_end+1))
+    if (src[token_end] == '(') ++nesting;
+    else --nesting;
+  if (token_end == std::string::npos)
+    throw Unclosed_parenthesis_t(src.substr(0, token_start+1));
+  else {
+    std::string literal = src.substr(token_start+1, token_end-token_start-1);
+    dest->add_token(literal, max_soon);}
+  return token_end;}
+
+std::string::size_type parse_token(const std::string& src,
+                                   std::string::size_type token_start,
+                                   unsigned max_soon,
+                                   Arg_script_t* dest) {
+  if (src[token_start] == '(') {
+    token_start = add_quote(src, token_start, max_soon, dest);
+    return src.find_first_not_of(" ", token_start+1);}
+  else if (src[token_start] == ')')
+    throw Mismatched_parenthesis_t(src.substr(0, token_start+1));
+  std::string::size_type split = src.find_first_of("{} \\", token_start);
+  for (; split != std::string::npos;
+       split = src.find_first_of("{} \\", split+2))
+    if (src[split] != '\\') break;
+    else if (split+1 == src.length()) {
+      split = std::string::npos;
+      //throw Line_continuation_t();
+      break;}
+    else;
+  if (split == std::string::npos) {
+    dest->add_token(src.substr(token_start), max_soon);
+    return std::string::npos;}
+  else switch (src[split]) {
+    case ' ':
+      dest->add_token(src.substr(token_start, split-token_start), max_soon);
+      return src.find_first_not_of(" ", split);
+    case '{':
+      token_start = dest->add_function(src, token_start, split, max_soon);
+      return src.find_first_not_of(" ", token_start);
+    case '}': throw Mismatched_brace_t(src.substr(0, split+1));
+    default: assert(0);}} // error in std::string::find_first_of
+
+} // close unnamed namespace
+
 Arg_script_t::Arg_script_t(const Rwsh_istream_p& input_i,
     const Rwsh_ostream_p& output_i, const Rwsh_ostream_p& error_i) :
   argfunction(0), argfunction_level(0), input(input_i), output(output_i),
@@ -33,7 +92,7 @@ Arg_script_t::Arg_script_t(const std::string& src, unsigned max_soon) :
   input(default_input), output(default_output), error(default_error) {
   std::string::size_type token_start = src.find_first_not_of(" "); 
   while (token_start != std::string::npos) {
-    token_start = parse_token(src, token_start, max_soon);}
+    token_start = parse_token(src, token_start, max_soon, this);}
   if (!args.size()) args.push_back(Arg_spec_t("", max_soon));
   if (is_argfunction_name(args.front().str()) &&  // argfunction_level handling
       args.front().str() != "rwsh.mapped_argfunction") {
@@ -46,100 +105,38 @@ Arg_script_t::Arg_script_t(const std::string& src, unsigned max_soon) :
       argfunction_level = 3;
     else assert(0);}}                            // unhandled argfunction level
 
-std::string::size_type Arg_script_t::add_literal(const std::string& src,
-                               std::string::size_type token_start,
-                               unsigned max_soon) {
-  std::string::size_type token_end = src.find_first_of("()", token_start+1); 
-  for (unsigned nesting = 0;
-       token_end != std::string::npos && (nesting || src[token_end] == '(');
-       token_end = src.find_first_of("()", token_end+1))
-    if (src[token_end] == '(') ++nesting;
-    else --nesting;
-  if (token_end == std::string::npos)
-    throw Unclosed_parenthesis_t(src.substr(0, token_start+1));
-  else {
-    std::string literal = src.substr(token_start+1, token_end-token_start-1);
-    args.push_back(Arg_spec_t(literal, max_soon));}
-  return token_end;}
-
-std::string::size_type Arg_script_t::parse_token(const std::string& src,
-                             std::string::size_type token_start,
-                             unsigned max_soon) {
-    if (src[token_start] == '(') {
-      token_start = add_literal(src, token_start, max_soon);
-      return src.find_first_not_of(" ", token_start+1);}
-    else if (src[token_start] == ')')
-      throw Mismatched_parenthesis_t(src.substr(0, token_start+1));
-    std::string::size_type token_end = src.find_first_of("{} \\", token_start);
-    for (; token_end != std::string::npos;
-         token_end = src.find_first_of("{} \\", token_end+2))
-      if (src[token_end] != '\\') break;
-      else if (token_end+1 == src.length()) {
-        token_end = std::string::npos;
-        //throw Line_continuation_t();
-        break;}
-      else;
-    if (token_end == std::string::npos) {
-      add_token(src, token_start, std::string::npos, max_soon);
-      return std::string::npos;}
-    else switch (src[token_end]) {
-      case ' ':
-        add_token(src, token_start, token_end, max_soon);
-        return src.find_first_not_of(" ", token_end);
-      case '{':
-        token_start = add_function(src, token_start, token_end, max_soon);
-        return src.find_first_not_of(" ", token_start);
-      case '}': throw Mismatched_brace_t(src.substr(0, token_end+1));
-      default: assert(0);}} // error in std::string::find_first_of
-
-std::string::size_type Arg_script_t::add_token(const std::string& src,
-                             std::string::size_type token_start,
-                             std::string::size_type token_end,
-                             unsigned max_soon) {
-  switch (src[token_start]) {
+void Arg_script_t::add_token(const std::string& src, unsigned max_soon) {
+  switch (src[0]) {
     case '<':
-      if (!input.is_default())
-        throw Double_redirection_t(input.str(), src.substr(token_start, token_end-token_start));
-      else {
-        std::string name(src.substr(token_start+1, token_end-token_start-1));
-        input = Rwsh_istream_p(new File_istream_t(name), false, false);}
+      if (!input.is_default()) throw Double_redirection_t(input.str(), src);
+      else input = Rwsh_istream_p(new File_istream_t(src.substr(1)),
+                                  false, false);
       break;
     case '>':
-      if (!output.is_default())
-        throw Double_redirection_t(output.str(), src.substr(token_start, token_end-token_start));
-      else {
-        std::string name(src.substr(token_start+1, token_end-token_start-1));
-        output = Rwsh_ostream_p(new File_ostream_t(name), false, false);}
+      if (!output.is_default()) throw Double_redirection_t(output.str(), src);
+      else output = Rwsh_ostream_p(new File_ostream_t(src.substr(1)),
+                                   false, false);
       break;
     default:
-      args.push_back(Arg_spec_t(src.substr(token_start, token_end-token_start),
-                                max_soon));}
- return std::string::npos;}
+      args.push_back(Arg_spec_t(src, max_soon));}}
 
 std::string::size_type Arg_script_t::add_function(const std::string& src, 
                                              std::string::size_type style_start,
                                              std::string::size_type f_start,
                                              unsigned max_soon) {
-  std::string::size_type close_brace = find_close_brace(src, f_start);
-  if (close_brace == std::string::npos)
-    throw Unclosed_brace_t(src.substr(0, f_start+1));
-  std::string f_str = src.substr(f_start+1, close_brace-f_start-1); 
   if (style_start != f_start) {
+      std::string::size_type close_brace = find_close_brace(src, f_start);
+      if (close_brace == std::string::npos)
+        throw Unclosed_brace_t(src.substr(0, f_start+1));
+      std::string f_str = src.substr(f_start+1, close_brace-f_start-1); 
     std::string style = src.substr(style_start, f_start-style_start);
-    args.push_back(Arg_spec_t(style, f_str, max_soon));}
-  else
+    args.push_back(Arg_spec_t(style, f_str, max_soon));
+    return close_brace + 1;}
+  else {
     if (argfunction) throw Multiple_argfunctions_t();
-    else argfunction = new Function_t("rwsh.argfunction", f_str, max_soon+1);
-  return close_brace + 1;}
-
-std::string::size_type 
-Arg_script_t::find_close_brace(const std::string& focus,
-                               std::string::size_type i) {
-  unsigned nesting = 1;
-  while (nesting && (i = focus.find_first_of("{}", i+1)) != std::string::npos) {
-    if (focus[i] == '{') ++nesting;
-    else --nesting;}
-  return i;}
+    else argfunction =
+      new Function_t("rwsh.argfunction", src, f_start, max_soon+1);
+    return f_start;}}
 
 Arg_script_t::Arg_script_t(const Arg_script_t& src) : 
   args(src.args), argfunction(src.argfunction->copy_pointer()),

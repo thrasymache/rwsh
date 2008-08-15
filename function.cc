@@ -19,17 +19,42 @@
 #include "executable.h"
 #include "executable_map.h"
 #include "function.h"
-#include "tokenize.cc"
 #include "variable_map.h"
 
 namespace {
   struct Statement_terminator : public std::unary_function<char, bool> {
-    bool operator() (const char& x) const {return x == ';' || x =='\n';} };}
+    bool operator() (const char& x) const {return x == ';' || x =='\n';} };
 
-Function_t::Function_t(const std::string& name_i, const std::string& src, 
-      unsigned max_soon) : name_v(name_i) {
+std::string::size_type find_close_brace(const std::string& focus,
+                                        std::string::size_type i) {
+  unsigned nesting = 1;
+  while (nesting && (i = focus.find_first_of("{}", i+1)) != std::string::npos) {
+    if (focus[i] == '{') ++nesting;
+    else --nesting;}
+  return i;}
+
+// only tokenizes text that is not within brace pairs.
+// repeated separators result in empty tokens.
+// empty input produces a single empty string
+template<class Out, class Pred>
+Out tokenize_same_brace_level(const std::string& in, Out res, Pred p) {
+  unsigned token_start=0, i=0, brace_level=0;
+  for (; i<in.length(); ++i)
+    if (in[i] == '{') ++brace_level;
+    else if (in[i] == '}') --brace_level;
+    else if (!brace_level && p(in[i])) {
+      *res++ = in.substr(token_start, i-token_start);
+      token_start = i + 1;}
+  *res = in.substr(token_start, i-token_start);
+  return res;}
+
+} // end unnamed namespace
+
+Function_t::Function_t(const std::string& name_i, const std::string& function,
+                       unsigned max_soon) :
+    name_v(name_i) {
   std::vector<std::string> commands;
-  tokenize_same_brace_level(src, std::back_inserter(commands), 
+  tokenize_same_brace_level(function, std::back_inserter(commands), 
                             Statement_terminator());
   for (std::vector<std::string>::const_iterator i = commands.begin();
        i != commands.end(); ++i) {
@@ -37,6 +62,24 @@ Function_t::Function_t(const std::string& name_i, const std::string& src,
     if (commands.size() != 1 && script.back().is_argfunction())
       default_output <<"rwsh.argfunction cannot occur as one of several "
                   "commands\n";}}
+  
+Function_t::Function_t(const std::string& name_i, const std::string& src,
+                       std::string::size_type& point, unsigned max_soon) :
+    name_v(name_i) {
+  std::string::size_type close_brace = find_close_brace(src, point);
+  if (close_brace == std::string::npos)
+    throw Unclosed_brace_t(src.substr(0, point+1));
+  std::string f_str = src.substr(point+1, close_brace-point-1); 
+  std::vector<std::string> commands;
+  tokenize_same_brace_level(f_str, std::back_inserter(commands), 
+                            Statement_terminator());
+  for (std::vector<std::string>::const_iterator i = commands.begin();
+       i != commands.end(); ++i) {
+    script.push_back(Arg_script_t(*i, max_soon));
+    if (commands.size() != 1 && script.back().is_argfunction())
+      default_output <<"rwsh.argfunction cannot occur as one of several "
+                  "commands\n";}
+  point = close_brace + 1;}
   
 // generate a new function by unescaping argument functions and replacing
 // unescaped_argfunction with the argument function in argv

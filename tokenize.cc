@@ -35,19 +35,3 @@ Out tokenize_strict(const std::string& in, Out res, Pred p) {
   *res = in.substr(token_start, i-token_start);
   return res;}
 
-// only tokenizes text that is not within brace pairs.
-// repeated separators result in empty tokens.
-// empty input produces a single empty string
-template<class Out, class Pred>
-Out tokenize_same_brace_level(const std::string& in, Out res, Pred p) {
-  unsigned token_start=0, i=0, brace_level=0;
-  for (; i<in.length(); ++i)
-    if (in[i] == '{') ++brace_level;
-    else if (in[i] == '}') --brace_level;
-    else if (!brace_level && p(in[i])) {
-      *res++ = in.substr(token_start, i-token_start);
-      token_start = i + 1;}
-  *res = in.substr(token_start, i-token_start);
-  return res;}
-
-

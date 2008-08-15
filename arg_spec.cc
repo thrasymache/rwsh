@@ -77,11 +77,12 @@ Arg_spec_t::Arg_spec_t(const std::string& style, const std::string& function,
       substitution(0), text() {
   unsigned i = 1;
   while (i < style.length() && style[i] == '&') ++soon_level, ++i;
+  std::string::size_type point = 0;
+  substitution = new Function_t("rwsh.argfunction", function, soon_level);
   if (i != style.length() || style[0] != '&') {
-    throw Bad_argfunction_style_t(style + "{" + function + "}");}
+    throw Bad_argfunction_style_t(style + substitution->str());}
   if (soon_level > max_soon) 
-    throw Not_soon_enough_t(style + "{" + function + "}");
-  substitution = new Function_t("rwsh.argfunction", function, soon_level);}
+    throw Not_soon_enough_t(style + substitution->str());}
 
 Arg_spec_t::Arg_spec_t(Arg_type_t type_i, unsigned soon_level_i,
                        unsigned ref_level_i, unsigned expand_count_i,

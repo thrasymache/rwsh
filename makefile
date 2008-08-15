@@ -33,7 +33,7 @@ executable_map.o: arg_spec.h rwsh_stream.h argv.h arg_script.h executable.h \
 	executable_map.h function.h
 file_stream.o: rwsh_stream.h argv.h file_stream.h
 function.o: arg_spec.h rwsh_stream.h argv.h arg_script.h clock.h executable.h \
-	executable_map.h function.h tokenize.cc variable_map.h
+	executable_map.h function.h variable_map.h
 plumber.o: rwsh_stream.h argv.h clock.h executable.h plumber.h
 rwsh.o: arg_spec.h rwsh_stream.h argv.h argv_star_var.cc arg_script.h \
 	clock.o command_stream.h default_stream.h executable.h \
