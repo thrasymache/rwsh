@@ -71,18 +71,21 @@ Arg_spec_t::Arg_spec_t(const std::string& script, unsigned max_soon) :
   else if (script[0] == '\\') {type=FIXED; text=script.substr(1);}
   else {type=FIXED; text=script;}};
 
-Arg_spec_t::Arg_spec_t(const std::string& style, const std::string& function, 
-                       unsigned max_soon) : 
+Arg_spec_t::Arg_spec_t(const std::string& src,
+                       std::string::size_type style_start, 
+                       std::string::size_type& point, unsigned max_soon) : 
       type(SUBSTITUTION), soon_level(0), ref_level(0), expand_count(0),
       substitution(0), text() {
-  unsigned i = 1;
-  while (i < style.length() && style[i] == '&') ++soon_level, ++i;
-  std::string::size_type point = 0;
-  substitution = new Function_t("rwsh.argfunction", function, soon_level);
-  if (i != style.length() || style[0] != '&') {
-    throw Bad_argfunction_style_t(style + substitution->str());}
-  if (soon_level > max_soon) 
-    throw Not_soon_enough_t(style + substitution->str());}
+  std::string::size_type tpoint = style_start+1;
+  while (tpoint != point && src[tpoint] == '&') ++soon_level, ++tpoint;
+  substitution = new Function_t("rwsh.argfunction", src, tpoint, soon_level);
+  if (soon_level+1 != point-style_start || src[style_start] != '&') {
+    delete substitution;
+    throw Bad_argfunction_style_t(src.substr(style_start, tpoint-style_start));}
+  if (soon_level > max_soon) {
+    delete substitution;
+    throw Not_soon_enough_t(src.substr(style_start, tpoint-style_start));}
+  point = tpoint;}
 
 Arg_spec_t::Arg_spec_t(Arg_type_t type_i, unsigned soon_level_i,
                        unsigned ref_level_i, unsigned expand_count_i,

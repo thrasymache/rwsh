@@ -157,8 +157,8 @@ $e &{e &&A}
 rwsh.not_soon_enough : command not found ( rwsh.not_soon_enough &&A )
 
 -1
-$e &&{e $A}
-rwsh.not_soon_enough : command not found ( rwsh.not_soon_enough &&{e $A} )
+$e &&{e &A}
+rwsh.not_soon_enough : command not found ( rwsh.not_soon_enough &&{e &A} )
 
 -1
 $e &A

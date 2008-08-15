@@ -24,14 +24,6 @@
 #include "variable_map.h"
 
 namespace {
-std::string::size_type find_close_brace(const std::string& focus,
-                                        std::string::size_type i) {
-  unsigned nesting = 1;
-  while (nesting && (i = focus.find_first_of("{}", i+1)) != std::string::npos) {
-    if (focus[i] == '{') ++nesting;
-    else --nesting;}
-  return i;}
-
 std::string::size_type add_quote(const std::string& src,
                                  std::string::size_type token_start,
                                  unsigned max_soon,
@@ -124,19 +116,13 @@ std::string::size_type Arg_script_t::add_function(const std::string& src,
                                              std::string::size_type style_start,
                                              std::string::size_type f_start,
                                              unsigned max_soon) {
-  if (style_start != f_start) {
-      std::string::size_type close_brace = find_close_brace(src, f_start);
-      if (close_brace == std::string::npos)
-        throw Unclosed_brace_t(src.substr(0, f_start+1));
-      std::string f_str = src.substr(f_start+1, close_brace-f_start-1); 
-    std::string style = src.substr(style_start, f_start-style_start);
-    args.push_back(Arg_spec_t(style, f_str, max_soon));
-    return close_brace + 1;}
-  else {
+  if (style_start != f_start)
+    args.push_back(Arg_spec_t(src, style_start, f_start, max_soon));
+  else
     if (argfunction) throw Multiple_argfunctions_t();
     else argfunction =
       new Function_t("rwsh.argfunction", src, f_start, max_soon+1);
-    return f_start;}}
+  return f_start;}
 
 Arg_script_t::Arg_script_t(const Arg_script_t& src) : 
   args(src.args), argfunction(src.argfunction->copy_pointer()),

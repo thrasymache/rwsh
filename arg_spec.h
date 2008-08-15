@@ -17,8 +17,8 @@ class Arg_spec_t {
   void add_function_spec(const std::string& src);
  public:
   Arg_spec_t(const std::string& script, unsigned max_soon);
-  Arg_spec_t(const std::string& style, const std::string& function, 
-             unsigned max_soon);
+  Arg_spec_t(const std::string& src, std::string::size_type style_start, 
+             std::string::size_type& point, unsigned max_soon);
   Arg_spec_t(Arg_type_t type, unsigned soon_level, unsigned ref_level,
              unsigned expand_count, Function_t* substitution, std::string text);
   Arg_spec_t(const Arg_spec_t& src);
