@@ -49,38 +49,35 @@ Out tokenize_same_brace_level(const std::string& in, Out res, Pred p) {
   return res;}
 
 } // end unnamed namespace
-
-Function_t::Function_t(const std::string& name_i, const std::string& function,
+  
+Function_t::Function_t(const std::string& name_i, const std::string& src,
                        unsigned max_soon) :
     name_v(name_i) {
-  std::vector<std::string> commands;
-  tokenize_same_brace_level(function, std::back_inserter(commands), 
-                            Statement_terminator());
-  for (std::vector<std::string>::const_iterator i = commands.begin();
-       i != commands.end(); ++i) {
-    script.push_back(Arg_script_t(*i, max_soon));
-    if (commands.size() != 1 && script.back().is_argfunction())
+  std::string::size_type tpoint = 0;
+  do {
+    script.push_back(Arg_script_t(src, tpoint, max_soon));
+    if (script.size() != 1 && script.back().is_argfunction())
       default_output <<"rwsh.argfunction cannot occur as one of several "
-                  "commands\n";}}
-  
+                  "commands\n";}
+  while (tpoint != std::string::npos && src[tpoint++] != '}');
+  if (tpoint != std::string::npos)
+    throw Mismatched_brace_t(src.substr(0, tpoint));
+  if (!script.size()) script.push_back(Arg_script_t("", max_soon));}
+
 Function_t::Function_t(const std::string& name_i, const std::string& src,
                        std::string::size_type& point, unsigned max_soon) :
     name_v(name_i) {
-  std::string::size_type close_brace = find_close_brace(src, point);
-  if (close_brace == std::string::npos)
-    throw Unclosed_brace_t(src.substr(0, point+1));
-  std::string f_str = src.substr(point+1, close_brace-point-1); 
-  std::vector<std::string> commands;
-  tokenize_same_brace_level(f_str, std::back_inserter(commands), 
-                            Statement_terminator());
-  for (std::vector<std::string>::const_iterator i = commands.begin();
-       i != commands.end(); ++i) {
-    script.push_back(Arg_script_t(*i, max_soon));
-    if (commands.size() != 1 && script.back().is_argfunction())
+  std::string::size_type tpoint = point;
+  while (tpoint != std::string::npos && src[tpoint] != '}') {
+    script.push_back(Arg_script_t(src, ++tpoint, max_soon));
+    if (script.size() != 1 && script.back().is_argfunction())
       default_output <<"rwsh.argfunction cannot occur as one of several "
                   "commands\n";}
-  point = close_brace + 1;}
-  
+  if (tpoint == std::string::npos)
+    throw Unclosed_brace_t(src.substr(0, point-1));
+  if (!script.size()) script.push_back(Arg_script_t("", max_soon));
+  point = tpoint + 1;}
+
 // generate a new function by unescaping argument functions and replacing
 // unescaped_argfunction with the argument function in argv
 Function_t* Function_t::apply(const Argv_t& argv, unsigned nesting) const {

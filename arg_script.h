@@ -11,9 +11,13 @@ class Arg_script_t {
                const Rwsh_ostream_p& error);
  public:
   Arg_script_t(const std::string& src, unsigned max_soon);
+  Arg_script_t(const std::string& src, std::string::size_type& point,
+               unsigned max_soon);
   Arg_script_t(const Arg_script_t& src);
   Arg_script_t& operator=(const Arg_script_t& src);
   ~Arg_script_t(void);
+  std::string::size_type constructor(const std::string& src,
+                              std::string::size_type point, unsigned max_soon);
   Argv_t argv(void) const;
   void add_token(const std::string& src, unsigned max_soon);
   std::string::size_type add_function(const std::string& src,
