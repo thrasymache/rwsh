@@ -21,49 +21,6 @@
 #include "function.h"
 #include "variable_map.h"
 
-namespace {
-  struct Statement_terminator : public std::unary_function<char, bool> {
-    bool operator() (const char& x) const {return x == ';' || x =='\n';} };
-
-std::string::size_type find_close_brace(const std::string& focus,
-                                        std::string::size_type i) {
-  unsigned nesting = 1;
-  while (nesting && (i = focus.find_first_of("{}", i+1)) != std::string::npos) {
-    if (focus[i] == '{') ++nesting;
-    else --nesting;}
-  return i;}
-
-// only tokenizes text that is not within brace pairs.
-// repeated separators result in empty tokens.
-// empty input produces a single empty string
-template<class Out, class Pred>
-Out tokenize_same_brace_level(const std::string& in, Out res, Pred p) {
-  unsigned token_start=0, i=0, brace_level=0;
-  for (; i<in.length(); ++i)
-    if (in[i] == '{') ++brace_level;
-    else if (in[i] == '}') --brace_level;
-    else if (!brace_level && p(in[i])) {
-      *res++ = in.substr(token_start, i-token_start);
-      token_start = i + 1;}
-  *res = in.substr(token_start, i-token_start);
-  return res;}
-
-} // end unnamed namespace
-  
-Function_t::Function_t(const std::string& name_i, const std::string& src,
-                       unsigned max_soon) :
-    name_v(name_i) {
-  std::string::size_type tpoint = 0;
-  do {
-    script.push_back(Arg_script_t(src, tpoint, max_soon));
-    if (script.size() != 1 && script.back().is_argfunction())
-      default_output <<"rwsh.argfunction cannot occur as one of several "
-                  "commands\n";}
-  while (tpoint != std::string::npos && src[tpoint++] != '}');
-  if (tpoint != std::string::npos)
-    throw Mismatched_brace_t(src.substr(0, tpoint));
-  if (!script.size()) script.push_back(Arg_script_t("", max_soon));}
-
 Function_t::Function_t(const std::string& name_i, const std::string& src,
                        std::string::size_type& point, unsigned max_soon) :
     name_v(name_i) {

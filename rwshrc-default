@@ -111,7 +111,7 @@
 %function rwsh.prompt {%echo $SELECT; %echo \$}
 %function rwsh.selection_not_found {
   %echo no file matching pattern $1
-  if_only_not %test_equal $1 $2 {%echo \ for selection &&2}; %newline}
+  if_only_not %test_equal $1 $2 {%echo () for selection &&2}; %newline}
 %function rwsh.shutdown {%newline}
 %function rwsh.sighup {%newline; %echo received SIGHUP: $*; %newline}
 %function rwsh.sigint {%newline; %echo received SIGINT: $*; %newline}
@@ -135,6 +135,7 @@
 
 # misc
 %function ! {if $* {%return 1}; else {%return 0}}
+%function m {rwsh.argfunction}
 %function and {%if %return 1; %stepwise $* {%else_if_not $*}; %else}
 %function or {%if %return 1; %stepwise $* {%else_if $*}; %else}
 %global TESTABILITY (an external variable)

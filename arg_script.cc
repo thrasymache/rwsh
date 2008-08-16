@@ -51,7 +51,9 @@ std::string::size_type parse_token(const std::string& src,
   else if (src[token_start] == ')')
     throw Mismatched_parenthesis_t(src.substr(0, token_start+1));
   char* separators = "\\ \t{};\n";
-  std::string::size_type split = src.find_first_of(separators, token_start);
+  std::string::size_type split = src.find_first_of(separators, token_start),
+                         point = token_start;
+  std::string token;
   for (; split != std::string::npos;
        split = src.find_first_of(separators, split+2))
     if (src[split] != '\\') break;
@@ -59,15 +61,18 @@ std::string::size_type parse_token(const std::string& src,
       split = std::string::npos;
       //throw Line_continuation_t();
       break;}
-    else;
+    else if (split != token_start) {
+      token += src.substr(point, split-point);
+      point = split+1;}
+  token += src.substr(point, split-point);
   if (split == std::string::npos) {
-    dest->add_token(src.substr(token_start), max_soon);
+    dest->add_token(token, max_soon);
     return std::string::npos;}
   else if (src[split] == '{') {
     token_start = dest->add_function(src, token_start, split, max_soon);
     return src.find_first_not_of(" ", token_start);}
   else {
-    dest->add_token(src.substr(token_start, split-token_start), max_soon);
+    dest->add_token(token, max_soon);
     return src.find_first_not_of(" ", split);}}
 
 } // close unnamed namespace

@@ -75,8 +75,9 @@ int Executable_map_t::not_found(Argv_t& argv) {
   argv.push_front("rwsh.executable_not_found");         // executable_not_found
   Executable_t* i = find(argv);
   if (i) return (*i)(argv);
+  std::string::size_type point = 0;
   set(new Function_t("rwsh.executable_not_found", // reset executable_not_found
-                     "%echo $1 : command not found \\( $* \\); %newline; "
-                     "%return -1", 0));
+                     "{%echo $1 : command not found \\( $* \\)\n %newline\n "
+                     "%return -1}", point, 0));
   return (*find(argv))(argv);}
 

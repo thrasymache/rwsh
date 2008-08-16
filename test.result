@@ -43,17 +43,28 @@ $%nop 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
 $%echo 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
 0
-$%newline
-
-
+$%echo  ()    1                2       $#
+ 1 2 5
 0
-$%echo  ()    1                2       
- 1 2
+$%echo \escaped internal\ space $#
+escaped internal space 4
 0
-$%newline
-
-
+$%echo now \ external\  $#
+now  external  4
 0
+$%echo a \  space $#
+a   space 5
+0
+$%echo \$tokens \} \{ \; \\ \) \(
+$tokens } { ; \ ) (
+0
+$%echo a \
+a 
+0
+$line continuation
+line : command not found ( line continuation )
+
+-1
 $%which_executable rwsh.mapped_argfunction {%nop}
 {%nop}
 0
@@ -63,6 +74,9 @@ $%which_executable rwsh.argfunction {
 0
 $%nop rwsh.argfunction rwsh.mismatched_brace } 
 rwsh.mismatched_brace : command not found ( rwsh.mismatched_brace %nop rwsh.argfunction rwsh.mismatched_brace } )
+
+-1
+$%nop multiple statements \; on a line
 
 -1
 $%which_executable rwsh.argfunction {rwsh.multiple_argfunctions} {}
@@ -315,8 +329,8 @@ $e a ( spaced string created by parentheses $# ) $#
 a  spaced string created by parentheses $#  4
 
 0
-$e some \( escaped $# \) \(parentheses\) $#
-some ( escaped 8 ) (parentheses\) 8
+$e some escaped \) \(parentheses $#
+some escaped ) (parentheses 6
 
 0
 $e some (nested (parentheses) $#) $#
@@ -1342,7 +1356,10 @@ $%which_executable #
 %function # {%nop}
 0
 $w rwsh.mapped_argfunction {%nop 1 () \ \\ \$ \@}
-{%nop 1 () \ \\ \$ \@}
+{%nop 1 () \ \ \$ \@}
+0
+$w rwsh.mapped_argfunction {%nop 1 () \  \\ \$ \@}
+{%nop 1 () \  \\ \$ \@}
 0
 $w rwsh.mapped_argfunction {$A $$A $0 $$$1 $# $* $*2 $A$ $$*$$ $$$*12$}
 {$A $$A $0 $$$1 $# $* $*2 $A$ $$*$$ $$$*12$}
