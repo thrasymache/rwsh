@@ -25,7 +25,7 @@ line continuation
 # ability of functions to immitate built-ins
 %function f {%function $1 {rwsh.argfunction}}
 f w {%which_executable $1 {rwsh.argfunction}}
-f e {%echo $*; %newline}
+f e {%echo $*}
 f m {rwsh.argfunction}
 w e
 w () {}
@@ -49,10 +49,10 @@ e &A
 %else {}
 %if %nop 1 2 3 {e &*0}
 %else {}
-m {%set A not_bin; e &A &&A $A; m {%set A otherwise; e &A &&A &&&A $A}}
+m {%set A not_bin; e &A &&A $A $nl; m {%set A otherwise; e &A &&A &&&A $A}}
 %set A /bin
 m {%set A not_bin
-   e &{%echo $A} &&{%echo $A} $A
+   e &{%echo $A} &&{%echo $A} $A $nl
    m {%set A otherwise
       e &{%echo $A} &&{%echo $A} &&&{%echo $A} $A}}
 %set A /bin
@@ -78,7 +78,7 @@ e @/etc/rwsh*a*
 e @/etc/rwsh*a*
 e @/usr/*l*i*b*x*e*
 %return &{%return 0}
-%return &{e 0}
+%return &{e 0 $nl}
 %return &{%echo 0}
 e nevermore &{/bin/echo quoth the raven} 
 %set A one two three four five
@@ -94,6 +94,7 @@ e a (multi-line parenthesis
 e a )mismatched parenthesis
 e a (multi-line parenthesis
   mismatch))
+e (internal \)parenthesis \\ escape ) $#
 %unset A
 
 # file redirection (but don't overwrite files that exist)
@@ -108,12 +109,12 @@ m {e hi >dummy_file}
 %if %return 0 {>dummy_file /bin/echo there}
 %else
 /bin/cat dummy_file
-m {m >dummy_file {e line 1; e line 2 longer; %newline; e ending}}
+m {m >dummy_file {e line 1 $nl; e line 2 longer $nl; %echo $nl; e ending}}
 /bin/cat <dummy_file
 %for_each_line x {}
 %for_each_line <dummy_file
 %for_each_line <dummy_file <another {}
-%for_each_line <dummy_file {e line of $# \( $* \)}
+%for_each_line <dummy_file {e line of $# \( $* \) $nl}
 /bin/rm dummy_file
 
 # soon level promotion
@@ -164,11 +165,11 @@ m {%global ERRNO X; %error_unit {%var_exists ERRNO; %global ERRNO Y}}
 # %for
 %for {e no arguments $1}
 %for 1 {e one argument $1}
-%for 1 2 3 4 {e four arguments $1}
+%for 1 2 3 4 {e four arguments $1 $nl}
 
 # %function
 %function
-%function /bin/echo {%echo $*; %newline}
+%function /bin/echo {%echo $* $nl}
 %function %function {%nop}
 %function rwsh.escaped_argfunction {%nop}
 %function a {%nop}
@@ -183,17 +184,17 @@ a 1 2 3
 a \
 a 1
 a 1 2
-%function a {e $*5 $* $*0}
+%function a {e $*5 $* $*0 $nl}
 a
 a 1
 a 1 2
 f g {%function $1 {%function $1 {rwsh.argfunction}}}
-g a {e 3 2 1}
+g a {e 3 2 1 $nl}
 w a
 a b
 b
 # a function redefining itself doesn't seg fault
-f g {e hi; f g {e there}; f h {e nothing here}; g}
+f g {e hi $nl; f g {e there $nl}; f h {e nothing here}; g}
 g
 
 # %global %unset %var_exists 
@@ -254,17 +255,17 @@ e $x
 %else {e already tested; %return 24}
 
 # %if_errno %if_errno_is %append_to_errno
-m {%if_errno {e no error}
+m {%if_errno {e no error $nl}
    %append_to_errno x
-   %if_errno {e invented error $ERRNO}
-   %if_errno %return 0 {e doubled error $ERRNO}}
-m {%if_errno_is x {e no error}
-   %if_errno_is {e invocation error $ERRNO}
+   %if_errno {e invented error $ERRNO $nl}
+   %if_errno %return 0 {e doubled error $ERRNO $nl}}
+m {%if_errno_is x {e no error $nl}
+   %if_errno_is {e invocation error $ERRNO $nl}
    %unset ERRNO
    %append_to_errno x
-   %if_errno_is y {e invented error $ERRNO matches y}
-   %if_errno_is x {e invented error $ERRNO matches x}
-   %if_errno_is {e doubled error $ERRNO}}
+   %if_errno_is y {e invented error $ERRNO matches y $nl}
+   %if_errno_is x {e invented error $ERRNO matches x $nl}
+   %if_errno_is {e doubled error $ERRNO $nl}}
 
 # %internal_errors %internal_features %internal_vars
 %internal_errors 1
@@ -288,10 +289,6 @@ m {%is_default_error}
 # %ls
 %ls
 %ls /bin /usr/
-
-# %newline
-%newline 1
-%newline
 
 # %nop
 %nop
@@ -342,17 +339,17 @@ w rwsh.init
 
 # %stepwise
 f wrapper {%append_to_errno x; a $* two; a $* three}
-f a {e $* one; e $* two; e $* three}
-f d {e $*; %stepwise $* {d $*}}
-%stepwise {e $*}
+f a {e $* one $nl; e $* two $nl; e $* three $nl}
+f d {e $* $nl; %stepwise $* {d $*}}
+%stepwise {e $* $nl}
 %stepwise wrapper 1 2
-%stepwise stepwise {e $*}
-%stepwise %stepwise {e $*}
-%stepwise wrapper 1 2 {e $*}
+%stepwise stepwise {e $* $nl}
+%stepwise %stepwise {e $* $nl}
+%stepwise wrapper 1 2 {e $* $nl}
 f wrapper {a $* one; a $* two; a $* three}
 wrapper 1 2
 %stepwise wrapper 1 2 {d $*}
-%stepwise wrapper 1 2 {e $*}
+%stepwise wrapper 1 2 {e $* $nl}
 %set A $MAX_NESTING
 %set MAX_NESTING 12
 %stepwise wrapper 1 2 {d $*}
@@ -424,11 +421,11 @@ w rwsh.mapped_argfunction {>dummy_file}
 %while tf {e printed; %set A 4}
 %while tf {e skipped}
 %set A 0
-%while tf {e in %while argfunction $A; %var_add A 1}
+%while tf {e in %while argfunction $A $nl; %var_add A 1}
 %set A 0
 %while tf {%if %return $A {%set A 1}
            %else {%function tf {%return 1}}
-           e in overwriting argfunction}
+           e in overwriting argfunction $nl}
 
 # %var_add
 %var_add
@@ -490,19 +487,19 @@ w rwsh.raw_command
 
 # rwsh.arguments_for_argfunction rwsh.before_command rwsh.binary_not_found
 w x {rwsh.escaped_argfunction me}
-f rwsh.before_command {%echo $*0; %newline}
+f rwsh.before_command {%echo $*0; %echo $nl}
 /bn
 f rwsh.before_command
 
 # rwsh.autofunction
 w z
-f rwsh.autofunction {e $*0}
+f rwsh.autofunction {e $*0 $nl}
 z 1 2 3
 w z
 f rwsh.autofunction {y $*0}
 z 1 2 3
 w z
-f rwsh.autofunction {f $1 {e $*}}
+f rwsh.autofunction {f $1 {e $* $nl}}
 z 1 2 3
 w z
 f rwsh.autofunction

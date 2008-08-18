@@ -72,7 +72,6 @@ void internal_init(void) {
   executable_map.set(new Builtin_t("%is_default_output", is_default_output_bi));
   executable_map.set(new Builtin_t("%is_default_error", is_default_error_bi));
   executable_map.set(new Builtin_t("%ls", ls_bi));
-  executable_map.set(new Builtin_t("%newline", newline_bi));
   executable_map.set(new Builtin_t("%nop", nop_bi));
   executable_map.set(new Builtin_t("%return", return_bi));
   executable_map.set(new Builtin_t("%set", set_bi));

@@ -338,11 +338,6 @@ int ls_bi(const Argv_t& argv) {
   argv.output.flush();
   return ret;}
 
-// write a newline to the standard output
-int newline_bi(const Argv_t& argv) {
-  if (argv.size() != 1) {argv.append_to_errno("ARGS"); return -1;}
-  else {argv.output <<"\n"; argv.output.flush(); return 0;}}
-
 // ignore arguments, and then do nothing
 int nop_bi(const Argv_t& argv) {return dollar_question;}
 

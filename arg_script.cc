@@ -5,7 +5,6 @@
 //
 // Copyright (C) 2006, 2007 Samuel Newbold
 
-#include <assert.h>
 #include <exception>
 #include <fstream>
 #include <iterator>
@@ -25,21 +24,29 @@
 
 namespace {
 std::string::size_type add_quote(const std::string& src,
-                                 std::string::size_type token_start,
+                                 std::string::size_type point,
                                  unsigned max_soon,
                                  Arg_script_t* dest) {
-  std::string::size_type token_end = src.find_first_of("()", token_start+1); 
+  std::string literal;
+  const char* separators = "()"; //"\\()";
+  std::string::size_type split = src.find_first_of(separators, point+1); 
   for (unsigned nesting = 0;
-       token_end != std::string::npos && (nesting || src[token_end] == '(');
-       token_end = src.find_first_of("()", token_end+1))
-    if (src[token_end] == '(') ++nesting;
-    else --nesting;
-  if (token_end == std::string::npos)
-    throw Unclosed_parenthesis_t(src.substr(0, token_start+1));
+       split != std::string::npos && (nesting || src[split] == '(');
+       split = src.find_first_of(separators, split+1)) switch(src[split]) {
+    case '(': ++nesting; break;
+    case ')': --nesting; break;
+    case '\\':
+      literal += src.substr(point+1, split-point-1);
+      point = split;
+      split += 2;
+      break;
+    default: abort();}
+  if (split == std::string::npos)
+    throw Unclosed_parenthesis_t(src.substr(0, point+1));
   else {
-    std::string literal = src.substr(token_start+1, token_end-token_start-1);
+    literal += src.substr(point+1, split-point-1);
     dest->add_token(literal, max_soon);}
-  return token_end;}
+  return split;}
 
 std::string::size_type parse_token(const std::string& src,
                                    std::string::size_type token_start,
@@ -50,7 +57,7 @@ std::string::size_type parse_token(const std::string& src,
     return src.find_first_not_of(" ", token_start+1);}
   else if (src[token_start] == ')')
     throw Mismatched_parenthesis_t(src.substr(0, token_start+1));
-  char* separators = "\\ \t{};\n";
+  const char* separators = "\\ \t{};\n";
   std::string::size_type split = src.find_first_of(separators, token_start),
                          point = token_start;
   std::string token;
@@ -89,7 +96,7 @@ Arg_script_t::Arg_script_t(const std::string& src, unsigned max_soon) :
   point = constructor(src, point, max_soon);
   if (point < src.length())
     if (src[point] == '}') throw Mismatched_brace_t(src.substr(0, point+1));
-    else exit(5);}
+    else abort();}
 
 Arg_script_t::Arg_script_t(const std::string& src,
                            std::string::size_type& point, unsigned max_soon) :
@@ -115,7 +122,7 @@ std::string::size_type Arg_script_t::constructor(const std::string& src,
     else if (args.front().str() == "rwsh.argfunction") argfunction_level = 2;
     else if (args.front().str() == "rwsh.escaped_argfunction")
       argfunction_level = 3;
-    else assert(0);                            // unhandled argfunction level
+    else abort();                            // unhandled argfunction level
   return point;}
 
 void Arg_script_t::add_token(const std::string& src, unsigned max_soon) {
@@ -175,7 +182,7 @@ Argv_t Arg_script_t::argv(void) const {
     result.error = error;}
   else if (argfunction_level == 1) result.push_back("rwsh.argfunction");
   else if (argfunction_level == 2) result.push_back("rwsh.escaped_argfunction");
-  else assert(0); // unhandled argfunction_level
+  else abort(); // unhandled argfunction_level
   return result;}
 
 // create a string from Arg_script. inverse of string constructor.
@@ -192,7 +199,7 @@ std::string Arg_script_t::str(void) const {
     return result;}
   else if (argfunction_level == 1) return "rwsh.argfunction";
   else if (argfunction_level == 2) return "rwsh.escaped_argfunction";
-  else {assert(0); return "";}} // unhandled argfunction_level
+  else {abort(); return "";}} // unhandled argfunction_level
 
 // produce a destination Argv from the source Argv according to this script
 Argv_t Arg_script_t::interpret(const Argv_t& src) const {
@@ -216,7 +223,7 @@ Argv_t Arg_script_t::interpret(const Argv_t& src) const {
   else if (argfunction_level == 2) 
     result.push_back("rwsh.unescaped_argfunction");
   else if (argfunction_level == 3) result.push_back("rwsh.argfunction");
-  else assert(0); // unhandled argfunction_level
+  else abort(); // unhandled argfunction_level
   return result;}
 
 // produce a new Arg_script by unescaping argument functions and replacing

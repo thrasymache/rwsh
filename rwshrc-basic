@@ -2,16 +2,18 @@
 
 # set up environment
 %global SHELL /bin/rwsh
+%global nl (
+)
 %importenv_preserve
 
 # builtin wrappers
 %function . {%source $*}
 %function af {rwsh.argfunction}
 %function e {%echo $*}
-%function echo {%echo $*; %newline}
+%function echo {%echo $* $nl}
 %function elif {%else_if $* {rwsh.argfunction}}
 %function else {%else {rwsh.argfunction}}
-%function ex_count {%which_execution_count $*; %newline}
+%function ex_count {%which_execution_count $* $nl}
 %function exec {%exec $*}
 %function exit {%exit}
 %function fn {
@@ -25,8 +27,8 @@
 %function if {%if $* {rwsh.argfunction}}
 %function if_only {%if $* {rwsh.argfunction}; %else}
 %function if_only_not {%if $*; %else {rwsh.argfunction}}
-%function last_time {%which_last_execution_time $*; %newline}
-%function total_time {%which_total_execution_time $*; %newline}
+%function last_time {%which_last_execution_time $* $nl}
+%function total_time {%which_total_execution_time $* $nl}
 %function set {%set $1 $2 $*3}
 %function setf {
   %if %var_exists $1 {%set &&1 &&2}
@@ -35,13 +37,13 @@
 %function user_shell_ratio {
   %set TEMP1 &{%waiting_for_user}
   %var_divide TEMP1 &{%waiting_for_shell}
-  %echo $TEMP1; %newline}
-%function wait_bin {%waiting_for_binary; %newline}
-%function wait_shell {%waiting_for_shell; %newline}
-%function wait_user {%waiting_for_user; %newline}
+  %echo $TEMP1 $nl}
+%function wait_bin {%waiting_for_binary $nl}
+%function wait_shell {%waiting_for_shell $nl}
+%function wait_user {%waiting_for_user $nl}
 %function which {
   %which_executable $1 {rwsh.argfunction}
-  %if %test_equal $? 0 {%newline}
+  %if %test_equal $? 0 {%echo $nl}
   %else {echo no &&1}}
 %function whichp {
   %which_path $1 $PATH
@@ -52,5 +54,5 @@
 
 %function rwsh.autofunction {
   %function $1 {&&{%which_path &&1 $PATH} $*}
-  if_only %return 0 {%echo added &&1 to executable map; %newline}
+  if_only %return 0 {%echo added &&1 to executable map $nl}
   %if_errno_is ESUBSTITUTION {%unset ERRNO}}

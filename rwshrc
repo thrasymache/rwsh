@@ -1,10 +1,12 @@
 %set MAX_NESTING 12
 %function () {%nop}
-rwsh.mapped_argfunction >/tmp/lcl {%echo &*0; %newline}
+rwsh.mapped_argfunction >/tmp/lcl {%echo &*0 (
+)}
 %if %test_equal $# 2 {%source /etc/rwshrc-default}
 %else_if %test_equal $# 3 {%source &2}
 %else_if %test_equal $2 -c {
   rwsh.mapped_argfunction &3 {%source /etc/rwshrc-basic; $1$; %exit}}
 %else {
-  %echo unexpected command line: &*; %newline
+  %echo unexpected command line: &* (
+)
   %source /etc/rwshrc-default}

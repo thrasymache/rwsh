@@ -1,8 +1,9 @@
 rwsh v0.2.2 -
-  * builtins: %exec, %for_each_line, %fork, %is_default_input,
+  * builtins added: %exec, %for_each_line, %fork, %is_default_input,
       %is_default_output, %is_default_error, %waiting_for_shell,
       %waiting_for_user, %which_execution_count, %which_last_execution_time,
       %which_total_execution_time
+  * builtins removed: %newline
   * internal_functions: rwsh.double_redirection rwsh.file_open_failure
   * file redirection
   * &* and $VAR$

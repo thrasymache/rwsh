@@ -1,6 +1,5 @@
 // Copyright (C) 2008 Samuel Newbold
 
-#include <assert.h>
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -13,9 +12,9 @@
 Default_istream_t::Default_istream_t(int fd_i) : fd_v(fd_i) {
   switch (fd_v) {
     case 0: implementation = &std::cin; break;
-    default: assert(0);}}
+    default: abort();}}
 
-Rwsh_istream_t* Default_istream_t::copy_pointer(void) {assert(0);}; // not needed
+Rwsh_istream_t* Default_istream_t::copy_pointer(void) {abort();}; // not needed
 
 bool Default_istream_t::fail(void) {return implementation->fail();}
 
@@ -31,9 +30,9 @@ Default_ostream_t::Default_ostream_t(int fd_i) : fd_v(fd_i) {
   switch (fd_v) {
     case 1: implementation = &std::cout; break;
     case 2: implementation = &std::cerr; break;
-    default: assert(0);}}
+    default: abort();}}
 
-Rwsh_ostream_t* Default_ostream_t::copy_pointer(void) {assert(0);}; // not needed
+Rwsh_ostream_t* Default_ostream_t::copy_pointer(void) {abort();}; // not needed
 
 Rwsh_ostream_t& Default_ostream_t::operator<<(const std::string& r) {
   *implementation <<r; 

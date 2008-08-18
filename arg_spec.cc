@@ -3,7 +3,6 @@
 //
 // Copyright (C) 2006, 2007 Samuel Newbold
 
-#include <assert.h>
 #include <dirent.h>
 #include <fcntl.h>
 #include <list>
@@ -157,7 +156,7 @@ std::string Arg_spec_t::str(void) const {
     case SELECT_VAR: return "@$" + text;
     case SELECT_STAR_VAR: return "@$*" + text;
     case SUBSTITUTION: return "&" + base + substitution->str() + tail;
-    default: assert(0);}}
+    default: abort();}}
 
 // produce one or more strings for destination Argv from Arg_spec and source
 // Argv
@@ -166,21 +165,21 @@ void Arg_spec_t::interpret(const Argv_t& src,
   switch(type) {
     case FIXED:      *res++ = text; break;
     case REFERENCE: case SOON: {
-      assert(!soon_level); // constructor guarantees SOONs are already done
+      if (soon_level) abort(); // constructor guarantees SOONs are already done
       std::string next = src.get_var(text);
       for (unsigned i = 0; i < ref_level; ++i) next = src.get_var(next);
       if (!expand_count) *res++ = next;
       else tokenize(next, res, std::bind2nd(std::equal_to<char>(), ' '));
       break;}
     case STAR_REF: case STAR_SOON:
-      assert(!soon_level); // constructor guarantees SOONs are already done
+      if (soon_level) abort(); // constructor guarantees SOONs are already done
       res = src.star_var(text, ref_level, res); break;
     case SELECTION:  selection_read(text, res); break;
     case SELECT_VAR: selection_read(src.get_var(text), res); break;
     case SELECT_STAR_VAR: 
       default_output <<"@$* not implemented yet\n"; break;
     case SUBSTITUTION: {
-      assert(!soon_level); // constructor guarantees SOONs are already done
+      if (soon_level) abort(); // constructor guarantees SOONs are already done
       Substitution_stream_t override_stream;
       Argv_t temp_argv(src);
       temp_argv.output = override_stream.child_stream();
@@ -188,7 +187,7 @@ void Arg_spec_t::interpret(const Argv_t& src,
         throw Failed_substitution_t(str()); 
       *res++ = override_stream.value();
       break;}
-    default: assert(0);}}
+    default: abort();}}
 
 void Arg_spec_t::promote_soons(unsigned nesting) {
   switch(type) {
