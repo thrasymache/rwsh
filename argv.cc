@@ -110,23 +110,22 @@ template<class In>char** copy_to_cstr(In first, In last, char** res) {
   return res;}
 
 Arguments_to_argfunction_t::Arguments_to_argfunction_t(
-      const std::string& argfunction_type) : Argv_t() {
+      const std::string& argfunction_type) {
   push_back("rwsh.arguments_for_argfunction");
   push_back(argfunction_type);}
 
 Bad_argfunction_style_t::Bad_argfunction_style_t(
-      const std::string& argfunction_style) : Argv_t() {
+      const std::string& argfunction_style) {
   push_back("rwsh.bad_argfunction_style");
   push_back(argfunction_style);}
 
 Double_redirection_t::Double_redirection_t(const std::string& first, 
-      const std::string& second) : Argv_t() {
+      const std::string& second) {
   push_back("rwsh.double_redirection");
   push_back(first);
   push_back(second);}
 
-Failed_substitution_t::Failed_substitution_t(const std::string& function) :
-      Argv_t() {
+Failed_substitution_t::Failed_substitution_t(const std::string& function) {
   push_back("rwsh.failed_substitution");
   push_back(function);}
 
@@ -134,20 +133,23 @@ File_open_failure_t::File_open_failure_t(const std::string& file_name) {
   push_back("rwsh.file_open_failure");
   push_back(file_name);}
 
-Line_continuation_t::Line_continuation_t() : Argv_t() {
+Invalid_word_selection_t::Invalid_word_selection_t(
+      const std::string& selection) {
+  push_back("rwsh.invalid_word_selection");
+  push_back(selection);}
+
+Line_continuation_t::Line_continuation_t() {
   push_back("rwsh.line_continuation");}
 
-Mismatched_brace_t::Mismatched_brace_t(const std::string& prefix) : 
-      Argv_t() {
+Mismatched_brace_t::Mismatched_brace_t(const std::string& prefix) {
   push_back("rwsh.mismatched_brace");
   push_back(prefix);}
 
-Mismatched_parenthesis_t::Mismatched_parenthesis_t(const std::string& prefix) :
-      Argv_t() {
+Mismatched_parenthesis_t::Mismatched_parenthesis_t(const std::string& prefix) {
   push_back("rwsh.mismatched_parenthesis");
   push_back(prefix);}
 
-Multiple_argfunctions_t::Multiple_argfunctions_t() : Argv_t() {
+Multiple_argfunctions_t::Multiple_argfunctions_t() {
   push_back("rwsh.multiple_argfunctions");}
 
 Not_soon_enough_t::Not_soon_enough_t(const std::string& argument) : 
@@ -155,18 +157,15 @@ Not_soon_enough_t::Not_soon_enough_t(const std::string& argument) :
   push_back("rwsh.not_soon_enough");
   push_back(argument);}
 
-Unclosed_brace_t::Unclosed_brace_t(const std::string& prefix) : 
-      Argv_t() {
+Unclosed_brace_t::Unclosed_brace_t(const std::string& prefix) {
   push_back("rwsh.subprompt");
   push_back(prefix);}
 
-Unclosed_parenthesis_t::Unclosed_parenthesis_t(const std::string& prefix) :
-      Argv_t() {
+Unclosed_parenthesis_t::Unclosed_parenthesis_t(const std::string& prefix) {
   push_back("rwsh.subprompt");
   push_back(prefix);}
 
-Undefined_variable_t::Undefined_variable_t(const std::string& variable) :
-      Argv_t() {
+Undefined_variable_t::Undefined_variable_t(const std::string& variable) {
   push_back("rwsh.undefined_variable");
   push_back(variable);}
   

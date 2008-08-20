@@ -10,7 +10,8 @@ class Arg_spec_t {
   Arg_type_t type;
   unsigned soon_level;
   unsigned ref_level;
-  unsigned expand_count;
+  bool expand;
+  int word_selection;
   Function_t* substitution;
   std::string text;
 
@@ -20,7 +21,8 @@ class Arg_spec_t {
   Arg_spec_t(const std::string& src, std::string::size_type style_start, 
              std::string::size_type& point, unsigned max_soon);
   Arg_spec_t(Arg_type_t type, unsigned soon_level, unsigned ref_level,
-             unsigned expand_count, Function_t* substitution, std::string text);
+             unsigned expand_count, int word_selection,
+             Function_t* substitution, std::string text);
   Arg_spec_t(const Arg_spec_t& src);
   ~Arg_spec_t();
   void apply(const Argv_t& src, unsigned nesting,

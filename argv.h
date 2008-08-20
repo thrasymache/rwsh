@@ -78,11 +78,14 @@ struct Bad_argfunction_style_t : public Argv_t {
 struct Double_redirection_t : public Argv_t {
   Double_redirection_t(const std::string& first, const std::string& second);};
 
+struct Failed_substitution_t : public Argv_t {
+  Failed_substitution_t(const std::string& function);};
+
 struct File_open_failure_t : public Argv_t {
   File_open_failure_t(const std::string& file_name);};
 
-struct Failed_substitution_t : public Argv_t {
-  Failed_substitution_t(const std::string& function);};
+struct Invalid_word_selection_t : public Argv_t {
+  Invalid_word_selection_t(const std::string& selection);};
 
 struct Line_continuation_t : public Argv_t {Line_continuation_t();};
 

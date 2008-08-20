@@ -282,14 +282,53 @@ $e nevermore &{/bin/echo quoth the raven}
 nevermore quoth the raven
 
 0
-$%set A one two three four five
+$%set A ((zero zero) (one one) two three)
 
 0
+$m $A$$ {e $* $#}
+rwsh.invalid_word_selection : command not found ( rwsh.invalid_word_selection $$ )
+
+-1
 $m $A {e $# $*}
-2 one two three four five
+2 (zero zero) (one one) two three
 0
 $m $A$ {e $# $*}
-6 one two three four five
+7 (zero zero) (one one) two three
+0
+$m $A$1 {e $# $*}
+2 (one one)
+0
+$m $A$10 {e $# $*}
+rwsh.undefined_variable : command not found ( rwsh.undefined_variable $A$10 )
+
+-1
+$m &{e ((zero zero) (one one) two three)}@ {e $# $*}
+rwsh.invalid_word_selection : command not found ( rwsh.invalid_word_selection @ )
+
+-1
+$m &{e ((zero zero) (one one) two three)}$$ {e $# $*}
+rwsh.invalid_word_selection : command not found ( rwsh.invalid_word_selection $ )
+
+-1
+$m &{e ((zero zero) (one one) two three)} {e $# $*}
+2 (zero zero) (one one) two three
+0
+$m &{e ((zero zero) (one one) two three)}$ {e $# $*}
+7 (zero zero) (one one) two three
+0
+$m &{e ((zero zero) (one one) two three)}$1 {e $# $*}
+2 (one one)
+0
+$m &{e ((zero zero) (one one) two three)}$10 {e $# $*}
+rwsh.undefined_variable : command not found ( rwsh.undefined_variable &{e (zero zero) (one one) two three}$10 )
+
+-1
+$m &{e (zero zero) \)one one two three}$1 {e $# $*}
+rwsh.mismatched_parenthesis : command not found ( rwsh.mismatched_parenthesis zero zero ) )
+
+-1
+$m &{e (zero zero) \)one one two three} {e $# $*}
+2 zero zero )one one two three
 0
 $e a (tight string created by parentheses $#) $#
 a tight string created by parentheses $# 4
@@ -882,7 +921,7 @@ $%internal_vars 1
 -1
 ERRNO set to ARGS
 $%internal_errors
-rwsh.arguments_for_argfunction rwsh.bad_argfunction_style rwsh.binary_not_found rwsh.double_redirection rwsh.excessive_nesting rwsh.executable_not_found rwsh.failed_substitution rwsh.mismatched_brace rwsh.multiple_argfunctions rwsh.not_soon_enough rwsh.init rwsh.selection_not_found rwsh.sighup rwsh.sigint rwsh.sigquit rwsh.sigpipe rwsh.sigterm rwsh.sigtstp rwsh.sigusr1 rwsh.sigusr2 rwsh.undefined_variable rwsh.unreadable_dir
+rwsh.arguments_for_argfunction rwsh.bad_argfunction_style rwsh.binary_not_found rwsh.double_redirection rwsh.excessive_nesting rwsh.executable_not_found rwsh.failed_substitution rwsh.invalid_word_selection rwsh.mismatched_brace rwsh.multiple_argfunctions rwsh.not_soon_enough rwsh.init rwsh.selection_not_found rwsh.sighup rwsh.sigint rwsh.sigquit rwsh.sigpipe rwsh.sigterm rwsh.sigtstp rwsh.sigusr1 rwsh.sigusr2 rwsh.undefined_variable rwsh.unreadable_dir
 0
 $%internal_features
 rwsh.after_command rwsh.before_command rwsh.prompt rwsh.raw_command rwsh.run_logic rwsh.shutdown rwsh.vars
@@ -1296,11 +1335,11 @@ $w rwsh.mapped_argfunction {%nop 1 () \ \\ \$ \@}
 $w rwsh.mapped_argfunction {%nop 1 () \  \\ \$ \@}
 {%nop 1 () \  \\ \$ \@}
 0
-$w rwsh.mapped_argfunction {$A $$A $0 $$$1 $# $* $*2 $A$ $$*$$ $$$*12$}
-{$A $$A $0 $$$1 $# $* $*2 $A$ $$*$$ $$$*12$}
+$w rwsh.mapped_argfunction {$A $$A $0 $$$1 $# $* $*2 $A$ $$*$ $$$*12$}
+{$A $$A $0 $$$1 $# $* $*2 $A$ $$*$ $$$*12$}
 0
-$w rwsh.mapped_argfunction {&&A &&0 &&* &&*3 &&$A$ &&*$$ &&*6$$$}
-{&A &0 &* &*3 &$A$ &*$$ &*6$$$}
+$w rwsh.mapped_argfunction {&&A &&0 &&* &&*3 &&$A$ &&*$ &&*6$}
+{&A &0 &* &*3 &$A$ &*$ &*6$}
 0
 $w rwsh.mapped_argfunction {@a @$a @$1 @$* @$*2}
 {@a @$a @$1 @$*1 @$*2}

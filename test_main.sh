@@ -81,9 +81,20 @@ e @/usr/*l*i*b*x*e*
 %return &{e 0 $nl}
 %return &{%echo 0}
 e nevermore &{/bin/echo quoth the raven} 
-%set A one two three four five
+%set A ((zero zero) (one one) two three)
+m $A$$ {e $* $#}
 m $A {e $# $*}
 m $A$ {e $# $*}
+m $A$1 {e $# $*}
+m $A$10 {e $# $*}
+m &{e ((zero zero) (one one) two three)}@ {e $# $*}
+m &{e ((zero zero) (one one) two three)}$$ {e $# $*}
+m &{e ((zero zero) (one one) two three)} {e $# $*}
+m &{e ((zero zero) (one one) two three)}$ {e $# $*}
+m &{e ((zero zero) (one one) two three)}$1 {e $# $*}
+m &{e ((zero zero) (one one) two three)}$10 {e $# $*}
+m &{e (zero zero) \)one one two three}$1 {e $# $*}
+m &{e (zero zero) \)one one two three} {e $# $*}
 e a (tight string created by parentheses $#) $#
 e a ( spaced string created by parentheses $# ) $#
 e some escaped \) \(parentheses $#
@@ -381,8 +392,8 @@ wrapper 1 2
 %which_executable #
 w rwsh.mapped_argfunction {%nop 1 () \ \\ \$ \@}
 w rwsh.mapped_argfunction {%nop 1 () \  \\ \$ \@}
-w rwsh.mapped_argfunction {$A $$A $0 $$$1 $# $* $*2 $A$ $$*$$ $$$*12$}
-w rwsh.mapped_argfunction {&&A &&0 &&* &&*3 &&$A$ &&*$$ &&*6$$$}
+w rwsh.mapped_argfunction {$A $$A $0 $$$1 $# $* $*2 $A$ $$*$ $$$*12$}
+w rwsh.mapped_argfunction {&&A &&0 &&* &&*3 &&$A$ &&*$ &&*6$}
 w rwsh.mapped_argfunction {@a @$a @$1 @$* @$*2}
 w rwsh.mapped_argfunction {>dummy_file}
 %which_executable rwsh.mapped_argfunction
