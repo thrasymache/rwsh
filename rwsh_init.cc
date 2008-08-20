@@ -79,8 +79,12 @@ void internal_init(void) {
   executable_map.set(new Builtin_t("%source", source_bi));
   executable_map.set(new Builtin_t("%stepwise", stepwise_bi));
   executable_map.set(new Builtin_t("%test_equal", test_equal_bi));
+  executable_map.set(new Builtin_t("%test_greater", test_greater_bi));
+  executable_map.set(new Builtin_t("%test_is_number", test_is_number_bi));
+  executable_map.set(new Builtin_t("%test_less", test_less_bi));
   executable_map.set(new Builtin_t("%test_not_empty", test_not_empty_bi));
   executable_map.set(new Builtin_t("%test_not_equal", test_not_equal_bi));
+  executable_map.set(new Builtin_t("%test_number_equal", test_number_equal_bi));
   executable_map.set(new Builtin_t("%unset", unset_bi));
   executable_map.set(new Builtin_t("%waiting_for_binary",
                                    waiting_for_binary_bi));

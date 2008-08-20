@@ -425,17 +425,60 @@ int stepwise_bi(const Argv_t& argv) {
 // return true if the two strings are the same
 int test_equal_bi(const Argv_t& argv) {
   if (argv.size() != 3) {argv.append_to_errno("ARGS"); return -1;}
-  else return argv[1] != argv[2];}
+  else return argv[1] != argv[2];} // C++ and shell have inverted logic
+
+// return true if two strings convert to a doubles and first is greater
+int test_greater_bi(const Argv_t& argv) {
+  if (argv.size() != 3) {argv.append_to_errno("ARGS"); return -1;}
+  double lhs, rhs;
+  try {lhs = my_strtod(argv[1]);
+       rhs = my_strtod(argv[2]);}
+  catch (E_generic_t) {argv.append_to_errno("GENERIC_ERROR"); return -1;}
+  catch (E_nan_t) {argv.append_to_errno("NAN"); return -1;}
+  catch (E_range_t) {argv.append_to_errno("RANGE"); return -1;}
+  return lhs <= rhs;} // C++ and shell have inverted logic
+
+// return true if the string converts to a number
+int test_is_number_bi(const Argv_t& argv) {
+  if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
+  try {
+    (void) my_strtod(argv[1]);
+    return 0;}
+  catch (E_generic_t) {argv.append_to_errno("GENERIC_ERROR"); return -1;}
+  catch (E_nan_t) {argv.append_to_errno("NAN"); return -1;}
+  catch (E_range_t) {argv.append_to_errno("RANGE"); return -1;}}
+
+// return true if two strings convert to a doubles and first is less
+int test_less_bi(const Argv_t& argv) {
+  if (argv.size() != 3) {argv.append_to_errno("ARGS"); return -1;}
+  double lhs, rhs;
+  try {lhs = my_strtod(argv[1]);
+       rhs = my_strtod(argv[2]);}
+  catch (E_generic_t) {argv.append_to_errno("GENERIC_ERROR"); return -1;}
+  catch (E_nan_t) {argv.append_to_errno("NAN"); return -1;}
+  catch (E_range_t) {argv.append_to_errno("RANGE"); return -1;}
+  return lhs >= rhs;} // C++ and shell have inverted logic
 
 // return true if the string is not empty
 int test_not_empty_bi(const Argv_t& argv) {
   if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
-  else return !argv[1].length();}
+  else return !argv[1].length();} // C++ and shell have inverted logic
 
 // return true if the two strings are different 
 int test_not_equal_bi(const Argv_t& argv) {
   if (argv.size() != 3) {argv.append_to_errno("ARGS"); return -1;}
-  else return argv[1] == argv[2];}
+  else return argv[1] == argv[2];} // C++ and shell have inverted logic
+
+// returns true if the two strings 
+int test_number_equal_bi(const Argv_t& argv) {
+  if (argv.size() != 3) {argv.append_to_errno("ARGS"); return -1;}
+  double lhs, rhs;
+  try {lhs = my_strtod(argv[1]);
+       rhs = my_strtod(argv[2]);}
+  catch (E_generic_t) {argv.append_to_errno("GENERIC_ERROR"); return -1;}
+  catch (E_nan_t) {argv.append_to_errno("NAN"); return -1;}
+  catch (E_range_t) {argv.append_to_errno("RANGE"); return -1;}
+  return lhs != rhs;} // C++ and shell have inverted logic
 
 // removes the given variable from the variable map. you could be really 
 // pedantic and throw an rwsh.undefined_variable if it doesn't exist, but the

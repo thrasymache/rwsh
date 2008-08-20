@@ -380,6 +380,37 @@ wrapper 1 2
 %test_not_empty \
 %test_not_empty x
 
+# %test_is_number %test_number_equal %test_greater %test_less
+%test_is_number
+%test_is_number ()
+%test_is_number 42a
+%test_is_number 42
+%test_is_number -0.314
+%test_is_number 6.022e9000000000
+%test_is_number 6.022e23
+%test_number_equal 42
+%test_number_equal 42 42a
+%test_number_equal 0 0.000000000000000000000000001
+%test_number_equal 1e-9000000000 1e-9000000001
+%test_number_equal 0 0.0
+%test_number_equal 42 42.01
+%test_number_equal 42 42
+%test_number_equal 6.022e9000000000 .6022e9000000001
+%test_number_equal 6.022e23 6.022e2
+%test_number_equal 6.022e23 .6022e24
+%test_greater 6.022e23
+%test_greater 6.022e23 6.022e23e
+%test_greater 6.022e9000000000 .6022e9000000001
+%test_greater 6.022e2 6.022e23
+%test_greater 6.022e23 .6022e24
+%test_greater 6.022e23 6.022e2
+%test_less 6.022e23
+%test_less 6.022e23 6.022e23e
+%test_less 6.022e9000000000 .6022e9000000001
+%test_less 6.022e23 6.022e2
+%test_less 6.022e23 .6022e24
+%test_less 6.022e2 6.022e23
+
 # %which_executable %which_execution_count %which_last_execution_time 
 # %which_total_execution_time %which_test %which_return
 %which_test

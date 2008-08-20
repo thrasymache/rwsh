@@ -1297,6 +1297,113 @@ $%test_not_empty x
 $
 
 0
+$# %test_is_number %test_number_equal %test_greater %test_less
+
+0
+$%test_is_number
+
+-1
+ERRNO set to ARGS
+$%test_is_number ()
+
+-1
+ERRNO set to NAN
+$%test_is_number 42a
+
+-1
+ERRNO set to NAN
+$%test_is_number 42
+
+0
+$%test_is_number -0.314
+
+0
+$%test_is_number 6.022e9000000000
+
+-1
+ERRNO set to RANGE
+$%test_is_number 6.022e23
+
+0
+$%test_number_equal 42
+
+-1
+ERRNO set to ARGS
+$%test_number_equal 42 42a
+
+-1
+ERRNO set to NAN
+$%test_number_equal 0 0.000000000000000000000000001
+
+1
+$%test_number_equal 1e-9000000000 1e-9000000001
+
+-1
+ERRNO set to RANGE
+$%test_number_equal 0 0.0
+
+0
+$%test_number_equal 42 42.01
+
+1
+$%test_number_equal 42 42
+
+0
+$%test_number_equal 6.022e9000000000 .6022e9000000001
+
+-1
+ERRNO set to RANGE
+$%test_number_equal 6.022e23 6.022e2
+
+1
+$%test_number_equal 6.022e23 .6022e24
+
+0
+$%test_greater 6.022e23
+
+-1
+ERRNO set to ARGS
+$%test_greater 6.022e23 6.022e23e
+
+-1
+ERRNO set to NAN
+$%test_greater 6.022e9000000000 .6022e9000000001
+
+-1
+ERRNO set to RANGE
+$%test_greater 6.022e2 6.022e23
+
+1
+$%test_greater 6.022e23 .6022e24
+
+1
+$%test_greater 6.022e23 6.022e2
+
+0
+$%test_less 6.022e23
+
+-1
+ERRNO set to ARGS
+$%test_less 6.022e23 6.022e23e
+
+-1
+ERRNO set to NAN
+$%test_less 6.022e9000000000 .6022e9000000001
+
+-1
+ERRNO set to RANGE
+$%test_less 6.022e23 6.022e2
+
+1
+$%test_less 6.022e23 .6022e24
+
+1
+$%test_less 6.022e2 6.022e23
+
+0
+$
+
+0
 $# %which_executable %which_execution_count %which_last_execution_time 
 
 0
@@ -1361,7 +1468,7 @@ $%which_execution_count j
 
 1
 $%which_execution_count #
-35
+36
 0
 $%which_last_execution_time
 
