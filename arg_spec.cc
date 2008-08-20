@@ -35,12 +35,15 @@ template<class Out>
 Out tokenize_words(const std::string& in, Out res) {
   unsigned token_start=0, i=0, nesting=0;
   for (; i<in.length(); ++i)
-    if (in[i] == '(') ++nesting;
+    if (in[i] == '(') {
+      if (i == token_start) ++token_start;
+      ++nesting;}
     else if (in[i] == ')')
       if (nesting) --nesting;
       else throw Mismatched_parenthesis_t(in.substr(0, i+1));
     else if (!nesting && isspace(in[i])) {
-      *res++ = in.substr(token_start, i-token_start);
+      if (in[i-1] == ')') *res++ = in.substr(token_start, i-token_start-1);
+      else *res++ = in.substr(token_start, i-token_start);
       while (i<in.length() && isspace(in[i])) ++i;
       token_start = i--;}
   if (nesting) throw Mismatched_parenthesis_t(in);

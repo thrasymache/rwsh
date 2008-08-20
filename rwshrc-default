@@ -5,69 +5,74 @@
 %global ERRINFO ()
 %global OLD_ERRNO ()
 %global REGEX ()
-%global SELECT $HOME
-%selection_set SELECT /
+%global s $HOME
+%global s2 $HOME
+%selection_set s /
 %global TEMP1 ()
 %global TEMP2 ()
 %set FIGNORE .*
 
 # selection commands
-%function cat {%selection_set SELECT $1; /bin/cat @$SELECT}
-%function cd {%selection_set SELECT $1; %cd @$SELECT; %selection_set SELECT /}
-%function chmod {%selection_set SELECT $2; /bin/chmod $1 @$SELECT}
-%function cp {/bin/cp @$SELECT $1}
-%function create {/usr/bin/touch $1; %selection_set SELECT $1}
-%function cvs {%selection_set SELECT $2; /usr/bin/cvs $1 @$SELECT}
-%function du {%selection_set SELECT $1; /usr/bin/du -hsc @$SELECT}
+%function sfn {
+  %function $* {%selection_set s $1; &&{%which_path &&1 $PATH} @$s}}
+sfn cat 
+%function cd {%selection_set s $1; %cd @$s; %selection_set s /; %set s2 $s}
+%function chmod {%selection_set s $2; &{whichp chmod} $1 @$s}
+%function cp {/bin/cp @$s $1}
+%function create {&{whichp touch} $1; %selection_set s $1}
+%function cvs {%selection_set s $2; &{whichp cvs} $1 @$s}
+%function diff {
+  %selection_set s $1; %selection_set s2 $2
+  &{whichp diff} @$s @$s2}
+%function du {%selection_set s $1; &{whichp du} -hsc @$s}
 %function gdb {
   if_only %test_equal $# 2 {%set BUILT_EXECUTABLE &&*}
-  /usr/bin/gdb $BUILT_EXECUTABLE}
+  &{whichp gdb} $BUILT_EXECUTABLE}
 %function gdb-bash {
   if_only %test_equal $# 2 {%set BUILT_EXECUTABLE &&*}
   %set SHELL /bin/bash
-  /usr/bin/gdb $BUILT_EXECUTABLE
+  &{whichp gdb} $BUILT_EXECUTABLE
   %set SHELL /bin/rwsh}
 %function grep {
   %set REGEX $1
-  %selection_set SELECT $2
-  &{whichp grep} $REGEX @$SELECT}
+  %selection_set s $2
+  &{whichp grep} $REGEX @$s}
 %function grepc {
   %set REGEX $1
-  %selection_set SELECT $2
-  &{whichp grep} -c $REGEX @$SELECT}
+  %selection_set s $2
+  &{whichp grep} -c $REGEX @$s}
 %function grepl {
   %set REGEX $1
-  %selection_set SELECT $2
-  &{whichp grep} -l $REGEX @$SELECT}
-%function home {%set SELECT $HOME; cd}
-%function head {%selection_set SELECT $1; &{whichp head} @$SELECT}
+  %selection_set s $2
+  &{whichp grep} -l $REGEX @$s}
+%function home {%set s $HOME; cd}
+sfn head 
 %function ignore {%set FIGNORE $*}
-%function ll {%selection_set SELECT $1; /bin/ls -l @$SELECT}
-%function mv {/bin/mv @$SELECT $1}
-%function ls {%selection_set SELECT $1; %ls @$SELECT}
-%function less {%selection_set SELECT $1; /usr/bin/less @$SELECT}
-%function oless {/usr/bin/less $*}
+%function ll {%selection_set s $1; &{whichp ls} -l @$s}
+%function mv {&{whichp mv} @$s $1}
+%function ls {%selection_set s $1; %ls @$s}
+sfn less 
+%function oless {&{whichp less} $*}
 %function regrep {
-  %selection_set SELECT $1
-  &{whichp grep} $REGEX @$SELECT}
+  %selection_set s $1
+  &{whichp grep} $REGEX @$s}
 %function regrepl {
-  %selection_set SELECT $1
-  &{whichp grep} -l $REGEX @$SELECT}
-%function rm {%selection_set SELECT $1; /bin/rm @$SELECT}
-%function sfn {
-  fn $* {%selection_set SELECT $1; &&{%which_path &&1 $PATH} @$SELECT}}
-%function vi {%selection_set SELECT $1; /usr/bin/vi @$SELECT}
+  %selection_set s $1
+  &{whichp grep} -l $REGEX @$s}
+sfn rm 
+sfn touch
+sfn vi 
 %function vim {
   %set SHELL /bin/bash
-  %selection_set SELECT $1
-  /usr/bin/vim @$SELECT
+  %selection_set s $1
+  /usr/bin/vim @$s
   %set SHELL /bin/rwsh}
 %function ovim {
   %set SHELL /bin/bash
   /usr/bin/vim $*
   %set SHELL /bin/rwsh}
-%function wc {%selection_set SELECT $1; /usr/bin/wc @$SELECT}
-%function unselect {%set SELECT $CWD; %selection_set SELECT /}
+sfn wc 
+%function unselect {%set s $CWD; %selection_set s /}
 
 # internal functions
 %function rwsh.after_command {
@@ -106,7 +111,7 @@
 %function rwsh.not_soon_enough {
   %echo $1 attempts to substitute after the command has been run $nl
   %return -1}
-%function rwsh.prompt {%echo $SELECT; %echo \$}
+%function rwsh.prompt {%echo $s; %echo \$}
 %function rwsh.selection_not_found {
   %echo no file matching pattern $1
   if_only_not %test_equal $1 $2 {%echo () for selection &&2} $nl}
@@ -129,7 +134,7 @@
   echo HOME $HOME
   echo OLDERRNO $OLDERRNO
   echo REGEX $REGEX
-  echo SELECT $SELECT}
+  echo s $s}
 
 # misc
 %function ! {if $* {%return 1}; else {%return 0}}

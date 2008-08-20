@@ -1,0 +1,5 @@
+\.o$
+^\.
+^rwsh$
+^librwsh.a$
+

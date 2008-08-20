@@ -13,7 +13,7 @@
 %function echo {%echo $* $nl}
 %function elif {%else_if $* {rwsh.argfunction}}
 %function else {%else {rwsh.argfunction}}
-%function ex_count {%which_execution_count $* $nl}
+%function ex_count {%which_execution_count $*; %echo $nl}
 %function exec {%exec $*}
 %function exit {%exit}
 %function fn {
@@ -27,8 +27,8 @@
 %function if {%if $* {rwsh.argfunction}}
 %function if_only {%if $* {rwsh.argfunction}; %else}
 %function if_only_not {%if $*; %else {rwsh.argfunction}}
-%function last_time {%which_last_execution_time $* $nl}
-%function total_time {%which_total_execution_time $* $nl}
+%function last_time {%which_last_execution_time $*; %echo $nl}
+%function total_time {%which_total_execution_time $*; %echo $nl}
 %function set {%set $1 $2 $*3}
 %function setf {
   %if %var_exists $1 {%set &&1 &&2}
@@ -38,9 +38,9 @@
   %set TEMP1 &{%waiting_for_user}
   %var_divide TEMP1 &{%waiting_for_shell}
   %echo $TEMP1 $nl}
-%function wait_bin {%waiting_for_binary $nl}
-%function wait_shell {%waiting_for_shell $nl}
-%function wait_user {%waiting_for_user $nl}
+%function wait_bin {%waiting_for_binary; %echo $nl}
+%function wait_shell {%waiting_for_shell; %echo $nl}
+%function wait_user {%waiting_for_user; %echo $nl}
 %function which {
   %which_executable $1 {rwsh.argfunction}
   %if %test_equal $? 0 {%echo $nl}
