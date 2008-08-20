@@ -225,7 +225,7 @@ void Arg_spec_t::interpret(const Argv_t& src,
            throw Undefined_variable_t(str());
          else *res++ = intermediate[word_selection];}
       else if (!expand) *res++ = next;
-      else tokenize(next, res, std::bind2nd(std::equal_to<char>(), ' '));
+      else tokenize_words(next, res);
       break;}
     case STAR_REF: case STAR_SOON:
       if (soon_level) abort(); // constructor guarantees SOONs are already done
@@ -248,8 +248,7 @@ void Arg_spec_t::interpret(const Argv_t& src,
          if (word_selection >= intermediate.size())
            throw Undefined_variable_t(str());
          else *res++ = intermediate[word_selection];}
-      else if (expand) tokenize(override_stream.value(), res,
-                                std::bind2nd(std::equal_to<char>(), ' '));
+      else if (expand) tokenize_words (override_stream.value(), res);
       else *res++ = override_stream.value();
       break;}
     default: abort();}}

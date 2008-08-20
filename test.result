@@ -293,7 +293,7 @@ $m $A {e $# $*}
 2 (zero zero) (one one) two three
 0
 $m $A$ {e $# $*}
-7 (zero zero) (one one) two three
+5 (zero zero) (one one) two three
 0
 $m $A$1 {e $# $*}
 2 (one one)
@@ -314,7 +314,7 @@ $m &{e ((zero zero) (one one) two three)} {e $# $*}
 2 (zero zero) (one one) two three
 0
 $m &{e ((zero zero) (one one) two three)}$ {e $# $*}
-7 (zero zero) (one one) two three
+5 (zero zero) (one one) two three
 0
 $m &{e ((zero zero) (one one) two three)}$1 {e $# $*}
 2 (one one)
