@@ -66,9 +66,10 @@ m {e &&{%return 1}; e after}
 f rwsh.failed_substitution
 # bad_argfunction_style
 e x{e x}
-e @//etc
+e @/etc
 # rwsh.selection_not_found
 e @/*is*
+e @test_main.cc
 e @/bin
 e @/usr/*bin
 e @/etc/rwsh*
@@ -77,6 +78,8 @@ e @/etc/rwsh*a*
 %set FIGNORE *de*
 e @/etc/rwsh*a*
 e @/usr/*l*i*b*x*e*
+e @test_main.sh
+e @*hrc*
 %return &{%return 0}
 %return &{e 0 $nl}
 %return &{%echo 0}
@@ -190,7 +193,7 @@ a 1 2 3
 %which_executable a
 %global A \
 %echo () A () A () $#
-%function a {e 9 $A $1 @//usr}
+%function a {e 9 $A $1 @/usr}
 %which_executable a
 a \
 a 1
@@ -319,17 +322,18 @@ m {%is_default_error}
 
 # %selection_set
 %selection_set A
-%selection_set A //usr
+%selection_set A /usr
 e $A
-%selection_set A /
+%selection_set A ./
 e $A
 %selection_set A local/include
 e $A
-%selection_set A ..
+%selection_set A ../..
 e $A
 %selection_set A \
 e $A
 %selection_set A /local/../../bin
+%selection_set A /bin
 e $A
 
 # %set

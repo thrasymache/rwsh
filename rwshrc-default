@@ -5,9 +5,8 @@
 %global ERRINFO ()
 %global OLD_ERRNO ()
 %global REGEX ()
-%global s $HOME
-%global s2 $HOME
-%selection_set s /
+%global s *
+%global s2 *
 %global TEMP1 ()
 %global TEMP2 ()
 %set FIGNORE .*
@@ -16,7 +15,7 @@
 %function sfn {
   %function $* {%selection_set s $1; &&{%which_path &&1 $PATH} @$s}}
 sfn cat 
-%function cd {%selection_set s $1; %cd @$s; %selection_set s /; %set s2 $s}
+%function cd {%selection_set s $1; %cd @$s; %set s *; %set s2 *}
 %function chmod {%selection_set s $2; &{whichp chmod} $1 @$s}
 %function cp {/bin/cp @$s $1}
 %function create {&{whichp touch} $1; %selection_set s $1}
@@ -54,7 +53,7 @@ sfn ed
   &{whichp grep} -l $REGEX @$s}
 sfn gzip
 sfn gunzip
-%function home {%set s $HOME; cd}
+%function home {cd $HOME}
 sfn head 
 %function ignore {%set FIGNORE $*}
 %function ll {%selection_set s $1; &{whichp ls} -ld @$s}
@@ -70,6 +69,7 @@ sfn md5
   %selection_set s $1
   &{whichp grep} -l $REGEX @$s}
 sfn rm 
+sfn sum
 sfn tail
 sfn touch
 sfn vi 
@@ -83,7 +83,7 @@ sfn vi
   /usr/bin/vim $*
   %set SHELL /bin/rwsh}
 sfn wc 
-%function unselect {%set s $CWD; %selection_set s /}
+%function unselect {%set s *}
 
 # internal functions
 %function rwsh.after_command {
@@ -166,10 +166,7 @@ fn ntimes {
     rwsh.mapped_argfunction {rwsh.argfunction}}}
 
 # final setup and individual configuration
-%global rc $HOME 
-%selection_set rc /.rwshrc
-%source $rc
-%unset rc
+%source &{e $HOME; e /.rwshrc}
 %echo rwsh v
 %version
 %echo $nl

@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <fstream>
 #include <iterator>
+#include <list>
 #include <map>
 #include <stdio.h>
 #include <string>
@@ -352,12 +353,12 @@ int return_bi(const Argv_t& argv) {
 // modify variable $1 as a selection according to $2
 int selection_set_bi(const Argv_t& argv) {
   if (argv.size() < 3) {argv.append_to_errno("ARGS"); return -1;}
-  std::vector<Entry_pattern_t> focus;
-  try {str_to_entry_pattern_vector(argv.get_var(argv[1]), focus);}
+  std::list<Entry_pattern_t> focus;
+  try {str_to_entry_pattern_list(argv.get_var(argv[1]), focus);}
   catch (Undefined_variable_t error) {return -1;}
   for (Argv_t::const_iterator i = argv.begin()+2; i != argv.end(); ++i) 
-    str_to_entry_pattern_vector(*i, focus);
-  argv.set_var(argv[1], entry_pattern_vector_to_str(focus));
+    str_to_entry_pattern_list(*i, focus);
+  argv.set_var(argv[1], entry_pattern_list_to_str(focus.begin(), focus.end()));
   return 0;}
 
 // set variable $1 to $*2

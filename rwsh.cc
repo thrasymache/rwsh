@@ -3,6 +3,7 @@
 // Copyright (C) 2005-2008 Samuel Newbold
 
 #include <iostream>
+#include <list>
 #include <map>
 #include <signal.h>
 #include <string>

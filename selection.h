@@ -14,8 +14,9 @@ class Entry_pattern_t {
   bool match(const std::string& s) const;
   const std::string& str(void) const;};
 
-void str_to_entry_pattern_vector(const std::string& src, 
-                          std::vector<Entry_pattern_t>& res);
-std::string entry_pattern_vector_to_str(
-                                       const std::vector<Entry_pattern_t>& src);
+void str_to_entry_pattern_list(const std::string& src, 
+                               std::list<Entry_pattern_t>& res);
+std::string entry_pattern_list_to_str(
+                               std::list<Entry_pattern_t>::const_iterator start,
+                               std::list<Entry_pattern_t>::const_iterator end);
 

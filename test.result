@@ -232,7 +232,7 @@ $e x{e x}
 rwsh.bad_argfunction_style : command not found ( rwsh.bad_argfunction_style x{e x} )
 
 -1
-$e @//etc
+$e @/etc
 /etc
 0
 $# rwsh.selection_not_found
@@ -240,6 +240,11 @@ $# rwsh.selection_not_found
 0
 $e @/*is*
 rwsh.selection_not_found : command not found ( rwsh.selection_not_found /*is* /*is* )
+
+-1
+ERRNO set to ARGS
+$e @test_main.cc
+rwsh.selection_not_found : command not found ( rwsh.selection_not_found test_main.cc test_main.cc )
 
 -1
 ERRNO set to ARGS
@@ -266,6 +271,12 @@ $e @/etc/rwsh*a*
 0
 $e @/usr/*l*i*b*x*e*
 /usr/libexec
+0
+$e @test_main.sh
+test_main.sh
+0
+$e @*hrc*
+rwshrc rwshrc-basic
 0
 $%return &{%return 0}
 
@@ -637,11 +648,11 @@ $%global A \
 $%echo () A () A () $#
  A  A  7
 0
-$%function a {e 9 $A $1 @//usr}
+$%function a {e 9 $A $1 @/usr}
 
 0
 $%which_executable a
-%function a {e 9 $A $1 @//usr}
+%function a {e 9 $A $1 @/usr}
 0
 $a \
 9   /usr
@@ -1045,13 +1056,13 @@ $%selection_set A
 
 -1
 ERRNO set to ARGS
-$%selection_set A //usr
+$%selection_set A /usr
 
 0
 $e $A
 /usr
 0
-$%selection_set A /
+$%selection_set A ./
 
 0
 $e $A
@@ -1063,7 +1074,7 @@ $%selection_set A local/include
 $e $A
 /usr/local/include
 0
-$%selection_set A ..
+$%selection_set A ../..
 
 0
 $e $A
@@ -1076,6 +1087,9 @@ $e $A
 /usr
 0
 $%selection_set A /local/../../bin
+
+0
+$%selection_set A /bin
 
 0
 $e $A

@@ -66,25 +66,36 @@ const std::string& Entry_pattern_t::str(void) const {
   if (unterminated) string_v += '*';
   return string_v;}
 
-void str_to_entry_pattern_vector(const std::string& src, 
-                                 std::vector<Entry_pattern_t>& res) {
+void str_to_entry_pattern_list(const std::string& src, 
+                               std::list<Entry_pattern_t>& res) {
+  if (src.empty()) return;
+  unsigned updir = 0;
   std::vector<std::string> temp;
   tokenize_strict(src, std::back_inserter(temp), 
                   std::bind2nd(std::equal_to<char>(), '/'));
   std::vector<std::string>::iterator i = temp.begin();
-  if (!i->size()) ++i;
-  else if (res.size()) res.pop_back();
-  for (; i != temp.end(); ++i) {
-    if (*i == "") 
-      if (i+1 == temp.end()) res.push_back(Entry_pattern_t("*"));
-      else res.clear();
-    else if (*i == "..") {if (res.size()) res.pop_back();}
-    else res.push_back(Entry_pattern_t(*i));}}
+  if (*i == "") {
+    res.clear();
+    res.push_back(std::string());}
+  else if (*i == "..")
+    if (res.size()) res.pop_back();
+    else ++updir;
+  else if (*i != ".") {
+    if (res.size()) res.pop_back();
+    res.push_back(Entry_pattern_t(*i));}
+  for (++i; i != temp.end(); ++i) {
+    if (*i == "") res.push_back(Entry_pattern_t("*"));
+    else if (*i == "..")
+      if (res.size()) res.pop_back();
+      else ++updir;
+    else res.push_back(Entry_pattern_t(*i));}
+  for (; updir; --updir) res.push_front(Entry_pattern_t(std::string("..")));}
 
-std::string entry_pattern_vector_to_str(
-                                      const std::vector<Entry_pattern_t>& src) {
-  std::string result;
-  for (std::vector<Entry_pattern_t>::const_iterator i=src.begin();
-       i != src.end(); ++i) result += '/' + i->str();
+std::string entry_pattern_list_to_str(
+                               std::list<Entry_pattern_t>::const_iterator start,
+                               std::list<Entry_pattern_t>::const_iterator end) {
+  if (start == end) return std::string();
+  std::string result = start->str();
+  for (++start; start != end; ++start) result += '/' + start->str();
   return result;}
 
