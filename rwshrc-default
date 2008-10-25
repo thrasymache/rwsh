@@ -25,11 +25,14 @@ sfn cat
   %selection_set s $1; %selection_set s2 $2
   &{whichp diff} @$s @$s2}
 %function du {%selection_set s $1; &{whichp du} -hsc @$s}
+sfn ed
 %function gdb {
   if_only %test_equal $# 2 {%set BUILT_EXECUTABLE &&*}
+  %echo debugging $BUILT_EXECUTABLE $nl
   &{whichp gdb} $BUILT_EXECUTABLE}
 %function gdb-bash {
   if_only %test_equal $# 2 {%set BUILT_EXECUTABLE &&*}
+  %echo debugging $BUILT_EXECUTABLE $nl
   %set SHELL /bin/bash
   &{whichp gdb} $BUILT_EXECUTABLE
   %set SHELL /bin/rwsh}
@@ -41,18 +44,25 @@ sfn cat
   %set REGEX $1
   %selection_set s $2
   &{whichp grep} -c $REGEX @$s}
+%function grepv {
+  %set REGEX $1
+  %selection_set s $2
+  &{whichp grep} -v $REGEX @$s}
 %function grepl {
   %set REGEX $1
   %selection_set s $2
   &{whichp grep} -l $REGEX @$s}
+sfn gzip
+sfn gunzip
 %function home {%set s $HOME; cd}
 sfn head 
 %function ignore {%set FIGNORE $*}
-%function ll {%selection_set s $1; &{whichp ls} -l @$s}
-%function mv {&{whichp mv} @$s $1}
+%function ll {%selection_set s $1; &{whichp ls} -ld @$s}
 %function ls {%selection_set s $1; %ls @$s}
 sfn less 
 %function oless {&{whichp less} $*}
+%function mv {&{whichp mv} @$s $1; %set s $CWD; %selection_set s / $1}
+sfn md5
 %function regrep {
   %selection_set s $1
   &{whichp grep} $REGEX @$s}
@@ -60,6 +70,7 @@ sfn less
   %selection_set s $1
   &{whichp grep} -l $REGEX @$s}
 sfn rm 
+sfn tail
 sfn touch
 sfn vi 
 %function vim {
@@ -114,7 +125,8 @@ sfn wc
 %function rwsh.prompt {%echo $s; %echo \$}
 %function rwsh.selection_not_found {
   %echo no file matching pattern $1
-  if_only_not %test_equal $1 $2 {%echo () for selection &&2} $nl}
+  %if %test_not_equal $1 $2 {%echo () for selection &&2 $nl}
+  %else {%echo $nl}}
 %function rwsh.shutdown {%echo $nl}
 %function rwsh.sighup {%echo $nl received SIGHUP: $* $nl}
 %function rwsh.sigint {%echo $nl received SIGINT: $* $nl}

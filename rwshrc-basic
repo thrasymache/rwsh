@@ -27,6 +27,10 @@
 %function if {%if $* {rwsh.argfunction}}
 %function if_only {%if $* {rwsh.argfunction}; %else}
 %function if_only_not {%if $*; %else {rwsh.argfunction}}
+%function timings {
+  %echo last time (); %which_last_execution_time $*; %echo $nl
+  %echo total time (); %which_total_execution_time $*; %echo $nl
+  %echo execution count (); %which_execution_count $*; %echo $nl}
 %function last_time {%which_last_execution_time $*; %echo $nl}
 %function total_time {%which_total_execution_time $*; %echo $nl}
 %function set {%set $1 $2 $*3}

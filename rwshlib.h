@@ -6,3 +6,4 @@ class E_range_t {};
 
 double my_strtod(const std::string& src);
 int my_strtoi(const std::string& src);
+char my_strtoc(const std::string& src);
