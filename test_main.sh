@@ -80,6 +80,8 @@ e @/etc/rwsh*a*
 e @/usr/*l*i*b*x*e*
 e @test_main.sh
 e @*hrc*
+%set A r*h.cc sel*.h
+e @$A
 %return &{%return 0}
 %return &{e 0 $nl}
 %return &{%echo 0}
@@ -332,15 +334,15 @@ e $A
 e $A
 %selection_set A \
 e $A
-%selection_set A /local/../../bin
-%selection_set A /bin
+%selection_set A ./local/../../bin
+e $A
+%selection_set A sbin etc
 e $A
 
 # %set
 %set A
 %set B x
 %set IF_TEST x
-e $A
 %set A x
 e $A
 

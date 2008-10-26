@@ -20,7 +20,7 @@
 #include "selection.h"
 #include "tokenize.cc"
 
-Entry_pattern_t::Entry_pattern_t(const std::string& src) {
+Simple_pattern::Simple_pattern(const std::string& src) {
   std::string::size_type j = src.find_first_of('*');
   if (j == std::string::npos) {
     only_text = true;
@@ -38,7 +38,7 @@ Entry_pattern_t::Entry_pattern_t(const std::string& src) {
     while (j < std::string::npos);}}
 
 // recursive function to determine matches after initial text 
-bool Entry_pattern_t::find_terms(size_type cur_term, const std::string& s) 
+bool Simple_pattern::find_terms(size_type cur_term, const std::string& s) 
         const {
   if (cur_term == terms.size())
     if (unterminated || !s.length()) return true;
@@ -53,18 +53,37 @@ bool Entry_pattern_t::find_terms(size_type cur_term, const std::string& s)
   return false;}
 
 // returns true if s matches the entry pattern
-bool Entry_pattern_t::match(const std::string& s) const {
+bool Simple_pattern::match(const std::string& s) const {
   if (s.compare(0, initial.size(), initial)) return false;
   return find_terms(0, s.substr(initial.size()));}
 
 // convert to a string. inverse of constructor.
-const std::string& Entry_pattern_t::str(void) const {
-  string_v = initial;
+std::string Simple_pattern::str(void) const {
+  std::string result = initial;
   for (std::vector<std::string>::const_iterator i=terms.begin(); 
        i != terms.end(); ++i)
-    string_v += '*' + *i;
-  if (unterminated) string_v += '*';
-  return string_v;}
+    result += '*' + *i;
+  if (unterminated) result += '*';
+  return result;}
+
+Entry_pattern_t::Entry_pattern_t(const std::string& src) {
+  std::vector<std::string> temp;
+  tokenize_strict(src, std::back_inserter(temp), 
+                  std::bind2nd(std::equal_to<char>(), ' '));
+  for (std::vector<std::string>::const_iterator i = temp.begin();
+       i != temp.end(); ++i) options.push_back(Simple_pattern(*i));
+  only_text = options.size() == 1 && options[0].is_only_text();}
+
+bool Entry_pattern_t::match(const std::string& s) const {
+  for (std::vector<Simple_pattern>::const_iterator i = options.begin();
+       i != options.end(); ++i) if (i->match(s)) return true;
+  return false;}
+
+std::string Entry_pattern_t::str(void) const {
+  std::string result = options.front().str();
+  for (std::vector<Simple_pattern>::const_iterator i = options.begin()+1;
+       i != options.end(); ++i) result += ' ' + i->str();
+  return result;}
 
 void str_to_entry_pattern_list(const std::string& src, 
                                std::list<Entry_pattern_t>& res) {

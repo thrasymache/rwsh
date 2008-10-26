@@ -278,6 +278,12 @@ test_main.sh
 $e @*hrc*
 rwshrc rwshrc-basic
 0
+$%set A r*h.cc sel*.h
+
+0
+$e @$A
+rwsh.cc selection.h
+0
 $%return &{%return 0}
 
 -1
@@ -1086,14 +1092,17 @@ $%selection_set A \
 $e $A
 /usr
 0
-$%selection_set A /local/../../bin
-
-0
-$%selection_set A /bin
+$%selection_set A ./local/../../bin
 
 0
 $e $A
 /bin
+0
+$%selection_set A sbin etc
+
+0
+$e $A
+/sbin etc
 0
 $
 
@@ -1112,9 +1121,6 @@ rwsh.undefined_variable : command not found ( rwsh.undefined_variable B %set )
 $%set IF_TEST x
 
 2
-$e $A
-/bin
-0
 $%set A x
 
 0

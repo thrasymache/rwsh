@@ -36,7 +36,7 @@ void selection_read(const std::string& src, Out res) {
     if (i->is_only_text())
       for (std::list<std::string>::iterator j=partial.begin();
            j!=partial.end(); ++j) {
-        *j += i->initial_text();
+        *j += i->str();
         if (more) *j += '/';
         struct stat sb;
         if (stat(j->c_str(), &sb)) {j = partial.erase(j); --j;}}

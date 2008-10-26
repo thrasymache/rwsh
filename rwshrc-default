@@ -13,17 +13,17 @@
 
 # selection commands
 %function sfn {
-  %function $* {%selection_set s $1; &&{%which_path &&1 $PATH} @$s}}
+  %function $* {%selection_set s $1 $*2; &&{%which_path &&1 $PATH} @$s}}
 sfn cat 
 %function cd {%selection_set s $1; %cd @$s; %set s *; %set s2 *}
-%function chmod {%selection_set s $2; &{whichp chmod} $1 @$s}
+%function chmod {%selection_set s $2 $*3; &{whichp chmod} $1 @$s}
 %function cp {/bin/cp @$s $1}
-%function create {&{whichp touch} $1; %selection_set s $1}
-%function cvs {%selection_set s $2; &{whichp cvs} $1 @$s}
+%function create {%selection_set s $1; &{whichp touch} $s}
+%function cvs {%selection_set s $2 $*3; &{whichp cvs} $1 @$s}
 %function diff {
   %selection_set s $1; %selection_set s2 $2
   &{whichp diff} @$s @$s2}
-%function du {%selection_set s $1; &{whichp du} -hsc @$s}
+%function du {%selection_set s $1 $*2; &{whichp du} -hsc @$s}
 sfn ed
 %function gdb {
   if_only %test_equal $# 2 {%set BUILT_EXECUTABLE &&*}
@@ -37,37 +37,28 @@ sfn ed
   %set SHELL /bin/rwsh}
 %function grep {
   %set REGEX $1
-  %selection_set s $2
+  %selection_set s $2 $*3
   &{whichp grep} $REGEX @$s}
-%function grepc {
-  %set REGEX $1
-  %selection_set s $2
-  &{whichp grep} -c $REGEX @$s}
-%function grepv {
-  %set REGEX $1
-  %selection_set s $2
-  &{whichp grep} -v $REGEX @$s}
-%function grepl {
-  %set REGEX $1
-  %selection_set s $2
-  &{whichp grep} -l $REGEX @$s}
+%function grepo {
+  %set REGEX $2
+  %selection_set s $3 $*4
+  &{whichp grep} &&{e -; e &&1} $REGEX @$s}
 sfn gzip
 sfn gunzip
 %function home {cd $HOME}
 sfn head 
 %function ignore {%set FIGNORE $*}
-%function ll {%selection_set s $1; &{whichp ls} -ld @$s}
-%function ls {%selection_set s $1; %ls @$s}
+%function ll {%selection_set s $1 $*2; &{whichp ls} -ld @$s}
+%function ls {%selection_set s $1 $*2; %ls @$s}
 sfn less 
-%function oless {&{whichp less} $*}
-%function mv {&{whichp mv} @$s $1; %set s $CWD; %selection_set s / $1}
+%function mv {&{whichp mv} @$s $1; %set s $1}
 sfn md5
 %function regrep {
-  %selection_set s $1
+  %selection_set s $1 $*2
   &{whichp grep} $REGEX @$s}
-%function regrepl {
-  %selection_set s $1
-  &{whichp grep} -l $REGEX @$s}
+%function regrepo {
+  %selection_set s $2 $*3
+  &{whichp grep} &&{e -; e &&1} $REGEX @$s}
 sfn rm 
 sfn sum
 sfn tail
@@ -75,12 +66,8 @@ sfn touch
 sfn vi 
 %function vim {
   %set SHELL /bin/bash
-  %selection_set s $1
+  %selection_set s $1 $*2
   /usr/bin/vim @$s
-  %set SHELL /bin/rwsh}
-%function ovim {
-  %set SHELL /bin/bash
-  /usr/bin/vim $*
   %set SHELL /bin/rwsh}
 sfn wc 
 %function unselect {%set s *}

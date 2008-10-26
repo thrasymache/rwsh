@@ -356,8 +356,10 @@ int selection_set_bi(const Argv_t& argv) {
   std::list<Entry_pattern_t> focus;
   try {str_to_entry_pattern_list(argv.get_var(argv[1]), focus);}
   catch (Undefined_variable_t error) {return -1;}
-  for (Argv_t::const_iterator i = argv.begin()+2; i != argv.end(); ++i) 
-    str_to_entry_pattern_list(*i, focus);
+  std::string change = *(argv.begin()+2);
+  for (Argv_t::const_iterator i = argv.begin()+3; i != argv.end(); ++i) 
+    change += ' ' + *i;
+  str_to_entry_pattern_list(change, focus);
   argv.set_var(argv[1], entry_pattern_list_to_str(focus.begin(), focus.end()));
   return 0;}
 
