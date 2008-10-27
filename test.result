@@ -1080,13 +1080,13 @@ $%selection_set A local/include
 $e $A
 /usr/local/include
 0
-$%selection_set A ../..
+$%selection_set A ..
 
 0
 $e $A
 /usr
 0
-$%selection_set A \
+$%selection_set A ()
 
 0
 $e $A

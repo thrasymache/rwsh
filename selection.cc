@@ -87,18 +87,18 @@ std::string Entry_pattern_t::str(void) const {
 
 void str_to_entry_pattern_list(const std::string& src, 
                                std::list<Entry_pattern_t>& res) {
-  if (src.empty()) return;
   unsigned updir = 0;
   std::vector<std::string> temp;
   tokenize_strict(src, std::back_inserter(temp), 
                   std::bind2nd(std::equal_to<char>(), '/'));
   std::vector<std::string>::iterator i = temp.begin();
-  if (*i == "") {
+  if (src.empty());
+  else if (*i == "") {
     res.clear();
     res.push_back(std::string());}
   else if (*i == "..")
-    if (res.size()) res.pop_back();
-    else ++updir;
+    if (res.size() > 1) {res.pop_back(); res.pop_back();}
+    else {res.clear(); ++updir;}
   else if (*i != ".") {
     if (res.size()) res.pop_back();
     res.push_back(Entry_pattern_t(*i));}
@@ -108,7 +108,8 @@ void str_to_entry_pattern_list(const std::string& src,
       if (res.size()) res.pop_back();
       else ++updir;
     else res.push_back(Entry_pattern_t(*i));}
-  for (; updir; --updir) res.push_front(Entry_pattern_t(std::string("..")));}
+  for (; updir; --updir) res.push_front(Entry_pattern_t(std::string("..")));
+  if (res.empty()) res.push_back(Entry_pattern_t("*"));}
 
 std::string entry_pattern_list_to_str(
                                std::list<Entry_pattern_t>::const_iterator start,
@@ -116,5 +117,6 @@ std::string entry_pattern_list_to_str(
   if (start == end) return std::string();
   std::string result = start->str();
   for (++start; start != end; ++start) result += '/' + start->str();
-  return result;}
+  if (result == "*") return std::string();
+  else return result;}
 

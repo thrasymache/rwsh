@@ -330,9 +330,9 @@ e $A
 e $A
 %selection_set A local/include
 e $A
-%selection_set A ../..
+%selection_set A ..
 e $A
-%selection_set A \
+%selection_set A ()
 e $A
 %selection_set A ./local/../../bin
 e $A
