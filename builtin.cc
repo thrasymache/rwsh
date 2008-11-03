@@ -3,6 +3,7 @@
 // Copyright (C) 2006, 2007 Samuel Newbold
 
 #include <dirent.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <fstream>
 #include <iterator>
