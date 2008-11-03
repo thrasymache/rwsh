@@ -1,14 +1,13 @@
 %source /etc/rwshrc-basic
 
 # set up environment
+%set PATH &{c $HOME /bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin}
 %global BUILT_EXECUTABLE /bin/rwsh
 %global ERRINFO ()
 %global OLD_ERRNO ()
 %global REGEX ()
 %global s ()
 %global s2 ()
-%global TEMP1 ()
-%global TEMP2 ()
 %set FIGNORE .*
 
 # selection commands
@@ -54,8 +53,10 @@ sfn head
 %function ll {%selection_set s $1 $*2; &{whichp ls} -ld @$s}
 %function ls {%selection_set s $1 $*2; %ls @$s}
 sfn less 
-%function mv {&{whichp mv} @$s $1; %set s $1}
-sfn md5
+%function mv {
+  %if %test_not_equal $# 2 {echo this mv takes only one argument; %return 1}
+  %else {&{whichp mv} @$s &&1; %set s &&1}}
+sfn md5sum
 %function regrep {
   %selection_set s $1 $*2
   &{whichp grep} $REGEX @$s}
@@ -144,10 +145,10 @@ sfn wc
 %function and {%if %return 1; %stepwise $* {%else_if_not $*}; %else}
 %function or {%if %return 1; %stepwise $* {%else_if $*}; %else}
 %global TESTABILITY (an external variable)
-%function st {/bin/rwsh /usr/share/rwsh/test_init.sh </usr/share/rwsh/test_main.sh >test.tmp
-  /usr/bin/diff -c /usr/share/rwsh/test.result test.tmp
-  /bin/rm test.tmp}
-%function to {/bin/rwsh /usr/share/rwsh/test_init.sh </usr/share/rwsh/test_main.sh}
+%function st {/bin/rwsh test_init.sh <test_main.sh >test.tmp
+  &{whichp diff} -c test.result test.tmp
+  &{whichp rm} test.tmp}
+%function to {/bin/rwsh -to}
 fn test_var_not_equal {%test_not_equal $$1 $2}
 fn ntimes {
   %set TEMP1 0

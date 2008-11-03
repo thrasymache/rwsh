@@ -3,6 +3,9 @@
 rwsh.mapped_argfunction >/tmp/lcl {%echo &*0 (
 )}
 %if %test_equal $# 2 {%source /etc/rwshrc-default}
+%else_if %test_equal $2 -to {%importenv_preserve;
+  %exec /bin/rwsh test_init.sh <test_main.sh
+  %exit}
 %else_if %test_equal $# 3 {%source &2}
 %else_if %test_equal $2 -c {
   rwsh.mapped_argfunction &3 {%source /etc/rwshrc-basic; $1$; %exit}}
