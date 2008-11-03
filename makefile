@@ -49,7 +49,7 @@ variable_map.o: arg_spec.h rwsh_stream.h argv.h arg_script.h executable.h \
 	variable_map.h
 
 .PHONY: all clean dist
-all: rwsh
+all: rwsh librwsh.a
 clean:
 	rm *.o
 dist:

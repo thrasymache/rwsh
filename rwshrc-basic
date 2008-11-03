@@ -9,11 +9,12 @@
 # builtin wrappers
 %function . {%source $*}
 %function af {rwsh.argfunction}
+%function c {%combine $*}
 %function e {%echo $*}
 %function echo {%echo $* $nl}
 %function elif {%else_if $* {rwsh.argfunction}}
 %function else {%else {rwsh.argfunction}}
-%function ex_count {%which_execution_count $*; %echo $nl}
+%function ex_count {%which_execution_count $*; c $nl}
 %function exec {%exec $*}
 %function exit {%exit}
 %function fn {
@@ -28,11 +29,11 @@
 %function if_only {%if $* {rwsh.argfunction}; %else}
 %function if_only_not {%if $*; %else {rwsh.argfunction}}
 %function timings {
-  %echo last time (); %which_last_execution_time $*; %echo $nl
-  %echo total time (); %which_total_execution_time $*; %echo $nl
-  %echo execution count (); %which_execution_count $*; %echo $nl}
-%function last_time {%which_last_execution_time $*; %echo $nl}
-%function total_time {%which_total_execution_time $*; %echo $nl}
+  %echo last time (); %which_last_execution_time $*; c $nl
+  %echo total time (); %which_total_execution_time $*; c $nl
+  %echo execution count (); %which_execution_count $*; c $nl}
+%function last_time {%which_last_execution_time $*; c $nl}
+%function total_time {%which_total_execution_time $*; c $nl}
 %function set {%set $1 $2 $*3}
 %function setf {
   %if %var_exists $1 {%set &&1 &&2}
@@ -42,9 +43,9 @@
   %set TEMP1 &{%waiting_for_user}
   %var_divide TEMP1 &{%waiting_for_shell}
   %echo $TEMP1 $nl}
-%function wait_bin {%waiting_for_binary; %echo $nl}
-%function wait_shell {%waiting_for_shell; %echo $nl}
-%function wait_user {%waiting_for_user; %echo $nl}
+%function wait_bin {%waiting_for_binary; c $nl}
+%function wait_shell {%waiting_for_shell; c $nl}
+%function wait_user {%waiting_for_user; c $nl}
 %function which {
   %which_executable $1 {rwsh.argfunction}
   %if %test_equal $? 0 {%echo $nl}
@@ -52,7 +53,7 @@
 %function whichp {
   %which_path $1 $PATH
   %if %test_equal $? 0
-  %else {echo &&1 not found in $PATH; return 1}}
+  %else {echo &&1 not found in $PATH; %return 1}}
 %function while {%while $* {rwsh.argfunction}}
 %function var_exists {%var_exists $1}
 

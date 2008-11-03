@@ -59,7 +59,15 @@ int cd_bi(const Argv_t& argv) {
   errno = 0;
   return ret;}
 
-// echo arguments to standard output
+// echo arguments to standard output without space separation
+int combine_bi(const Argv_t& argv) {
+  if (argv.size() < 2) {argv.append_to_errno("ARGS"); return -1;}
+  for (Argv_t::const_iterator i = argv.begin()+1; i != argv.end(); ++i)
+    argv.output <<*i;
+  argv.output.flush();
+  return 0;}
+
+// echo arguments to standard output separated by space
 int echo_bi(const Argv_t& argv) {
   if (argv.size() < 2) {argv.append_to_errno("ARGS"); return -1;}
   for (Argv_t::const_iterator i = argv.begin()+1; i != argv.end()-1; ++i)

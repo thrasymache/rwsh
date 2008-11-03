@@ -2,6 +2,7 @@
 
 int append_to_errno_bi(const Argv_t& argv);
 int cd_bi(const Argv_t& argv);
+int combine_bi(const Argv_t& argv);
 int echo_bi(const Argv_t& argv);
 int if_bi(const Argv_t& argv);
 int if_errno_bi(const Argv_t& argv);

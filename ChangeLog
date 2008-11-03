@@ -1,5 +1,5 @@
 rwsh v0.2.2 -
-  * builtins added: %exec, %for_each_line, %fork, %is_default_input,
+  * builtins added: %combine, %exec, %for_each_line, %fork, %is_default_input,
       %is_default_output, %is_default_error, %test_greater, %test_is_number,
       %test_number_equal, %test_less, %waiting_for_shell, %waiting_for_user,
       %which_execution_count, %which_last_execution_time,
@@ -11,6 +11,7 @@ rwsh v0.2.2 -
   * /etc/rwshrc does all command-processing
   * /etc/rwshrc supports -c flag
   * newlines supported within argfunctions
+  * selection read and write support relative paths
 
 rwsh v0.2.1 - command substitution
   * builtins: %append_to_errno, %error_unit, %for, %if_errno, %if_errno_is, 

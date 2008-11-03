@@ -15,7 +15,10 @@
 %function sfn {
   %function $* {%selection_set s $1 $*2; &&{%which_path &&1 $PATH} @$s}}
 sfn cat 
-%function cd {%selection_set s $1; %cd @$s; %set s (); %set s2 ()}
+%function cd {
+  %selection_set s $1; %cd @$s
+  &{whichp pwd}
+  %set s (); %set s2 ()}
 %function chmod {%selection_set s $2 $*3; &{whichp chmod} $1 @$s}
 %function cp {/bin/cp @$s $1}
 %function create {%selection_set s $1; &{whichp touch} $s}
@@ -27,11 +30,11 @@ sfn cat
 sfn ed
 %function gdb {
   if_only %test_equal $# 2 {%set BUILT_EXECUTABLE &&*}
-  %echo debugging $BUILT_EXECUTABLE $nl
+  echo debugging $BUILT_EXECUTABLE
   &{whichp gdb} $BUILT_EXECUTABLE}
 %function gdb-bash {
   if_only %test_equal $# 2 {%set BUILT_EXECUTABLE &&*}
-  %echo debugging $BUILT_EXECUTABLE $nl
+  echo debugging $BUILT_EXECUTABLE
   %set SHELL /bin/bash
   &{whichp gdb} $BUILT_EXECUTABLE
   %set SHELL /bin/rwsh}
@@ -58,7 +61,7 @@ sfn md5
   &{whichp grep} $REGEX @$s}
 %function regrepo {
   %selection_set s $2 $*3
-  &{whichp grep} &&{e -; e &&1} $REGEX @$s}
+  &{whichp grep} &&{c - &&1} $REGEX @$s}
 sfn rm 
 sfn sum
 sfn tail
@@ -154,7 +157,5 @@ fn ntimes {
 fn mark {ntimes 80 {%echo #}}
 
 # final setup and individual configuration
-%source &{e $HOME; e /.rwshrc}
-%echo rwsh v
-%version
-%echo $nl
+%source &{c $HOME /.rwshrc}
+%combine rwsh\ v &{%version} $nl

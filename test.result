@@ -535,6 +535,19 @@ $/bin/pwd
 $
 
 0
+$# %combine
+
+0
+$%combine
+
+-1
+ERRNO set to ARGS
+$%combine on () e \ two ( ) $#
+one two 7
+0
+$
+
+0
 $# %echo
 
 0
@@ -1488,7 +1501,7 @@ $%which_execution_count j
 
 1
 $%which_execution_count #
-36
+37
 0
 $%which_last_execution_time
 

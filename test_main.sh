@@ -160,6 +160,10 @@ f x
 %cd /bin
 /bin/pwd
 
+# %combine
+%combine
+%combine on () e \ two ( ) $#
+
 # %echo
 %echo
 %echo these are fixed strings

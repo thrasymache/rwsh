@@ -23,6 +23,7 @@ std::string init_str =
 void internal_init(void) {
   executable_map.set(new Builtin_t("%append_to_errno", append_to_errno_bi));
   executable_map.set(new Builtin_t("%cd", cd_bi));
+  executable_map.set(new Builtin_t("%combine", combine_bi));
   executable_map.set(new Builtin_t("%echo", echo_bi));
   executable_map.set(new Builtin_t("%else", else_bi));
   executable_map.set(new Builtin_t("%else_if", else_if_bi));
