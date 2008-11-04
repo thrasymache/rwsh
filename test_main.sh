@@ -506,13 +506,34 @@ e $A
 %var_divide B 1
 %set A A
 %var_divide A 2 
-%set A 3000000000
+%set A 1e3000000000
 %var_divide A 2 
-%set A 8
+%set A 16.8
 %var_divide A A
-%var_divide A 3000000000
+%var_divide A 1e3000000000
 %var_divide A 0 
-%var_divide A 2 
+%var_divide A 4.2 
+e $A
+
+# %var_subtract
+%var_subtract
+%var_subtract A 1 2
+%var_subtract B 1
+%set A A
+%var_subtract A 2 
+%set A 3000000000
+%var_subtract A 2 
+%set A -2147483648
+%var_subtract A A
+%var_subtract A 3000000000
+%var_subtract A -2147483648
+%var_subtract A 2147483647
+%var_subtract A 2147483647
+e $A
+%var_subtract A 2147483647
+%var_subtract A -2147483648
+e $A
+%var_subtract A \
 e $A
 
 # %version %version_available %version_compatible

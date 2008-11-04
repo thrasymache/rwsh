@@ -103,6 +103,7 @@ void internal_init(void) {
   executable_map.set(new Builtin_t("%which_test", which_test_bi));
   executable_map.set(new Builtin_t("%while", while_bi));
   executable_map.set(new Builtin_t("%var_add", var_add_bi));
+  executable_map.set(new Builtin_t("%var_subtract", var_subtract_bi));
   executable_map.set(new Builtin_t("%var_divide", var_divide_bi));
   executable_map.set(new Builtin_t("%var_exists", var_exists_bi));
   executable_map.set(new Builtin_t("%version", version_bi));

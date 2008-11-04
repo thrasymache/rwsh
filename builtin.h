@@ -50,6 +50,7 @@ int which_return_bi(const Argv_t& argv);
 int which_test_bi(const Argv_t& argv);
 int while_bi(const Argv_t& argv);
 int var_add_bi(const Argv_t& argv);
+int var_subtract_bi(const Argv_t& argv);
 int var_divide_bi(const Argv_t& argv);
 int var_exists_bi(const Argv_t& argv);
 int version_bi(const Argv_t& argv);

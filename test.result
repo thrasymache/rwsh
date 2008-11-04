@@ -1718,21 +1718,21 @@ $%var_divide A 2
 
 -1
 ERRNO set to VAR_NAN
-$%set A 3000000000
+$%set A 1e3000000000
 
 0
 $%var_divide A 2 
 
 -1
 ERRNO set to VAR_RANGE
-$%set A 8
+$%set A 16.8
 
 0
 $%var_divide A A
 
 -1
 ERRNO set to CONST_NAN
-$%var_divide A 3000000000
+$%var_divide A 1e3000000000
 
 -1
 ERRNO set to CONST_RANGE
@@ -1740,11 +1740,80 @@ $%var_divide A 0
 
 -1
 ERRNO set to DIVIDE_ZERO
-$%var_divide A 2 
+$%var_divide A 4.2 
 
 0
 $e $A
 4
+0
+$
+
+0
+$# %var_subtract
+
+0
+$%var_subtract
+
+-1
+ERRNO set to ARGS
+$%var_subtract A 1 2
+
+-1
+ERRNO set to ARGS
+$%var_subtract B 1
+rwsh.undefined_variable : command not found ( rwsh.undefined_variable B %var_subtract )
+
+-1
+$%set A A
+
+0
+$%var_subtract A 2 
+
+-1
+ERRNO set to VAR_NAN
+$%set A 3000000000
+
+0
+$%var_subtract A 2 
+
+0
+$%set A -2147483648
+
+0
+$%var_subtract A A
+
+-1
+ERRNO set to CONST_NAN
+$%var_subtract A 3000000000
+
+0
+$%var_subtract A -2147483648
+
+0
+$%var_subtract A 2147483647
+
+0
+$%var_subtract A 2147483647
+
+0
+$e $A
+-7.29496e+09
+0
+$%var_subtract A 2147483647
+
+0
+$%var_subtract A -2147483648
+
+0
+$e $A
+-7.29496e+09
+0
+$%var_subtract A \
+
+-1
+ERRNO set to CONST_NAN
+$e $A
+-7.29496e+09
 0
 $
 
@@ -2021,7 +2090,7 @@ $# check for extraneous variables
 0
 $/usr/bin/printenv
 ?=0
-A=4
+A=-7.29496e+09
 CWD=/bin
 FIGNORE=*de*
 MAX_NESTING=5

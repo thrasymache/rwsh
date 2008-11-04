@@ -524,23 +524,45 @@ int var_add_bi(const Argv_t& argv) {
   argv.set_var(argv[1], tmp.str());
   return 0;}
 
-int var_divide_bi(const Argv_t& argv) {
+int var_subtract_bi(const Argv_t& argv) {
   if (argv.size() != 3) {argv.append_to_errno("ARGS"); return -1;}
-  int var_term;
+  double var_term;
   try {
     const std::string& var_str = argv.get_var(argv[1]);
-    var_term = my_strtoi(var_str);}
+    var_term = my_strtod(var_str);}
+  catch (Undefined_variable_t error) {return -1;}
+  catch (E_generic_t) {argv.append_to_errno("VAR_ADD_ERROR"); return -1;}
+  catch (E_nan_t) {argv.append_to_errno("VAR_NAN"); return -1;}
+  catch (E_range_t) {argv.append_to_errno("VAR_RANGE"); return -1;}
+  double const_term;
+  try {const_term = my_strtod(argv[2]);}
+  catch (E_generic_t) {argv.append_to_errno("VAR_ADD_ERROR"); return -1;}
+  catch (E_nan_t) {argv.append_to_errno("CONST_NAN"); return -1;}
+  catch (E_range_t) {argv.append_to_errno("CONST_RANGE"); return -1;}
+  double difference = var_term - const_term;
+  int var_negative = var_term < 0;
+  std::ostringstream tmp; 
+  tmp <<difference;
+  argv.set_var(argv[1], tmp.str());
+  return 0;}
+
+int var_divide_bi(const Argv_t& argv) {
+  if (argv.size() != 3) {argv.append_to_errno("ARGS"); return -1;}
+  double var_term;
+  try {
+    const std::string& var_str = argv.get_var(argv[1]);
+    var_term = my_strtod(var_str);}
   catch (Undefined_variable_t error) {return -1;}
   catch (E_generic_t) {argv.append_to_errno("VAR_DIVIDE_ERROR"); return -1;}
   catch (E_nan_t) {argv.append_to_errno("VAR_NAN"); return -1;}
   catch (E_range_t) {argv.append_to_errno("VAR_RANGE"); return -1;}
-  int const_term;
-  try {const_term = my_strtoi(argv[2]);}
+  double const_term;
+  try {const_term = my_strtod(argv[2]);}
   catch (E_generic_t) {argv.append_to_errno("VAR_DIVIDE_ERROR"); return -1;}
   catch (E_nan_t) {argv.append_to_errno("CONST_NAN"); return -1;}
   catch (E_range_t) {argv.append_to_errno("CONST_RANGE"); return -1;}
   if (const_term == 0) {argv.append_to_errno("DIVIDE_ZERO"); return -1;}
-  int quotient = var_term / const_term;
+  double quotient = var_term / const_term;
   std::ostringstream tmp; 
   tmp <<quotient;
   argv.set_var(argv[1], tmp.str());
