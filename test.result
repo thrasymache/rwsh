@@ -60,7 +60,7 @@ $%echo a \
 a 
 0
 $line continuation
-line : command not found ( line continuation )
+line : command not found ( line continuation ) 
 
 -1
 $%which_executable rwsh.mapped_argfunction {%nop}
@@ -71,22 +71,22 @@ $%which_executable rwsh.argfunction {
 {; multiple line argfunction}
 0
 $%nop rwsh.argfunction rwsh.mismatched_brace } 
-rwsh.mismatched_brace : command not found ( rwsh.mismatched_brace %nop rwsh.argfunction rwsh.mismatched_brace } )
+rwsh.mismatched_brace : command not found ( rwsh.mismatched_brace %nop rwsh.argfunction rwsh.mismatched_brace } ) 
 
 -1
 $%nop multiple statements \; on a line
 
 -1
 $%which_executable rwsh.argfunction {rwsh.multiple_argfunctions} {}
-rwsh.multiple_argfunctions : command not found ( rwsh.multiple_argfunctions )
+rwsh.multiple_argfunctions : command not found ( rwsh.multiple_argfunctions ) 
 
 -1
 $%which_executable rwsh.argfunction {rwsh.argfunction with text args}
-rwsh.arguments_for_argfunction : command not found ( rwsh.arguments_for_argfunction rwsh.argfunction )
+rwsh.arguments_for_argfunction : command not found ( rwsh.arguments_for_argfunction rwsh.argfunction ) 
 
 -1
 $%which_executable rwsh.argfunction {rwsh.argfunction {with a function arg}}
-rwsh.arguments_for_argfunction : command not found ( rwsh.arguments_for_argfunction rwsh.argfunction )
+rwsh.arguments_for_argfunction : command not found ( rwsh.arguments_for_argfunction rwsh.argfunction ) 
 
 -1
 $%which_executable rwsh.argfunction {{{{{{{{{{{}}}}}}}}}}}
@@ -150,19 +150,19 @@ $e A 1 2 3 4 5 6 7 $$$$$$$$$8
 A 1 2 3 4 5 6 7 /bin
 0
 $e &&A
-rwsh.not_soon_enough : command not found ( rwsh.not_soon_enough &&A )
+rwsh.not_soon_enough : command not found ( rwsh.not_soon_enough &&A ) 
 
 -1
 $m {e &&&A}
-rwsh.not_soon_enough : command not found ( rwsh.not_soon_enough &&&A )
+rwsh.not_soon_enough : command not found ( rwsh.not_soon_enough &&&A ) 
 
 -1
 $e &{e &&A}
-rwsh.not_soon_enough : command not found ( rwsh.not_soon_enough &&A )
+rwsh.not_soon_enough : command not found ( rwsh.not_soon_enough &&A ) 
 
 -1
 $e &&{e &A}
-rwsh.not_soon_enough : command not found ( rwsh.not_soon_enough &&{e &A} )
+rwsh.not_soon_enough : command not found ( rwsh.not_soon_enough &&{e &A} ) 
 
 -1
 $e &A
@@ -204,22 +204,22 @@ $m &{%echo $A} {e $1 &1}
 not_bin &{%echo $A}
 0
 $m &{%return 1} {}
-rwsh.failed_substitution : command not found ( rwsh.failed_substitution &{%return 1} )
+rwsh.failed_substitution : command not found ( rwsh.failed_substitution &{%return 1} ) 
 
 -1
 $m {e &{%return 1}}
-rwsh.failed_substitution : command not found ( rwsh.failed_substitution &{%return 1} )
+rwsh.failed_substitution : command not found ( rwsh.failed_substitution &{%return 1} ) 
 
 -1
 $m {e &&{%return 1}; e after}
-rwsh.failed_substitution : command not found ( rwsh.failed_substitution &{%return 1} )
+rwsh.failed_substitution : command not found ( rwsh.failed_substitution &{%return 1} ) 
 after
 0
 $f rwsh.failed_substitution {e &&{%return 1}}
 
 0
 $m {e &&{%return 1}; e after}
-rwsh.excessive_nesting : command not found ( rwsh.excessive_nesting rwsh.failed_substitution rwsh.failed_substitution rwsh.failed_substitution rwsh.failed_substitution rwsh.failed_substitution rwsh.failed_substitution rwsh.failed_substitution rwsh.mapped_argfunction m )
+rwsh.excessive_nesting : command not found ( rwsh.excessive_nesting rwsh.failed_substitution rwsh.failed_substitution rwsh.failed_substitution rwsh.failed_substitution rwsh.failed_substitution rwsh.failed_substitution rwsh.failed_substitution rwsh.mapped_argfunction m ) 
 
 -1
 $f rwsh.failed_substitution
@@ -229,7 +229,7 @@ $# bad_argfunction_style
 
 0
 $e x{e x}
-rwsh.bad_argfunction_style : command not found ( rwsh.bad_argfunction_style x{e x} )
+rwsh.bad_argfunction_style : command not found ( rwsh.bad_argfunction_style x{e x} ) 
 
 -1
 $e @/etc
@@ -239,12 +239,12 @@ $# rwsh.selection_not_found
 
 0
 $e @/*is*
-rwsh.selection_not_found : command not found ( rwsh.selection_not_found /*is* /*is* )
+rwsh.selection_not_found : command not found ( rwsh.selection_not_found /*is* /*is* ) 
 
 -1
 ERRNO set to ARGS
 $e @test_main.cc
-rwsh.selection_not_found : command not found ( rwsh.selection_not_found test_main.cc test_main.cc )
+rwsh.selection_not_found : command not found ( rwsh.selection_not_found test_main.cc test_main.cc ) 
 
 -1
 ERRNO set to ARGS
@@ -303,7 +303,7 @@ $%set A ((zero zero) (one one) two three)
 
 0
 $m $A$$ {e $* $#}
-rwsh.invalid_word_selection : command not found ( rwsh.invalid_word_selection $$ )
+rwsh.invalid_word_selection : command not found ( rwsh.invalid_word_selection $$ ) 
 
 -1
 $m $A {e $# $*}
@@ -316,15 +316,15 @@ $m $A$1 {e $# $*}
 2 one one
 0
 $m $A$10 {e $# $*}
-rwsh.undefined_variable : command not found ( rwsh.undefined_variable $A$10 )
+rwsh.undefined_variable : command not found ( rwsh.undefined_variable $A$10 ) 
 
 -1
 $m &{e ((zero zero) (one one) two three)}@ {e $# $*}
-rwsh.invalid_word_selection : command not found ( rwsh.invalid_word_selection @ )
+rwsh.invalid_word_selection : command not found ( rwsh.invalid_word_selection @ ) 
 
 -1
 $m &{e ((zero zero) (one one) two three)}$$ {e $# $*}
-rwsh.invalid_word_selection : command not found ( rwsh.invalid_word_selection $ )
+rwsh.invalid_word_selection : command not found ( rwsh.invalid_word_selection $ ) 
 
 -1
 $m &{e ((zero zero) (one one) two three)} {e $# $*}
@@ -337,11 +337,11 @@ $m &{e ((zero zero) (one one) two three)}$1 {e $# $*}
 2 one one
 0
 $m &{e ((zero zero) (one one) two three)}$10 {e $# $*}
-rwsh.undefined_variable : command not found ( rwsh.undefined_variable &{e (zero zero) (one one) two three}$10 )
+rwsh.undefined_variable : command not found ( rwsh.undefined_variable &{e (zero zero) (one one) two three}$10 ) 
 
 -1
 $m &{e (zero zero) \)one one two three}$1 {e $# $*}
-rwsh.mismatched_parenthesis : command not found ( rwsh.mismatched_parenthesis zero zero ) )
+rwsh.mismatched_parenthesis : command not found ( rwsh.mismatched_parenthesis zero zero ) ) 
 
 -1
 $m &{e (zero zero) \)one one two three} {e $# $*}
@@ -368,17 +368,17 @@ a multi-line parenthesis
   enclosed string 4
 0
 $e a )mismatched parenthesis
-rwsh.mismatched_parenthesis : command not found ( rwsh.mismatched_parenthesis e a ) )
+rwsh.mismatched_parenthesis : command not found ( rwsh.mismatched_parenthesis e a ) ) 
 
 -1
 $e a (multi-line parenthesis
   mismatch))
 rwsh.mismatched_parenthesis : command not found ( rwsh.mismatched_parenthesis e a (multi-line parenthesis
-  mismatch)) )
+  mismatch)) ) 
 
 -1
 $e (internal \)parenthesis \\ escape ) $#
-rwsh.mismatched_parenthesis : command not found ( rwsh.mismatched_parenthesis e (internal \)parenthesis \\ escape ) )
+rwsh.mismatched_parenthesis : command not found ( rwsh.mismatched_parenthesis e (internal \)parenthesis \\ escape ) ) 
 
 -1
 $%unset A
@@ -400,15 +400,15 @@ $%else {}
 
 0
 $/bin/cat <dummy_file
-rwsh.file_open_failure dummy_file : command not found ( rwsh.file_open_failure dummy_file /bin/cat )
+rwsh.file_open_failure dummy_file : command not found ( rwsh.file_open_failure dummy_file /bin/cat ) 
 
 -1
 $%for_each_line <dummy_file {e line of $# \( $* \)}
-rwsh.file_open_failure dummy_file : command not found ( rwsh.file_open_failure dummy_file %for_each_line )
+rwsh.file_open_failure dummy_file : command not found ( rwsh.file_open_failure dummy_file %for_each_line ) 
 
 -1
 $m {e hi >dummy_file >another}
-rwsh.double_redirection : command not found ( rwsh.double_redirection >dummy_file >another )
+rwsh.double_redirection : command not found ( rwsh.double_redirection >dummy_file >another ) 
 
 -1
 $m {e hi >dummy_file}
@@ -445,7 +445,7 @@ $%for_each_line <dummy_file
 -1
 ERRNO set to ARGFUNCTION
 $%for_each_line <dummy_file <another {}
-rwsh.double_redirection : command not found ( rwsh.double_redirection <dummy_file <another )
+rwsh.double_redirection : command not found ( rwsh.double_redirection <dummy_file <another ) 
 
 -1
 $%for_each_line <dummy_file {e line of $# \( $* \) $nl}
@@ -1128,7 +1128,7 @@ $%set A
 -1
 ERRNO set to ARGS
 $%set B x
-rwsh.undefined_variable : command not found ( rwsh.undefined_variable B %set )
+rwsh.undefined_variable : command not found ( rwsh.undefined_variable B %set ) 
 
 -1
 $%set IF_TEST x
@@ -1219,7 +1219,7 @@ $wrapper 1 2
 0
 $%stepwise wrapper 1 2 {d $*}
 a 1 2 one 
-rwsh.excessive_nesting : command not found ( rwsh.excessive_nesting rwsh.mapped_argfunction a %stepwise d rwsh.mapped_argfunction wrapper %stepwise )
+rwsh.excessive_nesting : command not found ( rwsh.excessive_nesting rwsh.mapped_argfunction a %stepwise d rwsh.mapped_argfunction wrapper %stepwise ) 
 
 -1
 $%stepwise wrapper 1 2 {e $* $nl}
@@ -1635,7 +1635,7 @@ $%var_add A 1 2
 -1
 ERRNO set to ARGS
 $%var_add B 1
-rwsh.undefined_variable : command not found ( rwsh.undefined_variable B %var_add )
+rwsh.undefined_variable : command not found ( rwsh.undefined_variable B %var_add ) 
 
 -1
 $%set A A
@@ -1708,7 +1708,7 @@ $%var_divide A 1 2
 -1
 ERRNO set to ARGS
 $%var_divide B 1
-rwsh.undefined_variable : command not found ( rwsh.undefined_variable B %var_divide )
+rwsh.undefined_variable : command not found ( rwsh.undefined_variable B %var_divide ) 
 
 -1
 $%set A A
@@ -1856,7 +1856,7 @@ $# binary test implicitly tests Old_argv_t
 
 0
 $/bn/echo 1 2 3
-rwsh.binary_not_found : command not found ( rwsh.binary_not_found /bn/echo )
+rwsh.binary_not_found : command not found ( rwsh.binary_not_found /bn/echo ) 
 
 65280
 $/bin/echo 1 2 3
@@ -1894,7 +1894,7 @@ $# rwsh.arguments_for_argfunction rwsh.before_command rwsh.binary_not_found
 
 0
 $w x {rwsh.escaped_argfunction me}
-rwsh.arguments_for_argfunction : command not found ( rwsh.arguments_for_argfunction rwsh.escaped_argfunction )
+rwsh.arguments_for_argfunction : command not found ( rwsh.arguments_for_argfunction rwsh.escaped_argfunction ) 
 
 -1
 $f rwsh.before_command {%echo $*0; %echo $nl}
@@ -1902,7 +1902,7 @@ $f rwsh.before_command {%echo $*0; %echo $nl}
 0
 $/bn
 rwsh.before_command /bn
-rwsh.binary_not_found : command not found ( rwsh.binary_not_found /bn )
+rwsh.binary_not_found : command not found ( rwsh.binary_not_found /bn ) 
 
 65280
 $f rwsh.before_command
@@ -1923,7 +1923,7 @@ $f rwsh.autofunction {e $*0 $nl}
 0
 $z 1 2 3
 rwsh.autofunction z 1 2 3 
-z : command not found ( z 1 2 3 )
+z : command not found ( z 1 2 3 ) 
 
 -1
 $w z
@@ -1933,8 +1933,8 @@ $f rwsh.autofunction {y $*0}
 
 0
 $z 1 2 3
-y : command not found ( y rwsh.autofunction z 1 2 3 )
-z : command not found ( z 1 2 3 )
+y : command not found ( y rwsh.autofunction z 1 2 3 ) 
+z : command not found ( z 1 2 3 ) 
 
 -1
 $w z
@@ -1984,11 +1984,11 @@ $w x
 
 1
 $x
-x : command not found ( x )
+x : command not found ( x ) 
 
 -1
 $w rwsh.executable_not_found
-%function rwsh.executable_not_found {%echo $1 : command not found ( $* ); ; %echo 
+%function rwsh.executable_not_found {%echo $1 : command not found ( $* ) 
 ; %return -1}
 0
 $
@@ -2004,7 +2004,7 @@ $rwsh.mapped_argfunction 1 2 3 {e a $* a}
 a 1 2 3 a
 0
 $rwsh.mapped_argfunction
-rwsh.mapped_argfunction : command not found ( rwsh.mapped_argfunction )
+rwsh.mapped_argfunction : command not found ( rwsh.mapped_argfunction ) 
 
 -1
 $f g {w rwsh.argfunction {rwsh.unescaped_argfunction}
@@ -2028,7 +2028,7 @@ $f h {g}
 
 0
 $g
-rwsh.excessive_nesting : command not found ( rwsh.excessive_nesting g h g h g h g )
+rwsh.excessive_nesting : command not found ( rwsh.excessive_nesting g h g h g h g ) 
 
 -1
 $f rwsh.excessive_nesting {h}
@@ -2060,7 +2060,7 @@ $1 f rwsh.run_logic
 
 0
 $1 e executable not found
-1 : command not found ( 1 e executable not found )
+1 : command not found ( 1 e executable not found ) 
 
 -1
 $
@@ -2070,9 +2070,9 @@ $# rwsh.undefined_variable
 
 0
 $e $WRONG $WWRONG
-rwsh.undefined_variable : command not found ( rwsh.undefined_variable WRONG )
+rwsh.undefined_variable : command not found ( rwsh.undefined_variable WRONG ) 
 $e &WWRONG
-rwsh.undefined_variable : command not found ( rwsh.undefined_variable WWRONG )
+rwsh.undefined_variable : command not found ( rwsh.undefined_variable WWRONG ) 
 $
 
 0
