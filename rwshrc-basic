@@ -60,5 +60,4 @@
 
 %function rwsh.autofunction {
   %function $1 {&&{%which_path &&1 $PATH} $*}
-  if_only %return 0 {%echo added &&1 to executable map $nl}
   %if_errno_is ESUBSTITUTION {%unset ERRNO}}

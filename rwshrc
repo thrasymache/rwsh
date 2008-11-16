@@ -1,4 +1,4 @@
-%set MAX_NESTING 12
+%set MAX_NESTING 20
 %function () {%nop}
 rwsh.mapped_argfunction >/tmp/lcl {%echo &*0 (
 )}

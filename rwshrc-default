@@ -1,7 +1,7 @@
 %source /etc/rwshrc-basic
 
 # set up environment
-%set PATH &{c $HOME /bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin}
+setf PATH &{c $HOME /bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin}
 %global BUILT_EXECUTABLE /bin/rwsh
 %global ERRINFO ()
 %global OLD_ERRNO ()
@@ -66,8 +66,10 @@ sfn md5sum
 sfn rm 
 sfn sum
 sfn tail
+%function tail-f {%selection_set s $1 $*2; &{whichp tail} -f @$s}
 sfn touch
 sfn vi 
+sfn view
 %function vim {
   %set SHELL /bin/bash
   %selection_set s $1 $*2
@@ -89,6 +91,10 @@ sfn wc
 %function rwsh.arguments_for_argfunction {
   %echo cannot specify arguments for $1 directly $nl
   %return -1}
+%function rwsh.autofunction {
+  %function $1 {&&{%which_path &&1 $PATH} $*}
+  # if_only %return 0 {%echo added &&1 to executable map $nl}
+  %if_errno_is ESUBSTITUTION {%unset ERRNO}}
 %function rwsh.bad_argfunction_style {
   %echo $1 is neither an argfunction nor a substitution $nl
   %return -1}

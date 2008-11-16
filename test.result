@@ -1761,7 +1761,7 @@ $%var_subtract A 1 2
 -1
 ERRNO set to ARGS
 $%var_subtract B 1
-rwsh.undefined_variable : command not found ( rwsh.undefined_variable B %var_subtract )
+rwsh.undefined_variable : command not found ( rwsh.undefined_variable B %var_subtract ) 
 
 -1
 $%set A A

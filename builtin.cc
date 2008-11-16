@@ -130,6 +130,9 @@ int for_bi(const Argv_t& argv) {
   if (argv.size() < 2) {argv.append_to_errno("ARGS"); return -1;}
   int ret = -1;
   Argv_t body;
+  body.input = argv.input;
+  body.output = argv.output;
+  body.error = argv.error;
   body.push_back("rwsh.mapped_argfunction");
   body.push_back("");
   for (Argv_t::const_iterator i = ++argv.begin(); i != argv.end(); ++i) {
@@ -502,20 +505,20 @@ int unset_bi(const Argv_t& argv) {
 
 int var_add_bi(const Argv_t& argv) {
   if (argv.size() != 3) {argv.append_to_errno("ARGS"); return -1;}
-  int var_term;
+  double var_term;
   try {
     const std::string& var_str = argv.get_var(argv[1]);
-    var_term = my_strtoi(var_str);}
+    var_term = my_strtod(var_str);}
   catch (Undefined_variable_t error) {return -1;}
   catch (E_generic_t) {argv.append_to_errno("VAR_ADD_ERROR"); return -1;}
   catch (E_nan_t) {argv.append_to_errno("VAR_NAN"); return -1;}
   catch (E_range_t) {argv.append_to_errno("VAR_RANGE"); return -1;}
-  int const_term;
-  try {const_term = my_strtoi(argv[2]);}
+  double const_term;
+  try {const_term = my_strtod(argv[2]);}
   catch (E_generic_t) {argv.append_to_errno("VAR_ADD_ERROR"); return -1;}
   catch (E_nan_t) {argv.append_to_errno("CONST_NAN"); return -1;}
   catch (E_range_t) {argv.append_to_errno("CONST_RANGE"); return -1;}
-  int sum = var_term + const_term;
+  double sum = var_term + const_term;
   int var_negative = var_term < 0;
   if (var_negative == (const_term < 0) && var_negative != (sum < 0)) {
     argv.append_to_errno("SUM_RANGE"); return -1;}
