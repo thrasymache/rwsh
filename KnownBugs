@@ -1,3 +1,13 @@
+THIS IS PRE-ALPHA SOFTWARE. This means that major functionality is missing,
+such as pipes, job control, and command completion. This also means that
+scripts written for this version are unlikely to work on version 1.0 when it is
+released. (As an example, control flow will change in one of the next few
+versions so that the first command to return non-zero will cause functions and
+scripts to terminate, unless used in special contexts, of which only %if has
+been implemented yet). %version_compatible will eventually permit you to
+protect scripts from incompatibilities, but the shell has not matured to a
+point where the current semantics for %version_compatible may be depended upon.
+
 If a requested function does not exist, and rwsh.autofunction exceeds 
 MAX_NESTING, then you will get both the excessive_nesting and 
 executable_not_found errors.  You could make an argument that this is what 

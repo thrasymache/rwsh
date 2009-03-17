@@ -15,6 +15,16 @@ double my_strtod(const std::string& src) {
   else if (errno) {errno = 0; throw E_generic_t();}
   else return ret;}
 
+float my_strtof(const std::string& src) {
+  const char* focus = src.c_str();
+  char* endptr;
+  errno = 0;
+  float ret = strtof(focus, &endptr);
+  if (!*focus || *endptr) throw E_nan_t();
+  if (errno == ERANGE) {errno = 0; throw E_range_t();}
+  else if (errno) {errno = 0; throw E_generic_t();}
+  else return ret;}
+
 int my_strtoi(const std::string& src) {
   const char* focus = src.c_str();
   char* endptr;

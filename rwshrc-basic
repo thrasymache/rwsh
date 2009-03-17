@@ -1,7 +1,6 @@
 %function # {%nop}
 
 # set up environment
-%global SHELL /bin/rwsh
 %global TEMP1 ()
 %global nl (
 )
