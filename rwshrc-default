@@ -22,6 +22,7 @@ sfn cat
 %function cp {/bin/cp @$s $1}
 %function create {%selection_set s $1; &{whichp touch} $s}
 %function cvs {%selection_set s $2 $*3; &{whichp cvs} $1 @$s}
+%function cvso {%selection_set s $3 $*4; &{whichp cvs} $1 $2 @$s}
 %function diff {
   %selection_set s $1; %selection_set s2 $2
   &{whichp diff} @$s @$s2}
