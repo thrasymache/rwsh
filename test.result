@@ -811,6 +811,42 @@ $%return 0
 $
 
 0
+$# %store_output
+
+0
+$%store_output x
+
+-1
+ERRNO set to ARGS
+$%store_output {e some text}
+
+-1
+ERRNO set to ARGS
+$%store_output x {e some text}
+rwsh.undefined_variable : command not found ( rwsh.undefined_variable x %store_output ) 
+
+-1
+$%global x ()
+
+0
+$%store_output x {e some text; %return 1}
+
+1
+$e $x
+
+0
+$%store_output x {e some text}
+
+0
+$e $x
+some text
+0
+$%unset x
+
+0
+$
+
+0
 $# %if %else_if %else_if_not %else
 
 0
@@ -1501,7 +1537,7 @@ $%which_execution_count j
 
 1
 $%which_execution_count #
-37
+38
 0
 $%which_last_execution_time
 
@@ -1645,53 +1681,53 @@ $%var_add A 2
 
 -1
 ERRNO set to VAR_NAN
-$%set A 3000000000
+$%set A 1e309
 
 0
 $%var_add A 2 
 
 -1
 ERRNO set to VAR_RANGE
-$%set A -2147483648
+$%set A -1e308
 
 0
 $%var_add A A
 
 -1
 ERRNO set to CONST_NAN
-$%var_add A 3000000000
+$%var_add A 1e309
 
 -1
 ERRNO set to CONST_RANGE
-$%var_add A -2147483648
+$%var_add A -1e308
 
 -1
 ERRNO set to SUM_RANGE
-$%var_add A 2147483647
+$%var_add A 1e308
 
 0
-$%var_add A 2147483647
+$%var_add A 1e308
 
 0
 $e $A
-2147483646
+1e+308
 0
-$%var_add A 2147483647
+$%var_add A 1e308
 
 -1
 ERRNO set to SUM_RANGE
-$%var_add A -2147483648
+$%var_add A -1e308
 
 0
 $e $A
--2
+0
 0
 $%var_add A \
 
 -1
 ERRNO set to CONST_NAN
 $e $A
--2
+0
 0
 $
 

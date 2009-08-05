@@ -30,6 +30,7 @@ int set_bi(const Argv_t& argv);
 int selection_set_bi(const Argv_t& argv);
 int source_bi(const Argv_t& argv);
 int stepwise_bi(const Argv_t& argv);
+int store_output_bi(const Argv_t& argv);
 int test_equal_bi(const Argv_t& argv);
 int test_greater_bi(const Argv_t& argv);
 int test_less_bi(const Argv_t& argv);

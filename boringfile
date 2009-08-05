@@ -2,4 +2,5 @@
 ^\.
 ^rwsh$
 ^librwsh.a$
+^rwsh.tar.gz$
 

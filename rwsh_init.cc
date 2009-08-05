@@ -79,6 +79,7 @@ void internal_init(void) {
   executable_map.set(new Builtin_t("%selection_set", selection_set_bi));
   executable_map.set(new Builtin_t("%source", source_bi));
   executable_map.set(new Builtin_t("%stepwise", stepwise_bi));
+  executable_map.set(new Builtin_t("%store_output", store_output_bi));
   executable_map.set(new Builtin_t("%test_equal", test_equal_bi));
   executable_map.set(new Builtin_t("%test_greater", test_greater_bi));
   executable_map.set(new Builtin_t("%test_is_number", test_is_number_bi));

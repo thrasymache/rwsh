@@ -243,6 +243,17 @@ e $x
 %var_exists x
 %return 0
 
+# %store_output
+%store_output x
+%store_output {e some text}
+%store_output x {e some text}
+%global x ()
+%store_output x {e some text; %return 1}
+e $x
+%store_output x {e some text}
+e $x
+%unset x
+
 # %if %else_if %else_if_not %else
 %if
 %else_if
@@ -485,17 +496,17 @@ w rwsh.mapped_argfunction {>dummy_file}
 %var_add B 1
 %set A A
 %var_add A 2 
-%set A 3000000000
+%set A 1e309
 %var_add A 2 
-%set A -2147483648
+%set A -1e308
 %var_add A A
-%var_add A 3000000000
-%var_add A -2147483648
-%var_add A 2147483647
-%var_add A 2147483647
+%var_add A 1e309
+%var_add A -1e308
+%var_add A 1e308
+%var_add A 1e308
 e $A
-%var_add A 2147483647
-%var_add A -2147483648
+%var_add A 1e308
+%var_add A -1e308
 e $A
 %var_add A \
 e $A

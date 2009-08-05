@@ -52,17 +52,18 @@ std::string::size_type parse_token(const std::string& src,
                                    std::string::size_type token_start,
                                    unsigned max_soon,
                                    Arg_script_t* dest) {
+  const char* token_separators = " \t";
+  const char* all_separators = "\\ \t{};\n";
   if (src[token_start] == '(') {
     token_start = add_quote(src, token_start, max_soon, dest);
-    return src.find_first_not_of(" ", token_start+1);}
+    return src.find_first_not_of(token_separators, token_start+1);}
   else if (src[token_start] == ')')
     throw Mismatched_parenthesis_t(src.substr(0, token_start+1));
-  const char* separators = "\\ \t{};\n";
-  std::string::size_type split = src.find_first_of(separators, token_start),
+  std::string::size_type split = src.find_first_of(all_separators, token_start),
                          point = token_start;
   std::string token;
   for (; split != std::string::npos;
-       split = src.find_first_of(separators, split+2))
+       split = src.find_first_of(all_separators, split+2))
     if (src[split] != '\\') break;
     else if (split+1 == src.length()) {
       split = std::string::npos;
@@ -77,11 +78,10 @@ std::string::size_type parse_token(const std::string& src,
     return std::string::npos;}
   else if (src[split] == '{') {
     token_start = dest->add_function(src, token_start, split, max_soon);
-    return src.find_first_not_of(" ", token_start);}
+    return src.find_first_not_of(token_separators, token_start);}
   else {
     dest->add_token(token, max_soon);
-    return src.find_first_not_of(" ", split);}}
-
+    return src.find_first_not_of(token_separators, split);}}
 } // close unnamed namespace
 
 Arg_script_t::Arg_script_t(const Rwsh_istream_p& input_i,
@@ -95,7 +95,8 @@ Arg_script_t::Arg_script_t(const std::string& src, unsigned max_soon) :
   std::string::size_type point = 0; 
   point = constructor(src, point, max_soon);
   if (point < src.length())
-    if (src[point] == '}') throw Mismatched_brace_t(src.substr(0, point+1));
+    if (src[point] == '}' || src[point] == ';')
+      throw Mismatched_brace_t(src.substr(0, point+1));
     else abort();}
 
 Arg_script_t::Arg_script_t(const std::string& src,

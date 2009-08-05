@@ -32,6 +32,7 @@ extern char** environ;
 #include "read_dir.cc"
 #include "rwshlib.h"
 #include "selection.h"
+#include "substitution_stream.h"
 #include "tokenize.cc"
 #include "variable_map.h"
 
@@ -437,6 +438,23 @@ int stepwise_bi(const Argv_t& argv) {
   if (f->decrement_nesting(lookup)) ret = dollar_question;
   return ret;} // last return value from argfunction
 
+// run the argfunction and store its output in the variable $1
+// returns the last return from the argfunction
+int store_output_bi(const Argv_t& argv) {
+  if (argv.size() != 2 || !argv.argfunction()) {
+    argv.append_to_errno("ARGS"); return -1;}
+  if (isargvar(argv[1]) || argv[1] == "IF_TEST") return 2;
+  Argv_t mapped_argv;
+  mapped_argv.push_back("rwsh.mapped_argfunction");
+  Substitution_stream_t text;
+  mapped_argv.output = text.child_stream();
+  int ret = (*argv.argfunction())(mapped_argv);
+  if (Executable_t::unwind_stack() || argv.var_exists("ERRNO")) return -1;
+  if (ret) return ret;
+  try {argv.set_var(argv[1], text.value());}
+  catch (Undefined_variable_t) {return -1;}
+  return 0;}
+
 // return true if the two strings are the same
 int test_equal_bi(const Argv_t& argv) {
   if (argv.size() != 3) {argv.append_to_errno("ARGS"); return -1;}
@@ -519,8 +537,7 @@ int var_add_bi(const Argv_t& argv) {
   catch (E_nan_t) {argv.append_to_errno("CONST_NAN"); return -1;}
   catch (E_range_t) {argv.append_to_errno("CONST_RANGE"); return -1;}
   double sum = var_term + const_term;
-  int var_negative = var_term < 0;
-  if (var_negative == (const_term < 0) && var_negative != (sum < 0)) {
+  if (sum == 1e309 || sum == -1e309) {
     argv.append_to_errno("SUM_RANGE"); return -1;}
   std::ostringstream tmp; 
   tmp <<sum;
