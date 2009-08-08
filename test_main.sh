@@ -432,8 +432,7 @@ wrapper 1 2
 %test_less 6.022e23 .6022e24
 %test_less 6.022e2 6.022e23
 
-# %which_executable %which_execution_count %which_last_execution_time 
-# %which_total_execution_time %which_test %which_return
+# %which_executable %which_test %which_return
 %which_test
 %which_test j
 %which_test #
@@ -450,15 +449,6 @@ w rwsh.mapped_argfunction {@a @$a @$1 @$* @$*2}
 w rwsh.mapped_argfunction {>dummy_file}
 %which_executable rwsh.mapped_argfunction
 %which_executable rwsh.mapped_argfunction {rwsh.argfunction}
-%which_execution_count
-%which_execution_count j
-%which_execution_count #
-%which_last_execution_time
-# %which_last_execution_time j
-# %which_last_execution_time #
-%which_total_execution_time
-# %which_total_execution_time j
-# %which_total_execution_time #
 %waiting_for_shell j
 # %waiting_for_shell
 %waiting_for_user j
@@ -469,6 +459,22 @@ w rwsh.mapped_argfunction {>dummy_file}
 %which_return %which_return
 %which_return j
 %which_return #
+
+# %usleep %which_execution_count %which_last_execution_time
+# %which_total_execution_time
+%usleep
+%usleep -6
+%usleep 5i
+%usleep 8000
+%which_execution_count
+%which_execution_count j
+%which_execution_count %usleep
+%which_last_execution_time
+%which_last_execution_time j
+%which_last_execution_time %usleep
+%which_total_execution_time
+%which_total_execution_time j
+%which_total_execution_time %usleep
 
 # %which_path
 %which_path cat

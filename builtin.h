@@ -39,6 +39,7 @@ int test_not_equal_bi(const Argv_t& argv);
 int test_not_empty_bi(const Argv_t& argv);
 int test_number_equal_bi(const Argv_t& argv);
 int unset_bi(const Argv_t& argv);
+int usleep_bi(const Argv_t& argv);
 int waiting_for_binary_bi(const Argv_t& argv);
 int waiting_for_shell_bi(const Argv_t& argv);
 int waiting_for_user_bi(const Argv_t& argv);

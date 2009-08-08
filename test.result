@@ -1473,10 +1473,7 @@ $%test_less 6.022e2 6.022e23
 $
 
 0
-$# %which_executable %which_execution_count %which_last_execution_time 
-
-0
-$# %which_total_execution_time %which_test %which_return
+$# %which_executable %which_test %which_return
 
 0
 $%which_test
@@ -1529,36 +1526,6 @@ $%which_executable rwsh.mapped_argfunction
 $%which_executable rwsh.mapped_argfunction {rwsh.argfunction}
 {rwsh.argfunction}
 0
-$%which_execution_count
-
--1
-ERRNO set to ARGS
-$%which_execution_count j
-
-1
-$%which_execution_count #
-38
-0
-$%which_last_execution_time
-
--1
-ERRNO set to ARGS
-$# %which_last_execution_time j
-
--1
-$# %which_last_execution_time #
-
--1
-$%which_total_execution_time
-
--1
-ERRNO set to ARGS
-$# %which_total_execution_time j
-
--1
-$# %which_total_execution_time #
-
--1
 $%waiting_for_shell j
 
 -1
@@ -1591,6 +1558,60 @@ $%which_return j
 1
 $%which_return #
 -1
+0
+$
+
+0
+$# %usleep %which_execution_count %which_last_execution_time
+
+0
+$# %which_total_execution_time
+
+0
+$%usleep
+
+-1
+ERRNO set to ARGS
+$%usleep -6
+
+-1
+ERRNO set to RANGE
+$%usleep 5i
+
+-1
+ERRNO set to NAN
+$%usleep 8000
+
+0
+$%which_execution_count
+
+-1
+ERRNO set to ARGS
+$%which_execution_count j
+
+1
+$%which_execution_count %usleep
+4
+0
+$%which_last_execution_time
+
+-1
+ERRNO set to ARGS
+$%which_last_execution_time j
+
+1
+$%which_last_execution_time %usleep
+0.008144
+0
+$%which_total_execution_time
+
+-1
+ERRNO set to ARGS
+$%which_total_execution_time j
+
+1
+$%which_total_execution_time %usleep
+0.008231
 0
 $
 

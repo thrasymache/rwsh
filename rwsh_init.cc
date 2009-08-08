@@ -88,6 +88,7 @@ void internal_init(void) {
   executable_map.set(new Builtin_t("%test_not_equal", test_not_equal_bi));
   executable_map.set(new Builtin_t("%test_number_equal", test_number_equal_bi));
   executable_map.set(new Builtin_t("%unset", unset_bi));
+  executable_map.set(new Builtin_t("%usleep", usleep_bi));
   executable_map.set(new Builtin_t("%waiting_for_binary",
                                    waiting_for_binary_bi));
   executable_map.set(new Builtin_t("%waiting_for_shell", waiting_for_shell_bi));

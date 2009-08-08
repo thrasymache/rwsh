@@ -15,6 +15,7 @@
 #include <sys/stat.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
 #include <vector>
 extern char** environ;
 
@@ -521,6 +522,16 @@ int unset_bi(const Argv_t& argv) {
   if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
   else return argv.unset_var(argv[1]);}
 
+// sleep for the specified number of microseconds
+int usleep_bi(const Argv_t& argv) {
+  if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
+  try {
+    int delay = my_strtoi(argv[1], 0, INT_MAX);
+    return usleep(delay);}
+  catch (E_generic_t) {argv.append_to_errno("USLEEP"); return -1;}
+  catch (E_nan_t) {argv.append_to_errno("NAN"); return -1;}
+  catch (E_range_t) {argv.append_to_errno("RANGE"); return -1;}}
+  
 int var_add_bi(const Argv_t& argv) {
   if (argv.size() != 3) {argv.append_to_errno("ARGS"); return -1;}
   double var_term;
