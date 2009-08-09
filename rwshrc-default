@@ -4,7 +4,6 @@
 setf PATH &{c $HOME /bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin}
 %global BUILT_EXECUTABLE /bin/rwsh
 %global ERRINFO ()
-%global OLD_ERRNO ()
 %global REGEX ()
 %global s ()
 %global s2 ()
@@ -77,25 +76,21 @@ sfn view
   /usr/bin/vim @$s
   %set SHELL /bin/rwsh}
 sfn wc 
-%function unselect {%set s *}
+%function unselect {%set s ()}
 
 # internal functions
 %function rwsh.after_command {
   %set TEMP1 $?
   %if_errno {
-    %set OLD_ERRNO $ERRNO
-    %unset ERRNO
-    %if %test_equal $OLD_ERRNO ESUBSTITUTION {
-      echo substitution $ERRINFO failed}
-    %else {echo ERRNO is set to $OLD_ERRNO}}
+    echo ERRNO is set to $ERRNO
+    %unset ERRNO}
   if_only_not %test_equal $TEMP1 0 {echo &&1 returned $TEMP1}}
 %function rwsh.arguments_for_argfunction {
   %echo cannot specify arguments for $1 directly $nl
   %return -1}
 %function rwsh.autofunction {
   %function $1 {&&{%which_path &&1 $PATH} $*}
-  # if_only %return 0 {%echo added &&1 to executable map $nl}
-  %if_errno_is ESUBSTITUTION {%unset ERRNO}}
+  # if_only %return 0 {%echo added &&1 to executable map $nl}}
 %function rwsh.bad_argfunction_style {
   %echo $1 is neither an argfunction nor a substitution $nl
   %return -1}
@@ -107,8 +102,8 @@ sfn wc
 %function rwsh.excessive_nesting {
   %echo $nl function exceeded MAX_NESTING \( $MAX_NESTING \). call stack: $* $nl}
 %function rwsh.failed_substitution {
-  %append_to_errno ESUBSTITUTION
-  %set ERRINFO $1}
+  echo substitution $1 failed
+  echo call stack $*2}
 %function rwsh.help {
   %echo this is the default configuration for rwsh (or something copied from it), documentation should be available at rwsh.sf.net $nl}
 %function rwsh.mismatched_brace {
@@ -142,7 +137,6 @@ sfn wc
   %internal_vars
   echo $nl ERRINFO $ERRINFO
   echo HOME $HOME
-  echo OLDERRNO $OLDERRNO
   echo REGEX $REGEX
   echo s $s}
 
@@ -162,7 +156,7 @@ fn ntimes {
   %while test_var_not_equal TEMP1 $1 {
     %var_add TEMP1 1
     rwsh.mapped_argfunction {rwsh.argfunction}}}
-fn mark {ntimes 80 {%echo #}}
+fn mark {ntimes 4 {%echo ####################}}
 
 # final setup and individual configuration
 %source &{c $HOME /.rwshrc}

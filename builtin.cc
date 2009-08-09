@@ -429,7 +429,7 @@ int stepwise_bi(const Argv_t& argv) {
        i != f->script.end(); ++i) {
     Argv_t body;
     try {body = i->interpret(lookup);}
-    catch (Failed_substitution_t error) {body = error;}
+    catch (Failed_substitution_t error) {break;}
     catch (Undefined_variable_t error) {break;}
     body.push_front("rwsh.mapped_argfunction");
     ret  = (*argv.argfunction())(body);

@@ -40,8 +40,8 @@
   %else {%global &&1 &&2}}
 %function unset {%unset $1}
 %function user_shell_ratio {
-  %set TEMP1 &{%waiting_for_user}
-  %var_divide TEMP1 &{%waiting_for_shell}
+  %set TEMP1 &&{%waiting_for_user}
+  %var_divide TEMP1 &&{%waiting_for_shell}
   %echo $TEMP1 $nl}
 %function wait_bin {%waiting_for_binary; c $nl}
 %function wait_shell {%waiting_for_shell; c $nl}
@@ -58,5 +58,4 @@
 %function var_exists {%var_exists $1}
 
 %function rwsh.autofunction {
-  %function $1 {&&{%which_path &&1 $PATH} $*}
-  %if_errno_is ESUBSTITUTION {%unset ERRNO}}
+  %function $1 {&&{%which_path &&1 $PATH} $*}}

@@ -57,7 +57,7 @@ int Function_t::operator() (const Argv_t& src_argv) {
   for (const_iterator i = script.begin(); i != script.end(); ++i) {
     Argv_t dest_argv;
     try {dest_argv = i->interpret(src_argv);}
-    catch (Failed_substitution_t error) {dest_argv = error;}
+    catch (Failed_substitution_t error) {break;}
     catch (Undefined_variable_t error) {break;}
     ret = executable_map.run(dest_argv);
     if (unwind_stack()) break;}

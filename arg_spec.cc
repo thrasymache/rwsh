@@ -175,7 +175,10 @@ void Arg_spec_t::apply(const Argv_t& src, unsigned nesting,
         Substitution_stream_t override_stream;
         Argv_t temp_argv(src);
         temp_argv.output = override_stream.child_stream();
-        if ((*new_substitution)(temp_argv)) throw Failed_substitution_t(str());
+        if ((*new_substitution)(temp_argv)) {
+          Executable_t::caught_signal = Executable_t::SIGSUB;
+          Executable_t::call_stack.push_back(str());
+          throw Failed_substitution_t(str());}
         *res++ = Arg_spec_t(FIXED, 0, 0, 0, -1, 0, override_stream.value());}
       break;}
     default: *res++ = *this;}}  // most types are not affected by apply
@@ -242,8 +245,10 @@ void Arg_spec_t::interpret(const Argv_t& src,
       Substitution_stream_t override_stream;
       Argv_t temp_argv(src);
       temp_argv.output = override_stream.child_stream();
-      if ((*substitution)(temp_argv)) 
-        throw Failed_substitution_t(str()); 
+      if ((*substitution)(temp_argv)) {
+        Executable_t::caught_signal = Executable_t::SIGSUB;
+        Executable_t::call_stack.push_back(str());
+        throw Failed_substitution_t(str());}
       if (word_selection != -1) {
          std::vector<std::string> intermediate;
          tokenize_words(override_stream.value(),

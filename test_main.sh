@@ -58,6 +58,8 @@ m {%set A not_bin
 %set A /bin
 m {%set A not_bin; e &{%echo &A} &&{%echo &A &&A}}
 m &{%echo $A} {e $1 &1}
+m $FOO {}
+m {e $FOO}
 m &{%return 1} {}
 m {e &{%return 1}}
 m {e &&{%return 1}; e after}
@@ -471,10 +473,10 @@ w rwsh.mapped_argfunction {>dummy_file}
 %which_execution_count %usleep
 %which_last_execution_time
 %which_last_execution_time j
-%which_last_execution_time %usleep
+# %which_last_execution_time %usleep
 %which_total_execution_time
 %which_total_execution_time j
-%which_total_execution_time %usleep
+# %which_total_execution_time %usleep
 
 # %which_path
 %which_path cat

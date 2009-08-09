@@ -81,6 +81,7 @@ int main(int argc, char *argv[]) {
     try {
       if (!(command_stream >> script)) break;
       command = script.interpret(script.argv());}
+    catch (Failed_substitution_t exception) {command.push_back("%nop");}
     catch (Argv_t exception) {command = exception;}
     executable_map.run_if_exists("rwsh.before_command", command);
     if (!executable_map.run_if_exists("rwsh.run_logic", command))

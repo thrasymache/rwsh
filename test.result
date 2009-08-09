@@ -203,6 +203,15 @@ $m {%set A not_bin; e &{%echo &A} &&{%echo &A &&A}}
 $m &{%echo $A} {e $1 &1}
 not_bin &{%echo $A}
 0
+$m $FOO {}
+rwsh.undefined_variable : command not found ( rwsh.undefined_variable FOO ) 
+rwsh.undefined_variable : command not found ( rwsh.undefined_variable FOO ) 
+
+-1
+$m {e $FOO}
+rwsh.undefined_variable : command not found ( rwsh.undefined_variable FOO rwsh.mapped_argfunction m ) 
+
+-1
 $m &{%return 1} {}
 rwsh.failed_substitution : command not found ( rwsh.failed_substitution &{%return 1} ) 
 
@@ -212,14 +221,17 @@ rwsh.failed_substitution : command not found ( rwsh.failed_substitution &{%retur
 
 -1
 $m {e &&{%return 1}; e after}
-rwsh.failed_substitution : command not found ( rwsh.failed_substitution &{%return 1} ) 
-after
-0
+rwsh.failed_substitution : command not found ( rwsh.failed_substitution &{%return 1} rwsh.mapped_argfunction m ) 
+
+-1
 $f rwsh.failed_substitution {e &&{%return 1}}
 
 0
 $m {e &&{%return 1}; e after}
-rwsh.excessive_nesting : command not found ( rwsh.excessive_nesting rwsh.failed_substitution rwsh.failed_substitution rwsh.failed_substitution rwsh.failed_substitution rwsh.failed_substitution rwsh.failed_substitution rwsh.failed_substitution rwsh.mapped_argfunction m ) 
+signal handler itself triggered signal
+&{%return 1} rwsh.failed_substitution
+original call stack:
+&{%return 1} rwsh.mapped_argfunction m
 
 -1
 $f rwsh.failed_substitution
@@ -1600,9 +1612,9 @@ ERRNO set to ARGS
 $%which_last_execution_time j
 
 1
-$%which_last_execution_time %usleep
-0.008144
-0
+$# %which_last_execution_time %usleep
+
+1
 $%which_total_execution_time
 
 -1
@@ -1610,15 +1622,15 @@ ERRNO set to ARGS
 $%which_total_execution_time j
 
 1
-$%which_total_execution_time %usleep
-0.008231
-0
+$# %which_total_execution_time %usleep
+
+1
 $
 
-0
+1
 $# %which_path
 
-0
+1
 $%which_path cat
 
 -1
