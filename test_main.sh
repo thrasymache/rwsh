@@ -367,7 +367,7 @@ e $A
 %source
 %source /*fu*bar*
 # if you actually have that file, something is seriously wrong
-%source /etc/hostname
+%source /etc/hosts
 # %source is tested by having test_init.sh define #
 w rwsh.init
 

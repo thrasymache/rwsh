@@ -51,8 +51,9 @@ void Executable_t::signal_handler(void) {
   extern Variable_map_t* vars;
   Argv_t call_stack_copy;                                    //need for a copy: 
   switch (caught_signal) {
+    case SIGNOEXEC: call_stack_copy.push_back("rwsh.not_executable"); break;
     case SIGSUB: call_stack_copy.push_back("rwsh.failed_substitution"); break;
-    case SIGFILE: break;
+    case SIGFILE: call_stack_copy.push_back("rwsh.file_open_failure"); break;
     case SIGVAR: call_stack_copy.push_back("rwsh.undefined_variable"); break;
     case SIGEXNEST: call_stack_copy.push_back("rwsh.excessive_nesting"); break;
     case SIGHUP: call_stack_copy.push_back("rwsh.sighup"); break;
@@ -155,7 +156,12 @@ int Builtin_t::operator() (const Argv_t& argv) {
     return ret;}
   catch (File_open_failure_t error) {
     caught_signal = SIGFILE;
-    call_stack.push_back(error.str()); 
+    call_stack.push_back(error[1]); 
+    decrement_nesting(argv);
+    return -1;}
+  catch (Not_executable_t error) {
+    caught_signal = SIGNOEXEC;
+    call_stack.push_back(error[1]); 
     decrement_nesting(argv);
     return -1;}}
 

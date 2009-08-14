@@ -157,6 +157,10 @@ Not_soon_enough_t::Not_soon_enough_t(const std::string& argument) :
   push_back("rwsh.not_soon_enough");
   push_back(argument);}
 
+Not_executable_t::Not_executable_t(const std::string& file_name) {
+  push_back("rwsh.not_executable");
+  push_back(file_name);}
+
 Unclosed_brace_t::Unclosed_brace_t(const std::string& prefix) {
   push_back("rwsh.subprompt");
   push_back(prefix);}

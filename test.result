@@ -412,11 +412,11 @@ $%else {}
 
 0
 $/bin/cat <dummy_file
-rwsh.file_open_failure dummy_file : command not found ( rwsh.file_open_failure dummy_file /bin/cat ) 
+rwsh.file_open_failure : command not found ( rwsh.file_open_failure rwsh.file_open_failure dummy_file /bin/cat ) 
 
 -1
 $%for_each_line <dummy_file {e line of $# \( $* \)}
-rwsh.file_open_failure dummy_file : command not found ( rwsh.file_open_failure dummy_file %for_each_line ) 
+rwsh.file_open_failure : command not found ( rwsh.file_open_failure dummy_file %for_each_line ) 
 
 -1
 $m {e hi >dummy_file >another}
@@ -1199,16 +1199,16 @@ $%source
 -1
 ERRNO set to ARGS
 $%source /*fu*bar*
+rwsh.file_open_failure : command not found ( rwsh.file_open_failure /*fu*bar* %source ) 
 
 -1
-ERRNO set to NOENT
 $# if you actually have that file, something is seriously wrong
 
 -1
-$%source /etc/hostname
+$%source /etc/hosts
+rwsh.not_executable : command not found ( rwsh.not_executable /etc/hosts %source ) 
 
 -1
-ERRNO set to NOENT
 $# %source is tested by having test_init.sh define #
 
 -1

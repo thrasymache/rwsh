@@ -100,6 +100,9 @@ struct Multiple_argfunctions_t : public Argv_t {Multiple_argfunctions_t();};
 struct Not_soon_enough_t : public Argv_t {
   Not_soon_enough_t(const std::string& argument);};
 
+struct Not_executable_t : public Argv_t {
+  Not_executable_t(const std::string& file_name);};
+
 struct Unclosed_brace_t : public Argv_t {
   Unclosed_brace_t(const std::string& prefix);};
 

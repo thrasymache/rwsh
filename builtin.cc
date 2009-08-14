@@ -56,9 +56,9 @@ int cd_bi(const Argv_t& argv) {
   errno = 0;
   int ret = chdir(argv[1].c_str());
   if (!ret) argv.set_var("CWD", argv[1]);
-  else if (errno == ENOENT) argv.append_to_errno("NOENT");
-  else if (errno == ENOTDIR) argv.append_to_errno("NOTDIR"); 
-  else argv.append_to_errno("CD_ERROR"); 
+  else if (errno == ENOENT) ret = 1;
+  else if (errno == ENOTDIR) ret = 2; 
+  else ret = 3; 
   errno = 0;
   return ret;}
 
@@ -395,8 +395,8 @@ int set_bi(const Argv_t& argv) {
 int source_bi(const Argv_t& argv) {
   if (argv.size() < 2) {argv.append_to_errno("ARGS"); return -1;}
   struct stat sb;
-  if (stat(argv[1].c_str(), &sb)) {argv.append_to_errno("NOENT"); return -1;}
-  if (!(sb.st_mode & S_IXUSR)) {argv.append_to_errno("NOEXEC"); return -1;}
+  if (stat(argv[1].c_str(), &sb)) {throw File_open_failure_t(argv[1]);}
+  if (!(sb.st_mode & S_IXUSR)) {throw Not_executable_t(argv[1]);}
   std::ifstream src(argv[1].c_str(), std::ios_base::in);
   Argv_t script_arg(argv.begin()+1, argv.end(), 0, argv.input,
                     argv.output.child_stream(), argv.error);
