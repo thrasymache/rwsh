@@ -297,13 +297,14 @@ $e @$A
 rwsh.cc selection.h
 0
 $%return &{%return 0}
+rwsh.not_a_number : command not found ( rwsh.not_a_number  %return ) 
 
 -1
-ERRNO set to NAN
 $%return &{e 0 $nl}
+rwsh.not_a_number : command not found ( rwsh.not_a_number 0 
+ %return ) 
 
 -1
-ERRNO set to NAN
 $%return &{%echo 0}
 
 0
@@ -1091,28 +1092,28 @@ $%return 1
 
 1
 $%return \
+rwsh.not_a_number : command not found ( rwsh.not_a_number  %return ) 
 
 -1
-ERRNO set to NAN
 $%return O
+rwsh.not_a_number : command not found ( rwsh.not_a_number O %return ) 
 
 -1
-ERRNO set to NAN
 $%return 1E2
+rwsh.not_a_number : command not found ( rwsh.not_a_number 1E2 %return ) 
 
 -1
-ERRNO set to NAN
 $%return 2147483647
 
 2147483647
 $%return 2147483649
+rwsh.input_range : command not found ( rwsh.input_range 2147483649 %return ) 
 
 -1
-ERRNO set to RANGE
 $%return -2147483649
+rwsh.input_range : command not found ( rwsh.input_range -2147483649 %return ) 
 
 -1
-ERRNO set to RANGE
 $
 
 -1
@@ -1387,12 +1388,10 @@ $%test_is_number
 ERRNO set to ARGS
 $%test_is_number ()
 
--1
-ERRNO set to NAN
+1
 $%test_is_number 42a
 
--1
-ERRNO set to NAN
+1
 $%test_is_number 42
 
 0
@@ -1401,8 +1400,7 @@ $%test_is_number -0.314
 0
 $%test_is_number 6.022e9000000000
 
--1
-ERRNO set to RANGE
+2
 $%test_is_number 6.022e23
 
 0
@@ -1411,16 +1409,20 @@ $%test_number_equal 42
 -1
 ERRNO set to ARGS
 $%test_number_equal 42 42a
+rwsh.not_a_number : command not found ( rwsh.not_a_number 42a %test_number_equal ) 
 
 -1
-ERRNO set to NAN
+$%test_number_equal 42b 42
+rwsh.not_a_number : command not found ( rwsh.not_a_number 42b %test_number_equal ) 
+
+-1
 $%test_number_equal 0 0.000000000000000000000000001
 
 1
 $%test_number_equal 1e-9000000000 1e-9000000001
+rwsh.input_range : command not found ( rwsh.input_range 1e-9000000000 %test_number_equal ) 
 
 -1
-ERRNO set to RANGE
 $%test_number_equal 0 0.0
 
 0
@@ -1430,10 +1432,14 @@ $%test_number_equal 42 42.01
 $%test_number_equal 42 42
 
 0
-$%test_number_equal 6.022e9000000000 .6022e9000000001
+$%test_number_equal 6.022e9000000000 .6022e24
+rwsh.input_range : command not found ( rwsh.input_range 6.022e9000000000 %test_number_equal ) 
 
 -1
-ERRNO set to RANGE
+$%test_number_equal 6.022e23 .6022e9000000001
+rwsh.input_range : command not found ( rwsh.input_range .6022e9000000001 %test_number_equal ) 
+
+-1
 $%test_number_equal 6.022e23 6.022e2
 
 1
@@ -1444,14 +1450,22 @@ $%test_greater 6.022e23
 
 -1
 ERRNO set to ARGS
+$%test_greater 6.022e23c 6.022e23
+rwsh.not_a_number : command not found ( rwsh.not_a_number 6.022e23c %test_greater ) 
+
+-1
 $%test_greater 6.022e23 6.022e23e
+rwsh.not_a_number : command not found ( rwsh.not_a_number 6.022e23e %test_greater ) 
 
 -1
-ERRNO set to NAN
-$%test_greater 6.022e9000000000 .6022e9000000001
+$%test_greater 6.022e9000000000 .6022e23
+rwsh.input_range : command not found ( rwsh.input_range 6.022e9000000000 %test_greater ) 
 
 -1
-ERRNO set to RANGE
+$%test_greater 6.022e23 .6022e9000000001
+rwsh.input_range : command not found ( rwsh.input_range .6022e9000000001 %test_greater ) 
+
+-1
 $%test_greater 6.022e2 6.022e23
 
 1
@@ -1465,14 +1479,22 @@ $%test_less 6.022e23
 
 -1
 ERRNO set to ARGS
-$%test_less 6.022e23 6.022e23e
+$%test_less 6.022b23 6.022e23
+rwsh.not_a_number : command not found ( rwsh.not_a_number 6.022b23 %test_less ) 
 
 -1
-ERRNO set to NAN
-$%test_less 6.022e9000000000 .6022e9000000001
+$%test_less 6.022e23 6.022a23
+rwsh.not_a_number : command not found ( rwsh.not_a_number 6.022a23 %test_less ) 
 
 -1
-ERRNO set to RANGE
+$%test_less 6.022e9000000000 .6022e23
+rwsh.input_range : command not found ( rwsh.input_range 6.022e9000000000 %test_less ) 
+
+-1
+$%test_less 6.022e23 .6022e9000000001
+rwsh.input_range : command not found ( rwsh.input_range .6022e9000000001 %test_less ) 
+
+-1
 $%test_less 6.022e23 6.022e2
 
 1
@@ -1585,13 +1607,13 @@ $%usleep
 -1
 ERRNO set to ARGS
 $%usleep -6
+rwsh.input_range : command not found ( rwsh.input_range -6 %usleep ) 
 
 -1
-ERRNO set to RANGE
 $%usleep 5i
+rwsh.not_a_number : command not found ( rwsh.not_a_number 5i %usleep ) 
 
 -1
-ERRNO set to NAN
 $%usleep 8000
 
 0
@@ -1711,31 +1733,31 @@ $%set A A
 
 0
 $%var_add A 2 
+rwsh.not_a_number : command not found ( rwsh.not_a_number A %var_add ) 
 
 -1
-ERRNO set to VAR_NAN
 $%set A 1e309
 
 0
 $%var_add A 2 
+rwsh.input_range : command not found ( rwsh.input_range 1e309 %var_add ) 
 
 -1
-ERRNO set to VAR_RANGE
 $%set A -1e308
 
 0
 $%var_add A A
+rwsh.not_a_number : command not found ( rwsh.not_a_number A %var_add ) 
 
 -1
-ERRNO set to CONST_NAN
 $%var_add A 1e309
+rwsh.input_range : command not found ( rwsh.input_range 1e309 %var_add ) 
 
 -1
-ERRNO set to CONST_RANGE
 $%var_add A -1e308
+rwsh.result_range : command not found ( rwsh.result_range -1e308 -1e308 %var_add ) 
 
 -1
-ERRNO set to SUM_RANGE
 $%var_add A 1e308
 
 0
@@ -1746,9 +1768,9 @@ $e $A
 1e+308
 0
 $%var_add A 1e308
+rwsh.result_range : command not found ( rwsh.result_range 1e+308 1e308 %var_add ) 
 
 -1
-ERRNO set to SUM_RANGE
 $%var_add A -1e308
 
 0
@@ -1756,9 +1778,9 @@ $e $A
 0
 0
 $%var_add A \
+rwsh.not_a_number : command not found ( rwsh.not_a_number  %var_add ) 
 
 -1
-ERRNO set to CONST_NAN
 $e $A
 0
 0
@@ -1784,36 +1806,52 @@ $%set A A
 
 0
 $%var_divide A 2 
+rwsh.not_a_number : command not found ( rwsh.not_a_number A %var_divide ) 
 
 -1
-ERRNO set to VAR_NAN
 $%set A 1e3000000000
 
 0
 $%var_divide A 2 
+rwsh.input_range : command not found ( rwsh.input_range 1e3000000000 %var_divide ) 
 
 -1
-ERRNO set to VAR_RANGE
 $%set A 16.8
 
 0
 $%var_divide A A
+rwsh.not_a_number : command not found ( rwsh.not_a_number A %var_divide ) 
 
 -1
-ERRNO set to CONST_NAN
 $%var_divide A 1e3000000000
+rwsh.input_range : command not found ( rwsh.input_range 1e3000000000 %var_divide ) 
 
 -1
-ERRNO set to CONST_RANGE
 $%var_divide A 0 
+rwsh.divide_by_zero : command not found ( rwsh.divide_by_zero 16.8 %var_divide ) 
 
 -1
-ERRNO set to DIVIDE_ZERO
 $%var_divide A 4.2 
 
 0
 $e $A
 4
+0
+$%set A 1.8e-20
+
+0
+$%var_divide A 1e308
+rwsh.result_range : command not found ( rwsh.result_range 1.8e-20 1e308 %var_divide ) 
+
+-1
+$%set A 0
+
+0
+$%var_divide A 1e308
+
+0
+$e $A
+0
 0
 $
 
@@ -1837,22 +1875,32 @@ $%set A A
 
 0
 $%var_subtract A 2 
+rwsh.not_a_number : command not found ( rwsh.not_a_number A %var_subtract ) 
 
 -1
-ERRNO set to VAR_NAN
 $%set A 3000000000
 
 0
 $%var_subtract A 2 
 
 0
+$%set A 1e308
+
+0
+$%var_subtract A -1e308
+rwsh.result_range : command not found ( rwsh.result_range 1e308 -1e308 %var_subtract ) 
+
+-1
+$e $A
+1e308
+0
 $%set A -2147483648
 
 0
 $%var_subtract A A
+rwsh.not_a_number : command not found ( rwsh.not_a_number A %var_subtract ) 
 
 -1
-ERRNO set to CONST_NAN
 $%var_subtract A 3000000000
 
 0
@@ -1878,9 +1926,9 @@ $e $A
 -7.29496e+09
 0
 $%var_subtract A \
+rwsh.not_a_number : command not found ( rwsh.not_a_number  %var_subtract ) 
 
 -1
-ERRNO set to CONST_NAN
 $e $A
 -7.29496e+09
 0

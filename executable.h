@@ -30,12 +30,16 @@ class Executable_t {
     return total_execution_time_v;};
   bool is_running(void) const {return !!executable_nesting;};
 
-  static const int SIGNONE   =  0;
-  static const int SIGEXNEST = -1;
-  static const int SIGVAR    = -2;
-  static const int SIGFILE   = -3;
-  static const int SIGSUB    = -4;
-  static const int SIGNOEXEC = -5;
+  static const int SIGNONE     =  0;
+  static const int SIGEXNEST   = -1;
+  static const int SIGVAR      = -2;
+  static const int SIGFILE     = -3;
+  static const int SIGSUB      = -4;
+  static const int SIGNOEXEC   = -5;
+  static const int SIGRANGE    = -6;
+  static const int SIGRESRANGE = -7;
+  static const int SIGNAN      = -8;
+  static const int SIGDIVZERO  = -9;
   bool increment_nesting(const Argv_t& argv);
   bool decrement_nesting(const Argv_t& argv);
   static int caught_signal;

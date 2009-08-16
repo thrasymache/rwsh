@@ -51,6 +51,10 @@ void Executable_t::signal_handler(void) {
   extern Variable_map_t* vars;
   Argv_t call_stack_copy;                                    //need for a copy: 
   switch (caught_signal) {
+    case SIGDIVZERO: call_stack_copy.push_back("rwsh.divide_by_zero"); break;
+    case SIGNAN: call_stack_copy.push_back("rwsh.not_a_number"); break;
+    case SIGRESRANGE: call_stack_copy.push_back("rwsh.result_range"); break;
+    case SIGRANGE: call_stack_copy.push_back("rwsh.input_range"); break;
     case SIGNOEXEC: call_stack_copy.push_back("rwsh.not_executable"); break;
     case SIGSUB: call_stack_copy.push_back("rwsh.failed_substitution"); break;
     case SIGFILE: call_stack_copy.push_back("rwsh.file_open_failure"); break;
@@ -161,6 +165,27 @@ int Builtin_t::operator() (const Argv_t& argv) {
     return -1;}
   catch (Not_executable_t error) {
     caught_signal = SIGNOEXEC;
+    call_stack.push_back(error[1]); 
+    decrement_nesting(argv);
+    return -1;}
+  catch (Input_range_t error) {
+    caught_signal = SIGRANGE;
+    call_stack.push_back(error[1]); 
+    decrement_nesting(argv);
+    return -1;}
+  catch (Result_range_t error) {
+    caught_signal = SIGRESRANGE;
+    call_stack.push_back(error[1]); 
+    call_stack.push_back(error[2]); 
+    decrement_nesting(argv);
+    return -1;}
+  catch (Not_a_number_t error) {
+    caught_signal = SIGNAN;
+    call_stack.push_back(error[1]); 
+    decrement_nesting(argv);
+    return -1;}
+  catch (Divide_by_zero_t error) {
+    caught_signal = SIGDIVZERO;
     call_stack.push_back(error[1]); 
     decrement_nesting(argv);
     return -1;}}

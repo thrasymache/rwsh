@@ -413,23 +413,29 @@ wrapper 1 2
 %test_is_number 6.022e23
 %test_number_equal 42
 %test_number_equal 42 42a
+%test_number_equal 42b 42
 %test_number_equal 0 0.000000000000000000000000001
 %test_number_equal 1e-9000000000 1e-9000000001
 %test_number_equal 0 0.0
 %test_number_equal 42 42.01
 %test_number_equal 42 42
-%test_number_equal 6.022e9000000000 .6022e9000000001
+%test_number_equal 6.022e9000000000 .6022e24
+%test_number_equal 6.022e23 .6022e9000000001
 %test_number_equal 6.022e23 6.022e2
 %test_number_equal 6.022e23 .6022e24
 %test_greater 6.022e23
+%test_greater 6.022e23c 6.022e23
 %test_greater 6.022e23 6.022e23e
-%test_greater 6.022e9000000000 .6022e9000000001
+%test_greater 6.022e9000000000 .6022e23
+%test_greater 6.022e23 .6022e9000000001
 %test_greater 6.022e2 6.022e23
 %test_greater 6.022e23 .6022e24
 %test_greater 6.022e23 6.022e2
 %test_less 6.022e23
-%test_less 6.022e23 6.022e23e
-%test_less 6.022e9000000000 .6022e9000000001
+%test_less 6.022b23 6.022e23
+%test_less 6.022e23 6.022a23
+%test_less 6.022e9000000000 .6022e23
+%test_less 6.022e23 .6022e9000000001
 %test_less 6.022e23 6.022e2
 %test_less 6.022e23 .6022e24
 %test_less 6.022e2 6.022e23
@@ -533,6 +539,11 @@ e $A
 %var_divide A 0 
 %var_divide A 4.2 
 e $A
+%set A 1.8e-20
+%var_divide A 1e308
+%set A 0
+%var_divide A 1e308
+e $A
 
 # %var_subtract
 %var_subtract
@@ -542,6 +553,9 @@ e $A
 %var_subtract A 2 
 %set A 3000000000
 %var_subtract A 2 
+%set A 1e308
+%var_subtract A -1e308
+e $A
 %set A -2147483648
 %var_subtract A A
 %var_subtract A 3000000000

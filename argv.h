@@ -75,6 +75,9 @@ struct Arguments_to_argfunction_t : public Argv_t {
 struct Bad_argfunction_style_t : public Argv_t {
   Bad_argfunction_style_t(const std::string& argfunction_style);};
 
+struct Divide_by_zero_t : public Argv_t {
+  Divide_by_zero_t(const std::string& value);};
+
 struct Double_redirection_t : public Argv_t {
   Double_redirection_t(const std::string& first, const std::string& second);};
 
@@ -87,6 +90,8 @@ struct File_open_failure_t : public Argv_t {
 struct Invalid_word_selection_t : public Argv_t {
   Invalid_word_selection_t(const std::string& selection);};
 
+struct Input_range_t : public Argv_t {Input_range_t(const std::string& value);};
+
 struct Line_continuation_t : public Argv_t {Line_continuation_t();};
 
 struct Mismatched_brace_t : public Argv_t {
@@ -97,11 +102,17 @@ struct Mismatched_parenthesis_t : public Argv_t {
 
 struct Multiple_argfunctions_t : public Argv_t {Multiple_argfunctions_t();};
 
+struct Not_a_number_t : public Argv_t {
+  Not_a_number_t(const std::string& value);};
+
 struct Not_soon_enough_t : public Argv_t {
   Not_soon_enough_t(const std::string& argument);};
 
 struct Not_executable_t : public Argv_t {
   Not_executable_t(const std::string& file_name);};
+
+struct Result_range_t : public Argv_t {
+  Result_range_t(const std::string& lhs, const std::string& rhs);};
 
 struct Unclosed_brace_t : public Argv_t {
   Unclosed_brace_t(const std::string& prefix);};

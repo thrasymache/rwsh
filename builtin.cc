@@ -360,9 +360,9 @@ int nop_bi(const Argv_t& argv) {return dollar_question;}
 int return_bi(const Argv_t& argv) {
   if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}
   try {return my_strtoi(argv[1]);}
-  catch (E_generic_t) {argv.append_to_errno("RETURN_ERROR"); return -1;}
-  catch (E_nan_t) {argv.append_to_errno("NAN"); return -1;}
-  catch (E_range_t) {argv.append_to_errno("RANGE"); return -1;}}
+  catch (E_generic_t) {throw Not_a_number_t(argv[1]);}
+  catch (E_nan_t) {throw Not_a_number_t(argv[1]);}
+  catch (E_range_t) {throw Input_range_t(argv[1]);}}
 
 // modify variable $1 as a selection according to $2
 int selection_set_bi(const Argv_t& argv) {
@@ -465,11 +465,14 @@ int test_equal_bi(const Argv_t& argv) {
 int test_greater_bi(const Argv_t& argv) {
   if (argv.size() != 3) {argv.append_to_errno("ARGS"); return -1;}
   double lhs, rhs;
-  try {lhs = my_strtod(argv[1]);
-       rhs = my_strtod(argv[2]);}
-  catch (E_generic_t) {argv.append_to_errno("GENERIC_ERROR"); return -1;}
-  catch (E_nan_t) {argv.append_to_errno("NAN"); return -1;}
-  catch (E_range_t) {argv.append_to_errno("RANGE"); return -1;}
+  try {lhs = my_strtod(argv[1]);}
+  catch (E_generic_t) {throw Not_a_number_t(argv[1]);}
+  catch (E_nan_t) {throw Not_a_number_t(argv[1]);}
+  catch (E_range_t) {throw Input_range_t(argv[1]);}
+  try {rhs = my_strtod(argv[2]);}
+  catch (E_generic_t) {throw Not_a_number_t(argv[2]);}
+  catch (E_nan_t) {throw Not_a_number_t(argv[2]);}
+  catch (E_range_t) {throw Input_range_t(argv[2]);}
   return lhs <= rhs;} // C++ and shell have inverted logic
 
 // return true if the string converts to a number
@@ -478,19 +481,22 @@ int test_is_number_bi(const Argv_t& argv) {
   try {
     (void) my_strtod(argv[1]);
     return 0;}
-  catch (E_generic_t) {argv.append_to_errno("GENERIC_ERROR"); return -1;}
-  catch (E_nan_t) {argv.append_to_errno("NAN"); return -1;}
-  catch (E_range_t) {argv.append_to_errno("RANGE"); return -1;}}
+  catch (E_generic_t) {return 1;}
+  catch (E_nan_t) {return 1;}
+  catch (E_range_t) {return 2;}}
 
 // return true if two strings convert to a doubles and first is less
 int test_less_bi(const Argv_t& argv) {
   if (argv.size() != 3) {argv.append_to_errno("ARGS"); return -1;}
   double lhs, rhs;
-  try {lhs = my_strtod(argv[1]);
-       rhs = my_strtod(argv[2]);}
-  catch (E_generic_t) {argv.append_to_errno("GENERIC_ERROR"); return -1;}
-  catch (E_nan_t) {argv.append_to_errno("NAN"); return -1;}
-  catch (E_range_t) {argv.append_to_errno("RANGE"); return -1;}
+  try {lhs = my_strtod(argv[1]);}
+  catch (E_generic_t) {throw Not_a_number_t(argv[1]);}
+  catch (E_nan_t) {throw Not_a_number_t(argv[1]);}
+  catch (E_range_t) {throw Input_range_t(argv[1]);}
+  try {rhs = my_strtod(argv[2]);}
+  catch (E_generic_t) {throw Not_a_number_t(argv[2]);}
+  catch (E_nan_t) {throw Not_a_number_t(argv[2]);}
+  catch (E_range_t) {throw Input_range_t(argv[2]);}
   return lhs >= rhs;} // C++ and shell have inverted logic
 
 // return true if the string is not empty
@@ -507,11 +513,14 @@ int test_not_equal_bi(const Argv_t& argv) {
 int test_number_equal_bi(const Argv_t& argv) {
   if (argv.size() != 3) {argv.append_to_errno("ARGS"); return -1;}
   double lhs, rhs;
-  try {lhs = my_strtod(argv[1]);
-       rhs = my_strtod(argv[2]);}
-  catch (E_generic_t) {argv.append_to_errno("GENERIC_ERROR"); return -1;}
-  catch (E_nan_t) {argv.append_to_errno("NAN"); return -1;}
-  catch (E_range_t) {argv.append_to_errno("RANGE"); return -1;}
+  try {lhs = my_strtod(argv[1]);}
+  catch (E_generic_t) {throw Not_a_number_t(argv[1]);}
+  catch (E_nan_t) {throw Not_a_number_t(argv[1]);}
+  catch (E_range_t) {throw Input_range_t(argv[1]);}
+  try {rhs = my_strtod(argv[2]);}
+  catch (E_generic_t) {throw Not_a_number_t(argv[2]);}
+  catch (E_nan_t) {throw Not_a_number_t(argv[2]);}
+  catch (E_range_t) {throw Input_range_t(argv[2]);}
   return lhs != rhs;} // C++ and shell have inverted logic
 
 // removes the given variable from the variable map. you could be really 
@@ -528,76 +537,77 @@ int usleep_bi(const Argv_t& argv) {
   try {
     int delay = my_strtoi(argv[1], 0, INT_MAX);
     return usleep(delay);}
-  catch (E_generic_t) {argv.append_to_errno("USLEEP"); return -1;}
-  catch (E_nan_t) {argv.append_to_errno("NAN"); return -1;}
-  catch (E_range_t) {argv.append_to_errno("RANGE"); return -1;}}
+  catch (E_generic_t) {throw Not_a_number_t(argv[1]);}
+  catch (E_nan_t) {throw Not_a_number_t(argv[1]);}
+  catch (E_range_t) {throw Input_range_t(argv[1]);}}
   
 int var_add_bi(const Argv_t& argv) {
   if (argv.size() != 3) {argv.append_to_errno("ARGS"); return -1;}
-  double var_term;
   try {
     const std::string& var_str = argv.get_var(argv[1]);
-    var_term = my_strtod(var_str);}
-  catch (Undefined_variable_t error) {return -1;}
-  catch (E_generic_t) {argv.append_to_errno("VAR_ADD_ERROR"); return -1;}
-  catch (E_nan_t) {argv.append_to_errno("VAR_NAN"); return -1;}
-  catch (E_range_t) {argv.append_to_errno("VAR_RANGE"); return -1;}
-  double const_term;
-  try {const_term = my_strtod(argv[2]);}
-  catch (E_generic_t) {argv.append_to_errno("VAR_ADD_ERROR"); return -1;}
-  catch (E_nan_t) {argv.append_to_errno("CONST_NAN"); return -1;}
-  catch (E_range_t) {argv.append_to_errno("CONST_RANGE"); return -1;}
-  double sum = var_term + const_term;
-  if (sum == 1e309 || sum == -1e309) {
-    argv.append_to_errno("SUM_RANGE"); return -1;}
-  std::ostringstream tmp; 
-  tmp <<sum;
-  argv.set_var(argv[1], tmp.str());
-  return 0;}
+    double var_term;
+    try {var_term = my_strtod(var_str);}
+    catch (E_generic_t) {throw Not_a_number_t(var_str);}
+    catch (E_nan_t) {throw Not_a_number_t(var_str);}
+    catch (E_range_t) {throw Input_range_t(var_str);}
+    double const_term;
+    try {const_term = my_strtod(argv[2]);}
+    catch (E_generic_t) {throw Not_a_number_t(argv[2]);}
+    catch (E_nan_t) {throw Not_a_number_t(argv[2]);}
+    catch (E_range_t) {throw Input_range_t(argv[2]);}
+    double sum = var_term + const_term;
+    if (sum == 1e309 || sum == -1e309) throw Result_range_t(var_str, argv[2]);
+    std::ostringstream tmp; 
+    tmp <<sum;
+    argv.set_var(argv[1], tmp.str());
+    return 0;}
+  catch (Undefined_variable_t error) {return -1;}}
 
 int var_subtract_bi(const Argv_t& argv) {
   if (argv.size() != 3) {argv.append_to_errno("ARGS"); return -1;}
-  double var_term;
   try {
     const std::string& var_str = argv.get_var(argv[1]);
-    var_term = my_strtod(var_str);}
-  catch (Undefined_variable_t error) {return -1;}
-  catch (E_generic_t) {argv.append_to_errno("VAR_ADD_ERROR"); return -1;}
-  catch (E_nan_t) {argv.append_to_errno("VAR_NAN"); return -1;}
-  catch (E_range_t) {argv.append_to_errno("VAR_RANGE"); return -1;}
-  double const_term;
-  try {const_term = my_strtod(argv[2]);}
-  catch (E_generic_t) {argv.append_to_errno("VAR_ADD_ERROR"); return -1;}
-  catch (E_nan_t) {argv.append_to_errno("CONST_NAN"); return -1;}
-  catch (E_range_t) {argv.append_to_errno("CONST_RANGE"); return -1;}
-  double difference = var_term - const_term;
-  int var_negative = var_term < 0;
-  std::ostringstream tmp; 
-  tmp <<difference;
-  argv.set_var(argv[1], tmp.str());
-  return 0;}
+    double var_term;
+    try {var_term = my_strtod(var_str);}
+    catch (E_generic_t) {throw Not_a_number_t(var_str);}
+    catch (E_nan_t) {throw Not_a_number_t(var_str);}
+    catch (E_range_t) {throw Input_range_t(var_str);}
+    double const_term;
+    try {const_term = my_strtod(argv[2]);}
+    catch (E_generic_t) {throw Not_a_number_t(argv[2]);}
+    catch (E_nan_t) {throw Not_a_number_t(argv[2]);}
+    catch (E_range_t) {throw Input_range_t(argv[2]);}
+    double difference = var_term - const_term;
+    if (difference == 1e309 || difference == -1e309)
+      throw Result_range_t(var_str, argv[2]);
+    std::ostringstream tmp; 
+    tmp <<difference;
+    argv.set_var(argv[1], tmp.str());
+    return 0;}
+  catch (Undefined_variable_t error) {return -1;}}
 
 int var_divide_bi(const Argv_t& argv) {
   if (argv.size() != 3) {argv.append_to_errno("ARGS"); return -1;}
-  double var_term;
   try {
     const std::string& var_str = argv.get_var(argv[1]);
-    var_term = my_strtod(var_str);}
-  catch (Undefined_variable_t error) {return -1;}
-  catch (E_generic_t) {argv.append_to_errno("VAR_DIVIDE_ERROR"); return -1;}
-  catch (E_nan_t) {argv.append_to_errno("VAR_NAN"); return -1;}
-  catch (E_range_t) {argv.append_to_errno("VAR_RANGE"); return -1;}
-  double const_term;
-  try {const_term = my_strtod(argv[2]);}
-  catch (E_generic_t) {argv.append_to_errno("VAR_DIVIDE_ERROR"); return -1;}
-  catch (E_nan_t) {argv.append_to_errno("CONST_NAN"); return -1;}
-  catch (E_range_t) {argv.append_to_errno("CONST_RANGE"); return -1;}
-  if (const_term == 0) {argv.append_to_errno("DIVIDE_ZERO"); return -1;}
-  double quotient = var_term / const_term;
-  std::ostringstream tmp; 
-  tmp <<quotient;
-  argv.set_var(argv[1], tmp.str());
-  return 0;}
+    double var_term;
+    try {var_term = my_strtod(var_str);}
+    catch (E_generic_t) {throw Not_a_number_t(var_str);}
+    catch (E_nan_t) {throw Not_a_number_t(var_str);}
+    catch (E_range_t) {throw Input_range_t(var_str);}
+    double const_term;
+    try {const_term = my_strtod(argv[2]);}
+    catch (E_generic_t) {throw Not_a_number_t(argv[2]);}
+    catch (E_nan_t) {throw Not_a_number_t(argv[2]);}
+    catch (E_range_t) {throw Input_range_t(argv[2]);}
+    if (const_term == 0) throw Divide_by_zero_t(var_str);
+    double quotient = var_term / const_term;
+    if (quotient == 0 && var_term != 0) throw Result_range_t(var_str, argv[2]);
+    std::ostringstream tmp; 
+    tmp <<quotient;
+    argv.set_var(argv[1], tmp.str());
+    return 0;}
+  catch (Undefined_variable_t error) {return -1;}}
 
 int var_exists_bi(const Argv_t& argv) {
   if (argv.size() != 2) {argv.append_to_errno("ARGS"); return -1;}

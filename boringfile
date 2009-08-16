@@ -1,6 +1,8 @@
 \.o$
 ^\.
-^rwsh$
 ^librwsh.a$
+^rwsh$
 ^rwsh.tar.gz$
+^test.result.last$
+
 

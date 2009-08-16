@@ -119,6 +119,10 @@ Bad_argfunction_style_t::Bad_argfunction_style_t(
   push_back("rwsh.bad_argfunction_style");
   push_back(argfunction_style);}
 
+Divide_by_zero_t::Divide_by_zero_t(const std::string& value) {
+  push_back("rwsh.divide_by_zero");
+  push_back(value);}
+
 Double_redirection_t::Double_redirection_t(const std::string& first, 
       const std::string& second) {
   push_back("rwsh.double_redirection");
@@ -137,6 +141,10 @@ Invalid_word_selection_t::Invalid_word_selection_t(
       const std::string& selection) {
   push_back("rwsh.invalid_word_selection");
   push_back(selection);}
+
+Input_range_t::Input_range_t(const std::string& value) {
+  push_back("rwsh.input_range");
+  push_back(value);}
 
 Line_continuation_t::Line_continuation_t() {
   push_back("rwsh.line_continuation");}
@@ -160,6 +168,15 @@ Not_soon_enough_t::Not_soon_enough_t(const std::string& argument) :
 Not_executable_t::Not_executable_t(const std::string& file_name) {
   push_back("rwsh.not_executable");
   push_back(file_name);}
+
+Not_a_number_t::Not_a_number_t(const std::string& value) {
+  push_back("rwsh.not_a_number");
+  push_back(value);}
+
+Result_range_t::Result_range_t(const std::string& lhs, const std::string& rhs) {
+  push_back("rwsh.result_range");
+  push_back(lhs);
+  push_back(rhs);}
 
 Unclosed_brace_t::Unclosed_brace_t(const std::string& prefix) {
   push_back("rwsh.subprompt");
