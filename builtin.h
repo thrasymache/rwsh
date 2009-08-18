@@ -1,16 +1,12 @@
 // Copyright (C) 2006, 2007 Samuel Newbold
 
-int append_to_errno_bi(const Argv_t& argv);
 int cd_bi(const Argv_t& argv);
 int combine_bi(const Argv_t& argv);
 int echo_bi(const Argv_t& argv);
 int if_bi(const Argv_t& argv);
-int if_errno_bi(const Argv_t& argv);
-int if_errno_is_bi(const Argv_t& argv);
 int else_if_bi(const Argv_t& argv);
 int else_if_not_bi(const Argv_t& argv);
 int else_bi(const Argv_t& argv);
-int error_unit_bi(const Argv_t& argv);
 int exec_bi(const Argv_t& argv);
 int exit_bi(const Argv_t& argv);
 int for_bi(const Argv_t& argv);

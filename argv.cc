@@ -48,9 +48,6 @@ std::string Argv_t::str(void) const {
 
 void Argv_t::set_argfunction(Function_t* val) {argfunction_v = val;};
 
-void Argv_t::append_to_errno(const std::string& value) const {
-  var_map->append_to_errno(value);}
-
 // returns variables that are defined in the argument vector other than $* 
 // (i.e. positional parameters and $#)
 std::string Argv_t::get_var(const std::string& key) const {

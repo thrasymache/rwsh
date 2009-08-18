@@ -29,10 +29,6 @@ bool Variable_map_t::add(const std::string& key, const std::string& value) {
   std::pair<iterator, bool> ret = insert(entry);
   return !ret.second;}
 
-void Variable_map_t::append_to_errno(const std::string& value) {
-  if (exists("ERRNO")) set("ERRNO", get("ERRNO") + " " + value);
-  else add("ERRNO", value);}
-
 bool Variable_map_t::exists(const std::string& key) const {
   std::map<std::string, std::string>::const_iterator i = find(key);
   return i != end();}

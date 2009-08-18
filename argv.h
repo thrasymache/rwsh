@@ -26,7 +26,6 @@ class Argv_t : private std::vector<std::string> {
   mutable Rwsh_ostream_p output, error;
 
 // variables
-  void append_to_errno(const std::string& value) const;
   char** export_env(void) const;
   std::string get_var(const std::string& key) const;
   int global_var(const std::string& key, const std::string& value) const;

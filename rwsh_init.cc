@@ -21,14 +21,12 @@ std::string init_str =
    "%source /etc/rwshrc $*}";
 
 void internal_init(void) {
-  executable_map.set(new Builtin_t("%append_to_errno", append_to_errno_bi));
   executable_map.set(new Builtin_t("%cd", cd_bi));
   executable_map.set(new Builtin_t("%combine", combine_bi));
   executable_map.set(new Builtin_t("%echo", echo_bi));
   executable_map.set(new Builtin_t("%else", else_bi));
   executable_map.set(new Builtin_t("%else_if", else_if_bi));
   executable_map.set(new Builtin_t("%else_if_not", else_if_not_bi));
-  executable_map.set(new Builtin_t("%error_unit", error_unit_bi));
   executable_map.set(new Builtin_t("%exec", exec_bi));
   executable_map.set(new Builtin_t("%exit", exit_bi));
   executable_map.set(new Builtin_t("%for", for_bi));
@@ -37,38 +35,33 @@ void internal_init(void) {
   executable_map.set(new Builtin_t("%function", function_bi));
   executable_map.set(new Builtin_t("%global", global_bi));
   executable_map.set(new Builtin_t("%if", if_bi));
-  executable_map.set(new Builtin_t("%if_errno", if_errno_bi));
-  executable_map.set(new Builtin_t("%if_errno_is", if_errno_is_bi));
   executable_map.set(new Builtin_t("%importenv_overwrite", importenv_overwrite_bi));
   executable_map.set(new Builtin_t("%importenv_preserve", importenv_preserve_bi));
   std::string::size_type point = 0;
   executable_map.set(new Function_t("%internal_errors", 
-      "{%error_unit $* {"
-          "%if %test_equal $# 1 {"
-              "%echo rwsh.arguments_for_argfunction rwsh.bad_argfunction_style "
-              "rwsh.binary_not_found rwsh.double_redirection "
-              "rwsh.excessive_nesting rwsh.executable_not_found "
-              "rwsh.failed_substitution rwsh.invalid_word_selection "
-              "rwsh.mismatched_brace rwsh.multiple_argfunctions "
-              "rwsh.not_soon_enough rwsh.init rwsh.selection_not_found "
-              "rwsh.sighup rwsh.sigint rwsh.sigquit rwsh.sigpipe rwsh.sigterm "
-              "rwsh.sigtstp rwsh.sigusr1 rwsh.sigusr2 "
-              "rwsh.undefined_variable rwsh.unreadable_dir}; "
-          "%else {%echo wrong argument count; %return -1}}}", point, 0));
+      "{%if %test_equal $# 1 {"
+          "%echo rwsh.arguments_for_argfunction rwsh.bad_argfunction_style "
+          "rwsh.binary_not_found rwsh.double_redirection "
+          "rwsh.excessive_nesting rwsh.executable_not_found "
+          "rwsh.failed_substitution rwsh.invalid_word_selection "
+          "rwsh.mismatched_brace rwsh.multiple_argfunctions "
+          "rwsh.not_soon_enough rwsh.init rwsh.selection_not_found "
+          "rwsh.sighup rwsh.sigint rwsh.sigquit rwsh.sigpipe rwsh.sigterm "
+          "rwsh.sigtstp rwsh.sigusr1 rwsh.sigusr2 "
+          "rwsh.undefined_variable rwsh.unreadable_dir}; "
+      "%else {%echo wrong argument count; %return -1}}", point, 0));
   point = 0;
   executable_map.set(new Function_t("%internal_features", 
-      "{%error_unit $* {"
-          "%if %test_equal $# 1 {"
-              "%echo rwsh.after_command rwsh.before_command "
-              "rwsh.prompt rwsh.raw_command rwsh.run_logic "
-              "rwsh.shutdown rwsh.vars}; "
-          "%else {%echo wrong argument count; %return -1}}}", point, 0));
+      "{%if %test_equal $# 1 {"
+          "%echo rwsh.after_command rwsh.before_command "
+          "rwsh.prompt rwsh.raw_command rwsh.run_logic "
+          "rwsh.shutdown rwsh.vars}; "
+      "%else {%echo wrong argument count; %return -1}}", point, 0));
   point = 0;
   executable_map.set(new Function_t("%internal_vars", 
-      "{%error_unit $* {"
-          "%if %test_equal $# 1 {"
-              "%echo CWD ERRNO FIGNORE IF_TEST MAX_NESTING}; "
-          "%else {%echo wrong argument count; %return -1}}}", point, 0));
+      "{%if %test_equal $# 1 {"
+          "%echo CWD FIGNORE IF_TEST MAX_NESTING}; "
+      "%else {%echo wrong argument count; %return -1}}", point, 0));
   executable_map.set(new Builtin_t("%is_default_input", is_default_input_bi));
   executable_map.set(new Builtin_t("%is_default_output", is_default_output_bi));
   executable_map.set(new Builtin_t("%is_default_error", is_default_error_bi));

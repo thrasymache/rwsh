@@ -39,16 +39,6 @@ extern char** environ;
 
 #include "argv_star_var.cc"
 
-// add the given string to the end of ERRNO, creating it if necessary
-int append_to_errno_bi(const Argv_t& argv) {
-  if (argv.size() < 1) return 1;
-  std::string dest("");
-  for (Argv_t::const_iterator i = argv.begin()+1; i != argv.end()-1; ++i) 
-    dest += *i + ' ';
-  dest += argv.back();
-  argv.append_to_errno(dest);
-  return 0;}
-
 // change the current directory to the one given
 // returns the error returned from chdir
 int cd_bi(const Argv_t& argv) {
@@ -78,26 +68,6 @@ int echo_bi(const Argv_t& argv) {
   argv.output <<argv.back();
   argv.output.flush();
   return 0;}
-
-// unset ERRNO while running argfunction, then merge errors
-int error_unit_bi(const Argv_t& argv) {
-  if (!argv.argfunction()) throw Missing_argfunction_t();
-  Argv_t inner_args;
-  inner_args.push_back("rwsh.mapped_argfunction");
-  copy(argv.begin()+1, argv.end(), std::back_inserter(inner_args));
-  std::string saved_errno;
-  bool previous_error;
-  if (argv.var_exists("ERRNO")) {
-    previous_error = true;
-    saved_errno = argv.get_var("ERRNO");
-    argv.unset_var("ERRNO");}
-  else previous_error = false;
-  (*argv.argfunction())(inner_args);
-  if (previous_error)
-    if (argv.var_exists("ERRNO"))
-      argv.set_var("ERRNO", saved_errno + " " + argv.get_var("ERRNO"));
-    else argv.global_var("ERRNO", saved_errno);
-  return dollar_question;}
 
 #include <iostream>
 // replace the shell with the given binary
@@ -141,8 +111,7 @@ int for_bi(const Argv_t& argv) {
     if (argv.argfunction()) {
       body[1] = *i;
       ret  = (*argv.argfunction())(body);
-      if (Executable_t::unwind_stack() || argv.var_exists("ERRNO")) 
-        return -1;}
+      if (Executable_t::unwind_stack()) return -1;}
     else ret = 0;}
   return ret;}
 
@@ -219,8 +188,7 @@ int if_core(const Argv_t& argv, bool logic) {
 // run argfunction if $* returns true
 // returns the value returned by the argfunction
 int if_bi(const Argv_t& argv) {
-  if (argv.var_exists("ERRNO")) return dollar_question;
-  else if (argv.size() < 2) throw Argument_count_t(argv.size(), 2);
+  if (argv.size() < 2) throw Argument_count_t(argv.size(), 2);
   else if (!argv.var_exists("IF_TEST")) {
     argv.global_var("IF_TEST", "false"); 
     return if_core(argv, true);}
@@ -228,37 +196,10 @@ int if_bi(const Argv_t& argv) {
     argv.unset_var("IF_TEST");
     throw If_before_else_t();}}
 
-// run argfunction if ERRNO is set
-// returns the return value from argfunction
-int if_errno_bi(const Argv_t& argv) {
-  if (argv.size() != 1) throw Argument_count_t(argv.size(), 1);
-  if (argv.var_exists("ERRNO") && argv.argfunction()) {
-    Argv_t mapped_argv;
-    mapped_argv.push_back("rwsh.mapped_argfunction");
-    mapped_argv.output = argv.output.child_stream();
-    return (*argv.argfunction())(mapped_argv);}
-  else return 0;}
-
-// run argfunction if ERRNO is set to the given value
-// returns the return value from argfunction
-int if_errno_is_bi(const Argv_t& argv) {
-  bool immediate_error = false;
-  if (argv.size() < 2) {
-    throw Argument_count_t(argv.size(), 2);
-    immediate_error = true;}
-  if (argv.var_exists("ERRNO") && argv.argfunction() && 
-      (argv.get_var("ERRNO") == argv[1] || immediate_error)) {
-    Argv_t mapped_argv;
-    mapped_argv.push_back("rwsh.mapped_argfunction");
-    mapped_argv.output = argv.output.child_stream();
-    return (*argv.argfunction())(mapped_argv);}
-  else return 0;}
-
 // run argfunction if IF_TEST is false and $* returns true
 // returns the value returned by the argfunction
 int else_if_bi(const Argv_t& argv) {
-  if (argv.var_exists("ERRNO")) return dollar_question;
-  else if (argv.size() < 2) throw Argument_count_t(argv.size(), 2);
+  if (argv.size() < 2) throw Argument_count_t(argv.size(), 2);
   else if (!argv.var_exists("IF_TEST")) throw Else_without_if_t();
   else if (argv.get_var("IF_TEST") == "true") return dollar_question;
   else if (argv.get_var("IF_TEST") == "false") return if_core(argv, true);
@@ -267,8 +208,7 @@ int else_if_bi(const Argv_t& argv) {
 // run argfunction if IF_TEST is false and $* returns false
 // returns the value returned by the argfunction
 int else_if_not_bi(const Argv_t& argv) {
-  if (argv.var_exists("ERRNO")) return dollar_question;
-  else if (argv.size() < 2) throw Argument_count_t(argv.size(), 2);
+  if (argv.size() < 2) throw Argument_count_t(argv.size(), 2);
   else if (!argv.var_exists("IF_TEST")) throw Else_without_if_t();
   else if (argv.get_var("IF_TEST") == "true") return dollar_question;
   else if (argv.get_var("IF_TEST") == "false") return if_core(argv, false);
@@ -278,8 +218,7 @@ int else_if_not_bi(const Argv_t& argv) {
 // returns the value returned by the argfunction
 int else_bi(const Argv_t& argv) {
   int ret;
-  if (argv.var_exists("ERRNO")) ret = dollar_question;
-  else if (argv.size() != 1) throw Argument_count_t(argv.size(), 1);
+  if (argv.size() != 1) throw Argument_count_t(argv.size(), 1);
   else if (!argv.var_exists("IF_TEST")) {
     argv.unset_var("IF_TEST");
     throw Else_without_if_t();}
@@ -433,7 +372,7 @@ int stepwise_bi(const Argv_t& argv) {
     catch (Undefined_variable_t error) {break;}
     body.push_front("rwsh.mapped_argfunction");
     ret  = (*argv.argfunction())(body);
-    if (Executable_t::unwind_stack() || argv.var_exists("ERRNO")) {
+    if (Executable_t::unwind_stack()) {
       ret = -1;
       break;}}
   if (f->decrement_nesting(lookup)) ret = dollar_question;
@@ -450,7 +389,7 @@ int store_output_bi(const Argv_t& argv) {
   Substitution_stream_t text;
   mapped_argv.output = text.child_stream();
   int ret = (*argv.argfunction())(mapped_argv);
-  if (Executable_t::unwind_stack() || argv.var_exists("ERRNO")) return -1;
+  if (Executable_t::unwind_stack()) return -1;
   if (ret) return ret;
   try {argv.set_var(argv[1], text.value());}
   catch (Undefined_variable_t) {return -1;}
@@ -762,14 +701,13 @@ int while_bi(const Argv_t& argv) {
   Argv_t lookup(argv.begin()+1, argv.end(), 0,
                 argv.input, argv.output.child_stream(), argv.error);
   while (!executable_map.run(lookup)) {
-    if (Executable_t::unwind_stack() || argv.var_exists("ERRNO")) return -1;
+    if (Executable_t::unwind_stack()) return -1;
     if (argv.argfunction()) {
       Argv_t mapped_argv;
       mapped_argv.push_back("rwsh.mapped_argfunction");
       mapped_argv.output = argv.output.child_stream();
       ret = (*argv.argfunction())(mapped_argv);
-      if (Executable_t::unwind_stack() || argv.var_exists("ERRNO"))
-        return -1;}
+      if (Executable_t::unwind_stack()) return -1;}
     else ret = 0;}
   return ret;}
 

@@ -15,7 +15,6 @@ public:
   const std::string& get(const std::string& key);
   int set(const std::string& key, const std::string& value);
   int unset(const std::string& key);
-  void append_to_errno(const std::string& value);
   char** export_env(void) const;};
 
 extern int& dollar_question;

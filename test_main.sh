@@ -170,13 +170,6 @@ f x
 %echo
 %echo these are fixed strings
 
-# %error_unit
-%error_unit
-%error_unit {e $*0}
-%error_unit x y z {e $*0; %global ERRNO X}
-m {%global ERRNO X; %error_unit {%var_exists ERRNO}} 
-m {%global ERRNO X; %error_unit {%var_exists ERRNO; %global ERRNO Y}} 
-
 # %exec %fork
 %fork
 %fork e text
@@ -289,19 +282,6 @@ e $x
 %if %return 0 {%else_if %return 0 {e nested syntax; %return 23}}
 %else {e already tested; %return 24}
 
-# %if_errno %if_errno_is %append_to_errno
-m {%if_errno {e no error $nl}
-   %append_to_errno x
-   %if_errno {e invented error $ERRNO $nl}
-   %if_errno %return 0 {e doubled error $ERRNO $nl}}
-m {%if_errno_is x {e no error $nl}
-   %if_errno_is {e invocation error $ERRNO $nl}
-   %unset ERRNO
-   %append_to_errno x
-   %if_errno_is y {e invented error $ERRNO matches y $nl}
-   %if_errno_is x {e invented error $ERRNO matches x $nl}
-   %if_errno_is {e doubled error $ERRNO $nl}}
-
 # %internal_errors %internal_features %internal_vars
 %internal_errors 1
 %internal_features 1
@@ -374,7 +354,7 @@ e $A
 w rwsh.init
 
 # %stepwise
-f wrapper {%append_to_errno x; a $* two; a $* three}
+f wrapper {a $* two; a $* three}
 f a {e $* one $nl; e $* two $nl; e $* three $nl}
 f d {e $* $nl; %stepwise $* {d $*}}
 %stepwise {e $* $nl}

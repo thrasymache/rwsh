@@ -1,3 +1,7 @@
+rwsh v0.3
+  An enormous number of changes that would be worth itemizing if I wasn't the
+  only user.
+
 rwsh v0.2.2 -
   * builtins added: %combine, %exec, %for_each_line, %fork, %is_default_input,
       %is_default_output, %is_default_error, %test_greater, %test_is_number,
