@@ -109,6 +109,13 @@ template<class In>char** copy_to_cstr(In first, In last, char** res) {
   *res = 0;
   return res;}
 
+Argument_count_t::Argument_count_t(unsigned given, unsigned expected) {
+  push_back("rwsh.argument_count");
+  /*push_back(given); push_back(expected);*/}
+
+Missing_argfunction_t::Missing_argfunction_t() {
+  push_back("rwsh.missing_argfunction");}
+
 Arguments_to_argfunction_t::Arguments_to_argfunction_t(
       const std::string& argfunction_type) {
   push_back("rwsh.arguments_for_argfunction");
@@ -118,6 +125,8 @@ Bad_argfunction_style_t::Bad_argfunction_style_t(
       const std::string& argfunction_style) {
   push_back("rwsh.bad_argfunction_style");
   push_back(argfunction_style);}
+
+Bad_if_nest_t::Bad_if_nest_t() {push_back("rwsh.bad_if_nest");}
 
 Divide_by_zero_t::Divide_by_zero_t(const std::string& value) {
   push_back("rwsh.divide_by_zero");
@@ -129,6 +138,8 @@ Double_redirection_t::Double_redirection_t(const std::string& first,
   push_back(first);
   push_back(second);}
 
+Else_without_if_t::Else_without_if_t() {push_back("rwsh.else_without_if");}
+
 Failed_substitution_t::Failed_substitution_t(const std::string& function) {
   push_back("rwsh.failed_substitution");
   push_back(function);}
@@ -136,6 +147,8 @@ Failed_substitution_t::Failed_substitution_t(const std::string& function) {
 File_open_failure_t::File_open_failure_t(const std::string& file_name) {
   push_back("rwsh.file_open_failure");
   push_back(file_name);}
+
+If_before_else_t::If_before_else_t() {push_back("rwsh.if_before_else");}
 
 Invalid_word_selection_t::Invalid_word_selection_t(
       const std::string& selection) {

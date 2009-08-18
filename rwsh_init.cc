@@ -54,7 +54,7 @@ void internal_init(void) {
               "rwsh.sighup rwsh.sigint rwsh.sigquit rwsh.sigpipe rwsh.sigterm "
               "rwsh.sigtstp rwsh.sigusr1 rwsh.sigusr2 "
               "rwsh.undefined_variable rwsh.unreadable_dir}; "
-          "%else {%append_to_errno ARGS; %return -1}}}", point, 0));
+          "%else {%echo wrong argument count; %return -1}}}", point, 0));
   point = 0;
   executable_map.set(new Function_t("%internal_features", 
       "{%error_unit $* {"
@@ -62,13 +62,13 @@ void internal_init(void) {
               "%echo rwsh.after_command rwsh.before_command "
               "rwsh.prompt rwsh.raw_command rwsh.run_logic "
               "rwsh.shutdown rwsh.vars}; "
-          "%else {%append_to_errno ARGS; %return -1}}}", point, 0));
+          "%else {%echo wrong argument count; %return -1}}}", point, 0));
   point = 0;
   executable_map.set(new Function_t("%internal_vars", 
       "{%error_unit $* {"
           "%if %test_equal $# 1 {"
               "%echo CWD ERRNO FIGNORE IF_TEST MAX_NESTING}; "
-          "%else {%append_to_errno ARGS; %return -1}}}", point, 0));
+          "%else {%echo wrong argument count; %return -1}}}", point, 0));
   executable_map.set(new Builtin_t("%is_default_input", is_default_input_bi));
   executable_map.set(new Builtin_t("%is_default_output", is_default_output_bi));
   executable_map.set(new Builtin_t("%is_default_error", is_default_error_bi));

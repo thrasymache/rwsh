@@ -284,6 +284,8 @@ e $x
                %else_if %return 0 {
                    e nested else_if; %return 21}}
 %else {e else_if failed to appropriately set IF_TEST on exit; %return 22}
+%if %nop {e set up}
+%if %nop {e if before else}
 %if %return 0 {%else_if %return 0 {e nested syntax; %return 23}}
 %else {e already tested; %return 24}
 

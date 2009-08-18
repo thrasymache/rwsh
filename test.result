@@ -252,14 +252,14 @@ $# rwsh.selection_not_found
 0
 $e @/*is*
 rwsh.selection_not_found : command not found ( rwsh.selection_not_found /*is* /*is* ) 
+rwsh.argument_count : command not found ( rwsh.argument_count %echo e ) 
 
 -1
-ERRNO set to ARGS
 $e @test_main.cc
 rwsh.selection_not_found : command not found ( rwsh.selection_not_found test_main.cc test_main.cc ) 
+rwsh.argument_count : command not found ( rwsh.argument_count %echo e ) 
 
 -1
-ERRNO set to ARGS
 $e @/bin
 /bin
 0
@@ -450,13 +450,13 @@ line 2 longer
 ending
 0
 $%for_each_line x {}
+rwsh.argument_count : command not found ( rwsh.argument_count %for_each_line ) 
 
 -1
-ERRNO set to ARGS
 $%for_each_line <dummy_file
+rwsh.missing_argfunction : command not found ( rwsh.missing_argfunction %for_each_line ) 
 
 -1
-ERRNO set to ARGFUNCTION
 $%for_each_line <dummy_file <another {}
 rwsh.double_redirection : command not found ( rwsh.double_redirection <dummy_file <another ) 
 
@@ -531,13 +531,13 @@ $# %cd
 
 0
 $%cd
+rwsh.argument_count : command not found ( rwsh.argument_count %cd ) 
 
 -1
-ERRNO set to ARGS
 $%cd /bin /
+rwsh.argument_count : command not found ( rwsh.argument_count %cd ) 
 
 -1
-ERRNO set to ARGS
 $%cd /bin
 
 0
@@ -552,9 +552,9 @@ $# %combine
 
 0
 $%combine
+rwsh.argument_count : command not found ( rwsh.argument_count %combine ) 
 
 -1
-ERRNO set to ARGS
 $%combine on () e \ two ( ) $#
 one two 7
 0
@@ -565,9 +565,9 @@ $# %echo
 
 0
 $%echo
+rwsh.argument_count : command not found ( rwsh.argument_count %echo ) 
 
 -1
-ERRNO set to ARGS
 $%echo these are fixed strings
 these are fixed strings
 0
@@ -578,9 +578,9 @@ $# %error_unit
 
 0
 $%error_unit
+rwsh.missing_argfunction : command not found ( rwsh.missing_argfunction %error_unit ) 
 
 -1
-ERRNO set to ARGFUNCTION
 $%error_unit {e $*0}
 rwsh.mapped_argfunction
 0
@@ -603,9 +603,9 @@ $# %exec %fork
 
 0
 $%fork
+rwsh.argument_count : command not found ( rwsh.argument_count %fork ) 
 
 -1
-ERRNO set to ARGS
 $%fork e text
 text
 0
@@ -613,9 +613,9 @@ $%fork %return 1
 
 256
 $%exec
+rwsh.argument_count : command not found ( rwsh.argument_count %exec ) 
 
 -1
-ERRNO set to ARGS
 $%fork m {%exec /bin/echo something; /bin/echo else}
 something
 
@@ -627,9 +627,9 @@ $# %for
 
 0
 $%for {e no arguments $1}
+rwsh.argument_count : command not found ( rwsh.argument_count %for ) 
 
 -1
-ERRNO set to ARGS
 $%for 1 {e one argument $1}
 one argument 1
 0
@@ -647,9 +647,9 @@ $# %function
 
 0
 $%function
+rwsh.argument_count : command not found ( rwsh.argument_count %function ) 
 
 -1
-ERRNO set to ARGS
 $%function /bin/echo {%echo $* $nl}
 
 1
@@ -744,29 +744,29 @@ $# %global %unset %var_exists
 
 0
 $%global
+rwsh.argument_count : command not found ( rwsh.argument_count %global ) 
 
 -1
-ERRNO set to ARGS
 $%global x y z
+rwsh.argument_count : command not found ( rwsh.argument_count %global ) 
 
 -1
-ERRNO set to ARGS
 $%unset
+rwsh.argument_count : command not found ( rwsh.argument_count %unset ) 
 
 -1
-ERRNO set to ARGS
 $%unset x y
+rwsh.argument_count : command not found ( rwsh.argument_count %unset ) 
 
 -1
-ERRNO set to ARGS
 $%var_exists
+rwsh.argument_count : command not found ( rwsh.argument_count %var_exists ) 
 
 -1
-ERRNO set to ARGS
 $%var_exists x y
+rwsh.argument_count : command not found ( rwsh.argument_count %var_exists ) 
 
 -1
-ERRNO set to ARGS
 $%global 100 nihilism
 
 2
@@ -828,13 +828,13 @@ $# %store_output
 
 0
 $%store_output x
+rwsh.missing_argfunction : command not found ( rwsh.missing_argfunction %store_output ) 
 
 -1
-ERRNO set to ARGS
 $%store_output {e some text}
+rwsh.argument_count : command not found ( rwsh.argument_count %store_output ) 
 
 -1
-ERRNO set to ARGS
 $%store_output x {e some text}
 rwsh.undefined_variable : command not found ( rwsh.undefined_variable x %store_output ) 
 
@@ -864,21 +864,21 @@ $# %if %else_if %else_if_not %else
 
 0
 $%if
+rwsh.argument_count : command not found ( rwsh.argument_count %if ) 
 
 -1
-ERRNO set to ARGS
 $%else_if
+rwsh.argument_count : command not found ( rwsh.argument_count %else_if ) 
 
 -1
-ERRNO set to ARGS
 $%else_if_not
+rwsh.argument_count : command not found ( rwsh.argument_count %else_if_not ) 
 
 -1
-ERRNO set to ARGS
 $%else
+rwsh.else_without_if : command not found ( rwsh.else_without_if %else ) 
 
 -1
-ERRNO set to ELSE_WITHOUT_IF
 $%if %return 0 {e if true; %return 1}
 if true
 1
@@ -892,13 +892,13 @@ $%else {e else false; %return 5}
 else false
 5
 $%else_if %return 0 {e not this one; %return 6}
+rwsh.else_without_if : command not found ( rwsh.else_without_if %else_if ) 
 
 -1
-ERRNO set to ELSE_WITHOUT_IF
 $%else_if_not %return 1 {e not this one; %return 7}
+rwsh.else_without_if : command not found ( rwsh.else_without_if %else_if_not ) 
 
 -1
-ERRNO set to ELSE_WITHOUT_IF
 $%if %return 1 {e nor this; %return 8}
 
 0
@@ -939,18 +939,26 @@ $%if %return 0 {%if %return 1 {
                    not to be printed; %return 20}
                %else_if %return 0 {
                    e nested else_if; %return 21}}
-nested else_if
+nested else_ifrwsh.bad_if_nest : command not found ( rwsh.bad_if_nest %if ) 
+
 -1
-ERRNO set to BAD_IF_NEST
 $%else {e else_if failed to appropriately set IF_TEST on exit; %return 22}
+rwsh.else_without_if : command not found ( rwsh.else_without_if %else ) 
 
 -1
-ERRNO set to ELSE_WITHOUT_IF
+$%if %nop {e set up}
+
+0
+$%if %nop {e if before else}
+rwsh.if_before_else : command not found ( rwsh.if_before_else %if ) 
+
+-1
 $%if %return 0 {%else_if %return 0 {e nested syntax; %return 23}}
+rwsh.else_without_if : command not found ( rwsh.else_without_if %else_if rwsh.mapped_argfunction %if ) 
 
 -1
-ERRNO set to ELSE_WITHOUT_IF
 $%else {e already tested; %return 24}
+rwsh.else_without_if : command not found ( rwsh.else_without_if %else ) 
 
 -1
 $
@@ -964,10 +972,10 @@ $m {%if_errno {e no error $nl}
    %if_errno {e invented error $ERRNO $nl}
    %if_errno %return 0 {e doubled error $ERRNO $nl}}
 invented error x 
-doubled error x ARGS 
+rwsh.argument_count : command not found ( rwsh.argument_count %if_errno rwsh.mapped_argfunction m ) 
 
-0
-ERRNO set to x ARGS
+-1
+ERRNO set to x
 $m {%if_errno_is x {e no error $nl}
    %if_errno_is {e invocation error $ERRNO $nl}
    %unset ERRNO
@@ -975,30 +983,24 @@ $m {%if_errno_is x {e no error $nl}
    %if_errno_is y {e invented error $ERRNO matches y $nl}
    %if_errno_is x {e invented error $ERRNO matches x $nl}
    %if_errno_is {e doubled error $ERRNO $nl}}
-invocation error ARGS 
-invented error x matches x 
-doubled error x ARGS 
+rwsh.argument_count : command not found ( rwsh.argument_count %if_errno_is rwsh.mapped_argfunction m ) 
 
-0
-ERRNO set to x ARGS
+-1
 $
 
-0
+-1
 $# %internal_errors %internal_features %internal_vars
 
-0
+-1
 $%internal_errors 1
-
+wrong argument count
 -1
-ERRNO set to ARGS
 $%internal_features 1
-
+wrong argument count
 -1
-ERRNO set to ARGS
 $%internal_vars 1
-
+wrong argument count
 -1
-ERRNO set to ARGS
 $%internal_errors
 rwsh.arguments_for_argfunction rwsh.bad_argfunction_style rwsh.binary_not_found rwsh.double_redirection rwsh.excessive_nesting rwsh.executable_not_found rwsh.failed_substitution rwsh.invalid_word_selection rwsh.mismatched_brace rwsh.multiple_argfunctions rwsh.not_soon_enough rwsh.init rwsh.selection_not_found rwsh.sighup rwsh.sigint rwsh.sigquit rwsh.sigpipe rwsh.sigterm rwsh.sigtstp rwsh.sigusr1 rwsh.sigusr2 rwsh.undefined_variable rwsh.unreadable_dir
 0
@@ -1015,9 +1017,9 @@ $# %is_default_input %is_default_output %is_default_error
 
 0
 $%is_default_input 1
+rwsh.argument_count : command not found ( rwsh.argument_count %is_default_input ) 
 
 -1
-ERRNO set to ARGS
 $m {%is_default_input <dummy_file}
 
 1
@@ -1025,9 +1027,9 @@ $m {%is_default_input}
 
 0
 $%is_default_output 1
+rwsh.argument_count : command not found ( rwsh.argument_count %is_default_output ) 
 
 -1
-ERRNO set to ARGS
 $e &{%is_default_output; %echo $?}
 1
 0
@@ -1038,9 +1040,9 @@ $m {%is_default_output}
 
 0
 $%is_default_error 1
+rwsh.argument_count : command not found ( rwsh.argument_count %is_default_error ) 
 
 -1
-ERRNO set to ARGS
 $m {%is_default_error}
 
 0
@@ -1051,9 +1053,9 @@ $# %ls
 
 0
 $%ls
+rwsh.argument_count : command not found ( rwsh.argument_count %ls ) 
 
 -1
-ERRNO set to ARGS
 $%ls /bin /usr/
 /bin
 /usr/
@@ -1078,13 +1080,13 @@ $# %return
 
 0
 $%return
+rwsh.argument_count : command not found ( rwsh.argument_count %return ) 
 
 -1
-ERRNO set to ARGS
 $%return 1 1
+rwsh.argument_count : command not found ( rwsh.argument_count %return ) 
 
 -1
-ERRNO set to ARGS
 $%return 0
 
 0
@@ -1121,9 +1123,9 @@ $# %selection_set
 
 -1
 $%selection_set A
+rwsh.argument_count : command not found ( rwsh.argument_count %selection_set ) 
 
 -1
-ERRNO set to ARGS
 $%selection_set A /usr
 
 0
@@ -1173,9 +1175,9 @@ $# %set
 
 0
 $%set A
+rwsh.argument_count : command not found ( rwsh.argument_count %set ) 
 
 -1
-ERRNO set to ARGS
 $%set B x
 rwsh.undefined_variable : command not found ( rwsh.undefined_variable B %set ) 
 
@@ -1196,9 +1198,9 @@ $# %source
 
 0
 $%source
+rwsh.argument_count : command not found ( rwsh.argument_count %source ) 
 
 -1
-ERRNO set to ARGS
 $%source /*fu*bar*
 rwsh.file_open_failure : command not found ( rwsh.file_open_failure /*fu*bar* %source ) 
 
@@ -1232,13 +1234,13 @@ $f d {e $* $nl; %stepwise $* {d $*}}
 
 0
 $%stepwise {e $* $nl}
+rwsh.argument_count : command not found ( rwsh.argument_count %stepwise ) 
 
 -1
-ERRNO set to ARGS
 $%stepwise wrapper 1 2
+rwsh.missing_argfunction : command not found ( rwsh.missing_argfunction %stepwise ) 
 
 -1
-ERRNO set to ARGFUNCTION
 $%stepwise stepwise {e $* $nl}
 
 1
@@ -1335,29 +1337,29 @@ $# %test_equal %test_not_equal %test_not_empty
 
 0
 $%test_equal x
+rwsh.argument_count : command not found ( rwsh.argument_count %test_equal ) 
 
 -1
-ERRNO set to ARGS
 $%test_equal x x x
+rwsh.argument_count : command not found ( rwsh.argument_count %test_equal ) 
 
 -1
-ERRNO set to ARGS
 $%test_not_equal x 
+rwsh.argument_count : command not found ( rwsh.argument_count %test_not_equal ) 
 
 -1
-ERRNO set to ARGS
 $%test_not_equal x x x
+rwsh.argument_count : command not found ( rwsh.argument_count %test_not_equal ) 
 
 -1
-ERRNO set to ARGS
 $%test_not_empty 
+rwsh.argument_count : command not found ( rwsh.argument_count %test_not_empty ) 
 
 -1
-ERRNO set to ARGS
 $%test_not_empty x x
+rwsh.argument_count : command not found ( rwsh.argument_count %test_not_empty ) 
 
 -1
-ERRNO set to ARGS
 $%test_equal x y
 
 1
@@ -1383,9 +1385,9 @@ $# %test_is_number %test_number_equal %test_greater %test_less
 
 0
 $%test_is_number
+rwsh.argument_count : command not found ( rwsh.argument_count %test_is_number ) 
 
 -1
-ERRNO set to ARGS
 $%test_is_number ()
 
 1
@@ -1405,9 +1407,9 @@ $%test_is_number 6.022e23
 
 0
 $%test_number_equal 42
+rwsh.argument_count : command not found ( rwsh.argument_count %test_number_equal ) 
 
 -1
-ERRNO set to ARGS
 $%test_number_equal 42 42a
 rwsh.not_a_number : command not found ( rwsh.not_a_number 42a %test_number_equal ) 
 
@@ -1447,9 +1449,9 @@ $%test_number_equal 6.022e23 .6022e24
 
 0
 $%test_greater 6.022e23
+rwsh.argument_count : command not found ( rwsh.argument_count %test_greater ) 
 
 -1
-ERRNO set to ARGS
 $%test_greater 6.022e23c 6.022e23
 rwsh.not_a_number : command not found ( rwsh.not_a_number 6.022e23c %test_greater ) 
 
@@ -1476,9 +1478,9 @@ $%test_greater 6.022e23 6.022e2
 
 0
 $%test_less 6.022e23
+rwsh.argument_count : command not found ( rwsh.argument_count %test_less ) 
 
 -1
-ERRNO set to ARGS
 $%test_less 6.022b23 6.022e23
 rwsh.not_a_number : command not found ( rwsh.not_a_number 6.022b23 %test_less ) 
 
@@ -1511,9 +1513,9 @@ $# %which_executable %which_test %which_return
 
 0
 $%which_test
+rwsh.argument_count : command not found ( rwsh.argument_count %which_test ) 
 
 -1
-ERRNO set to ARGS
 $%which_test j
 
 1
@@ -1527,9 +1529,9 @@ $%which_test rwsh.mapped_argfunction {rwsh.argfunction}
 
 0
 $%which_executable
+rwsh.argument_count : command not found ( rwsh.argument_count %which_executable ) 
 
 -1
-ERRNO set to ARGS
 $%which_executable j
 
 1
@@ -1561,23 +1563,23 @@ $%which_executable rwsh.mapped_argfunction {rwsh.argfunction}
 {rwsh.argfunction}
 0
 $%waiting_for_shell j
+rwsh.argument_count : command not found ( rwsh.argument_count %waiting_for_shell ) 
 
 -1
-ERRNO set to ARGS
 $# %waiting_for_shell
 
 -1
 $%waiting_for_user j
+rwsh.argument_count : command not found ( rwsh.argument_count %waiting_for_user ) 
 
 -1
-ERRNO set to ARGS
 $# %waiting_for_user
 
 -1
 $%which_return
+rwsh.argument_count : command not found ( rwsh.argument_count %which_return ) 
 
 -1
-ERRNO set to ARGS
 $%which_return rwsh.mapped_argfunction
 
 2
@@ -1603,9 +1605,9 @@ $# %which_total_execution_time
 
 0
 $%usleep
+rwsh.argument_count : command not found ( rwsh.argument_count %usleep ) 
 
 -1
-ERRNO set to ARGS
 $%usleep -6
 rwsh.input_range : command not found ( rwsh.input_range -6 %usleep ) 
 
@@ -1618,9 +1620,9 @@ $%usleep 8000
 
 0
 $%which_execution_count
+rwsh.argument_count : command not found ( rwsh.argument_count %which_execution_count ) 
 
 -1
-ERRNO set to ARGS
 $%which_execution_count j
 
 1
@@ -1628,9 +1630,9 @@ $%which_execution_count %usleep
 4
 0
 $%which_last_execution_time
+rwsh.argument_count : command not found ( rwsh.argument_count %which_last_execution_time ) 
 
 -1
-ERRNO set to ARGS
 $%which_last_execution_time j
 
 1
@@ -1638,9 +1640,9 @@ $# %which_last_execution_time %usleep
 
 1
 $%which_total_execution_time
+rwsh.argument_count : command not found ( rwsh.argument_count %which_total_execution_time ) 
 
 -1
-ERRNO set to ARGS
 $%which_total_execution_time j
 
 1
@@ -1654,9 +1656,9 @@ $# %which_path
 
 1
 $%which_path cat
+rwsh.argument_count : command not found ( rwsh.argument_count %which_path ) 
 
 -1
-ERRNO set to ARGS
 $%which_path cat \
 
 1
@@ -1682,9 +1684,9 @@ $%set N 4
 
 0
 $%while {e ARGS}
+rwsh.argument_count : command not found ( rwsh.argument_count %while ) 
 
 -1
-ERRNO set to ARGS
 $%while tf {e printed; %set A 4}
 printed
 0
@@ -1718,13 +1720,13 @@ $# %var_add
 
 0
 $%var_add
+rwsh.argument_count : command not found ( rwsh.argument_count %var_add ) 
 
 -1
-ERRNO set to ARGS
 $%var_add A 1 2
+rwsh.argument_count : command not found ( rwsh.argument_count %var_add ) 
 
 -1
-ERRNO set to ARGS
 $%var_add B 1
 rwsh.undefined_variable : command not found ( rwsh.undefined_variable B %var_add ) 
 
@@ -1791,13 +1793,13 @@ $# %var_divide
 
 0
 $%var_divide A
+rwsh.argument_count : command not found ( rwsh.argument_count %var_divide ) 
 
 -1
-ERRNO set to ARGS
 $%var_divide A 1 2
+rwsh.argument_count : command not found ( rwsh.argument_count %var_divide ) 
 
 -1
-ERRNO set to ARGS
 $%var_divide B 1
 rwsh.undefined_variable : command not found ( rwsh.undefined_variable B %var_divide ) 
 
@@ -1860,13 +1862,13 @@ $# %var_subtract
 
 0
 $%var_subtract
+rwsh.argument_count : command not found ( rwsh.argument_count %var_subtract ) 
 
 -1
-ERRNO set to ARGS
 $%var_subtract A 1 2
+rwsh.argument_count : command not found ( rwsh.argument_count %var_subtract ) 
 
 -1
-ERRNO set to ARGS
 $%var_subtract B 1
 rwsh.undefined_variable : command not found ( rwsh.undefined_variable B %var_subtract ) 
 
@@ -1939,21 +1941,21 @@ $# %version %version_available %version_compatible
 
 0
 $%version 1.0
+rwsh.argument_count : command not found ( rwsh.argument_count %version ) 
 
 -1
-ERRNO set to ARGS
 $%version_available 1.0
+rwsh.argument_count : command not found ( rwsh.argument_count %version_available ) 
 
 -1
-ERRNO set to ARGS
 $%version_compatible
+rwsh.argument_count : command not found ( rwsh.argument_count %version_compatible ) 
 
 -1
-ERRNO set to ARGS
 $%version_compatible 1.0 1.0
+rwsh.argument_count : command not found ( rwsh.argument_count %version_compatible ) 
 
 -1
-ERRNO set to ARGS
 $%version
 0.2.1+
 0
@@ -2254,9 +2256,9 @@ $# exiting rwsh.shutdown
 
 0
 $%exit now
+rwsh.argument_count : command not found ( rwsh.argument_count %exit ) 
 
 -1
-ERRNO set to ARGS
 $%exit
 
 0

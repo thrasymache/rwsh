@@ -40,6 +40,11 @@ class Executable_t {
   static const int SIGRESRANGE = -7;
   static const int SIGNAN      = -8;
   static const int SIGDIVZERO  = -9;
+  static const int SIGIFBEFORE = -10;
+  static const int SIGELSEWO   = -11;
+  static const int SIGBADIFN   = -12;
+  static const int SIGARGFUNC  = -13;
+  static const int SIGARGS     = -14;
   bool increment_nesting(const Argv_t& argv);
   bool decrement_nesting(const Argv_t& argv);
   static int caught_signal;

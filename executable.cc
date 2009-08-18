@@ -51,6 +51,12 @@ void Executable_t::signal_handler(void) {
   extern Variable_map_t* vars;
   Argv_t call_stack_copy;                                    //need for a copy: 
   switch (caught_signal) {
+    case SIGARGS: call_stack_copy.push_back("rwsh.argument_count"); break;
+    case SIGARGFUNC:
+      call_stack_copy.push_back("rwsh.missing_argfunction"); break;
+    case SIGBADIFN: call_stack_copy.push_back("rwsh.bad_if_nest"); break;
+    case SIGELSEWO: call_stack_copy.push_back("rwsh.else_without_if"); break;
+    case SIGIFBEFORE: call_stack_copy.push_back("rwsh.if_before_else"); break;
     case SIGDIVZERO: call_stack_copy.push_back("rwsh.divide_by_zero"); break;
     case SIGNAN: call_stack_copy.push_back("rwsh.not_a_number"); break;
     case SIGRESRANGE: call_stack_copy.push_back("rwsh.result_range"); break;
@@ -187,6 +193,26 @@ int Builtin_t::operator() (const Argv_t& argv) {
   catch (Divide_by_zero_t error) {
     caught_signal = SIGDIVZERO;
     call_stack.push_back(error[1]); 
+    decrement_nesting(argv);
+    return -1;}
+  catch (If_before_else_t error) {
+    caught_signal = SIGIFBEFORE;
+    decrement_nesting(argv);
+    return -1;}
+  catch (Else_without_if_t error) {
+    caught_signal = SIGELSEWO;
+    decrement_nesting(argv);
+    return -1;}
+  catch (Bad_if_nest_t error) {
+    caught_signal = SIGBADIFN;
+    decrement_nesting(argv);
+    return -1;}
+  catch (Argument_count_t error) {
+    caught_signal = SIGARGS;
+    decrement_nesting(argv);
+    return -1;}
+  catch (Missing_argfunction_t error) {
+    caught_signal = SIGARGFUNC;
     decrement_nesting(argv);
     return -1;}}
 

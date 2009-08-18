@@ -69,11 +69,18 @@ class Argv_t : private std::vector<std::string> {
   std::string& operator[] (int i) {return Base::operator[](i);};
   const std::string& operator[] (int i) const {return Base::operator[](i);}; };
 
+struct Argument_count_t : public Argv_t {
+  Argument_count_t(unsigned given, unsigned expected);};
+
+struct Missing_argfunction_t : public Argv_t {Missing_argfunction_t();};
+
 struct Arguments_to_argfunction_t : public Argv_t {
   Arguments_to_argfunction_t(const std::string& argfunction_type);};
 
 struct Bad_argfunction_style_t : public Argv_t {
   Bad_argfunction_style_t(const std::string& argfunction_style);};
+
+struct Bad_if_nest_t : public Argv_t {Bad_if_nest_t();};
 
 struct Divide_by_zero_t : public Argv_t {
   Divide_by_zero_t(const std::string& value);};
@@ -81,11 +88,15 @@ struct Divide_by_zero_t : public Argv_t {
 struct Double_redirection_t : public Argv_t {
   Double_redirection_t(const std::string& first, const std::string& second);};
 
+struct Else_without_if_t : public Argv_t {Else_without_if_t();};
+
 struct Failed_substitution_t : public Argv_t {
   Failed_substitution_t(const std::string& function);};
 
 struct File_open_failure_t : public Argv_t {
   File_open_failure_t(const std::string& file_name);};
+
+struct If_before_else_t : public Argv_t {If_before_else_t();};
 
 struct Invalid_word_selection_t : public Argv_t {
   Invalid_word_selection_t(const std::string& selection);};
