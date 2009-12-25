@@ -3,10 +3,10 @@ such as pipes, job control, and command completion. This also means that
 scripts written for this version are unlikely to work on version 1.0 when it is
 released. (As an example, control flow will change in one of the next few
 versions so that the first command to return non-zero will cause functions and
-scripts to terminate, unless used in special contexts, of which only %if has
-been implemented yet). %version_compatible will eventually permit you to
-protect scripts from incompatibilities, but the shell has not matured to a
-point where the current semantics for %version_compatible may be depended upon.
+scripts to terminate, unless used in some control flow contexts, such as .if).
+.version_compatible will eventually permit you to protect scripts from
+incompatibilities, but the shell has not matured to a point where the current
+semantics for .version_compatible may be depended upon.
 
 If a requested function does not exist, and rwsh.autofunction exceeds 
 MAX_NESTING, then you will get both the excessive_nesting and 
@@ -26,9 +26,6 @@ If rwsh is run from rwsh, and then that shell receives a signal, the signal is
 passed on to its parent shell, even if the child shell handled it appropriately. 
 There is no way to have the root directory be the result of a selection read
 
-A selection read of an empty string does not produce any results and it does 
-not produce a selection_not_found error
-
 A script cannot be run as if it was a compiled binary, it must be passed to the
 source builtin.  Furthermore, the source builtin will run scripts if and only 
 if the owner of the script has the execute permission for that file, regardless
@@ -41,8 +38,6 @@ result of applying that relative path to the previous working directory.
 Catching a signal can result in a spurious BAD_IF_NEST error
 
 %ls fails to mention soft links that refer to files that do not exist
-
-CWD is not set at startup
 
 %stepwise refuses to step through all builtins, including control flow builtins,
 like %while and %source that clearly have separable parts.
