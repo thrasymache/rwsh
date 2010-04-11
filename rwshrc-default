@@ -1,159 +1,159 @@
-%source /etc/rwshrc-basic
+.source /etc/rwshrc-basic
 
 # set up environment
 setf PATH &{c $HOME /bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin}
-%global BUILT_EXECUTABLE /bin/rwsh
-%global REGEX ()
-%global s ()
-%global s2 ()
-%set FIGNORE .*
+.global BUILT_EXECUTABLE /bin/rwsh
+.global REGEX ()
+.global s ()
+.global s2 ()
+.set FIGNORE .*
 
 # selection commands
-%function sfn {
-  %function $* {%selection_set s $1 $*2; &&{%which_path &&1 $PATH} @$s}}
+.function sfn {
+  .function $* {.selection_set s $1 $*2; &&{.which_path &&1 $PATH} @$s}}
 sfn cat 
-%function cd {
-  %selection_set s $1; %cd @$s
+.function cd {
+  .selection_set s $1; .cd @$s
   &{whichp pwd}
-  %set s (); %set s2 ()}
-%function chmod {%selection_set s $2 $*3; &{whichp chmod} $1 @$s}
-%function cp {/bin/cp @$s $1}
-%function create {%selection_set s $1; &{whichp touch} $s}
-%function cvs {%selection_set s $2 $*3; &{whichp cvs} $1 @$s}
-%function cvso {%selection_set s $3 $*4; &{whichp cvs} $1 $2 @$s}
-%function diff {
-  %selection_set s $1; %selection_set s2 $2
+  .set s (); .set s2 ()}
+.function chmod {.selection_set s $2 $*3; &{whichp chmod} $1 @$s}
+.function cp {/bin/cp @$s $1}
+.function create {.selection_set s $1; &{whichp touch} $s}
+.function cvs {.selection_set s $2 $*3; &{whichp cvs} $1 @$s}
+.function cvso {.selection_set s $3 $*4; &{whichp cvs} $1 $2 @$s}
+.function diff {
+  .selection_set s $1; .selection_set s2 $2
   &{whichp diff} @$s @$s2}
-%function du {%selection_set s $1 $*2; &{whichp du} -hsc @$s}
+.function du {.selection_set s $1 $*2; &{whichp du} -hsc @$s}
 sfn ed
-%function gdb {
-  if_only %test_equal $# 2 {%set BUILT_EXECUTABLE &&*}
+.function gdb {
+  if_only .test_equal $# 2 {.set BUILT_EXECUTABLE &&*}
   echo debugging $BUILT_EXECUTABLE
   &{whichp gdb} $BUILT_EXECUTABLE}
-%function gdb-bash {
-  if_only %test_equal $# 2 {%set BUILT_EXECUTABLE &&*}
+.function gdb-bash {
+  if_only .test_equal $# 2 {.set BUILT_EXECUTABLE &&*}
   echo debugging $BUILT_EXECUTABLE
-  %set SHELL /bin/bash
+  .set SHELL /bin/bash
   &{whichp gdb} $BUILT_EXECUTABLE
-  %set SHELL /bin/rwsh}
-%function grep {
-  %set REGEX $1
-  %selection_set s $2 $*3
+  .set SHELL /bin/rwsh}
+.function grep {
+  .set REGEX $1
+  .selection_set s $2 $*3
   &{whichp grep} $REGEX @$s}
-%function grepo {
-  %set REGEX $2
-  %selection_set s $3 $*4
+.function grepo {
+  .set REGEX $2
+  .selection_set s $3 $*4
   &{whichp grep} &&{e -; e &&1} $REGEX @$s}
 sfn gzip
 sfn gunzip
-%function home {cd $HOME}
+.function home {cd $HOME}
 sfn head 
-%function ignore {%set FIGNORE $*}
-%function ll {%selection_set s $1 $*2; &{whichp ls} -ld @$s}
-%function ls {%selection_set s $1 $*2; %ls @$s}
+.function ignore {.set FIGNORE $*}
+.function ll {.selection_set s $1 $*2; &{whichp ls} -ld @$s}
+.function ls {.selection_set s $1 $*2; .ls @$s}
 sfn less 
-%function mv {
-  %if %test_not_equal $# 2 {echo this mv takes only one argument; %return 1}
-  %else {&{whichp mv} @$s &&1; %set s &&1}}
+.function mv {
+  .if .test_not_equal $# 2 {echo this mv takes only one argument; .return 1}
+  .else {&{whichp mv} @$s &&1; .set s &&1}}
 sfn md5sum
-%function regrep {
-  %selection_set s $1 $*2
+.function regrep {
+  .selection_set s $1 $*2
   &{whichp grep} $REGEX @$s}
-%function regrepo {
-  %selection_set s $2 $*3
+.function regrepo {
+  .selection_set s $2 $*3
   &{whichp grep} &&{c - &&1} $REGEX @$s}
 sfn rm 
 sfn sum
 sfn tail
-%function tail-f {%selection_set s $1 $*2; &{whichp tail} -f @$s}
+.function tail-f {.selection_set s $1 $*2; &{whichp tail} -f @$s}
 sfn touch
 sfn vi 
 sfn view
-%function vim {
-  %set SHELL /bin/bash
-  %selection_set s $1 $*2
+.function vim {
+  .set SHELL /bin/bash
+  .selection_set s $1 $*2
   /usr/bin/vim @$s
-  %set SHELL /bin/rwsh}
+  .set SHELL /bin/rwsh}
 sfn wc 
-%function unselect {%set s ()}
+.function unselect {.set s ()}
 
 # internal functions
-%function rwsh.after_command {
-  %set TEMP1 $?
-  if_only_not %test_equal $TEMP1 0 {echo &&1 returned $TEMP1}}
-%function rwsh.arguments_for_argfunction {
-  %echo cannot specify arguments for $1 directly $nl
-  %return -1}
-%function rwsh.autofunction {
-  %function $1 {&&{%which_path &&1 $PATH} $*}
-  # if_only %return 0 {%echo added &&1 to executable map $nl}}
-%function rwsh.bad_argfunction_style {
-  %echo $1 is neither an argfunction nor a substitution $nl
-  %return -1}
-%function rwsh.binary_not_found {
-  %echo $1 : could not run binary $nl
-  %return -1}
-%function rwsh.double_redirection {
-  %echo double redirection is not supported at this time: $1 and $2 $nl}
-%function rwsh.excessive_nesting {
-  %echo $nl function exceeded MAX_NESTING \( $MAX_NESTING \). call stack: $* $nl}
-%function rwsh.failed_substitution {
+.function rwsh.after_command {
+  .set TEMP1 $?
+  if_only_not .test_equal $TEMP1 0 {echo &&1 returned $TEMP1}}
+.function rwsh.arguments_for_argfunction {
+  .echo cannot specify arguments for $1 directly $nl
+  .return -1}
+.function rwsh.autofunction {
+  .function $1 {&&{.which_path &&1 $PATH} $*}
+  # if_only .return 0 {.echo added &&1 to executable map $nl}}
+.function rwsh.bad_argfunction_style {
+  .echo $1 is neither an argfunction nor a substitution $nl
+  .return -1}
+.function rwsh.binary_not_found {
+  .echo $1 : could not run binary $nl
+  .return -1}
+.function rwsh.double_redirection {
+  .echo double redirection is not supported at this time: $1 and $2 $nl}
+.function rwsh.excessive_nesting {
+  .echo $nl function exceeded MAX_NESTING \( $MAX_NESTING \). call stack: $* $nl}
+.function rwsh.failed_substitution {
   echo substitution $1 failed
   echo call stack $*2}
-%function rwsh.help {
-  %echo this is the default configuration for rwsh (or something copied from it), documentation should be available at rwsh.sf.net $nl}
-%function rwsh.mismatched_brace {
-  %echo mismatched brace: $1 $nl
-  %return -1}
-%function rwsh.multiple_argfunctions {
-  %echo multiple argfunctions not supported at this time $nl
-  %return -1}
-%function rwsh.not_soon_enough {
-  %echo $1 attempts to substitute after the command has been run $nl
-  %return -1}
-%function rwsh.prompt {%echo $s; %echo \$}
-%function rwsh.selection_not_found {
-  %echo no file matching pattern $1
-  %if %test_not_equal $1 $2 {%echo () for selection &&2 $nl}
-  %else {%echo $nl}}
-%function rwsh.shutdown {%echo $nl}
-%function rwsh.sighup {%echo $nl received SIGHUP: $* $nl}
-%function rwsh.sigint {%echo $nl received SIGINT: $* $nl}
-%function rwsh.sigquit {%echo $nl received SIGQUIT: $* $nl}
-%function rwsh.sigpipe {%echo $nl received SIGPIPE: $* $nl}
-%function rwsh.sigterm {%echo $nl received SIGTERM: $* $nl}
-%function rwsh.sigtstp {%echo $nl received SIGTSTP: $* $nl}
-%function rwsh.siginfo {%echo $nl received SIGINFO: $* $nl}
-%function rwsh.sigusr1 {%echo $nl received SIGUSR1: $* $nl}
-%function rwsh.sigusr2 {%echo $nl received SIGUSR2: $* $nl}
-%function rwsh.undefined_variable {
-  %echo $1 was undefined with call stack $*2 $nl}
-%function rwsh.unreadable_dir {%echo cannot read directory $1 $nl}
-%function rwsh.vars {
-  %internal_vars
+.function rwsh.help {
+  .echo this is the default configuration for rwsh (or something copied from it), documentation should be available at rwsh.sf.net $nl}
+.function rwsh.mismatched_brace {
+  .echo mismatched brace: $1 $nl
+  .return -1}
+.function rwsh.multiple_argfunctions {
+  .echo multiple argfunctions not supported at this time $nl
+  .return -1}
+.function rwsh.not_soon_enough {
+  .echo $1 attempts to substitute after the command has been run $nl
+  .return -1}
+.function rwsh.prompt {.echo $s; .echo \$}
+.function rwsh.selection_not_found {
+  .echo no file matching pattern $1
+  .if .test_not_equal $1 $2 {.echo () for selection &&2 $nl}
+  .else {.echo $nl}}
+.function rwsh.shutdown {.echo $nl}
+.function rwsh.sighup {.echo $nl received SIGHUP: $* $nl}
+.function rwsh.sigint {.echo $nl received SIGINT: $* $nl}
+.function rwsh.sigquit {.echo $nl received SIGQUIT: $* $nl}
+.function rwsh.sigpipe {.echo $nl received SIGPIPE: $* $nl}
+.function rwsh.sigterm {.echo $nl received SIGTERM: $* $nl}
+.function rwsh.sigtstp {.echo $nl received SIGTSTP: $* $nl}
+.function rwsh.siginfo {.echo $nl received SIGINFO: $* $nl}
+.function rwsh.sigusr1 {.echo $nl received SIGUSR1: $* $nl}
+.function rwsh.sigusr2 {.echo $nl received SIGUSR2: $* $nl}
+.function rwsh.undefined_variable {
+  .echo $1 was undefined with call stack $*2 $nl}
+.function rwsh.unreadable_dir {.echo cannot read directory $1 $nl}
+.function rwsh.vars {
+  .internal_vars
   echo $nl HOME $HOME
   echo REGEX $REGEX
   echo s $s}
 
 # misc
-%function ! {if $* {%return 1}; else {%return 0}}
-%function m {rwsh.argfunction}
-%function and {%if %return 1; %stepwise $* {%else_if_not $*}; %else}
-%function or {%if %return 1; %stepwise $* {%else_if $*}; %else}
-%global TESTABILITY (an external variable)
-%function st {/bin/rwsh -to >test.result.last
+.function ! {if $* {.return 1}; else {.return 0}}
+.function m {rwsh.argfunction}
+.function and {.if .return 1; .stepwise $* {.else_if_not $*}; .else}
+.function or {.if .return 1; .stepwise $* {.else_if $*}; .else}
+.global TESTABILITY (an external variable)
+.function st {/bin/rwsh -to >test.result.last
   &{whichp diff} -c test.result test.result.last}
-%function bless-t {/bin/cp test.result.last test.result}
-%function to {/bin/rwsh -to}
-%function mst {make; st}
-fn test_var_not_equal {%test_not_equal $$1 $2}
+.function bless-t {/bin/cp test.result.last test.result}
+.function to {/bin/rwsh -to}
+.function mst {make; st}
+fn test_var_not_equal {.test_not_equal $$1 $2}
 fn ntimes {
-  %set TEMP1 0
-  %while test_var_not_equal TEMP1 $1 {
-    %var_add TEMP1 1
+  .set TEMP1 0
+  .while test_var_not_equal TEMP1 $1 {
+    .var_add TEMP1 1
     rwsh.mapped_argfunction {rwsh.argfunction}}}
-fn mark {ntimes 4 {%echo ####################}}
+fn mark {ntimes 4 {.echo ####################}}
 
 # final setup and individual configuration
-%source &{c $HOME /.rwshrc}
-%combine rwsh\ v &{%version} $nl
+.source &{c $HOME /.rwshrc}
+.combine rwsh\ v &{.version} $nl

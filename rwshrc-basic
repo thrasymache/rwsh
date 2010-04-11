@@ -1,61 +1,61 @@
-%function # {%nop}
+.function # {.nop}
 
 # set up environment
-%global TEMP1 ()
-%global nl (
+.global TEMP1 ()
+.global nl (
 )
-%importenv_preserve
+.importenv_preserve
 
 # builtin wrappers
-%function . {%source $*}
-%function af {rwsh.argfunction}
-%function c {%combine $*}
-%function e {%echo $*}
-%function echo {%echo $* $nl}
-%function elif {%else_if $* {rwsh.argfunction}}
-%function else {%else {rwsh.argfunction}}
-%function ex_count {%which_execution_count $*; c $nl}
-%function exec {%exec $*}
-%function exit {%exit}
-%function fn {
-  %function $* {rwsh.argfunction}
-  %set TEMP1 $?
-  %if %test_equal $TEMP1 1 {echo cannot set paths as functions}
-  %else_if %test_equal $TEMP1 2 {echo cannot set builtins as functions}
-  %else_if %test_equal $TEMP1 3 {echo cannot set argfunctions in executable map}
-  %else_if %test_equal $TEMP1 4 {echo function &&1 did not exist to be erased}
-  %else {%return $TEMP1}}
-%function if {%if $* {rwsh.argfunction}}
-%function if_only {%if $* {rwsh.argfunction}; %else}
-%function if_only_not {%if $*; %else {rwsh.argfunction}}
-%function timings {
-  %echo last time (); %which_last_execution_time $*; c $nl
-  %echo total time (); %which_total_execution_time $*; c $nl
-  %echo execution count (); %which_execution_count $*; c $nl}
-%function last_time {%which_last_execution_time $*; c $nl}
-%function total_time {%which_total_execution_time $*; c $nl}
-%function set {%set $1 $2 $*3}
-%function setf {
-  %if %var_exists $1 {%set &&1 &&2}
-  %else {%global &&1 &&2}}
-%function unset {%unset $1}
-%function user_shell_ratio {
-  %set TEMP1 &&{%waiting_for_user}
-  %var_divide TEMP1 &&{%waiting_for_shell}
-  %echo $TEMP1 $nl}
-%function wait_bin {%waiting_for_binary; c $nl}
-%function wait_shell {%waiting_for_shell; c $nl}
-%function wait_user {%waiting_for_user; c $nl}
-%function which {
-  %which_executable $1 {rwsh.argfunction}
-  %if %test_equal $? 0 {%echo $nl}
-  %else {echo no &&1}}
-%function whichp {
-  %which_path $1 $PATH
-  %if %test_equal $? 0
-  %else {echo &&1 not found in $PATH; %return 1}}
-%function while {%while $* {rwsh.argfunction}}
-%function var_exists {%var_exists $1}
+.function . {.source $*}
+.function af {rwsh.argfunction}
+.function c {.combine $*}
+.function e {.echo $*}
+.function echo {.echo $* $nl}
+.function elif {.else_if $* {rwsh.argfunction}}
+.function else {.else {rwsh.argfunction}}
+.function ex_count {.which_execution_count $*; c $nl}
+.function exec {.exec $*}
+.function exit {.exit}
+.function fn {
+  .function $* {rwsh.argfunction}
+  .set TEMP1 $?
+  .if .test_equal $TEMP1 1 {echo cannot set paths as functions}
+  .else_if .test_equal $TEMP1 2 {echo cannot set builtins as functions}
+  .else_if .test_equal $TEMP1 3 {echo cannot set argfunctions in executable map}
+  .else_if .test_equal $TEMP1 4 {echo function &&1 did not exist to be erased}
+  .else {.return $TEMP1}}
+.function if {.if $* {rwsh.argfunction}}
+.function if_only {.if $* {rwsh.argfunction}; .else}
+.function if_only_not {.if $*; .else {rwsh.argfunction}}
+.function timings {
+  .echo last time (); .which_last_execution_time $*; c $nl
+  .echo total time (); .which_total_execution_time $*; c $nl
+  .echo execution count (); .which_execution_count $*; c $nl}
+.function last_time {.which_last_execution_time $*; c $nl}
+.function total_time {.which_total_execution_time $*; c $nl}
+.function set {.set $1 $2 $*3}
+.function setf {
+  .if .var_exists $1 {.set &&1 &&2}
+  .else {.global &&1 &&2}}
+.function unset {.unset $1}
+.function user_shell_ratio {
+  .set TEMP1 &&{.waiting_for_user}
+  .var_divide TEMP1 &&{.waiting_for_shell}
+  .echo $TEMP1 $nl}
+.function wait_bin {.waiting_for_binary; c $nl}
+.function wait_shell {.waiting_for_shell; c $nl}
+.function wait_user {.waiting_for_user; c $nl}
+.function which {
+  .which_executable $1 {rwsh.argfunction}
+  .if .test_equal $? 0 {.echo $nl}
+  .else {echo no &&1}}
+.function whichp {
+  .which_path $1 $PATH
+  .if .test_equal $? 0
+  .else {echo &&1 not found in $PATH; .return 1}}
+.function while {.while $* {rwsh.argfunction}}
+.function var_exists {.var_exists $1}
 
-%function rwsh.autofunction {
-  %function $1 {&&{%which_path &&1 $PATH} $*}}
+.function rwsh.autofunction {
+  .function $1 {&&{.which_path &&1 $PATH} $*}}

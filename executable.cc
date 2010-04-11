@@ -77,7 +77,7 @@ void Executable_t::signal_handler(void) {
     case SIGUSR1: call_stack_copy.push_back("rwsh.sigusr1"); break;
     case SIGUSR2: call_stack_copy.push_back("rwsh.sigusr2"); break;
     default: 
-      call_stack_copy.push_back("%echo");
+      call_stack_copy.push_back(".echo");
       call_stack_copy.push_back("caught unknown signal in");}
   std::copy(call_stack.begin(), call_stack.end(), 
             std::back_inserter(call_stack_copy));
@@ -88,10 +88,10 @@ void Executable_t::signal_handler(void) {
   executable_map.run(call_stack_copy);
   if (unwind_stack()) {
     default_output <<"signal handler itself triggered signal\n";
-    call_stack.push_front("%echo");
+    call_stack.push_front(".echo");
     echo_bi(call_stack);
     default_output <<"\noriginal call stack:\n";
-    call_stack_copy[0] = "%echo";
+    call_stack_copy[0] = ".echo";
     echo_bi(call_stack_copy);
     default_output <<"\n";
     default_output.flush();

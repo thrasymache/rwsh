@@ -149,7 +149,10 @@ int fork_bi(const Argv_t& argv) {
 int function_bi(const Argv_t& argv) {
   if (argv.size() != 2) throw Argument_count_t(argv.size(), 2);
   else if (is_binary_name(argv[1])) return 1;
-  else if (is_builtin_name(argv[1])) return 2;
+  Argv_t lookup(argv.begin()+1, argv.end(), NULL, 
+                default_input, default_output, default_error);
+  Executable_t *e = executable_map.find(lookup);
+  if (e && dynamic_cast<Builtin_t*>(e)) return 2;
   else if (is_argfunction_name(argv[1])) return 3;
   else if (!argv.argfunction()) {
     return 4 * !executable_map.erase(*(argv.begin()+1));}

@@ -84,5 +84,5 @@ std::string Function_t::str() const {
       body += i->str() + "; ";
     body += script.back().str();
     if (name() == "rwsh.argfunction") return "{" + body + "}";
-    else return "%function " + name_v + " {" + body + "}";}
+    else return ".function " + name_v + " {" + body + "}";}
 

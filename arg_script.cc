@@ -264,17 +264,11 @@ bool is_argfunction_name(const std::string& focus) {
 bool is_binary_name(const std::string& focus) {
   return !focus.compare(0, 1, "/");}
 
-// test whether an executable name is possible for a builtin, does not test 
-// whether this builtin exists
-bool is_builtin_name(const std::string& focus) {
-  return !focus.compare(0, 1, "%");}
-
 // test whether this is an appropriate name for an internal function
 bool is_internal_function_name(const std::string& focus) {
   return !focus.compare(0, 5, "rwsh.");}
 
 // test whether an executable name is possible for a function
 bool is_function_name(const std::string& focus) {
-  return !is_binary_name(focus) && !is_builtin_name(focus) && 
-    !is_internal_function_name(focus);}
+  return !is_binary_name(focus) && !is_internal_function_name(focus);}
 

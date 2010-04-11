@@ -1,22 +1,22 @@
-%function # {%nop}
-%global last_command_return -10
-%global A \
-%global N \
-%function rwsh.before_command {%return $last_command_return}
+.function # {.nop}
+.global last_command_return -10
+.global A \
+.global N \
+.function rwsh.before_command {.return $last_command_return}
 
 # tests multi-line commands within a sourced script
-%function rwsh.after_command {
-  %set last_command_return $?
-  %echo $nl; %echo $last_command_return; %echo $nl}
-%function rwsh.prompt {%echo \$}
-%function rwsh.shutdown {%echo $nl; %echo now terminating normally; %echo $nl}
-%function rwsh.vars {%internal_vars}
-%else_if %test_equal $2 -c {
-  rwsh.mapped_argfunction &3 {%source /etc/rwshrc-basic; $1$; %exit}}
-%else {
-  %echo unexpected command line: &* (
+.function rwsh.after_command {
+  .set last_command_return $?
+  .echo $nl; .echo $last_command_return; .echo $nl}
+.function rwsh.prompt {.echo \$}
+.function rwsh.shutdown {.echo $nl; .echo now terminating normally; .echo $nl}
+.function rwsh.vars {.internal_vars}
+.else_if .test_equal $2 -c {
+  rwsh.mapped_argfunction &3 {.source /etc/rwshrc-basic; $1$; .exit}}
+.else {
+  .echo unexpected command line: &* (
 )
-  %source /etc/rwshrc-default}
+  .source /etc/rwshrc-default}
 $# rwsh.init is tested by having test_init.sh define #
 
 -10
@@ -26,67 +26,67 @@ $
 $# argv tests
 
 -10
-$%nop
+$.nop
 
 -10
-$     %nop
+$     .nop
 
 -10
-$%nop 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+$.nop 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
 
 -10
-$%echo 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+$.echo 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
 0
-$%echo  ()    1                2       $#
+$.echo  ()    1                2       $#
  1 2 5
 0
-$%echo \escaped internal\ space $#
+$.echo \escaped internal\ space $#
 escaped internal space 4
 0
-$%echo now \ external\  $#
+$.echo now \ external\  $#
 now  external  4
 0
-$%echo a \  space $#
+$.echo a \  space $#
 a   space 5
 0
-$%echo \$tokens \} \{ \; \\ \) \(
+$.echo \$tokens \} \{ \; \\ \) \(
 $tokens } { ; \ ) (
 0
-$%echo a \
+$.echo a \
 a 
 0
 $line continuation
 line : command not found ( line continuation ) 
 
 -1
-$%which_executable rwsh.mapped_argfunction {%nop}
-{%nop}
+$.which_executable rwsh.mapped_argfunction {.nop}
+{.nop}
 0
-$%which_executable rwsh.argfunction {
+$.which_executable rwsh.argfunction {
   multiple line argfunction }
 {; multiple line argfunction}
 0
-$%nop rwsh.argfunction rwsh.mismatched_brace } 
-rwsh.mismatched_brace : command not found ( rwsh.mismatched_brace %nop rwsh.argfunction rwsh.mismatched_brace } ) 
+$.nop rwsh.argfunction rwsh.mismatched_brace } 
+rwsh.mismatched_brace : command not found ( rwsh.mismatched_brace .nop rwsh.argfunction rwsh.mismatched_brace } ) 
 
 -1
-$%nop multiple statements \; on a line
+$.nop multiple statements \; on a line
 
 -1
-$%which_executable rwsh.argfunction {rwsh.multiple_argfunctions} {}
+$.which_executable rwsh.argfunction {rwsh.multiple_argfunctions} {}
 rwsh.multiple_argfunctions : command not found ( rwsh.multiple_argfunctions ) 
 
 -1
-$%which_executable rwsh.argfunction {rwsh.argfunction with text args}
+$.which_executable rwsh.argfunction {rwsh.argfunction with text args}
 rwsh.arguments_for_argfunction : command not found ( rwsh.arguments_for_argfunction rwsh.argfunction ) 
 
 -1
-$%which_executable rwsh.argfunction {rwsh.argfunction {with a function arg}}
+$.which_executable rwsh.argfunction {rwsh.argfunction {with a function arg}}
 rwsh.arguments_for_argfunction : command not found ( rwsh.arguments_for_argfunction rwsh.argfunction ) 
 
 -1
-$%which_executable rwsh.argfunction {{{{{{{{{{{}}}}}}}}}}}
+$.which_executable rwsh.argfunction {{{{{{{{{{{}}}}}}}}}}}
 {{{{{{{{{{{}}}}}}}}}}}
 0
 $
@@ -95,23 +95,23 @@ $
 $# ability of functions to immitate built-ins
 
 0
-$%function f {%function $1 {rwsh.argfunction}}
+$.function f {.function $1 {rwsh.argfunction}}
 
 0
-$f w {%which_executable $1 {rwsh.argfunction}}
+$f w {.which_executable $1 {rwsh.argfunction}}
 
 0
-$f e {%echo $*}
+$f e {.echo $*}
 
 0
 $f m {rwsh.argfunction}
 
 0
 $w e
-%function e {%echo $*}
+.function e {.echo $*}
 0
 $w () {}
-%function  {%nop}
+.function  {.nop}
 0
 $e text that doesn't have a prompt appended
 text that doesn't have a prompt appended
@@ -125,7 +125,7 @@ $
 $# arg_script tests
 
 0
-$%set A /bin
+$.set A /bin
 
 0
 $e 5 4 3 2 1
@@ -165,40 +165,40 @@ rwsh.not_soon_enough : command not found ( rwsh.not_soon_enough &&{e &A} )
 $e &A
 /bin
 0
-$%if %nop 1 2 3 {e &*}
-%nop 1 2 3
+$.if .nop 1 2 3 {e &*}
+.nop 1 2 3
 0
-$%else {}
+$.else {}
 
 0
-$%if %nop 1 2 3 {e &*0}
-%if %nop 1 2 3
+$.if .nop 1 2 3 {e &*0}
+.if .nop 1 2 3
 0
-$%else {}
+$.else {}
 
 0
-$m {%set A not_bin; e &A &&A $A $nl; m {%set A otherwise; e &A &&A &&&A $A}}
+$m {.set A not_bin; e &A &&A $A $nl; m {.set A otherwise; e &A &&A &&&A $A}}
 /bin not_bin not_bin 
 /bin not_bin otherwise otherwise
 0
-$%set A /bin
+$.set A /bin
 
 0
-$m {%set A not_bin
-   e &{%echo $A} &&{%echo $A} $A $nl
-   m {%set A otherwise
-      e &{%echo $A} &&{%echo $A} &&&{%echo $A} $A}}
+$m {.set A not_bin
+   e &{.echo $A} &&{.echo $A} $A $nl
+   m {.set A otherwise
+      e &{.echo $A} &&{.echo $A} &&&{.echo $A} $A}}
 /bin not_bin not_bin 
 /bin not_bin otherwise otherwise
 0
-$%set A /bin
+$.set A /bin
 
 0
-$m {%set A not_bin; e &{%echo &A} &&{%echo &A &&A}}
+$m {.set A not_bin; e &{.echo &A} &&{.echo &A &&A}}
 /bin /bin not_bin
 0
-$m &{%echo $A} {e $1 &1}
-not_bin &{%echo $A}
+$m &{.echo $A} {e $1 &1}
+not_bin &{.echo $A}
 0
 $m $FOO {}
 rwsh.undefined_variable : command not found ( rwsh.undefined_variable FOO ) 
@@ -209,26 +209,26 @@ $m {e $FOO}
 rwsh.undefined_variable : command not found ( rwsh.undefined_variable FOO rwsh.mapped_argfunction m ) 
 
 -1
-$m &{%return 1} {}
-rwsh.failed_substitution : command not found ( rwsh.failed_substitution &{%return 1} ) 
+$m &{.return 1} {}
+rwsh.failed_substitution : command not found ( rwsh.failed_substitution &{.return 1} ) 
 
 -1
-$m {e &{%return 1}}
-rwsh.failed_substitution : command not found ( rwsh.failed_substitution &{%return 1} ) 
+$m {e &{.return 1}}
+rwsh.failed_substitution : command not found ( rwsh.failed_substitution &{.return 1} ) 
 
 -1
-$m {e &&{%return 1}; e after}
-rwsh.failed_substitution : command not found ( rwsh.failed_substitution &{%return 1} rwsh.mapped_argfunction m ) 
+$m {e &&{.return 1}; e after}
+rwsh.failed_substitution : command not found ( rwsh.failed_substitution &{.return 1} rwsh.mapped_argfunction m ) 
 
 -1
-$f rwsh.failed_substitution {e &&{%return 1}}
+$f rwsh.failed_substitution {e &&{.return 1}}
 
 0
-$m {e &&{%return 1}; e after}
+$m {e &&{.return 1}; e after}
 signal handler itself triggered signal
-&{%return 1} rwsh.failed_substitution
+&{.return 1} rwsh.failed_substitution
 original call stack:
-&{%return 1} rwsh.mapped_argfunction m
+&{.return 1} rwsh.mapped_argfunction m
 
 -1
 $f rwsh.failed_substitution
@@ -249,12 +249,12 @@ $# rwsh.selection_not_found
 0
 $e @/*is*
 rwsh.selection_not_found : command not found ( rwsh.selection_not_found /*is* /*is* ) 
-rwsh.argument_count : command not found ( rwsh.argument_count %echo e ) 
+rwsh.argument_count : command not found ( rwsh.argument_count .echo e ) 
 
 -1
 $e @test_main.cc
 rwsh.selection_not_found : command not found ( rwsh.selection_not_found test_main.cc test_main.cc ) 
-rwsh.argument_count : command not found ( rwsh.argument_count %echo e ) 
+rwsh.argument_count : command not found ( rwsh.argument_count .echo e ) 
 
 -1
 $e @/bin
@@ -272,7 +272,7 @@ $e @/etc/rw*ic
 $e @/etc/rwsh*a*
 /etc/rwshrc-basic /etc/rwshrc-default
 0
-$%set FIGNORE *de*
+$.set FIGNORE *de*
 
 0
 $e @/etc/rwsh*a*
@@ -287,29 +287,29 @@ test_main.sh
 $e @*hrc*
 rwshrc rwshrc-basic
 0
-$%set A r*h.cc sel*.h
+$.set A r*h.cc sel*.h
 
 0
 $e @$A
 rwsh.cc selection.h
 0
-$%return &{%return 0}
-rwsh.not_a_number : command not found ( rwsh.not_a_number  %return ) 
+$.return &{.return 0}
+rwsh.not_a_number : command not found ( rwsh.not_a_number  .return ) 
 
 -1
-$%return &{e 0 $nl}
+$.return &{e 0 $nl}
 rwsh.not_a_number : command not found ( rwsh.not_a_number 0 
- %return ) 
+ .return ) 
 
 -1
-$%return &{%echo 0}
+$.return &{.echo 0}
 
 0
 $e nevermore &{/bin/echo quoth the raven} 
 nevermore quoth the raven
 
 0
-$%set A ((zero zero) (one one) two three)
+$.set A ((zero zero) (one one) two three)
 
 0
 $m $A$$ {e $* $#}
@@ -391,7 +391,7 @@ $e (internal \)parenthesis \\ escape ) $#
 rwsh.mismatched_parenthesis : command not found ( rwsh.mismatched_parenthesis e (internal \)parenthesis \\ escape ) ) 
 
 -1
-$%unset A
+$.unset A
 
 0
 $
@@ -400,21 +400,21 @@ $
 $# file redirection (but don't overwrite files that exist)
 
 0
-$# %for_each_line
+$# .for_each_line
 
 0
-$%if %ls dummy_file {%exit}
+$.if .ls dummy_file {.exit}
 
 0
-$%else {}
+$.else {}
 
 0
 $/bin/cat <dummy_file
 rwsh.file_open_failure : command not found ( rwsh.file_open_failure rwsh.file_open_failure dummy_file /bin/cat ) 
 
 -1
-$%for_each_line <dummy_file {e line of $# \( $* \)}
-rwsh.file_open_failure : command not found ( rwsh.file_open_failure dummy_file %for_each_line ) 
+$.for_each_line <dummy_file {e line of $# \( $* \)}
+rwsh.file_open_failure : command not found ( rwsh.file_open_failure dummy_file .for_each_line ) 
 
 -1
 $m {e hi >dummy_file >another}
@@ -427,17 +427,17 @@ $m {e hi >dummy_file}
 $/bin/cat dummy_file
 hi
 0
-$%if %return 0 {>dummy_file /bin/echo there}
+$.if .return 0 {>dummy_file /bin/echo there}
 
 0
-$%else
+$.else
 
 0
 $/bin/cat dummy_file
 there
 
 0
-$m {m >dummy_file {e line 1 $nl; e line 2 longer $nl; %echo $nl; e ending}}
+$m {m >dummy_file {e line 1 $nl; e line 2 longer $nl; .echo $nl; e ending}}
 
 0
 $/bin/cat <dummy_file
@@ -446,19 +446,19 @@ line 2 longer
 
 ending
 0
-$%for_each_line x {}
-rwsh.argument_count : command not found ( rwsh.argument_count %for_each_line ) 
+$.for_each_line x {}
+rwsh.argument_count : command not found ( rwsh.argument_count .for_each_line ) 
 
 -1
-$%for_each_line <dummy_file
-rwsh.missing_argfunction : command not found ( rwsh.missing_argfunction %for_each_line ) 
+$.for_each_line <dummy_file
+rwsh.missing_argfunction : command not found ( rwsh.missing_argfunction .for_each_line ) 
 
 -1
-$%for_each_line <dummy_file <another {}
+$.for_each_line <dummy_file <another {}
 rwsh.double_redirection : command not found ( rwsh.double_redirection <dummy_file <another ) 
 
 -1
-$%for_each_line <dummy_file {e line of $# \( $* \) $nl}
+$.for_each_line <dummy_file {e line of $# \( $* \) $nl}
 line of 3 ( line 1 ) 
 line of 4 ( line 2 longer ) 
 line of 1 ( ) 
@@ -474,48 +474,48 @@ $
 $# soon level promotion
 
 0
-$%global A 0
+$.global A 0
 
 0
-$%set MAX_NESTING 44
+$.set MAX_NESTING 44
 
 0
-$f x {%var_add A 1
-     m {%var_add A 1
-        m {%var_add A 1
-           m {%var_add A 1
-              m {%var_add A 1
+$f x {.var_add A 1
+     m {.var_add A 1
+        m {.var_add A 1
+           m {.var_add A 1
+              m {.var_add A 1
                  m {rwsh.argfunction}}}}}}
 
 0
 $x {e &A &&A $A}
 0 5 5
 0
-$%set A 0
+$.set A 0
 
 0
 $x {x {x {x {e &A &&A &&&A &&&&A &&&&&A $A}}}}
 0 5 10 15 20 20
 0
-$%set A 0
+$.set A 0
 
 0
-$x {e &{%echo &A $A} &&{%echo &A &&A $A} $A}
+$x {e &{.echo &A $A} &&{.echo &A &&A $A} $A}
 0 0 0 5 5 5
 0
-$%set A 0
+$.set A 0
 
 0
-$x {x {x {x {e &{%echo &A $A} &&{%echo &A &&A $A} &&&{%echo &A &&A &&&A $A} &&&&{%echo &A &&A &&&A &&&&A $A} &&&&&{%echo &A &&A &&&A &&&&A &&&&&A $A} $A}}}}
+$x {x {x {x {e &{.echo &A $A} &&{.echo &A &&A $A} &&&{.echo &A &&A &&&A $A} &&&&{.echo &A &&A &&&A &&&&A $A} &&&&&{.echo &A &&A &&&A &&&&A &&&&&A $A} $A}}}}
 0 0 0 5 5 0 5 10 10 0 5 10 15 15 0 5 10 15 20 20 20
 0
 $f x
 
 0
-$%set MAX_NESTING 5
+$.set MAX_NESTING 5
 
 0
-$%unset A
+$.unset A
 
 0
 $
@@ -524,18 +524,18 @@ $
 $# builtin tests
 
 0
-$# %cd
+$# .cd
 
 0
-$%cd
-rwsh.argument_count : command not found ( rwsh.argument_count %cd ) 
+$.cd
+rwsh.argument_count : command not found ( rwsh.argument_count .cd ) 
 
 -1
-$%cd /bin /
-rwsh.argument_count : command not found ( rwsh.argument_count %cd ) 
+$.cd /bin /
+rwsh.argument_count : command not found ( rwsh.argument_count .cd ) 
 
 -1
-$%cd /bin
+$.cd /bin
 
 0
 $/bin/pwd
@@ -545,67 +545,67 @@ $/bin/pwd
 $
 
 0
-$# %combine
+$# .combine
 
 0
-$%combine
-rwsh.argument_count : command not found ( rwsh.argument_count %combine ) 
+$.combine
+rwsh.argument_count : command not found ( rwsh.argument_count .combine ) 
 
 -1
-$%combine on () e \ two ( ) $#
+$.combine on () e \ two ( ) $#
 one two 7
 0
 $
 
 0
-$# %echo
+$# .echo
 
 0
-$%echo
-rwsh.argument_count : command not found ( rwsh.argument_count %echo ) 
+$.echo
+rwsh.argument_count : command not found ( rwsh.argument_count .echo ) 
 
 -1
-$%echo these are fixed strings
+$.echo these are fixed strings
 these are fixed strings
 0
 $
 
 0
-$# %exec %fork
+$# .exec .fork
 
 0
-$%fork
-rwsh.argument_count : command not found ( rwsh.argument_count %fork ) 
+$.fork
+rwsh.argument_count : command not found ( rwsh.argument_count .fork ) 
 
 -1
-$%fork e text
+$.fork e text
 text
 0
-$%fork %return 1
+$.fork .return 1
 
 256
-$%exec
-rwsh.argument_count : command not found ( rwsh.argument_count %exec ) 
+$.exec
+rwsh.argument_count : command not found ( rwsh.argument_count .exec ) 
 
 -1
-$%fork m {%exec /bin/echo something; /bin/echo else}
+$.fork m {.exec /bin/echo something; /bin/echo else}
 something
 
 0
 $
 
 0
-$# %for
+$# .for
 
 0
-$%for {e no arguments $1}
-rwsh.argument_count : command not found ( rwsh.argument_count %for ) 
+$.for {e no arguments $1}
+rwsh.argument_count : command not found ( rwsh.argument_count .for ) 
 
 -1
-$%for 1 {e one argument $1}
+$.for 1 {e one argument $1}
 one argument 1
 0
-$%for 1 2 3 4 {e four arguments $1 $nl}
+$.for 1 2 3 4 {e four arguments $1 $nl}
 four arguments 1 
 four arguments 2 
 four arguments 3 
@@ -615,48 +615,48 @@ four arguments 4
 $
 
 0
-$# %function
+$# .function
 
 0
-$%function
-rwsh.argument_count : command not found ( rwsh.argument_count %function ) 
+$.function
+rwsh.argument_count : command not found ( rwsh.argument_count .function ) 
 
 -1
-$%function /bin/echo {%echo $* $nl}
+$.function /bin/echo {.echo $* $nl}
 
 1
-$%function %function {%nop}
+$.function .exit {.nop}
 
 2
-$%function rwsh.escaped_argfunction {%nop}
+$.function rwsh.escaped_argfunction {.nop}
 
 3
-$%function a {%nop}
+$.function a {.nop}
 
 0
-$%which_executable a
-%function a {%nop}
+$.which_executable a
+.function a {.nop}
 0
 $a 1 2 3
 
 0
-$%function a
+$.function a
 
 0
-$%which_executable a
+$.which_executable a
 
 1
-$%global A \
+$.global A \
 
 0
-$%echo () A () A () $#
+$.echo () A () A () $#
  A  A  7
 0
-$%function a {e 9 $A $1 @/usr}
+$.function a {e 9 $A $1 @/usr}
 
 0
-$%which_executable a
-%function a {e 9 $A $1 @/usr}
+$.which_executable a
+.function a {e 9 $A $1 @/usr}
 0
 $a \
 9   /usr
@@ -667,7 +667,7 @@ $a 1
 $a 1 2
 9  1 /usr
 0
-$%function a {e $*5 $* $*0 $nl}
+$.function a {e $*5 $* $*0 $nl}
 
 0
 $a
@@ -682,14 +682,14 @@ $a 1 2
 1 2 a 1 2 
 
 0
-$f g {%function $1 {%function $1 {rwsh.argfunction}}}
+$f g {.function $1 {.function $1 {rwsh.argfunction}}}
 
 0
 $g a {e 3 2 1 $nl}
 
 0
 $w a
-%function a {%function $1 {e 3 2 1 $nl}}
+.function a {.function $1 {e 3 2 1 $nl}}
 0
 $a b
 
@@ -712,298 +712,298 @@ there
 $
 
 0
-$# %global %unset %var_exists 
+$# .global .unset .var_exists 
 
 0
-$%global
-rwsh.argument_count : command not found ( rwsh.argument_count %global ) 
+$.global
+rwsh.argument_count : command not found ( rwsh.argument_count .global ) 
 
 -1
-$%global x y z
-rwsh.argument_count : command not found ( rwsh.argument_count %global ) 
+$.global x y z
+rwsh.argument_count : command not found ( rwsh.argument_count .global ) 
 
 -1
-$%unset
-rwsh.argument_count : command not found ( rwsh.argument_count %unset ) 
+$.unset
+rwsh.argument_count : command not found ( rwsh.argument_count .unset ) 
 
 -1
-$%unset x y
-rwsh.argument_count : command not found ( rwsh.argument_count %unset ) 
+$.unset x y
+rwsh.argument_count : command not found ( rwsh.argument_count .unset ) 
 
 -1
-$%var_exists
-rwsh.argument_count : command not found ( rwsh.argument_count %var_exists ) 
+$.var_exists
+rwsh.argument_count : command not found ( rwsh.argument_count .var_exists ) 
 
 -1
-$%var_exists x y
-rwsh.argument_count : command not found ( rwsh.argument_count %var_exists ) 
+$.var_exists x y
+rwsh.argument_count : command not found ( rwsh.argument_count .var_exists ) 
 
 -1
-$%global 100 nihilism
+$.global 100 nihilism
 
 2
-$%unset #
+$.unset #
 
 3
-$%unset *
+$.unset *
 
 3
-$%unset 1
+$.unset 1
 
 3
-$%unset MAX_NESTING
+$.unset MAX_NESTING
 
 2
-$%var_exists #
+$.var_exists #
 
 0
-$%var_exists *
+$.var_exists *
 
 0
-$%var_exists 0
+$.var_exists 0
 
 0
-$%var_exists 2
+$.var_exists 2
 
 1
-$%var_exists x
+$.var_exists x
 
 1
-$%unset x
+$.unset x
 
 1
-$%global x nihilism
+$.global x nihilism
 
 0
-$%var_exists x
+$.var_exists x
 
 0
 $e $x
 nihilism
 0
-$%global x nihilism
+$.global x nihilism
 
 1
-$%unset x
+$.unset x
 
 0
-$%var_exists x
+$.var_exists x
 
 1
-$%return 0
+$.return 0
 
 0
 $
 
 0
-$# %store_output
+$# .store_output
 
 0
-$%store_output x
-rwsh.missing_argfunction : command not found ( rwsh.missing_argfunction %store_output ) 
+$.store_output x
+rwsh.missing_argfunction : command not found ( rwsh.missing_argfunction .store_output ) 
 
 -1
-$%store_output {e some text}
-rwsh.argument_count : command not found ( rwsh.argument_count %store_output ) 
+$.store_output {e some text}
+rwsh.argument_count : command not found ( rwsh.argument_count .store_output ) 
 
 -1
-$%store_output x {e some text}
-rwsh.undefined_variable : command not found ( rwsh.undefined_variable x %store_output ) 
+$.store_output x {e some text}
+rwsh.undefined_variable : command not found ( rwsh.undefined_variable x .store_output ) 
 
 -1
-$%global x ()
+$.global x ()
 
 0
-$%store_output x {e some text; %return 1}
+$.store_output x {e some text; .return 1}
 
 1
 $e $x
 
 0
-$%store_output x {e some text}
+$.store_output x {e some text}
 
 0
 $e $x
 some text
 0
-$%unset x
+$.unset x
 
 0
 $
 
 0
-$# %if %else_if %else_if_not %else
+$# .if .else_if .else_if_not .else
 
 0
-$%if
-rwsh.argument_count : command not found ( rwsh.argument_count %if ) 
+$.if
+rwsh.argument_count : command not found ( rwsh.argument_count .if ) 
 
 -1
-$%else_if
-rwsh.argument_count : command not found ( rwsh.argument_count %else_if ) 
+$.else_if
+rwsh.argument_count : command not found ( rwsh.argument_count .else_if ) 
 
 -1
-$%else_if_not
-rwsh.argument_count : command not found ( rwsh.argument_count %else_if_not ) 
+$.else_if_not
+rwsh.argument_count : command not found ( rwsh.argument_count .else_if_not ) 
 
 -1
-$%else
-rwsh.else_without_if : command not found ( rwsh.else_without_if %else ) 
+$.else
+rwsh.else_without_if : command not found ( rwsh.else_without_if .else ) 
 
 -1
-$%if %return 0 {e if true; %return 1}
+$.if .return 0 {e if true; .return 1}
 if true
 1
-$%else {e else true; %return 3}
+$.else {e else true; .return 3}
 
 1
-$%if %return 1 {e if false; %return 4}
+$.if .return 1 {e if false; .return 4}
 
 0
-$%else {e else false; %return 5}
+$.else {e else false; .return 5}
 else false
 5
-$%else_if %return 0 {e not this one; %return 6}
-rwsh.else_without_if : command not found ( rwsh.else_without_if %else_if ) 
+$.else_if .return 0 {e not this one; .return 6}
+rwsh.else_without_if : command not found ( rwsh.else_without_if .else_if ) 
 
 -1
-$%else_if_not %return 1 {e not this one; %return 7}
-rwsh.else_without_if : command not found ( rwsh.else_without_if %else_if_not ) 
+$.else_if_not .return 1 {e not this one; .return 7}
+rwsh.else_without_if : command not found ( rwsh.else_without_if .else_if_not ) 
 
 -1
-$%if %return 1 {e nor this; %return 8}
+$.if .return 1 {e nor this; .return 8}
 
 0
-$%else_if %return 1 {e nor this; %return 9}
+$.else_if .return 1 {e nor this; .return 9}
 
 0
-$%else_if %return 0 {e but this; %return 10}
+$.else_if .return 0 {e but this; .return 10}
 but this
 10
-$%else_if %return 0 {e this should be skipped; %return 11}
+$.else_if .return 0 {e this should be skipped; .return 11}
 
 10
-$%else_if %return 1 {e and certainly this; %return 12}
+$.else_if .return 1 {e and certainly this; .return 12}
 
 10
-$%else {e nor this; %return 13}
+$.else {e nor this; .return 13}
 
 10
-$%if %return 1 {e nor this; %return 14}
+$.if .return 1 {e nor this; .return 14}
 
 0
-$%else_if_not %return 0 {e nor this; %return 15}
+$.else_if_not .return 0 {e nor this; .return 15}
 
 0
-$%else_if_not %return 1 {e but this; %return 16}
+$.else_if_not .return 1 {e but this; .return 16}
 but this
 16
-$%else_if_not %return 1 {e this should be skipped; %return 17}
+$.else_if_not .return 1 {e this should be skipped; .return 17}
 
 16
-$%else_if_not %return 0 {e and certainly this; %return 18}
+$.else_if_not .return 0 {e and certainly this; .return 18}
 
 16
-$%else {e nor this; %return 19}
+$.else {e nor this; .return 19}
 
 16
-$%if %return 0 {%if %return 1 {
-                   not to be printed; %return 20}
-               %else_if %return 0 {
-                   e nested else_if; %return 21}}
-nested else_ifrwsh.bad_if_nest : command not found ( rwsh.bad_if_nest %if ) 
+$.if .return 0 {.if .return 1 {
+	   not to be printed; .return 20}
+       .else_if .return 0 {
+	   e nested else_if; .return 21}}
+rwsh.bad_if_nest : command not found ( rwsh.bad_if_nest .if ) 
 
 -1
-$%else {e else_if failed to appropriately set IF_TEST on exit; %return 22}
-rwsh.else_without_if : command not found ( rwsh.else_without_if %else ) 
+$.else {e else_if failed to appropriately set IF_TEST on exit; .return 22}
+rwsh.else_without_if : command not found ( rwsh.else_without_if .else ) 
 
 -1
-$%if %nop {e set up}
+$.if .nop {e set up}
 
 0
-$%if %nop {e if before else}
-rwsh.if_before_else : command not found ( rwsh.if_before_else %if ) 
+$.if .nop {e if before else}
+rwsh.if_before_else : command not found ( rwsh.if_before_else .if ) 
 
 -1
-$%if %return 0 {%else_if %return 0 {e nested syntax; %return 23}}
-rwsh.else_without_if : command not found ( rwsh.else_without_if %else_if rwsh.mapped_argfunction %if ) 
+$.if .return 0 {.else_if .return 0 {e nested syntax; .return 23}}
+rwsh.else_without_if : command not found ( rwsh.else_without_if .else_if rwsh.mapped_argfunction .if ) 
 
 -1
-$%else {e already tested; %return 24}
-rwsh.else_without_if : command not found ( rwsh.else_without_if %else ) 
+$.else {e already tested; .return 24}
+rwsh.else_without_if : command not found ( rwsh.else_without_if .else ) 
 
 -1
 $
 
 -1
-$# %internal_errors %internal_features %internal_vars
+$# .internal_errors .internal_features .internal_vars
 
 -1
-$%internal_errors 1
+$.internal_errors 1
 wrong argument count
 -1
-$%internal_features 1
+$.internal_features 1
 wrong argument count
 -1
-$%internal_vars 1
+$.internal_vars 1
 wrong argument count
 -1
-$%internal_errors
+$.internal_errors
 rwsh.arguments_for_argfunction rwsh.bad_argfunction_style rwsh.binary_not_found rwsh.double_redirection rwsh.excessive_nesting rwsh.executable_not_found rwsh.failed_substitution rwsh.invalid_word_selection rwsh.mismatched_brace rwsh.multiple_argfunctions rwsh.not_soon_enough rwsh.init rwsh.selection_not_found rwsh.sighup rwsh.sigint rwsh.sigquit rwsh.sigpipe rwsh.sigterm rwsh.sigtstp rwsh.sigusr1 rwsh.sigusr2 rwsh.undefined_variable rwsh.unreadable_dir
 0
-$%internal_features
+$.internal_features
 rwsh.after_command rwsh.before_command rwsh.prompt rwsh.raw_command rwsh.run_logic rwsh.shutdown rwsh.vars
 0
-$%internal_vars
+$.internal_vars
 CWD FIGNORE IF_TEST MAX_NESTING
 0
 $
 
 0
-$# %is_default_input %is_default_output %is_default_error
+$# .is_default_input .is_default_output .is_default_error
 
 0
-$%is_default_input 1
-rwsh.argument_count : command not found ( rwsh.argument_count %is_default_input ) 
+$.is_default_input 1
+rwsh.argument_count : command not found ( rwsh.argument_count .is_default_input ) 
 
 -1
-$m {%is_default_input <dummy_file}
+$m {.is_default_input <dummy_file}
 
 1
-$m {%is_default_input}
+$m {.is_default_input}
 
 0
-$%is_default_output 1
-rwsh.argument_count : command not found ( rwsh.argument_count %is_default_output ) 
+$.is_default_output 1
+rwsh.argument_count : command not found ( rwsh.argument_count .is_default_output ) 
 
 -1
-$e &{%is_default_output; %echo $?}
+$e &{.is_default_output; .echo $?}
 1
 0
-$m {%is_default_output >dummy_file}
+$m {.is_default_output >dummy_file}
 
 1
-$m {%is_default_output}
+$m {.is_default_output}
 
 0
-$%is_default_error 1
-rwsh.argument_count : command not found ( rwsh.argument_count %is_default_error ) 
+$.is_default_error 1
+rwsh.argument_count : command not found ( rwsh.argument_count .is_default_error ) 
 
 -1
-$m {%is_default_error}
+$m {.is_default_error}
 
 0
 $
 
 0
-$# %ls
+$# .ls
 
 0
-$%ls
-rwsh.argument_count : command not found ( rwsh.argument_count %ls ) 
+$.ls
+rwsh.argument_count : command not found ( rwsh.argument_count .ls ) 
 
 -1
-$%ls /bin /usr/
+$.ls /bin /usr/
 /bin
 /usr/
 
@@ -1011,105 +1011,105 @@ $%ls /bin /usr/
 $
 
 0
-$# %nop
+$# .nop
 
 0
-$%nop
+$.nop
 
 0
-$%nop 1 2 3 4 5
+$.nop 1 2 3 4 5
 
 0
 $
 
 0
-$# %return
+$# .return
 
 0
-$%return
-rwsh.argument_count : command not found ( rwsh.argument_count %return ) 
+$.return
+rwsh.argument_count : command not found ( rwsh.argument_count .return ) 
 
 -1
-$%return 1 1
-rwsh.argument_count : command not found ( rwsh.argument_count %return ) 
+$.return 1 1
+rwsh.argument_count : command not found ( rwsh.argument_count .return ) 
 
 -1
-$%return 0
+$.return 0
 
 0
-$%return 1
+$.return 1
 
 1
-$%return \
-rwsh.not_a_number : command not found ( rwsh.not_a_number  %return ) 
+$.return \
+rwsh.not_a_number : command not found ( rwsh.not_a_number  .return ) 
 
 -1
-$%return O
-rwsh.not_a_number : command not found ( rwsh.not_a_number O %return ) 
+$.return O
+rwsh.not_a_number : command not found ( rwsh.not_a_number O .return ) 
 
 -1
-$%return 1E2
-rwsh.not_a_number : command not found ( rwsh.not_a_number 1E2 %return ) 
+$.return 1E2
+rwsh.not_a_number : command not found ( rwsh.not_a_number 1E2 .return ) 
 
 -1
-$%return 2147483647
+$.return 2147483647
 
 2147483647
-$%return 2147483649
-rwsh.input_range : command not found ( rwsh.input_range 2147483649 %return ) 
+$.return 2147483649
+rwsh.input_range : command not found ( rwsh.input_range 2147483649 .return ) 
 
 -1
-$%return -2147483649
-rwsh.input_range : command not found ( rwsh.input_range -2147483649 %return ) 
+$.return -2147483649
+rwsh.input_range : command not found ( rwsh.input_range -2147483649 .return ) 
 
 -1
 $
 
 -1
-$# %selection_set
+$# .selection_set
 
 -1
-$%selection_set A
-rwsh.argument_count : command not found ( rwsh.argument_count %selection_set ) 
+$.selection_set A
+rwsh.argument_count : command not found ( rwsh.argument_count .selection_set ) 
 
 -1
-$%selection_set A /usr
+$.selection_set A /usr
 
 0
 $e $A
 /usr
 0
-$%selection_set A ./
+$.selection_set A ./
 
 0
 $e $A
 /usr/*
 0
-$%selection_set A local/include
+$.selection_set A local/include
 
 0
 $e $A
 /usr/local/include
 0
-$%selection_set A ..
+$.selection_set A ..
 
 0
 $e $A
 /usr
 0
-$%selection_set A ()
+$.selection_set A ()
 
 0
 $e $A
 /usr
 0
-$%selection_set A ./local/../../bin
+$.selection_set A ./local/../../bin
 
 0
 $e $A
 /bin
 0
-$%selection_set A sbin etc
+$.selection_set A sbin etc
 
 0
 $e $A
@@ -1118,21 +1118,21 @@ $e $A
 $
 
 0
-$# %set
+$# .set
 
 0
-$%set A
-rwsh.argument_count : command not found ( rwsh.argument_count %set ) 
+$.set A
+rwsh.argument_count : command not found ( rwsh.argument_count .set ) 
 
 -1
-$%set B x
-rwsh.undefined_variable : command not found ( rwsh.undefined_variable B %set ) 
+$.set B x
+rwsh.undefined_variable : command not found ( rwsh.undefined_variable B .set ) 
 
 -1
-$%set IF_TEST x
+$.set IF_TEST x
 
 2
-$%set A x
+$.set A x
 
 0
 $e $A
@@ -1141,34 +1141,34 @@ x
 $
 
 0
-$# %source
+$# .source
 
 0
-$%source
-rwsh.argument_count : command not found ( rwsh.argument_count %source ) 
+$.source
+rwsh.argument_count : command not found ( rwsh.argument_count .source ) 
 
 -1
-$%source /*fu*bar*
-rwsh.file_open_failure : command not found ( rwsh.file_open_failure /*fu*bar* %source ) 
+$.source /*fu*bar*
+rwsh.file_open_failure : command not found ( rwsh.file_open_failure /*fu*bar* .source ) 
 
 -1
 $# if you actually have that file, something is seriously wrong
 
 -1
-$%source /etc/hosts
-rwsh.not_executable : command not found ( rwsh.not_executable /etc/hosts %source ) 
+$.source /etc/hosts
+rwsh.not_executable : command not found ( rwsh.not_executable /etc/hosts .source ) 
 
 -1
-$# %source is tested by having test_init.sh define #
+$# .source is tested by having test_init.sh define #
 
 -1
 $w rwsh.init
-%function rwsh.init {%set MAX_NESTING 4; %source /etc/rwshrc $*}
+.function rwsh.init {.set MAX_NESTING 4; .source /etc/rwshrc $*}
 0
 $
 
 0
-$# %stepwise
+$# .stepwise
 
 0
 $f wrapper {a $* two; a $* three}
@@ -1177,24 +1177,24 @@ $f wrapper {a $* two; a $* three}
 $f a {e $* one $nl; e $* two $nl; e $* three $nl}
 
 0
-$f d {e $* $nl; %stepwise $* {d $*}}
+$f d {e $* $nl; .stepwise $* {d $*}}
 
 0
-$%stepwise {e $* $nl}
-rwsh.argument_count : command not found ( rwsh.argument_count %stepwise ) 
+$.stepwise {e $* $nl}
+rwsh.argument_count : command not found ( rwsh.argument_count .stepwise ) 
 
 -1
-$%stepwise wrapper 1 2
-rwsh.missing_argfunction : command not found ( rwsh.missing_argfunction %stepwise ) 
+$.stepwise wrapper 1 2
+rwsh.missing_argfunction : command not found ( rwsh.missing_argfunction .stepwise ) 
 
 -1
-$%stepwise stepwise {e $* $nl}
+$.stepwise stepwise {e $* $nl}
 
 1
-$%stepwise %stepwise {e $* $nl}
+$.stepwise .stepwise {e $* $nl}
 
 2
-$%stepwise wrapper 1 2 {e $* $nl}
+$.stepwise wrapper 1 2 {e $* $nl}
 a 1 2 two 
 a 1 2 three 
 
@@ -1214,281 +1214,281 @@ $wrapper 1 2
 1 2 three three 
 
 0
-$%stepwise wrapper 1 2 {d $*}
+$.stepwise wrapper 1 2 {d $*}
 a 1 2 one 
-rwsh.excessive_nesting : command not found ( rwsh.excessive_nesting rwsh.mapped_argfunction a %stepwise d rwsh.mapped_argfunction wrapper %stepwise ) 
+rwsh.excessive_nesting : command not found ( rwsh.excessive_nesting rwsh.mapped_argfunction a .stepwise d rwsh.mapped_argfunction wrapper .stepwise ) 
 
 -1
-$%stepwise wrapper 1 2 {e $* $nl}
+$.stepwise wrapper 1 2 {e $* $nl}
 a 1 2 one 
 a 1 2 two 
 a 1 2 three 
 
 0
-$%set A $MAX_NESTING
+$.set A $MAX_NESTING
 
 0
-$%set MAX_NESTING 12
+$.set MAX_NESTING 12
 
 0
-$%stepwise wrapper 1 2 {d $*}
+$.stepwise wrapper 1 2 {d $*}
 a 1 2 one 
 e 1 2 one one 
  
-%echo 1 2 one one 
+.echo 1 2 one one 
  
 e 1 2 one two 
  
-%echo 1 2 one two 
+.echo 1 2 one two 
  
 e 1 2 one three 
  
-%echo 1 2 one three 
+.echo 1 2 one three 
  
 a 1 2 two 
 e 1 2 two one 
  
-%echo 1 2 two one 
+.echo 1 2 two one 
  
 e 1 2 two two 
  
-%echo 1 2 two two 
+.echo 1 2 two two 
  
 e 1 2 two three 
  
-%echo 1 2 two three 
+.echo 1 2 two three 
  
 a 1 2 three 
 e 1 2 three one 
  
-%echo 1 2 three one 
+.echo 1 2 three one 
  
 e 1 2 three two 
  
-%echo 1 2 three two 
+.echo 1 2 three two 
  
 e 1 2 three three 
  
-%echo 1 2 three three 
+.echo 1 2 three three 
  
 
 2
-$%set MAX_NESTING $A 
+$.set MAX_NESTING $A 
 
 0
 $
 
 0
-$# %test_equal %test_not_equal %test_not_empty
+$# .test_equal .test_not_equal .test_not_empty
 
 0
-$%test_equal x
-rwsh.argument_count : command not found ( rwsh.argument_count %test_equal ) 
+$.test_equal x
+rwsh.argument_count : command not found ( rwsh.argument_count .test_equal ) 
 
 -1
-$%test_equal x x x
-rwsh.argument_count : command not found ( rwsh.argument_count %test_equal ) 
+$.test_equal x x x
+rwsh.argument_count : command not found ( rwsh.argument_count .test_equal ) 
 
 -1
-$%test_not_equal x 
-rwsh.argument_count : command not found ( rwsh.argument_count %test_not_equal ) 
+$.test_not_equal x 
+rwsh.argument_count : command not found ( rwsh.argument_count .test_not_equal ) 
 
 -1
-$%test_not_equal x x x
-rwsh.argument_count : command not found ( rwsh.argument_count %test_not_equal ) 
+$.test_not_equal x x x
+rwsh.argument_count : command not found ( rwsh.argument_count .test_not_equal ) 
 
 -1
-$%test_not_empty 
-rwsh.argument_count : command not found ( rwsh.argument_count %test_not_empty ) 
+$.test_not_empty 
+rwsh.argument_count : command not found ( rwsh.argument_count .test_not_empty ) 
 
 -1
-$%test_not_empty x x
-rwsh.argument_count : command not found ( rwsh.argument_count %test_not_empty ) 
+$.test_not_empty x x
+rwsh.argument_count : command not found ( rwsh.argument_count .test_not_empty ) 
 
 -1
-$%test_equal x y
+$.test_equal x y
 
 1
-$%test_equal x x
+$.test_equal x x
 
 0
-$%test_not_equal x y
+$.test_not_equal x y
 
 0
-$%test_not_equal x x
+$.test_not_equal x x
 
 1
-$%test_not_empty \
+$.test_not_empty \
 
 1
-$%test_not_empty x
+$.test_not_empty x
 
 0
 $
 
 0
-$# %test_is_number %test_number_equal %test_greater %test_less
+$# .test_is_number .test_number_equal .test_greater .test_less
 
 0
-$%test_is_number
-rwsh.argument_count : command not found ( rwsh.argument_count %test_is_number ) 
+$.test_is_number
+rwsh.argument_count : command not found ( rwsh.argument_count .test_is_number ) 
 
 -1
-$%test_is_number ()
+$.test_is_number ()
 
 1
-$%test_is_number 42a
+$.test_is_number 42a
 
 1
-$%test_is_number 42
+$.test_is_number 42
 
 0
-$%test_is_number -0.314
+$.test_is_number -0.314
 
 0
-$%test_is_number 6.022e9000000000
+$.test_is_number 6.022e9000000000
 
 2
-$%test_is_number 6.022e23
+$.test_is_number 6.022e23
 
 0
-$%test_number_equal 42
-rwsh.argument_count : command not found ( rwsh.argument_count %test_number_equal ) 
+$.test_number_equal 42
+rwsh.argument_count : command not found ( rwsh.argument_count .test_number_equal ) 
 
 -1
-$%test_number_equal 42 42a
-rwsh.not_a_number : command not found ( rwsh.not_a_number 42a %test_number_equal ) 
+$.test_number_equal 42 42a
+rwsh.not_a_number : command not found ( rwsh.not_a_number 42a .test_number_equal ) 
 
 -1
-$%test_number_equal 42b 42
-rwsh.not_a_number : command not found ( rwsh.not_a_number 42b %test_number_equal ) 
+$.test_number_equal 42b 42
+rwsh.not_a_number : command not found ( rwsh.not_a_number 42b .test_number_equal ) 
 
 -1
-$%test_number_equal 0 0.000000000000000000000000001
+$.test_number_equal 0 0.000000000000000000000000001
 
 1
-$%test_number_equal 1e-9000000000 1e-9000000001
-rwsh.input_range : command not found ( rwsh.input_range 1e-9000000000 %test_number_equal ) 
+$.test_number_equal 1e-9000000000 1e-9000000001
+rwsh.input_range : command not found ( rwsh.input_range 1e-9000000000 .test_number_equal ) 
 
 -1
-$%test_number_equal 0 0.0
+$.test_number_equal 0 0.0
 
 0
-$%test_number_equal 42 42.01
+$.test_number_equal 42 42.01
 
 1
-$%test_number_equal 42 42
+$.test_number_equal 42 42
 
 0
-$%test_number_equal 6.022e9000000000 .6022e24
-rwsh.input_range : command not found ( rwsh.input_range 6.022e9000000000 %test_number_equal ) 
+$.test_number_equal 6.022e9000000000 .6022e24
+rwsh.input_range : command not found ( rwsh.input_range 6.022e9000000000 .test_number_equal ) 
 
 -1
-$%test_number_equal 6.022e23 .6022e9000000001
-rwsh.input_range : command not found ( rwsh.input_range .6022e9000000001 %test_number_equal ) 
+$.test_number_equal 6.022e23 .6022e9000000001
+rwsh.input_range : command not found ( rwsh.input_range .6022e9000000001 .test_number_equal ) 
 
 -1
-$%test_number_equal 6.022e23 6.022e2
+$.test_number_equal 6.022e23 6.022e2
 
 1
-$%test_number_equal 6.022e23 .6022e24
+$.test_number_equal 6.022e23 .6022e24
 
 0
-$%test_greater 6.022e23
-rwsh.argument_count : command not found ( rwsh.argument_count %test_greater ) 
+$.test_greater 6.022e23
+rwsh.argument_count : command not found ( rwsh.argument_count .test_greater ) 
 
 -1
-$%test_greater 6.022e23c 6.022e23
-rwsh.not_a_number : command not found ( rwsh.not_a_number 6.022e23c %test_greater ) 
+$.test_greater 6.022e23c 6.022e23
+rwsh.not_a_number : command not found ( rwsh.not_a_number 6.022e23c .test_greater ) 
 
 -1
-$%test_greater 6.022e23 6.022e23e
-rwsh.not_a_number : command not found ( rwsh.not_a_number 6.022e23e %test_greater ) 
+$.test_greater 6.022e23 6.022e23e
+rwsh.not_a_number : command not found ( rwsh.not_a_number 6.022e23e .test_greater ) 
 
 -1
-$%test_greater 6.022e9000000000 .6022e23
-rwsh.input_range : command not found ( rwsh.input_range 6.022e9000000000 %test_greater ) 
+$.test_greater 6.022e9000000000 .6022e23
+rwsh.input_range : command not found ( rwsh.input_range 6.022e9000000000 .test_greater ) 
 
 -1
-$%test_greater 6.022e23 .6022e9000000001
-rwsh.input_range : command not found ( rwsh.input_range .6022e9000000001 %test_greater ) 
+$.test_greater 6.022e23 .6022e9000000001
+rwsh.input_range : command not found ( rwsh.input_range .6022e9000000001 .test_greater ) 
 
 -1
-$%test_greater 6.022e2 6.022e23
+$.test_greater 6.022e2 6.022e23
 
 1
-$%test_greater 6.022e23 .6022e24
+$.test_greater 6.022e23 .6022e24
 
 1
-$%test_greater 6.022e23 6.022e2
+$.test_greater 6.022e23 6.022e2
 
 0
-$%test_less 6.022e23
-rwsh.argument_count : command not found ( rwsh.argument_count %test_less ) 
+$.test_less 6.022e23
+rwsh.argument_count : command not found ( rwsh.argument_count .test_less ) 
 
 -1
-$%test_less 6.022b23 6.022e23
-rwsh.not_a_number : command not found ( rwsh.not_a_number 6.022b23 %test_less ) 
+$.test_less 6.022b23 6.022e23
+rwsh.not_a_number : command not found ( rwsh.not_a_number 6.022b23 .test_less ) 
 
 -1
-$%test_less 6.022e23 6.022a23
-rwsh.not_a_number : command not found ( rwsh.not_a_number 6.022a23 %test_less ) 
+$.test_less 6.022e23 6.022a23
+rwsh.not_a_number : command not found ( rwsh.not_a_number 6.022a23 .test_less ) 
 
 -1
-$%test_less 6.022e9000000000 .6022e23
-rwsh.input_range : command not found ( rwsh.input_range 6.022e9000000000 %test_less ) 
+$.test_less 6.022e9000000000 .6022e23
+rwsh.input_range : command not found ( rwsh.input_range 6.022e9000000000 .test_less ) 
 
 -1
-$%test_less 6.022e23 .6022e9000000001
-rwsh.input_range : command not found ( rwsh.input_range .6022e9000000001 %test_less ) 
+$.test_less 6.022e23 .6022e9000000001
+rwsh.input_range : command not found ( rwsh.input_range .6022e9000000001 .test_less ) 
 
 -1
-$%test_less 6.022e23 6.022e2
+$.test_less 6.022e23 6.022e2
 
 1
-$%test_less 6.022e23 .6022e24
+$.test_less 6.022e23 .6022e24
 
 1
-$%test_less 6.022e2 6.022e23
+$.test_less 6.022e2 6.022e23
 
 0
 $
 
 0
-$# %which_executable %which_test %which_return
+$# .which_executable .which_test .which_return
 
 0
-$%which_test
-rwsh.argument_count : command not found ( rwsh.argument_count %which_test ) 
+$.which_test
+rwsh.argument_count : command not found ( rwsh.argument_count .which_test ) 
 
 -1
-$%which_test j
+$.which_test j
 
 1
-$%which_test #
+$.which_test #
 
 0
-$%which_test rwsh.mapped_argfunction
+$.which_test rwsh.mapped_argfunction
 
 1
-$%which_test rwsh.mapped_argfunction {rwsh.argfunction}
+$.which_test rwsh.mapped_argfunction {rwsh.argfunction}
 
 0
-$%which_executable
-rwsh.argument_count : command not found ( rwsh.argument_count %which_executable ) 
+$.which_executable
+rwsh.argument_count : command not found ( rwsh.argument_count .which_executable ) 
 
 -1
-$%which_executable j
+$.which_executable j
 
 1
-$%which_executable #
-%function # {%nop}
+$.which_executable #
+.function # {.nop}
 0
-$w rwsh.mapped_argfunction {%nop 1 () \ \\ \$ \@}
-{%nop 1 () \ \ \$ \@}
+$w rwsh.mapped_argfunction {.nop 1 () \ \\ \$ \@}
+{.nop 1 () \ \ \$ \@}
 0
-$w rwsh.mapped_argfunction {%nop 1 () \  \\ \$ \@}
-{%nop 1 () \  \\ \$ \@}
+$w rwsh.mapped_argfunction {.nop 1 () \  \\ \$ \@}
+{.nop 1 () \  \\ \$ \@}
 0
 $w rwsh.mapped_argfunction {$A $$A $0 $$$1 $# $* $*2 $A$ $$*$ $$$*12$}
 {$A $$A $0 $$$1 $# $* $*2 $A$ $$*$ $$$*12$}
@@ -1502,158 +1502,158 @@ $w rwsh.mapped_argfunction {@a @$a @$1 @$* @$*2}
 $w rwsh.mapped_argfunction {>dummy_file}
 {>dummy_file}
 0
-$%which_executable rwsh.mapped_argfunction
+$.which_executable rwsh.mapped_argfunction
 
 1
-$%which_executable rwsh.mapped_argfunction {rwsh.argfunction}
+$.which_executable rwsh.mapped_argfunction {rwsh.argfunction}
 {rwsh.argfunction}
 0
-$%waiting_for_shell j
-rwsh.argument_count : command not found ( rwsh.argument_count %waiting_for_shell ) 
+$.waiting_for_shell j
+rwsh.argument_count : command not found ( rwsh.argument_count .waiting_for_shell ) 
 
 -1
-$# %waiting_for_shell
+$# .waiting_for_shell
 
 -1
-$%waiting_for_user j
-rwsh.argument_count : command not found ( rwsh.argument_count %waiting_for_user ) 
+$.waiting_for_user j
+rwsh.argument_count : command not found ( rwsh.argument_count .waiting_for_user ) 
 
 -1
-$# %waiting_for_user
+$# .waiting_for_user
 
 -1
-$%which_return
-rwsh.argument_count : command not found ( rwsh.argument_count %which_return ) 
+$.which_return
+rwsh.argument_count : command not found ( rwsh.argument_count .which_return ) 
 
 -1
-$%which_return rwsh.mapped_argfunction
+$.which_return rwsh.mapped_argfunction
 
 2
-$%which_return rwsh.mapped_argfunction {rwsh.argfunction}
+$.which_return rwsh.mapped_argfunction {rwsh.argfunction}
 
 2
-$%which_return %which_return
+$.which_return .which_return
 2
 0
-$%which_return j
+$.which_return j
 
 1
-$%which_return #
+$.which_return #
 -1
 0
 $
 
 0
-$# %usleep %which_execution_count %which_last_execution_time
+$# .usleep .which_execution_count .which_last_execution_time
 
 0
-$# %which_total_execution_time
+$# .which_total_execution_time
 
 0
-$%usleep
-rwsh.argument_count : command not found ( rwsh.argument_count %usleep ) 
+$.usleep
+rwsh.argument_count : command not found ( rwsh.argument_count .usleep ) 
 
 -1
-$%usleep -6
-rwsh.input_range : command not found ( rwsh.input_range -6 %usleep ) 
+$.usleep -6
+rwsh.input_range : command not found ( rwsh.input_range -6 .usleep ) 
 
 -1
-$%usleep 5i
-rwsh.not_a_number : command not found ( rwsh.not_a_number 5i %usleep ) 
+$.usleep 5i
+rwsh.not_a_number : command not found ( rwsh.not_a_number 5i .usleep ) 
 
 -1
-$%usleep 8000
+$.usleep 8000
 
 0
-$%which_execution_count
-rwsh.argument_count : command not found ( rwsh.argument_count %which_execution_count ) 
+$.which_execution_count
+rwsh.argument_count : command not found ( rwsh.argument_count .which_execution_count ) 
 
 -1
-$%which_execution_count j
+$.which_execution_count j
 
 1
-$%which_execution_count %usleep
+$.which_execution_count .usleep
 4
 0
-$%which_last_execution_time
-rwsh.argument_count : command not found ( rwsh.argument_count %which_last_execution_time ) 
+$.which_last_execution_time
+rwsh.argument_count : command not found ( rwsh.argument_count .which_last_execution_time ) 
 
 -1
-$%which_last_execution_time j
+$.which_last_execution_time j
 
 1
-$# %which_last_execution_time %usleep
+$# .which_last_execution_time .usleep
 
 1
-$%which_total_execution_time
-rwsh.argument_count : command not found ( rwsh.argument_count %which_total_execution_time ) 
+$.which_total_execution_time
+rwsh.argument_count : command not found ( rwsh.argument_count .which_total_execution_time ) 
 
 -1
-$%which_total_execution_time j
+$.which_total_execution_time j
 
 1
-$# %which_total_execution_time %usleep
+$# .which_total_execution_time .usleep
 
 1
 $
 
 1
-$# %which_path
+$# .which_path
 
 1
-$%which_path cat
-rwsh.argument_count : command not found ( rwsh.argument_count %which_path ) 
+$.which_path cat
+rwsh.argument_count : command not found ( rwsh.argument_count .which_path ) 
 
 -1
-$%which_path cat \
+$.which_path cat \
 
 1
-$%which_path does<not>exist /bin:/usr/bin
+$.which_path does<not>exist /bin:/usr/bin
 
 1
-$%which_path cat /bin:/usr/bin
+$.which_path cat /bin:/usr/bin
 /bin/cat
 0
 $
 
 0
-$# %while
+$# .while
 
 0
-$%function tf {%test_not_equal $A $N}
+$.function tf {.test_not_equal $A $N}
 
 0
-$%set A 0
+$.set A 0
 
 0
-$%set N 4
+$.set N 4
 
 0
-$%while {e ARGS}
-rwsh.argument_count : command not found ( rwsh.argument_count %while ) 
+$.while {e ARGS}
+rwsh.argument_count : command not found ( rwsh.argument_count .while ) 
 
 -1
-$%while tf {e printed; %set A 4}
+$.while tf {e printed; .set A 4}
 printed
 0
-$%while tf {e skipped}
+$.while tf {e skipped}
 
 -1
-$%set A 0
+$.set A 0
 
 0
-$%while tf {e in %while argfunction $A $nl; %var_add A 1}
-in %while argfunction 0 
-in %while argfunction 1 
-in %while argfunction 2 
-in %while argfunction 3 
+$.while tf {e in .while argfunction $A $nl; .var_add A 1}
+in .while argfunction 0 
+in .while argfunction 1 
+in .while argfunction 2 
+in .while argfunction 3 
 
 0
-$%set A 0
+$.set A 0
 
 0
-$%while tf {%if %return $A {%set A 1}
-           %else {%function tf {%return 1}}
+$.while tf {.if .return $A {.set A 1}
+           .else {.function tf {.return 1}}
            e in overwriting argfunction $nl}
 in overwriting argfunction 
 in overwriting argfunction 
@@ -1662,71 +1662,71 @@ in overwriting argfunction
 $
 
 0
-$# %var_add
+$# .var_add
 
 0
-$%var_add
-rwsh.argument_count : command not found ( rwsh.argument_count %var_add ) 
+$.var_add
+rwsh.argument_count : command not found ( rwsh.argument_count .var_add ) 
 
 -1
-$%var_add A 1 2
-rwsh.argument_count : command not found ( rwsh.argument_count %var_add ) 
+$.var_add A 1 2
+rwsh.argument_count : command not found ( rwsh.argument_count .var_add ) 
 
 -1
-$%var_add B 1
-rwsh.undefined_variable : command not found ( rwsh.undefined_variable B %var_add ) 
+$.var_add B 1
+rwsh.undefined_variable : command not found ( rwsh.undefined_variable B .var_add ) 
 
 -1
-$%set A A
+$.set A A
 
 0
-$%var_add A 2 
-rwsh.not_a_number : command not found ( rwsh.not_a_number A %var_add ) 
+$.var_add A 2 
+rwsh.not_a_number : command not found ( rwsh.not_a_number A .var_add ) 
 
 -1
-$%set A 1e309
+$.set A 1e309
 
 0
-$%var_add A 2 
-rwsh.input_range : command not found ( rwsh.input_range 1e309 %var_add ) 
+$.var_add A 2 
+rwsh.input_range : command not found ( rwsh.input_range 1e309 .var_add ) 
 
 -1
-$%set A -1e308
+$.set A -1e308
 
 0
-$%var_add A A
-rwsh.not_a_number : command not found ( rwsh.not_a_number A %var_add ) 
+$.var_add A A
+rwsh.not_a_number : command not found ( rwsh.not_a_number A .var_add ) 
 
 -1
-$%var_add A 1e309
-rwsh.input_range : command not found ( rwsh.input_range 1e309 %var_add ) 
+$.var_add A 1e309
+rwsh.input_range : command not found ( rwsh.input_range 1e309 .var_add ) 
 
 -1
-$%var_add A -1e308
-rwsh.result_range : command not found ( rwsh.result_range -1e308 -1e308 %var_add ) 
+$.var_add A -1e308
+rwsh.result_range : command not found ( rwsh.result_range -1e308 -1e308 .var_add ) 
 
 -1
-$%var_add A 1e308
+$.var_add A 1e308
 
 0
-$%var_add A 1e308
+$.var_add A 1e308
 
 0
 $e $A
 1e+308
 0
-$%var_add A 1e308
-rwsh.result_range : command not found ( rwsh.result_range 1e+308 1e308 %var_add ) 
+$.var_add A 1e308
+rwsh.result_range : command not found ( rwsh.result_range 1e+308 1e308 .var_add ) 
 
 -1
-$%var_add A -1e308
+$.var_add A -1e308
 
 0
 $e $A
 0
 0
-$%var_add A \
-rwsh.not_a_number : command not found ( rwsh.not_a_number  %var_add ) 
+$.var_add A \
+rwsh.not_a_number : command not found ( rwsh.not_a_number  .var_add ) 
 
 -1
 $e $A
@@ -1735,67 +1735,67 @@ $e $A
 $
 
 0
-$# %var_divide
+$# .var_divide
 
 0
-$%var_divide A
-rwsh.argument_count : command not found ( rwsh.argument_count %var_divide ) 
+$.var_divide A
+rwsh.argument_count : command not found ( rwsh.argument_count .var_divide ) 
 
 -1
-$%var_divide A 1 2
-rwsh.argument_count : command not found ( rwsh.argument_count %var_divide ) 
+$.var_divide A 1 2
+rwsh.argument_count : command not found ( rwsh.argument_count .var_divide ) 
 
 -1
-$%var_divide B 1
-rwsh.undefined_variable : command not found ( rwsh.undefined_variable B %var_divide ) 
+$.var_divide B 1
+rwsh.undefined_variable : command not found ( rwsh.undefined_variable B .var_divide ) 
 
 -1
-$%set A A
+$.set A A
 
 0
-$%var_divide A 2 
-rwsh.not_a_number : command not found ( rwsh.not_a_number A %var_divide ) 
+$.var_divide A 2 
+rwsh.not_a_number : command not found ( rwsh.not_a_number A .var_divide ) 
 
 -1
-$%set A 1e3000000000
+$.set A 1e3000000000
 
 0
-$%var_divide A 2 
-rwsh.input_range : command not found ( rwsh.input_range 1e3000000000 %var_divide ) 
+$.var_divide A 2 
+rwsh.input_range : command not found ( rwsh.input_range 1e3000000000 .var_divide ) 
 
 -1
-$%set A 16.8
+$.set A 16.8
 
 0
-$%var_divide A A
-rwsh.not_a_number : command not found ( rwsh.not_a_number A %var_divide ) 
+$.var_divide A A
+rwsh.not_a_number : command not found ( rwsh.not_a_number A .var_divide ) 
 
 -1
-$%var_divide A 1e3000000000
-rwsh.input_range : command not found ( rwsh.input_range 1e3000000000 %var_divide ) 
+$.var_divide A 1e3000000000
+rwsh.input_range : command not found ( rwsh.input_range 1e3000000000 .var_divide ) 
 
 -1
-$%var_divide A 0 
-rwsh.divide_by_zero : command not found ( rwsh.divide_by_zero 16.8 %var_divide ) 
+$.var_divide A 0 
+rwsh.divide_by_zero : command not found ( rwsh.divide_by_zero 16.8 .var_divide ) 
 
 -1
-$%var_divide A 4.2 
+$.var_divide A 4.2 
 
 0
 $e $A
 4
 0
-$%set A 1.8e-20
+$.set A 1.8e-20
 
 0
-$%var_divide A 1e308
-rwsh.result_range : command not found ( rwsh.result_range 1.8e-20 1e308 %var_divide ) 
+$.var_divide A 1e308
+rwsh.result_range : command not found ( rwsh.result_range 1.8e-20 1e308 .var_divide ) 
 
 -1
-$%set A 0
+$.set A 0
 
 0
-$%var_divide A 1e308
+$.var_divide A 1e308
 
 0
 $e $A
@@ -1804,77 +1804,77 @@ $e $A
 $
 
 0
-$# %var_subtract
+$# .var_subtract
 
 0
-$%var_subtract
-rwsh.argument_count : command not found ( rwsh.argument_count %var_subtract ) 
+$.var_subtract
+rwsh.argument_count : command not found ( rwsh.argument_count .var_subtract ) 
 
 -1
-$%var_subtract A 1 2
-rwsh.argument_count : command not found ( rwsh.argument_count %var_subtract ) 
+$.var_subtract A 1 2
+rwsh.argument_count : command not found ( rwsh.argument_count .var_subtract ) 
 
 -1
-$%var_subtract B 1
-rwsh.undefined_variable : command not found ( rwsh.undefined_variable B %var_subtract ) 
+$.var_subtract B 1
+rwsh.undefined_variable : command not found ( rwsh.undefined_variable B .var_subtract ) 
 
 -1
-$%set A A
+$.set A A
 
 0
-$%var_subtract A 2 
-rwsh.not_a_number : command not found ( rwsh.not_a_number A %var_subtract ) 
+$.var_subtract A 2 
+rwsh.not_a_number : command not found ( rwsh.not_a_number A .var_subtract ) 
 
 -1
-$%set A 3000000000
+$.set A 3000000000
 
 0
-$%var_subtract A 2 
+$.var_subtract A 2 
 
 0
-$%set A 1e308
+$.set A 1e308
 
 0
-$%var_subtract A -1e308
-rwsh.result_range : command not found ( rwsh.result_range 1e308 -1e308 %var_subtract ) 
+$.var_subtract A -1e308
+rwsh.result_range : command not found ( rwsh.result_range 1e308 -1e308 .var_subtract ) 
 
 -1
 $e $A
 1e308
 0
-$%set A -2147483648
+$.set A -2147483648
 
 0
-$%var_subtract A A
-rwsh.not_a_number : command not found ( rwsh.not_a_number A %var_subtract ) 
+$.var_subtract A A
+rwsh.not_a_number : command not found ( rwsh.not_a_number A .var_subtract ) 
 
 -1
-$%var_subtract A 3000000000
+$.var_subtract A 3000000000
 
 0
-$%var_subtract A -2147483648
+$.var_subtract A -2147483648
 
 0
-$%var_subtract A 2147483647
+$.var_subtract A 2147483647
 
 0
-$%var_subtract A 2147483647
-
-0
-$e $A
--7.29496e+09
-0
-$%var_subtract A 2147483647
-
-0
-$%var_subtract A -2147483648
+$.var_subtract A 2147483647
 
 0
 $e $A
 -7.29496e+09
 0
-$%var_subtract A \
-rwsh.not_a_number : command not found ( rwsh.not_a_number  %var_subtract ) 
+$.var_subtract A 2147483647
+
+0
+$.var_subtract A -2147483648
+
+0
+$e $A
+-7.29496e+09
+0
+$.var_subtract A \
+rwsh.not_a_number : command not found ( rwsh.not_a_number  .var_subtract ) 
 
 -1
 $e $A
@@ -1883,35 +1883,35 @@ $e $A
 $
 
 0
-$# %version %version_available %version_compatible
+$# .version .version_available .version_compatible
 
 0
-$%version 1.0
-rwsh.argument_count : command not found ( rwsh.argument_count %version ) 
+$.version 1.0
+rwsh.argument_count : command not found ( rwsh.argument_count .version ) 
 
 -1
-$%version_available 1.0
-rwsh.argument_count : command not found ( rwsh.argument_count %version_available ) 
+$.version_available 1.0
+rwsh.argument_count : command not found ( rwsh.argument_count .version_available ) 
 
 -1
-$%version_compatible
-rwsh.argument_count : command not found ( rwsh.argument_count %version_compatible ) 
+$.version_compatible
+rwsh.argument_count : command not found ( rwsh.argument_count .version_compatible ) 
 
 -1
-$%version_compatible 1.0 1.0
-rwsh.argument_count : command not found ( rwsh.argument_count %version_compatible ) 
+$.version_compatible 1.0 1.0
+rwsh.argument_count : command not found ( rwsh.argument_count .version_compatible ) 
 
 -1
-$%version
+$.version
 0.2.1+
 0
-$%version_available
+$.version_available
 0.2.1+
 0
-$%version_compatible 1.0
+$.version_compatible 1.0
 
 1
-$%version_compatible 0.2.1+
+$.version_compatible 0.2.1+
 
 0
 $
@@ -1944,13 +1944,13 @@ $# following tests will fail.
 
 0
 $w rwsh.after_command
-%function rwsh.after_command {; %set last_command_return $?; %echo $nl; %echo $last_command_return; %echo $nl}
+.function rwsh.after_command {; .set last_command_return $?; .echo $nl; .echo $last_command_return; .echo $nl}
 0
 $w rwsh.prompt
-%function rwsh.prompt {%echo \$}
+.function rwsh.prompt {.echo \$}
 0
 $w rwsh.raw_command
-%function rwsh.raw_command {%echo $1; %echo $nl}
+.function rwsh.raw_command {.echo $1; .echo $nl}
 0
 $
 
@@ -1962,7 +1962,7 @@ $w x {rwsh.escaped_argfunction me}
 rwsh.arguments_for_argfunction : command not found ( rwsh.arguments_for_argfunction rwsh.escaped_argfunction ) 
 
 -1
-$f rwsh.before_command {%echo $*0; %echo $nl}
+$f rwsh.before_command {.echo $*0; .echo $nl}
 
 0
 $/bn
@@ -2013,7 +2013,7 @@ $z 1 2 3
 
 0
 $w z
-%function z {e $* $nl}
+.function z {e $* $nl}
 0
 $f rwsh.autofunction
 
@@ -2053,8 +2053,8 @@ x : command not found ( x )
 
 -1
 $w rwsh.executable_not_found
-%function rwsh.executable_not_found {%echo $1 : command not found ( $* ) 
-; %return -1}
+.function rwsh.executable_not_found {.echo $1 : command not found ( $* ) 
+; .return -1}
 0
 $
 
@@ -2112,7 +2112,7 @@ $
 $# rwsh.run_logic
 
 0
-$f rwsh.run_logic {%if %return $1; %else_if $*2; %else}
+$f rwsh.run_logic {.if .return $1; .else_if $*2; .else}
 
 0
 $0 e don't print
@@ -2168,13 +2168,13 @@ nl=
 $
 
 0
-$# %importenv_preserve %importenv_overwrite
+$# .importenv_preserve .importenv_overwrite
 
 0
-$%global SHELL unmodified
+$.global SHELL unmodified
 
 0
-$%importenv_preserve
+$.importenv_preserve
 
 0
 $e $TESTABILITY
@@ -2183,10 +2183,10 @@ an external variable
 $e $SHELL
 unmodified
 0
-$%unset TESTABILITY
+$.unset TESTABILITY
 
 0
-$%importenv_overwrite
+$.importenv_overwrite
 
 0
 $e $TESTABILITY
@@ -2201,11 +2201,11 @@ $
 $# exiting rwsh.shutdown
 
 0
-$%exit now
-rwsh.argument_count : command not found ( rwsh.argument_count %exit ) 
+$.exit now
+rwsh.argument_count : command not found ( rwsh.argument_count .exit ) 
 
 -1
-$%exit
+$.exit
 
 0
 

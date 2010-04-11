@@ -1,6 +1,7 @@
 rwsh v0.3
-  An enormous number of changes that would be worth itemizing if I wasn't the
-  only user.
+  A list of changes too long for it to be worth enumerating them,...
+  though it is worth mentioning that all builtins now begin with a "." rather
+  than a "%" character
 
 rwsh v0.2.2 -
   * builtins added: %combine, %exec, %for_each_line, %fork, %is_default_input,
