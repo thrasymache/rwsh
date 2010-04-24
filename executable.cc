@@ -89,10 +89,10 @@ void Executable_t::signal_handler(void) {
   if (unwind_stack()) {
     default_output <<"signal handler itself triggered signal\n";
     call_stack.push_front(".echo");
-    echo_bi(call_stack);
+    b_echo(call_stack);
     default_output <<"\noriginal call stack:\n";
     call_stack_copy[0] = ".echo";
-    echo_bi(call_stack_copy);
+    b_echo(call_stack_copy);
     default_output <<"\n";
     default_output.flush();
     dollar_question = -1;

@@ -41,7 +41,7 @@ extern char** environ;
 
 // change the current directory to the one given
 // returns the error returned from chdir
-int cd_bi(const Argv_t& argv) {
+int b_cd(const Argv_t& argv) {
   if (argv.size() != 2) throw Argument_count_t(argv.size(), 2);
   errno = 0;
   int ret = chdir(argv[1].c_str());
@@ -53,7 +53,7 @@ int cd_bi(const Argv_t& argv) {
   return ret;}
 
 // echo arguments to standard output without space separation
-int combine_bi(const Argv_t& argv) {
+int b_combine(const Argv_t& argv) {
   if (argv.size() < 2) throw Argument_count_t(argv.size(), 2);
   for (Argv_t::const_iterator i = argv.begin()+1; i != argv.end(); ++i)
     argv.output <<*i;
@@ -61,7 +61,7 @@ int combine_bi(const Argv_t& argv) {
   return 0;}
 
 // echo arguments to standard output separated by space
-int echo_bi(const Argv_t& argv) {
+int b_echo(const Argv_t& argv) {
   if (argv.size() < 2) throw Argument_count_t(argv.size(), 2);
   for (Argv_t::const_iterator i = argv.begin()+1; i != argv.end()-1; ++i)
     argv.output <<*i <<" ";
@@ -71,7 +71,7 @@ int echo_bi(const Argv_t& argv) {
 
 #include <iostream>
 // replace the shell with the given binary
-int exec_bi(const Argv_t& argv) {
+int b_exec(const Argv_t& argv) {
   if (argv.size() < 2) throw Argument_count_t(argv.size(), 2);
   int input = argv.input.fd(),
       output = argv.output.fd(),
@@ -91,14 +91,14 @@ int exec_bi(const Argv_t& argv) {
   return ret;}
 
 // exit the shell
-int exit_bi(const Argv_t& argv) {
+int b_exit(const Argv_t& argv) {
   if (argv.size() != 1) throw Argument_count_t(argv.size(), 1);
   Variable_map_t::exit_requested = true;
   return 0;}
 
 // run the argfunction for each argument, passing that value as the argument
 // returns the value returned by the argfunction
-int for_bi(const Argv_t& argv) {
+int b_for(const Argv_t& argv) {
   if (argv.size() < 2) throw Argument_count_t(argv.size(), 2);
   int ret = -1;
   Argv_t body;
@@ -117,7 +117,7 @@ int for_bi(const Argv_t& argv) {
 
 // run the argfunction for line of input, passing that line as the argv
 // returns the value returned by the argfunction
-int for_each_line_bi(const Argv_t& argv) {
+int b_for_each_line(const Argv_t& argv) {
   if (argv.size() != 1) throw Argument_count_t(argv.size(), 1);
   if (!argv.argfunction()) throw Missing_argfunction_t();
   int ret = -1;
@@ -133,7 +133,7 @@ int for_each_line_bi(const Argv_t& argv) {
   return ret;}
 
 #include "plumber.h"
-int fork_bi(const Argv_t& argv) {
+int b_fork(const Argv_t& argv) {
   if (argv.size() < 2) throw Argument_count_t(argv.size(), 2);
   int ret = 0;
   if (!fork()) {  
@@ -146,7 +146,7 @@ int fork_bi(const Argv_t& argv) {
   return ret;}
 
 // add argfunction to executable map with name $1
-int function_bi(const Argv_t& argv) {
+int b_function(const Argv_t& argv) {
   if (argv.size() != 2) throw Argument_count_t(argv.size(), 2);
   else if (is_binary_name(argv[1])) return 1;
   Argv_t lookup(argv.begin()+1, argv.end(), NULL, 
@@ -162,7 +162,7 @@ int function_bi(const Argv_t& argv) {
 
 // add a variable to the variable map that will remain after the enclosing
 // function terminates
-int global_bi(const Argv_t& argv) {
+int b_global(const Argv_t& argv) {
   if (argv.size() != 3) throw Argument_count_t(argv.size(), 3);
   else return argv.global_var(argv[1], argv[2]);}
 
@@ -190,7 +190,7 @@ int if_core(const Argv_t& argv, bool logic) {
 
 // run argfunction if $* returns true
 // returns the value returned by the argfunction
-int if_bi(const Argv_t& argv) {
+int b_if(const Argv_t& argv) {
   if (argv.size() < 2) throw Argument_count_t(argv.size(), 2);
   else if (!argv.var_exists("IF_TEST")) {
     argv.global_var("IF_TEST", "false"); 
@@ -201,7 +201,7 @@ int if_bi(const Argv_t& argv) {
 
 // run argfunction if IF_TEST is false and $* returns true
 // returns the value returned by the argfunction
-int else_if_bi(const Argv_t& argv) {
+int b_else_if(const Argv_t& argv) {
   if (argv.size() < 2) throw Argument_count_t(argv.size(), 2);
   else if (!argv.var_exists("IF_TEST")) throw Else_without_if_t();
   else if (argv.get_var("IF_TEST") == "true") return dollar_question;
@@ -210,7 +210,7 @@ int else_if_bi(const Argv_t& argv) {
 
 // run argfunction if IF_TEST is false and $* returns false
 // returns the value returned by the argfunction
-int else_if_not_bi(const Argv_t& argv) {
+int b_else_if_not(const Argv_t& argv) {
   if (argv.size() < 2) throw Argument_count_t(argv.size(), 2);
   else if (!argv.var_exists("IF_TEST")) throw Else_without_if_t();
   else if (argv.get_var("IF_TEST") == "true") return dollar_question;
@@ -219,7 +219,7 @@ int else_if_not_bi(const Argv_t& argv) {
 
 // run argfunction if IF_TEST is false 
 // returns the value returned by the argfunction
-int else_bi(const Argv_t& argv) {
+int b_else(const Argv_t& argv) {
   int ret;
   if (argv.size() != 1) throw Argument_count_t(argv.size(), 1);
   else if (!argv.var_exists("IF_TEST")) {
@@ -246,7 +246,7 @@ int else_bi(const Argv_t& argv) {
 
 // import the external environment into the variable map, overwriting variables
 // that already exist
-int importenv_overwrite_bi(const Argv_t& argv) {
+int b_importenv_overwrite(const Argv_t& argv) {
   if (argv.size() != 1) throw Argument_count_t(argv.size(), 1);
   for (char** i=environ; *i; ++i) {
     std::string src(*i);
@@ -259,7 +259,7 @@ int importenv_overwrite_bi(const Argv_t& argv) {
 
 // import the external environment into the variable map, preserving variables
 // that already exist
-int importenv_preserve_bi(const Argv_t& argv) {
+int b_importenv_preserve(const Argv_t& argv) {
   if (argv.size() != 1) throw Argument_count_t(argv.size(), 1);
   for (char** i=environ; *i; ++i) {
     std::string src(*i);
@@ -269,22 +269,22 @@ int importenv_preserve_bi(const Argv_t& argv) {
   return 0;}
 
 // returns one if the input stream is not the default_stream
-int is_default_input_bi(const Argv_t& argv) {
+int b_is_default_input(const Argv_t& argv) {
   if(argv.size() != 1) throw Argument_count_t(argv.size(), 1);
   return !argv.input.is_default();}
 
 // returns one if the output stream is not the default_stream
-int is_default_output_bi(const Argv_t& argv) {
+int b_is_default_output(const Argv_t& argv) {
   if(argv.size() != 1) throw Argument_count_t(argv.size(), 1);
   return !argv.output.is_default();}
 
 // returns one if the error stream is not the default_stream
-int is_default_error_bi(const Argv_t& argv) {
+int b_is_default_error(const Argv_t& argv) {
   if(argv.size() != 1) throw Argument_count_t(argv.size(), 1);
   return !argv.error.is_default();}
 
 // list the files specified by the arguments if they exist
-int ls_bi(const Argv_t& argv) {
+int b_ls(const Argv_t& argv) {
   if (argv.size() < 2) throw Argument_count_t(argv.size(), 2);
   struct stat sb;
   int ret = 1;
@@ -296,10 +296,10 @@ int ls_bi(const Argv_t& argv) {
   return ret;}
 
 // ignore arguments, and then do nothing
-int nop_bi(const Argv_t& argv) {return dollar_question;}
+int b_nop(const Argv_t& argv) {return dollar_question;}
 
 // return the value given by the argument
-int return_bi(const Argv_t& argv) {
+int b_return(const Argv_t& argv) {
   if (argv.size() != 2) throw Argument_count_t(argv.size(), 2);
   try {return my_strtoi(argv[1]);}
   catch (E_generic_t) {throw Not_a_number_t(argv[1]);}
@@ -307,7 +307,7 @@ int return_bi(const Argv_t& argv) {
   catch (E_range_t) {throw Input_range_t(argv[1]);}}
 
 // modify variable $1 as a selection according to $2
-int selection_set_bi(const Argv_t& argv) {
+int b_selection_set(const Argv_t& argv) {
   if (argv.size() < 3) throw Argument_count_t(argv.size(), 3);
   std::list<Entry_pattern_t> focus;
   try {str_to_entry_pattern_list(argv.get_var(argv[1]), focus);}
@@ -321,7 +321,7 @@ int selection_set_bi(const Argv_t& argv) {
 
 // set variable $1 to $*2
 // returns 1 if the variable does not exist
-int set_bi(const Argv_t& argv) {
+int b_set(const Argv_t& argv) {
   if (argv.size() < 3) throw Argument_count_t(argv.size(), 3);
   if (isargvar(argv[1]) || argv[1] == "IF_TEST") return 2;
   std::string dest("");
@@ -334,7 +334,7 @@ int set_bi(const Argv_t& argv) {
 // run the first argument as if it was a script, passing additional arguments
 // to that script
 // returns last return value from script, -1 if empty
-int source_bi(const Argv_t& argv) {
+int b_source(const Argv_t& argv) {
   if (argv.size() < 2) throw Argument_count_t(argv.size(), 2);
   struct stat sb;
   if (stat(argv[1].c_str(), &sb)) {throw File_open_failure_t(argv[1]);}
@@ -356,7 +356,7 @@ int source_bi(const Argv_t& argv) {
 
 // run the argument function once with each command in the specified function
 // invocation
-int stepwise_bi(const Argv_t& argv) {
+int b_stepwise(const Argv_t& argv) {
   if (argv.size() < 2) throw Argument_count_t(argv.size(), 2);
   if (!argv.argfunction()) throw Missing_argfunction_t();
   Argv_t lookup(argv.begin()+1, argv.end(), 0,
@@ -383,7 +383,7 @@ int stepwise_bi(const Argv_t& argv) {
 
 // run the argfunction and store its output in the variable $1
 // returns the last return from the argfunction
-int store_output_bi(const Argv_t& argv) {
+int b_store_output(const Argv_t& argv) {
   if (argv.size() != 2) throw Argument_count_t(argv.size(), 2);
   if (!argv.argfunction()) throw Missing_argfunction_t();
   if (isargvar(argv[1]) || argv[1] == "IF_TEST") return 2;
@@ -399,12 +399,12 @@ int store_output_bi(const Argv_t& argv) {
   return 0;}
 
 // return true if the two strings are the same
-int test_string_equal_bi(const Argv_t& argv) {
+int b_test_string_equal(const Argv_t& argv) {
   if (argv.size() != 3) throw Argument_count_t(argv.size(), 3);
   else return argv[1] != argv[2];} // C++ and shell have inverted logic
 
 // return true if two strings convert to a doubles and first is greater
-int test_greater_bi(const Argv_t& argv) {
+int b_test_greater(const Argv_t& argv) {
   if (argv.size() != 3) throw Argument_count_t(argv.size(), 3);
   double lhs, rhs;
   try {lhs = my_strtod(argv[1]);}
@@ -418,7 +418,7 @@ int test_greater_bi(const Argv_t& argv) {
   return lhs <= rhs;} // C++ and shell have inverted logic
 
 // return true if the string converts to a number
-int test_is_number_bi(const Argv_t& argv) {
+int b_test_is_number(const Argv_t& argv) {
   if (argv.size() != 2) throw Argument_count_t(argv.size(), 2);
   try {
     (void) my_strtod(argv[1]);
@@ -428,7 +428,7 @@ int test_is_number_bi(const Argv_t& argv) {
   catch (E_range_t) {return 2;}}
 
 // return true if two strings convert to a doubles and first is less
-int test_less_bi(const Argv_t& argv) {
+int b_test_less(const Argv_t& argv) {
   if (argv.size() != 3) throw Argument_count_t(argv.size(), 3);
   double lhs, rhs;
   try {lhs = my_strtod(argv[1]);}
@@ -442,17 +442,17 @@ int test_less_bi(const Argv_t& argv) {
   return lhs >= rhs;} // C++ and shell have inverted logic
 
 // return true if the string is not empty
-int test_not_empty_bi(const Argv_t& argv) {
+int b_test_not_empty(const Argv_t& argv) {
   if (argv.size() != 2) throw Argument_count_t(argv.size(), 2);
   else return !argv[1].length();} // C++ and shell have inverted logic
 
 // return true if the two strings are different 
-int test_string_unequal_bi(const Argv_t& argv) {
+int b_test_string_unequal(const Argv_t& argv) {
   if (argv.size() != 3) throw Argument_count_t(argv.size(), 3);
   else return argv[1] == argv[2];} // C++ and shell have inverted logic
 
 // returns true if the two strings 
-int test_number_equal_bi(const Argv_t& argv) {
+int b_test_number_equal(const Argv_t& argv) {
   if (argv.size() != 3) throw Argument_count_t(argv.size(), 3);
   double lhs, rhs;
   try {lhs = my_strtod(argv[1]);}
@@ -469,12 +469,12 @@ int test_number_equal_bi(const Argv_t& argv) {
 // pedantic and throw an rwsh.undefined_variable if it doesn't exist, but the
 // fact is that the requested state (one where this variable isn't set) is
 // already the case, so it's hard to say what you're protecting people from.
-int unset_bi(const Argv_t& argv) {
+int b_unset(const Argv_t& argv) {
   if (argv.size() != 2) throw Argument_count_t(argv.size(), 2);
   else return argv.unset_var(argv[1]);}
 
 // sleep for the specified number of microseconds
-int usleep_bi(const Argv_t& argv) {
+int b_usleep(const Argv_t& argv) {
   if (argv.size() != 2) throw Argument_count_t(argv.size(), 2);
   try {
     int delay = my_strtoi(argv[1], 0, INT_MAX);
@@ -483,7 +483,7 @@ int usleep_bi(const Argv_t& argv) {
   catch (E_nan_t) {throw Not_a_number_t(argv[1]);}
   catch (E_range_t) {throw Input_range_t(argv[1]);}}
   
-int var_add_bi(const Argv_t& argv) {
+int b_var_add(const Argv_t& argv) {
   if (argv.size() != 3) throw Argument_count_t(argv.size(), 3);
   try {
     const std::string& var_str = argv.get_var(argv[1]);
@@ -505,7 +505,7 @@ int var_add_bi(const Argv_t& argv) {
     return 0;}
   catch (Undefined_variable_t error) {return -1;}}
 
-int var_subtract_bi(const Argv_t& argv) {
+int b_var_subtract(const Argv_t& argv) {
   if (argv.size() != 3) throw Argument_count_t(argv.size(), 3);
   try {
     const std::string& var_str = argv.get_var(argv[1]);
@@ -528,7 +528,7 @@ int var_subtract_bi(const Argv_t& argv) {
     return 0;}
   catch (Undefined_variable_t error) {return -1;}}
 
-int var_divide_bi(const Argv_t& argv) {
+int b_var_divide(const Argv_t& argv) {
   if (argv.size() != 3) throw Argument_count_t(argv.size(), 3);
   try {
     const std::string& var_str = argv.get_var(argv[1]);
@@ -551,21 +551,21 @@ int var_divide_bi(const Argv_t& argv) {
     return 0;}
   catch (Undefined_variable_t error) {return -1;}}
 
-int var_exists_bi(const Argv_t& argv) {
+int b_var_exists(const Argv_t& argv) {
   if (argv.size() != 2) throw Argument_count_t(argv.size(), 2);
   else return !argv.var_exists(argv[1]);}
 
 static const std::string version_str("0.2.1+");
 
 // write to standard output the version of rwsh
-int version_bi(const Argv_t& argv) {
+int b_version(const Argv_t& argv) {
   if (argv.size() != 1) throw Argument_count_t(argv.size(), 1);
   argv.output <<version_str;
   return 0;}
 
 // write to standard output a list of the version with which this shell is 
 // compatible
-int version_available_bi(const Argv_t& argv) {
+int b_version_available(const Argv_t& argv) {
   if (argv.size() != 1) throw Argument_count_t(argv.size(), 1);
   argv.output <<version_str;
   argv.output.flush();
@@ -573,13 +573,13 @@ int version_available_bi(const Argv_t& argv) {
 
 // return true if the given version string is compatible with the version
 // of this shell
-int version_compatible_bi(const Argv_t& argv) {
+int b_version_compatible(const Argv_t& argv) {
   if (argv.size() != 2) throw Argument_count_t(argv.size(), 0);
   else if (argv[1] == version_str) return 0;
   else return 1;}
 
 // prints the total amount of time the shell has not been waiting for user input
-int waiting_for_binary_bi(const Argv_t& argv) {
+int b_waiting_for(const Argv_t& argv) {
   if (argv.size() != 1) throw Argument_count_t(argv.size(), 1);
   argv.output <<rwsh_clock.waiting_for_binary();
   argv.output.flush();
@@ -587,14 +587,14 @@ int waiting_for_binary_bi(const Argv_t& argv) {
 
 // prints the total amount of time that has passed and the shell has not been
 // waiting for other processes or the user
-int waiting_for_shell_bi(const Argv_t& argv) {
+int b_waiting_for_shell(const Argv_t& argv) {
   if (argv.size() != 1) throw Argument_count_t(argv.size(), 1);
   argv.output <<rwsh_clock.waiting_for_shell();
   argv.output.flush();
   return 0;}
 
 // prints the total amount of time the shell has been waiting for user input
-int waiting_for_user_bi(const Argv_t& argv) {
+int b_waiting_for_user(const Argv_t& argv) {
   if (argv.size() != 1) throw Argument_count_t(argv.size(), 0);
   argv.output <<rwsh_clock.waiting_for_user();
   argv.output.flush();
@@ -602,7 +602,7 @@ int waiting_for_user_bi(const Argv_t& argv) {
 
 // print the string corresponding to the executable in the executable map with
 // key $1
-int which_executable_bi(const Argv_t& argv) {
+int b_which_executable(const Argv_t& argv) {
   if (argv.size() != 2) throw Argument_count_t(argv.size(), 2);
   Argv_t lookup(argv.begin()+1, argv.end(), argv.argfunction(), 
                 default_input, default_output, default_error);
@@ -616,7 +616,7 @@ int which_executable_bi(const Argv_t& argv) {
 
 // print the number of times that the executable in the executable map with
 // key $1 has been run
-int which_execution_count_bi(const Argv_t& argv) {
+int b_which_execution_count(const Argv_t& argv) {
   if (argv.size() != 2) throw Argument_count_t(argv.size(), 2);
   Argv_t lookup(argv.begin()+1, argv.end(), argv.argfunction(), 
                 default_input, default_output, default_error);
@@ -630,7 +630,7 @@ int which_execution_count_bi(const Argv_t& argv) {
 
 // print the number of times that the executable in the executable map with
 // key $1 has been run
-int which_last_execution_time_bi(const Argv_t& argv) {
+int b_which_last_execution_time(const Argv_t& argv) {
   if (argv.size() != 2) throw Argument_count_t(argv.size(), 2);
   Argv_t lookup(argv.begin()+1, argv.end(), argv.argfunction(), 
                 default_input, default_output, default_error);
@@ -645,7 +645,7 @@ int which_last_execution_time_bi(const Argv_t& argv) {
 
 // print the number of times that the executable in the executable map with
 // key $1 has been run
-int which_total_execution_time_bi(const Argv_t& argv) {
+int b_which_total_execution_time(const Argv_t& argv) {
   if (argv.size() != 2) throw Argument_count_t(argv.size(), 2);
   Argv_t lookup(argv.begin()+1, argv.end(), argv.argfunction(), 
                 default_input, default_output, default_error);
@@ -659,7 +659,7 @@ int which_total_execution_time_bi(const Argv_t& argv) {
   else return 1;} // executable does not exist
 
 // find the binary in $2 with filename $1
-int which_path_bi(const Argv_t& argv) {
+int b_which_path(const Argv_t& argv) {
   if (argv.size() != 3) throw Argument_count_t(argv.size(), 3);
   std::vector<std::string> path;
   tokenize_strict(argv[2], std::back_inserter(path), 
@@ -674,7 +674,7 @@ int which_path_bi(const Argv_t& argv) {
   return 1;} // executable does not exist
 
 // prints the last return value of the executable with named $1
-int which_return_bi(const Argv_t& argv) {
+int b_which_return(const Argv_t& argv) {
   if (argv.size() != 2) throw Argument_count_t(argv.size(), 2);
   Argv_t lookup(argv.begin()+1, argv.end(), 0,
                 default_input, default_output, default_error);
@@ -689,7 +689,7 @@ int which_return_bi(const Argv_t& argv) {
   else return 1;} // executable does not exist
 
 // return true if ther is an executable in the executable map with key $1
-int which_test_bi(const Argv_t& argv) {
+int b_which_test(const Argv_t& argv) {
   if (argv.size() != 2) throw Argument_count_t(argv.size(), 2);
   Argv_t lookup(argv.begin()+1, argv.end(), argv.argfunction(), 
                 default_input, default_output, default_error);
@@ -698,7 +698,7 @@ int which_test_bi(const Argv_t& argv) {
 
 // for each time that the arguments return true, run the argfunction
 // returns the last return from the argfunction
-int while_bi(const Argv_t& argv) {
+int b_while(const Argv_t& argv) {
   if (argv.size() < 2) throw Argument_count_t(argv.size(), 2);
   int ret = -1;
   Argv_t lookup(argv.begin()+1, argv.end(), 0,

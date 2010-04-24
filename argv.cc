@@ -170,8 +170,7 @@ Mismatched_parenthesis_t::Mismatched_parenthesis_t(const std::string& prefix) {
 Multiple_argfunctions_t::Multiple_argfunctions_t() {
   push_back("rwsh.multiple_argfunctions");}
 
-Not_soon_enough_t::Not_soon_enough_t(const std::string& argument) : 
-      Argv_t() {
+Not_soon_enough_t::Not_soon_enough_t(const std::string& argument) {
   push_back("rwsh.not_soon_enough");
   push_back(argument);}
 
