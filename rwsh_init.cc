@@ -39,7 +39,7 @@ void internal_init(void) {
   executable_map.set(new Builtin_t(".importenv_preserve", importenv_preserve_bi));
   std::string::size_type point = 0;
   executable_map.set(new Function_t(".internal_errors", 
-      "{.if .test_equal $# 1 {"
+      "{.if .test_number_equal $# 1 {"
           ".echo rwsh.arguments_for_argfunction rwsh.bad_argfunction_style "
           "rwsh.binary_not_found rwsh.double_redirection "
           "rwsh.excessive_nesting rwsh.executable_not_found "
@@ -52,14 +52,14 @@ void internal_init(void) {
       ".else {.echo wrong argument count; .return -1}}", point, 0));
   point = 0;
   executable_map.set(new Function_t(".internal_features", 
-      "{.if .test_equal $# 1 {"
+      "{.if .test_number_equal $# 1 {"
           ".echo rwsh.after_command rwsh.before_command "
           "rwsh.prompt rwsh.raw_command rwsh.run_logic "
           "rwsh.shutdown rwsh.vars}; "
       ".else {.echo wrong argument count; .return -1}}", point, 0));
   point = 0;
   executable_map.set(new Function_t(".internal_vars", 
-      "{.if .test_equal $# 1 {"
+      "{.if .test_number_equal $# 1 {"
           ".echo CWD FIGNORE IF_TEST MAX_NESTING}; "
       ".else {.echo wrong argument count; .return -1}}", point, 0));
   executable_map.set(new Builtin_t(".is_default_input", is_default_input_bi));
@@ -73,12 +73,12 @@ void internal_init(void) {
   executable_map.set(new Builtin_t(".source", source_bi));
   executable_map.set(new Builtin_t(".stepwise", stepwise_bi));
   executable_map.set(new Builtin_t(".store_output", store_output_bi));
-  executable_map.set(new Builtin_t(".test_equal", test_equal_bi));
+  executable_map.set(new Builtin_t(".test_string_equal", test_string_equal_bi));
   executable_map.set(new Builtin_t(".test_greater", test_greater_bi));
   executable_map.set(new Builtin_t(".test_is_number", test_is_number_bi));
   executable_map.set(new Builtin_t(".test_less", test_less_bi));
   executable_map.set(new Builtin_t(".test_not_empty", test_not_empty_bi));
-  executable_map.set(new Builtin_t(".test_not_equal", test_not_equal_bi));
+  executable_map.set(new Builtin_t(".test_string_unequal", test_string_unequal_bi));
   executable_map.set(new Builtin_t(".test_number_equal", test_number_equal_bi));
   executable_map.set(new Builtin_t(".unset", unset_bi));
   executable_map.set(new Builtin_t(".usleep", usleep_bi));

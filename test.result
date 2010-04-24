@@ -11,7 +11,7 @@
 .function rwsh.prompt {.echo \$}
 .function rwsh.shutdown {.echo $nl; .echo now terminating normally; .echo $nl}
 .function rwsh.vars {.internal_vars}
-.else_if .test_equal $2 -c {
+.else_if .test_string_equal $2 -c {
   rwsh.mapped_argfunction &3 {.source /etc/rwshrc-basic; $1$; .exit}}
 .else {
   .echo unexpected command line: &* (
@@ -1279,23 +1279,23 @@ $.set MAX_NESTING $A
 $
 
 0
-$# .test_equal .test_not_equal .test_not_empty
+$# .test_string_equal .test_string_unequal .test_not_empty
 
 0
-$.test_equal x
-rwsh.argument_count : command not found ( rwsh.argument_count .test_equal ) 
+$.test_string_equal x
+rwsh.argument_count : command not found ( rwsh.argument_count .test_string_equal ) 
 
 -1
-$.test_equal x x x
-rwsh.argument_count : command not found ( rwsh.argument_count .test_equal ) 
+$.test_string_equal x x x
+rwsh.argument_count : command not found ( rwsh.argument_count .test_string_equal ) 
 
 -1
-$.test_not_equal x 
-rwsh.argument_count : command not found ( rwsh.argument_count .test_not_equal ) 
+$.test_string_unequal x 
+rwsh.argument_count : command not found ( rwsh.argument_count .test_string_unequal ) 
 
 -1
-$.test_not_equal x x x
-rwsh.argument_count : command not found ( rwsh.argument_count .test_not_equal ) 
+$.test_string_unequal x x x
+rwsh.argument_count : command not found ( rwsh.argument_count .test_string_unequal ) 
 
 -1
 $.test_not_empty 
@@ -1306,16 +1306,16 @@ $.test_not_empty x x
 rwsh.argument_count : command not found ( rwsh.argument_count .test_not_empty ) 
 
 -1
-$.test_equal x y
+$.test_string_equal x y
 
 1
-$.test_equal x x
+$.test_string_equal x x
 
 0
-$.test_not_equal x y
+$.test_string_unequal x y
 
 0
-$.test_not_equal x x
+$.test_string_unequal x x
 
 1
 $.test_not_empty \
@@ -1620,7 +1620,7 @@ $
 $# .while
 
 0
-$.function tf {.test_not_equal $A $N}
+$.function tf {.test_string_unequal $A $N}
 
 0
 $.set A 0

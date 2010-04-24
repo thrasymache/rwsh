@@ -27,11 +27,11 @@ sfn cat
 .function du {.selection_set s $1 $*2; &{whichp du} -hsc @$s}
 sfn ed
 .function gdb {
-  if_only .test_equal $# 2 {.set BUILT_EXECUTABLE &&*}
+  if_only .test_number_equal $# 2 {.set BUILT_EXECUTABLE &&*}
   echo debugging $BUILT_EXECUTABLE
   &{whichp gdb} $BUILT_EXECUTABLE}
 .function gdb-bash {
-  if_only .test_equal $# 2 {.set BUILT_EXECUTABLE &&*}
+  if_only .test_number_equal $# 2 {.set BUILT_EXECUTABLE &&*}
   echo debugging $BUILT_EXECUTABLE
   .set SHELL /bin/bash
   &{whichp gdb} $BUILT_EXECUTABLE
@@ -53,7 +53,7 @@ sfn head
 .function ls {.selection_set s $1 $*2; .ls @$s}
 sfn less 
 .function mv {
-  .if .test_not_equal $# 2 {echo this mv takes only one argument; .return 1}
+  .if .test_string_unequal $# 2 {echo this mv takes only one argument; .return 1}
   .else {&{whichp mv} @$s &&1; .set s &&1}}
 sfn md5sum
 .function regrep {
@@ -80,7 +80,7 @@ sfn wc
 # internal functions
 .function rwsh.after_command {
   .set TEMP1 $?
-  if_only_not .test_equal $TEMP1 0 {echo &&1 returned $TEMP1}}
+  if_only_not .test_number_equal $TEMP1 0 {echo &&1 returned $TEMP1}}
 .function rwsh.arguments_for_argfunction {
   .echo cannot specify arguments for $1 directly $nl
   .return -1}
@@ -114,7 +114,7 @@ sfn wc
 .function rwsh.prompt {.echo $s; .echo \$}
 .function rwsh.selection_not_found {
   .echo no file matching pattern $1
-  .if .test_not_equal $1 $2 {.echo () for selection &&2 $nl}
+  .if .test_string_unequal $1 $2 {.echo () for selection &&2 $nl}
   .else {.echo $nl}}
 .function rwsh.shutdown {.echo $nl}
 .function rwsh.sighup {.echo $nl received SIGHUP: $* $nl}
@@ -146,7 +146,7 @@ sfn wc
 .function bless-t {/bin/cp test.result.last test.result}
 .function to {/bin/rwsh -to}
 .function mst {make; st}
-fn test_var_not_equal {.test_not_equal $$1 $2}
+fn test_var_not_equal {.test_string_unequal $$1 $2}
 fn ntimes {
   .set TEMP1 0
   .while test_var_not_equal TEMP1 $1 {

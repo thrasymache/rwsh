@@ -20,10 +20,10 @@
 .function fn {
   .function $* {rwsh.argfunction}
   .set TEMP1 $?
-  .if .test_equal $TEMP1 1 {echo cannot set paths as functions}
-  .else_if .test_equal $TEMP1 2 {echo cannot set builtins as functions}
-  .else_if .test_equal $TEMP1 3 {echo cannot set argfunctions in executable map}
-  .else_if .test_equal $TEMP1 4 {echo function &&1 did not exist to be erased}
+  .if .test_number_equal $TEMP1 1 {echo cannot set paths as functions}
+  .else_if .test_number_equal $TEMP1 2 {echo cannot set builtins as functions}
+  .else_if .test_number_equal $TEMP1 3 {echo cannot set argfunctions in executable map}
+  .else_if .test_number_equal $TEMP1 4 {echo function &&1 did not exist to be erased}
   .else {.return $TEMP1}}
 .function if {.if $* {rwsh.argfunction}}
 .function if_only {.if $* {rwsh.argfunction}; .else}
@@ -48,11 +48,11 @@
 .function wait_user {.waiting_for_user; c $nl}
 .function which {
   .which_executable $1 {rwsh.argfunction}
-  .if .test_equal $? 0 {.echo $nl}
+  .if .test_number_equal $? 0 {.echo $nl}
   .else {echo no &&1}}
 .function whichp {
   .which_path $1 $PATH
-  .if .test_equal $? 0
+  .if .test_number_equal $? 0
   .else {echo &&1 not found in $PATH; .return 1}}
 .function while {.while $* {rwsh.argfunction}}
 .function var_exists {.var_exists $1}

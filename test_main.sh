@@ -371,17 +371,17 @@ wrapper 1 2
 .stepwise wrapper 1 2 {d $*}
 .set MAX_NESTING $A 
 
-# .test_equal .test_not_equal .test_not_empty
-.test_equal x
-.test_equal x x x
-.test_not_equal x 
-.test_not_equal x x x
+# .test_string_equal .test_string_unequal .test_not_empty
+.test_string_equal x
+.test_string_equal x x x
+.test_string_unequal x 
+.test_string_unequal x x x
 .test_not_empty 
 .test_not_empty x x
-.test_equal x y
-.test_equal x x
-.test_not_equal x y
-.test_not_equal x x
+.test_string_equal x y
+.test_string_equal x x
+.test_string_unequal x y
+.test_string_unequal x x
 .test_not_empty \
 .test_not_empty x
 
@@ -473,7 +473,7 @@ w rwsh.mapped_argfunction {>dummy_file}
 .which_path cat /bin:/usr/bin
 
 # .while
-.function tf {.test_not_equal $A $N}
+.function tf {.test_string_unequal $A $N}
 .set A 0
 .set N 4
 .while {e ARGS}

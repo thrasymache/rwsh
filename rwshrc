@@ -2,12 +2,12 @@
 .function () {.nop}
 .echo $*0 >/tmp/lcl (
 )
-.if .test_equal $# 2 {.source /etc/rwshrc-default}
-.else_if .test_equal $2 -to {.importenv_preserve;
+.if .test_number_equal $# 2 {.source /etc/rwshrc-default}
+.else_if .test_string_equal $2 -to {.importenv_preserve;
   .exec /bin/rwsh test_init.sh <test_main.sh
   .exit}
-.else_if .test_equal $# 3 {.source &2}
-.else_if .test_equal $2 -c {
+.else_if .test_number_equal $# 3 {.source &2}
+.else_if .test_string_equal $2 -c {
   rwsh.mapped_argfunction &3 {.source /etc/rwshrc-basic; $1$; .exit}}
 .else {
   .echo unexpected command line: &* (

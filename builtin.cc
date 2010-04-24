@@ -399,7 +399,7 @@ int store_output_bi(const Argv_t& argv) {
   return 0;}
 
 // return true if the two strings are the same
-int test_equal_bi(const Argv_t& argv) {
+int test_string_equal_bi(const Argv_t& argv) {
   if (argv.size() != 3) throw Argument_count_t(argv.size(), 3);
   else return argv[1] != argv[2];} // C++ and shell have inverted logic
 
@@ -447,7 +447,7 @@ int test_not_empty_bi(const Argv_t& argv) {
   else return !argv[1].length();} // C++ and shell have inverted logic
 
 // return true if the two strings are different 
-int test_not_equal_bi(const Argv_t& argv) {
+int test_string_unequal_bi(const Argv_t& argv) {
   if (argv.size() != 3) throw Argument_count_t(argv.size(), 3);
   else return argv[1] == argv[2];} // C++ and shell have inverted logic
 
