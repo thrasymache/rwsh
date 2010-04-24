@@ -45,7 +45,7 @@ int cd_bi(const Argv_t& argv) {
   if (argv.size() != 2) throw Argument_count_t(argv.size(), 2);
   errno = 0;
   int ret = chdir(argv[1].c_str());
-  if (!ret) argv.set_var("CWD", argv[1]);
+  if (!ret) return 0;
   else if (errno == ENOENT) ret = 1;
   else if (errno == ENOTDIR) ret = 2; 
   else ret = 3; 

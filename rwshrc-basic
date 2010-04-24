@@ -47,8 +47,8 @@
 .function wait_shell {.waiting_for_shell; c $nl}
 .function wait_user {.waiting_for_user; c $nl}
 .function which {
-  .which_executable $1 {rwsh.argfunction}
-  .if .test_number_equal $? 0 {.echo $nl}
+  .store_output TEMP1 {.which_executable &&1 {rwsh.argfunction}}
+  .if .test_number_equal $? 0 {.echo .function &&1 $TEMP1 $nl}
   .else {echo no &&1}}
 .function whichp {
   .which_path $1 $PATH

@@ -1,5 +1,5 @@
-// the definition of rwsh.init
-// Copyright Samuel Newbold 2005-2008
+// the registering of builtins
+// Copyright Samuel Newbold 2005-2010
 
 #include <map>
 #include <string>
@@ -15,10 +15,6 @@
 #include "executable.h"
 #include "executable_map.h"
 #include "function.h"
-
-std::string init_str =
-  "{.set MAX_NESTING 4\n"
-   ".source /etc/rwshrc $*}";
 
 void internal_init(void) {
   executable_map.set(new Builtin_t(".cd", cd_bi));
@@ -38,6 +34,10 @@ void internal_init(void) {
   executable_map.set(new Builtin_t(".importenv_overwrite", importenv_overwrite_bi));
   executable_map.set(new Builtin_t(".importenv_preserve", importenv_preserve_bi));
   std::string::size_type point = 0;
+  executable_map.set(new Function_t(".init", 
+      "{.set MAX_NESTING 4\n"
+          ".source /etc/rwshrc $*}", point, 0));
+  point = 0;
   executable_map.set(new Function_t(".internal_errors", 
       "{.if .test_number_equal $# 1 {"
           ".echo rwsh.arguments_for_argfunction rwsh.bad_argfunction_style "
@@ -45,10 +45,10 @@ void internal_init(void) {
           "rwsh.excessive_nesting rwsh.executable_not_found "
           "rwsh.failed_substitution rwsh.invalid_word_selection "
           "rwsh.mismatched_brace rwsh.multiple_argfunctions "
-          "rwsh.not_soon_enough rwsh.init rwsh.selection_not_found "
-          "rwsh.sighup rwsh.sigint rwsh.sigquit rwsh.sigpipe rwsh.sigterm "
-          "rwsh.sigtstp rwsh.sigusr1 rwsh.sigusr2 "
-          "rwsh.undefined_variable rwsh.unreadable_dir}; "
+          "rwsh.not_soon_enough rwsh.selection_not_found rwsh.sighup "
+          "rwsh.sigint rwsh.sigquit rwsh.sigpipe rwsh.sigterm rwsh.sigtstp "
+          "rwsh.sigusr1 rwsh.sigusr2 rwsh.undefined_variable "
+          "rwsh.unreadable_dir}; "
       ".else {.echo wrong argument count; .return -1}}", point, 0));
   point = 0;
   executable_map.set(new Function_t(".internal_features", 
@@ -60,7 +60,7 @@ void internal_init(void) {
   point = 0;
   executable_map.set(new Function_t(".internal_vars", 
       "{.if .test_number_equal $# 1 {"
-          ".echo CWD FIGNORE IF_TEST MAX_NESTING}; "
+          ".echo FIGNORE IF_TEST MAX_NESTING}; "
       ".else {.echo wrong argument count; .return -1}}", point, 0));
   executable_map.set(new Builtin_t(".is_default_input", is_default_input_bi));
   executable_map.set(new Builtin_t(".is_default_output", is_default_output_bi));

@@ -20,7 +20,6 @@ char** env;
 Variable_map_t::Variable_map_t(bool root) : max_nesting_v(0) {
   if(root) {
     add("?", "");
-    add("CWD", "");
     add("FIGNORE", "");
     add("MAX_NESTING", "0");}}
 
@@ -60,8 +59,7 @@ int Variable_map_t::set(const std::string& key, const std::string& value) {
     return 0;}}
 
 int Variable_map_t::unset(const std::string& key) {
-  if (key == "MAX_NESTING" || key == "FIGNORE" || key == "?" || 
-      key == "CWD") return 2;
+  if (key == "MAX_NESTING" || key == "FIGNORE" || key == "?") return 2;
   std::map<std::string, std::string>::iterator i = find(key);
   if (i != end()) {erase(i); return 0;}
   else return 1;}

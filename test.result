@@ -17,7 +17,7 @@
   .echo unexpected command line: &* (
 )
   .source /etc/rwshrc-default}
-$# rwsh.init is tested by having test_init.sh define #
+$# .init is tested by having test_init.sh define #
 
 -10
 $
@@ -108,10 +108,10 @@ $f m {rwsh.argfunction}
 
 0
 $w e
-.function e {.echo $*}
+{.echo $*}
 0
 $w () {}
-.function  {.nop}
+{.nop}
 0
 $e text that doesn't have a prompt appended
 text that doesn't have a prompt appended
@@ -635,7 +635,7 @@ $.function a {.nop}
 
 0
 $.which_executable a
-.function a {.nop}
+{.nop}
 0
 $a 1 2 3
 
@@ -656,7 +656,7 @@ $.function a {e 9 $A $1 @/usr}
 
 0
 $.which_executable a
-.function a {e 9 $A $1 @/usr}
+{e 9 $A $1 @/usr}
 0
 $a \
 9   /usr
@@ -689,7 +689,7 @@ $g a {e 3 2 1 $nl}
 
 0
 $w a
-.function a {.function $1 {e 3 2 1 $nl}}
+{.function $1 {e 3 2 1 $nl}}
 0
 $a b
 
@@ -955,7 +955,7 @@ $.internal_features
 rwsh.after_command rwsh.before_command rwsh.prompt rwsh.raw_command rwsh.run_logic rwsh.shutdown rwsh.vars
 0
 $.internal_vars
-CWD FIGNORE IF_TEST MAX_NESTING
+FIGNORE IF_TEST MAX_NESTING
 0
 $
 
@@ -1162,8 +1162,8 @@ rwsh.not_executable : command not found ( rwsh.not_executable /etc/hosts .source
 $# .source is tested by having test_init.sh define #
 
 -1
-$w rwsh.init
-.function rwsh.init {.set MAX_NESTING 4; .source /etc/rwshrc $*}
+$w .init
+{.set MAX_NESTING 4; .source /etc/rwshrc $*}
 0
 $
 
@@ -1482,7 +1482,7 @@ $.which_executable j
 
 1
 $.which_executable #
-.function # {.nop}
+{.nop}
 0
 $w rwsh.mapped_argfunction {.nop 1 () \ \\ \$ \@}
 {.nop 1 () \ \ \$ \@}
@@ -1944,13 +1944,13 @@ $# following tests will fail.
 
 0
 $w rwsh.after_command
-.function rwsh.after_command {; .set last_command_return $?; .echo $nl; .echo $last_command_return; .echo $nl}
+{; .set last_command_return $?; .echo $nl; .echo $last_command_return; .echo $nl}
 0
 $w rwsh.prompt
-.function rwsh.prompt {.echo \$}
+{.echo \$}
 0
 $w rwsh.raw_command
-.function rwsh.raw_command {.echo $1; .echo $nl}
+{.echo $1; .echo $nl}
 0
 $
 
@@ -2013,7 +2013,7 @@ $z 1 2 3
 
 0
 $w z
-.function z {e $* $nl}
+{e $* $nl}
 0
 $f rwsh.autofunction
 
@@ -2053,7 +2053,7 @@ x : command not found ( x )
 
 -1
 $w rwsh.executable_not_found
-.function rwsh.executable_not_found {.echo $1 : command not found ( $* ) 
+{.echo $1 : command not found ( $* ) 
 ; .return -1}
 0
 $
@@ -2145,7 +2145,7 @@ $# rwsh.vars
 
 0
 $rwsh.vars
-CWD FIGNORE IF_TEST MAX_NESTING
+FIGNORE IF_TEST MAX_NESTING
 0
 $
 
@@ -2156,7 +2156,6 @@ $# check for extraneous variables
 $/usr/bin/printenv
 ?=0
 A=-7.29496e+09
-CWD=/bin
 FIGNORE=*de*
 MAX_NESTING=5
 N=4

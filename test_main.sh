@@ -1,4 +1,4 @@
-# rwsh.init is tested by having test_init.sh define #
+# .init is tested by having test_init.sh define #
 
 # argv tests
 .nop
@@ -351,7 +351,7 @@ e $A
 # if you actually have that file, something is seriously wrong
 .source /etc/hosts
 # .source is tested by having test_init.sh define #
-w rwsh.init
+w .init
 
 # .stepwise
 f wrapper {a $* two; a $* three}
