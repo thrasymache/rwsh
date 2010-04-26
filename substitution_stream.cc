@@ -13,32 +13,32 @@
 #include "plumber.h"
 #include "substitution_stream.h"
 
-Rwsh_ostream_t* Substitution_stream_t::copy_pointer(void) {
+Rwsh_ostream* Substitution_stream::copy_pointer(void) {
   abort();} // substitution streams are not used in this way
 
-Rwsh_ostream_t& Substitution_stream_t::operator<<(const std::string& r) {
+Rwsh_ostream& Substitution_stream::operator<<(const std::string& r) {
   buffer <<r; 
   return *this;}
 
-Rwsh_ostream_t& Substitution_stream_t::operator<<(int r) {
+Rwsh_ostream& Substitution_stream::operator<<(int r) {
   buffer <<r; 
   return *this;}
 
-Rwsh_ostream_t& Substitution_stream_t::operator<<(unsigned int r) {
+Rwsh_ostream& Substitution_stream::operator<<(unsigned int r) {
   buffer <<r; 
   return *this;}
 
-Rwsh_ostream_t& Substitution_stream_t::operator<<(double r) {
+Rwsh_ostream& Substitution_stream::operator<<(double r) {
   buffer <<r; 
   return *this;}
 
-Rwsh_ostream_t& Substitution_stream_t::operator<<(struct timeval r) {
+Rwsh_ostream& Substitution_stream::operator<<(struct timeval r) {
   buffer <<r.tv_sec <<"." <<std::setw(6) <<std::setfill('0') <<r.tv_usec;
   return *this;}
 
-bool Substitution_stream_t::fail(void) {return false;}
+bool Substitution_stream::fail(void) {return false;}
 
-int Substitution_stream_t::fd(void) {
+int Substitution_stream::fd(void) {
   int fds[2];
   if (pipe(fds)) std::cerr <<"failed pipe with errno " <<errno <<std::endl;
   plumber.proxy_output(fds[0], this);
@@ -46,5 +46,5 @@ int Substitution_stream_t::fd(void) {
   plumber.close_on_wait(fds[1]);
   return fds[1];}
 
-std::string Substitution_stream_t::str(void) const {
+std::string Substitution_stream::str(void) const {
   return "&{}";}

@@ -17,39 +17,39 @@
 
 char** env;
 
-Variable_map_t::Variable_map_t(bool root) : max_nesting_v(0) {
+Variable_map::Variable_map(bool root) : max_nesting_v(0) {
   if(root) {
     add("?", "");
     add("FIGNORE", "");
     add("MAX_NESTING", "0");}}
 
-bool Variable_map_t::add(const std::string& key, const std::string& value) {
+bool Variable_map::add(const std::string& key, const std::string& value) {
   std::pair<std::string, std::string> entry(key, value);
   std::pair<iterator, bool> ret = insert(entry);
   return !ret.second;}
 
-bool Variable_map_t::exists(const std::string& key) const {
+bool Variable_map::exists(const std::string& key) const {
   std::map<std::string, std::string>::const_iterator i = find(key);
   return i != end();}
 
-const std::string& Variable_map_t::get(const std::string& key) {
+const std::string& Variable_map::get(const std::string& key) {
   if (key == "?") {
     std::ostringstream tmp; 
     tmp <<dollar_question;
     (*this)["?"] = tmp.str();}
   std::map<std::string, std::string>::const_iterator i = find(key);
   if (i == end()) {
-    Executable_t::caught_signal = Executable_t::SIGVAR;
-    Executable_t::call_stack.push_back(key);
-    throw Undefined_variable_t(key);}
+    Executable::caught_signal = Executable::SIGVAR;
+    Executable::call_stack.push_back(key);
+    throw Undefined_variable(key);}
   else return i->second;}
 
-int Variable_map_t::set(const std::string& key, const std::string& value) {
+int Variable_map::set(const std::string& key, const std::string& value) {
   std::map<std::string, std::string>::iterator i = find(key);
   if (i == end()) {
-    Executable_t::caught_signal = Executable_t::SIGVAR;
-    Executable_t::call_stack.push_back(key);
-    throw Undefined_variable_t(key);}
+    Executable::caught_signal = Executable::SIGVAR;
+    Executable::call_stack.push_back(key);
+    throw Undefined_variable(key);}
   else {
     i->second = value;
     if (key == "MAX_NESTING") {
@@ -58,7 +58,7 @@ int Variable_map_t::set(const std::string& key, const std::string& value) {
       else this->max_nesting_v = temp;}
     return 0;}}
 
-int Variable_map_t::unset(const std::string& key) {
+int Variable_map::unset(const std::string& key) {
   if (key == "MAX_NESTING" || key == "FIGNORE" || key == "?") return 2;
   std::map<std::string, std::string>::iterator i = find(key);
   if (i != end()) {erase(i); return 0;}
@@ -74,10 +74,10 @@ char** copy_to_char_star_star(In first, In last, char** res) {
   *res = 0;
   return res;}
 
-extern Variable_map_t* vars;
+extern Variable_map* vars;
 
 // return the variable map in a way that can be passed to child processes
-char** Variable_map_t::export_env(void) const {
+char** Variable_map::export_env(void) const {
   delete env;
   env = new char*[vars->size() + 1];
   copy_to_char_star_star(this->begin(), this->end(), env);

@@ -1,4 +1,4 @@
-// The definition of the Binary_t and Builtin_t classes. The former executes
+// The definition of the Binary and Builtin classes. The former executes
 // external programs, the latter executes commands that are implemented by
 // functions in builtin.cc.
 //
@@ -20,7 +20,7 @@
 #include "plumber.h"
 #include "variable_map.h"
 
-bool Executable_t::increment_nesting(const Argv_t& argv) {
+bool Executable::increment_nesting(const Argv& argv) {
   if (global_nesting > argv.max_nesting()+1) caught_signal = SIGEXNEST;
   if (unwind_stack()) return true;
   else {
@@ -28,7 +28,7 @@ bool Executable_t::increment_nesting(const Argv_t& argv) {
     ++global_nesting;
     return false;}}
 
-bool Executable_t::decrement_nesting(const Argv_t& argv) {
+bool Executable::decrement_nesting(const Argv& argv) {
   --global_nesting;
   if (unwind_stack()) {
     call_stack.push_back(argv[0]);
@@ -39,17 +39,17 @@ bool Executable_t::decrement_nesting(const Argv_t& argv) {
 
 // code to call rwsh.excessive_nesting, separated out of operator() for clarity.
 // The requirements for stack unwinding to work properly are as 
-// follows: All things derived from Executable_t must call increment_nesting
+// follows: All things derived from Executable must call increment_nesting
 // on start and decrement_nesting before terminating.  If they run more 
 // than one other executable, then they must call unwind_stack() in 
-// between each executable, which must be of a Executable_t rather than a 
+// between each executable, which must be of a Executable rather than a 
 // direct call to the function that implements a builtin (the code below to 
 // handle recursively excessive nesting is the only exception to this rule).
 // main does not need to do this handling, because anything 
 // that it calls directly will have an initial nesting of 0.
-void Executable_t::signal_handler(void) {
-  extern Variable_map_t* vars;
-  Argv_t call_stack_copy;                                    //need for a copy: 
+void Executable::signal_handler(void) {
+  extern Variable_map* vars;
+  Argv call_stack_copy;                                    //need for a copy: 
   switch (caught_signal) {
     case SIGARGS: call_stack_copy.push_back("rwsh.argument_count"); break;
     case SIGARGFUNC:
@@ -81,7 +81,7 @@ void Executable_t::signal_handler(void) {
       call_stack_copy.push_back("caught unknown signal in");}
   std::copy(call_stack.begin(), call_stack.end(), 
             std::back_inserter(call_stack_copy));
-  call_stack = Argv_t();
+  call_stack = Argv();
   in_signal_handler = true;
   caught_signal = SIGNONE;
   vars->unset("IF_TEST");
@@ -96,7 +96,7 @@ void Executable_t::signal_handler(void) {
     default_output <<"\n";
     default_output.flush();
     dollar_question = -1;
-    call_stack = Argv_t();
+    call_stack = Argv();
     caught_signal = SIGNONE;
     vars->unset("IF_TEST");}
   in_signal_handler = false;}
@@ -105,11 +105,11 @@ void Executable_t::signal_handler(void) {
 //     To preserve the original call stack, we need a copy of call_stack to be 
 //     the argument.
 
-Binary_t::Binary_t(const std::string& impl) : implementation(impl) {}
+Binary::Binary(const std::string& impl) : implementation(impl) {}
 
 #include <iostream>
 // run the given binary
-int Binary_t::operator() (const Argv_t& argv_i) {
+int Binary::operator() (const Argv& argv_i) {
   try {
     if (increment_nesting(argv_i)) return dollar_question;
     struct timeval start_time;
@@ -124,10 +124,10 @@ int Binary_t::operator() (const Argv_t& argv_i) {
       if (dup2(input, 0) < 0) std::cerr <<"dup2 didn't like changing input\n";
       if (dup2(output, 1) < 0) std::cerr <<"dup2 didn't like changing output\n";
       if (dup2(error, 2) < 0) std::cerr <<"dup2 didn't like changing error\n";
-      Old_argv_t argv(argv_i);
+      Old_argv argv(argv_i);
       char **env = argv_i.export_env();
       int ret = execve(implementation.c_str(), argv.argv(), env);
-      Argv_t error_argv;
+      Argv error_argv;
       error_argv.push_back("rwsh.binary_not_found");
       error_argv.push_back(argv_i[0]); 
       executable_map.run(error_argv);
@@ -140,18 +140,18 @@ int Binary_t::operator() (const Argv_t& argv_i) {
     Clock::timeval_add(total_execution_time_v, last_execution_time_v);
     if (decrement_nesting(argv_i)) ret = dollar_question;
     return ret;}
-  catch (File_open_failure_t error) {
+  catch (File_open_failure error) {
     caught_signal = SIGFILE;
     call_stack.push_back(error.str()); 
     decrement_nesting(argv_i);
     return -1;}}
 
-Builtin_t::Builtin_t(const std::string& name_i, 
-                       int (*impl)(const Argv_t& argv)) : 
+Builtin::Builtin(const std::string& name_i, 
+                       int (*impl)(const Argv& argv)) : 
   implementation(impl), name_v(name_i) {}
 
 // run the given builtin
-int Builtin_t::operator() (const Argv_t& argv) {
+int Builtin::operator() (const Argv& argv) {
   try {
     if (increment_nesting(argv)) return dollar_question;
     struct timeval start_time;
@@ -164,54 +164,54 @@ int Builtin_t::operator() (const Argv_t& argv) {
     Clock::timeval_add(total_execution_time_v, last_execution_time_v);
     if (decrement_nesting(argv)) ret = dollar_question;
     return ret;}
-  catch (File_open_failure_t error) {
+  catch (File_open_failure error) {
     caught_signal = SIGFILE;
     call_stack.push_back(error[1]); 
     decrement_nesting(argv);
     return -1;}
-  catch (Not_executable_t error) {
+  catch (Not_executable error) {
     caught_signal = SIGNOEXEC;
     call_stack.push_back(error[1]); 
     decrement_nesting(argv);
     return -1;}
-  catch (Input_range_t error) {
+  catch (Input_range error) {
     caught_signal = SIGRANGE;
     call_stack.push_back(error[1]); 
     decrement_nesting(argv);
     return -1;}
-  catch (Result_range_t error) {
+  catch (Result_range error) {
     caught_signal = SIGRESRANGE;
     call_stack.push_back(error[1]); 
     call_stack.push_back(error[2]); 
     decrement_nesting(argv);
     return -1;}
-  catch (Not_a_number_t error) {
+  catch (Not_a_number error) {
     caught_signal = SIGNAN;
     call_stack.push_back(error[1]); 
     decrement_nesting(argv);
     return -1;}
-  catch (Divide_by_zero_t error) {
+  catch (Divide_by_zero error) {
     caught_signal = SIGDIVZERO;
     call_stack.push_back(error[1]); 
     decrement_nesting(argv);
     return -1;}
-  catch (If_before_else_t error) {
+  catch (If_before_else error) {
     caught_signal = SIGIFBEFORE;
     decrement_nesting(argv);
     return -1;}
-  catch (Else_without_if_t error) {
+  catch (Else_without_if error) {
     caught_signal = SIGELSEWO;
     decrement_nesting(argv);
     return -1;}
-  catch (Bad_if_nest_t error) {
+  catch (Bad_if_nest error) {
     caught_signal = SIGBADIFN;
     decrement_nesting(argv);
     return -1;}
-  catch (Argument_count_t error) {
+  catch (Argument_count error) {
     caught_signal = SIGARGS;
     decrement_nesting(argv);
     return -1;}
-  catch (Missing_argfunction_t error) {
+  catch (Missing_argfunction error) {
     caught_signal = SIGARGFUNC;
     decrement_nesting(argv);
     return -1;}}

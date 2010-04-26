@@ -6,8 +6,8 @@
 // that element with the entries in that directory that match entry_pattern,
 // but do not match ignore_pattern.
 template<class In> 
-void partial_match_children(In& partial, const Entry_pattern_t& entry_pattern,
-                            const Entry_pattern_t& ignore_pattern, bool more) {
+void partial_match_children(In& partial, const Entry_pattern& entry_pattern,
+                            const Entry_pattern& ignore_pattern, bool more) {
   typename In::iterator first = partial.begin();
   while (first != partial.end()) {
     std::vector<std::string> temp;
@@ -24,14 +24,14 @@ void partial_match_children(In& partial, const Entry_pattern_t& entry_pattern,
 // treat src as a selection, add matching files to res.
 template<class Out>
 void selection_read(const std::string& src, Out res) {
-  extern Variable_map_t* vars;
-  std::list<Entry_pattern_t> focus;
+  extern Variable_map* vars;
+  std::list<Entry_pattern> focus;
   str_to_entry_pattern_list(src, focus);
-  Entry_pattern_t ignore(vars->get("FIGNORE"));
+  Entry_pattern ignore(vars->get("FIGNORE"));
   std::list<std::string> partial(1);
-  for (std::list<Entry_pattern_t>::const_iterator i=focus.begin(); 
+  for (std::list<Entry_pattern>::const_iterator i=focus.begin(); 
        i!=focus.end() && partial.size(); ++i){// each path step in the selection
-    std::list<Entry_pattern_t>::const_iterator k = i; 
+    std::list<Entry_pattern>::const_iterator k = i; 
     bool more = ++k != focus.end();
     if (i->is_only_text())
       for (std::list<std::string>::iterator j=partial.begin();
@@ -42,9 +42,9 @@ void selection_read(const std::string& src, Out res) {
         if (stat(j->c_str(), &sb)) {j = partial.erase(j); --j;}}
     else partial_match_children(partial, *i, ignore, more);
     if (!partial.size()) {
-      Argv_t argv;
+      Argv argv;
       argv.push_back("rwsh.selection_not_found");
-      std::list<Entry_pattern_t>::const_iterator j = i;
+      std::list<Entry_pattern>::const_iterator j = i;
       argv.push_back(entry_pattern_list_to_str(focus.begin(), ++j));
       argv.push_back(src);
       executable_map.run(argv);}}

@@ -1,6 +1,6 @@
 // Copyright (C) 2005, 2006, 2007 Samuel Newbold
 
-class Executable_t {
+class Executable {
  private:
   static int global_nesting;
   static bool excessive_nesting;
@@ -16,7 +16,7 @@ class Executable_t {
  public:
   bool del_on_term;
 
-  Executable_t(void) : executable_nesting(0), last_return(0),
+  Executable(void) : executable_nesting(0), last_return(0),
     execution_count_v(0), del_on_term(false) {
     last_execution_time_v.tv_sec = 0;
     last_execution_time_v.tv_usec = 0;
@@ -45,31 +45,31 @@ class Executable_t {
   static const int SIGBADIFN   = -12;
   static const int SIGARGFUNC  = -13;
   static const int SIGARGS     = -14;
-  bool increment_nesting(const Argv_t& argv);
-  bool decrement_nesting(const Argv_t& argv);
+  bool increment_nesting(const Argv& argv);
+  bool decrement_nesting(const Argv& argv);
   static int caught_signal;
-  static Argv_t call_stack;
+  static Argv call_stack;
   static bool unwind_stack(void) {return caught_signal != SIGNONE;}
   static void signal_handler(void);
 
-  virtual int operator() (const Argv_t& argv) = 0;
+  virtual int operator() (const Argv& argv) = 0;
   virtual const std::string& name(void) const = 0;
   virtual std::string str() const = 0;};
 
-class Binary_t : public Executable_t {
+class Binary : public Executable {
   std::string implementation;
  public:
-  Binary_t(const std::string& impl);
-  virtual int operator() (const Argv_t& argv);
+  Binary(const std::string& impl);
+  virtual int operator() (const Argv& argv);
   virtual const std::string& name(void) const {return implementation;};
   virtual std::string str() const {return implementation;}; };
 
-class Builtin_t : public Executable_t {
-  int (*implementation)(const Argv_t& argv);
+class Builtin : public Executable {
+  int (*implementation)(const Argv& argv);
   std::string name_v;
  public:
-  Builtin_t(const std::string& name, int (*impl)(const Argv_t& argv));
-  virtual int operator() (const Argv_t& argv);
+  Builtin(const std::string& name, int (*impl)(const Argv& argv));
+  virtual int operator() (const Argv& argv);
   virtual const std::string& name(void) const {return name_v;};
   virtual std::string str() const {return name_v;}; };
 

@@ -1,15 +1,15 @@
 // Copyright (C) 2007 Samuel Newbold
 
-class Substitution_stream_t : public Rwsh_ostream_t {
+class Substitution_stream : public Rwsh_ostream {
   std::ostringstream buffer;
 
  public:
-  virtual Rwsh_ostream_t* copy_pointer(void);
-  virtual Rwsh_ostream_t& operator<<(const std::string& r);
-  virtual Rwsh_ostream_t& operator<<(int r);
-  virtual Rwsh_ostream_t& operator<<(unsigned int r);
-  virtual Rwsh_ostream_t& operator<<(double r);
-  virtual Rwsh_ostream_t& operator<<(struct timeval r);
+  virtual Rwsh_ostream* copy_pointer(void);
+  virtual Rwsh_ostream& operator<<(const std::string& r);
+  virtual Rwsh_ostream& operator<<(int r);
+  virtual Rwsh_ostream& operator<<(unsigned int r);
+  virtual Rwsh_ostream& operator<<(double r);
+  virtual Rwsh_ostream& operator<<(struct timeval r);
   virtual bool fail(void);
   virtual int fd(void);
   virtual void flush(void) {};

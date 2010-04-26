@@ -1,11 +1,11 @@
 // Copyright (C) 2006, 2007 Samuel Newbold
 
-class Variable_map_t : private std::map<std::string, std::string> {
+class Variable_map : private std::map<std::string, std::string> {
   typedef std::map<std::string, std::string> Base;
 
   unsigned max_nesting_v;
 public:
-  Variable_map_t(bool root);
+  Variable_map(bool root);
   static int dollar_question;
   static bool exit_requested;
   unsigned max_nesting(void) {return max_nesting_v;};

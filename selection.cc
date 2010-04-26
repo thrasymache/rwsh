@@ -1,4 +1,4 @@
-// The definition of selection_write and the Entry_pattern_t class which is 
+// The definition of selection_write and the Entry_pattern class which is 
 // used to implement selections.
 //
 // Copyright (C) 2005, 2006, 2007 Samuel Newbold
@@ -66,7 +66,7 @@ std::string Simple_pattern::str(void) const {
   if (unterminated) result += '*';
   return result;}
 
-Entry_pattern_t::Entry_pattern_t(const std::string& src) {
+Entry_pattern::Entry_pattern(const std::string& src) {
   std::vector<std::string> temp;
   tokenize_strict(src, std::back_inserter(temp), 
                   std::bind2nd(std::equal_to<char>(), ' '));
@@ -74,19 +74,19 @@ Entry_pattern_t::Entry_pattern_t(const std::string& src) {
        i != temp.end(); ++i) options.push_back(Simple_pattern(*i));
   only_text = options.size() == 1 && options[0].is_only_text();}
 
-bool Entry_pattern_t::match(const std::string& s) const {
+bool Entry_pattern::match(const std::string& s) const {
   for (std::vector<Simple_pattern>::const_iterator i = options.begin();
        i != options.end(); ++i) if (i->match(s)) return true;
   return false;}
 
-std::string Entry_pattern_t::str(void) const {
+std::string Entry_pattern::str(void) const {
   std::string result = options.front().str();
   for (std::vector<Simple_pattern>::const_iterator i = options.begin()+1;
        i != options.end(); ++i) result += ' ' + i->str();
   return result;}
 
 void str_to_entry_pattern_list(const std::string& src, 
-                               std::list<Entry_pattern_t>& res) {
+                               std::list<Entry_pattern>& res) {
   unsigned updir = 0;
   std::vector<std::string> temp;
   tokenize_strict(src, std::back_inserter(temp), 
@@ -101,19 +101,19 @@ void str_to_entry_pattern_list(const std::string& src,
     else {res.clear(); ++updir;}
   else if (*i != ".") {
     if (res.size()) res.pop_back();
-    res.push_back(Entry_pattern_t(*i));}
+    res.push_back(Entry_pattern(*i));}
   for (++i; i != temp.end(); ++i) {
-    if (*i == "") res.push_back(Entry_pattern_t("*"));
+    if (*i == "") res.push_back(Entry_pattern("*"));
     else if (*i == "..")
       if (res.size()) res.pop_back();
       else ++updir;
-    else res.push_back(Entry_pattern_t(*i));}
-  for (; updir; --updir) res.push_front(Entry_pattern_t(std::string("..")));
-  if (res.empty()) res.push_back(Entry_pattern_t("*"));}
+    else res.push_back(Entry_pattern(*i));}
+  for (; updir; --updir) res.push_front(Entry_pattern(std::string("..")));
+  if (res.empty()) res.push_back(Entry_pattern("*"));}
 
 std::string entry_pattern_list_to_str(
-                               std::list<Entry_pattern_t>::const_iterator start,
-                               std::list<Entry_pattern_t>::const_iterator end) {
+                               std::list<Entry_pattern>::const_iterator start,
+                               std::list<Entry_pattern>::const_iterator end) {
   if (start == end) return std::string();
   std::string result = start->str();
   for (++start; start != end; ++start) result += '/' + start->str();

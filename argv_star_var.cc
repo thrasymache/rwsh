@@ -1,4 +1,4 @@
-// The template star_var from the Argv_t class. It is separated out because gcc
+// The template star_var from the Argv class. It is separated out because gcc
 // won't export templates, so it must be included directly in each file where
 // it is used.
 //
@@ -6,8 +6,8 @@
 
 // constructor of Argv from a pair of iterators
 template <class String_it> 
-inline Argv_t::Argv_t(String_it first_string, String_it last_string,
-       Function_t* argfunction_i, 
+inline Argv::Argv(String_it first_string, String_it last_string,
+       Function* argfunction_i, 
        Rwsh_istream_p input_i, Rwsh_ostream_p output_i,
        Rwsh_ostream_p error_i) :
   Base(first_string, last_string),
@@ -16,7 +16,7 @@ inline Argv_t::Argv_t(String_it first_string, String_it last_string,
 
 // write the strings corresponding to $*
 template<class Out>
-inline Out Argv_t::star_var(const std::string& key, unsigned reference_level, 
+inline Out Argv::star_var(const std::string& key, unsigned reference_level, 
                      Out res) const {
   int n = std::atoi(key.c_str());
   if (n < 0) n = 0;
@@ -27,15 +27,15 @@ inline Out Argv_t::star_var(const std::string& key, unsigned reference_level,
     *res++ = next;}
   return res;}
 
-template<> std::back_insert_iterator<std::vector<Arg_spec_t> >
-inline Argv_t::star_var(const std::string& key, unsigned reference_level, 
-                std::back_insert_iterator<std::vector<Arg_spec_t> > res) const {
+template<> std::back_insert_iterator<std::vector<Arg_spec> >
+inline Argv::star_var(const std::string& key, unsigned reference_level, 
+                std::back_insert_iterator<std::vector<Arg_spec> > res) const {
   int n = std::atoi(key.c_str());
   if (n < 0) n = 0;
   else if (n >= size()) n = size();
   for (const_iterator i = begin()+n; i != end(); ++i) {
     std::string next = *i;
     for (unsigned i = 0; i < reference_level; ++i) next = get_var(next);
-    *res++ = Arg_spec_t(FIXED, 0, 0, 0, -1, 0, next);}
+    *res++ = Arg_spec(FIXED, 0, 0, 0, -1, 0, next);}
   return res;}
 

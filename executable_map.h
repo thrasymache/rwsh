@@ -1,22 +1,22 @@
 // Copyright (C) 2005, 2006, 2007 Samuel Newbold
 
-// Executable_map_t must be able to lookup rwsh.argfunction, which is
-// part of an Argv_t. Thus Argv_t must be the key_type so as to specify which
-// rwsh.argfunction is intended. Argv_t are not stored in the map, so
+// Executable_map must be able to lookup rwsh.argfunction, which is
+// part of an Argv. Thus Argv must be the key_type so as to specify which
+// rwsh.argfunction is intended. Argv are not stored in the map, so
 // value_type is not std::pair<key_type, mapped_type>
-class Executable_map_t : private std::map<std::string, Executable_t*> {
-  typedef std::map<std::string, Executable_t*> Base;
+class Executable_map : private std::map<std::string, Executable*> {
+  typedef std::map<std::string, Executable*> Base;
   bool in_autofunction;
-  int not_found(Argv_t& argv);                    // doesn't catch unwind_stack
+  int not_found(Argv& argv);                    // doesn't catch unwind_stack
  public:
-  Executable_map_t(void);
+  Executable_map(void);
   size_type erase (const std::string& key);
-  Executable_t* find(const Argv_t& key);
-  int run(Argv_t& argv);                          // doesn't catch unwind_stack
-  bool run_if_exists(const std::string& key, Argv_t& argv); // catches unwind
+  Executable* find(const Argv& key);
+  int run(Argv& argv);                          // doesn't catch unwind_stack
+  bool run_if_exists(const std::string& key, Argv& argv); // catches unwind
 
   // insert executable if not present, replace if executable already exists
-  void set(Executable_t* target); };
+  void set(Executable* target); };
 
-extern Executable_map_t executable_map;
+extern Executable_map executable_map;
 

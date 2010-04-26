@@ -1,6 +1,6 @@
-// The definition of the Executable_map_t class, which defines the mapping
-// between executable names and Executable_t objects. It takes an Argv_t as its
-// key so that it can return argument functions which are part of the Argv_t
+// The definition of the Executable_map class, which defines the mapping
+// between executable names and Executable objects. It takes an Argv as its
+// key so that it can return argument functions which are part of the Argv
 // object.
 //
 // Copyright (C) 2005, 2006, 2007 Samuel Newbold
@@ -18,18 +18,18 @@
 #include "executable_map.h"
 #include "function.h"
 
-Executable_map_t::Executable_map_t(void) : in_autofunction(false) {}
+Executable_map::Executable_map(void) : in_autofunction(false) {}
 
 // insert target into map, with key target->name(), replacing old value if key
 // is already in the map
-void Executable_map_t::set(Executable_t* target) {
+void Executable_map::set(Executable* target) {
   std::pair<iterator, bool> ret;
   ret = insert(std::make_pair(target->name(), target));
   if (!ret.second) { // replace if key already exists
     Base::erase(ret.first);
     insert(std::make_pair(target->name(), target));}}
 
-Executable_map_t::size_type Executable_map_t::erase (const std::string& key) {
+Executable_map::size_type Executable_map::erase (const std::string& key) {
   iterator pos = Base::find(key);
   if (pos == end()) return 0;
   else {
@@ -38,29 +38,29 @@ Executable_map_t::size_type Executable_map_t::erase (const std::string& key) {
     Base::erase(pos);
     return 1;}}
 
-Executable_t* Executable_map_t::find(const Argv_t& key) {
+Executable* Executable_map::find(const Argv& key) {
   iterator i = Base::find(key[0]);
   if (i != end()) return i->second;
   else if (key[0] == "rwsh.mapped_argfunction") return key.argfunction(); 
   else return NULL;}
 
-bool Executable_map_t::run_if_exists(const std::string& key, Argv_t& argv) {
+bool Executable_map::run_if_exists(const std::string& key, Argv& argv) {
   argv.push_front(key);
-  Executable_t* i = find(argv);
+  Executable* i = find(argv);
   if (i) {
     (*i)(argv);
-    if (Executable_t::unwind_stack()) Executable_t::signal_handler();
+    if (Executable::unwind_stack()) Executable::signal_handler();
     argv.pop_front();
     return true;}
   else {
     argv.pop_front();
     return false;}}
 
-int Executable_map_t::run(Argv_t& argv) {
-  Executable_t* i = find(argv);                       // first check for key
+int Executable_map::run(Argv& argv) {
+  Executable* i = find(argv);                       // first check for key
   if (i) return (*i)(argv);
   else if (argv[0][0] == '/') {                       // insert a binary
-    set(new Binary_t(argv[0]));
+    set(new Binary(argv[0]));
     return (*find(argv))(argv);}
   if (is_function_name(argv[0])) {                    // try autofunction
     if (in_autofunction) return not_found(argv);        // nested autofunction
@@ -71,12 +71,12 @@ int Executable_map_t::run(Argv_t& argv) {
     if (i) return (*i)(argv);}
   return not_found(argv);}
 
-int Executable_map_t::not_found(Argv_t& argv) {
+int Executable_map::not_found(Argv& argv) {
   argv.push_front("rwsh.executable_not_found");         // executable_not_found
-  Executable_t* i = find(argv);
+  Executable* i = find(argv);
   if (i) return (*i)(argv);
   std::string::size_type point = 0;
-  set(new Function_t("rwsh.executable_not_found", // reset executable_not_found
+  set(new Function("rwsh.executable_not_found", // reset executable_not_found
                      "{.echo $1 (: command not found) \\( $* \\) (\n)\n"
                      ".return -1}", point, 0));
   return (*find(argv))(argv);}

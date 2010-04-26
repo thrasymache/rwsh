@@ -1,26 +1,26 @@
 // Copyright (C) 2005, 2006, 2007 Samuel Newbold
 
-class Function_t;
-class Variable_map_t;
+class Function;
+class Variable_map;
 
-class Argv_t : private std::vector<std::string> {
+class Argv : private std::vector<std::string> {
   typedef std::vector<std::string> Base;
-  Function_t* argfunction_v;
-  static Variable_map_t* var_map;
+  Function* argfunction_v;
+  static Variable_map* var_map;
 
  public:
-  Argv_t(void);
+  Argv(void);
   template <class String_it> 
-  Argv_t(String_it first_string, String_it last_string,
-         Function_t* argfunction_i, 
+  Argv(String_it first_string, String_it last_string,
+         Function* argfunction_i, 
          Rwsh_istream_p input_i, Rwsh_ostream_p output_i,
          Rwsh_ostream_p error_i);
-  Argv_t(const Argv_t& src);
-  ~Argv_t(void);
-  Argv_t& operator=(const Argv_t& src);
+  Argv(const Argv& src);
+  ~Argv(void);
+  Argv& operator=(const Argv& src);
   std::string str(void) const;
-  Function_t* argfunction(void) const {return argfunction_v;};
-  void set_argfunction(Function_t* val);
+  Function* argfunction(void) const {return argfunction_v;};
+  void set_argfunction(Function* val);
 
   mutable Rwsh_istream_p input;
   mutable Rwsh_ostream_p output, error;
@@ -68,78 +68,78 @@ class Argv_t : private std::vector<std::string> {
   std::string& operator[] (int i) {return Base::operator[](i);};
   const std::string& operator[] (int i) const {return Base::operator[](i);}; };
 
-struct Argument_count_t : public Argv_t {
-  Argument_count_t(unsigned given, unsigned expected);};
+struct Argument_count : public Argv {
+  Argument_count(unsigned given, unsigned expected);};
 
-struct Missing_argfunction_t : public Argv_t {Missing_argfunction_t();};
+struct Missing_argfunction : public Argv {Missing_argfunction();};
 
-struct Arguments_to_argfunction_t : public Argv_t {
-  Arguments_to_argfunction_t(const std::string& argfunction_type);};
+struct Arguments_to_argfunction : public Argv {
+  Arguments_to_argfunction(const std::string& argfunction_type);};
 
-struct Bad_argfunction_style_t : public Argv_t {
-  Bad_argfunction_style_t(const std::string& argfunction_style);};
+struct Bad_argfunction_style : public Argv {
+  Bad_argfunction_style(const std::string& argfunction_style);};
 
-struct Bad_if_nest_t : public Argv_t {Bad_if_nest_t();};
+struct Bad_if_nest : public Argv {Bad_if_nest();};
 
-struct Divide_by_zero_t : public Argv_t {
-  Divide_by_zero_t(const std::string& value);};
+struct Divide_by_zero : public Argv {
+  Divide_by_zero(const std::string& value);};
 
-struct Double_redirection_t : public Argv_t {
-  Double_redirection_t(const std::string& first, const std::string& second);};
+struct Double_redirection : public Argv {
+  Double_redirection(const std::string& first, const std::string& second);};
 
-struct Else_without_if_t : public Argv_t {Else_without_if_t();};
+struct Else_without_if : public Argv {Else_without_if();};
 
-struct Failed_substitution_t : public Argv_t {
-  Failed_substitution_t(const std::string& function);};
+struct Failed_substitution : public Argv {
+  Failed_substitution(const std::string& function);};
 
-struct File_open_failure_t : public Argv_t {
-  File_open_failure_t(const std::string& file_name);};
+struct File_open_failure : public Argv {
+  File_open_failure(const std::string& file_name);};
 
-struct If_before_else_t : public Argv_t {If_before_else_t();};
+struct If_before_else : public Argv {If_before_else();};
 
-struct Invalid_word_selection_t : public Argv_t {
-  Invalid_word_selection_t(const std::string& selection);};
+struct Invalid_word_selection : public Argv {
+  Invalid_word_selection(const std::string& selection);};
 
-struct Input_range_t : public Argv_t {Input_range_t(const std::string& value);};
+struct Input_range : public Argv {Input_range(const std::string& value);};
 
-struct Line_continuation_t : public Argv_t {Line_continuation_t();};
+struct Line_continuation : public Argv {Line_continuation();};
 
-struct Mismatched_brace_t : public Argv_t {
-  Mismatched_brace_t(const std::string& prefix);};
+struct Mismatched_brace : public Argv {
+  Mismatched_brace(const std::string& prefix);};
 
-struct Mismatched_parenthesis_t : public Argv_t {
-  Mismatched_parenthesis_t(const std::string& prefix);};
+struct Mismatched_parenthesis : public Argv {
+  Mismatched_parenthesis(const std::string& prefix);};
 
-struct Multiple_argfunctions_t : public Argv_t {Multiple_argfunctions_t();};
+struct Multiple_argfunctions : public Argv {Multiple_argfunctions();};
 
-struct Not_a_number_t : public Argv_t {
-  Not_a_number_t(const std::string& value);};
+struct Not_a_number : public Argv {
+  Not_a_number(const std::string& value);};
 
-struct Not_soon_enough_t : public Argv_t {
-  Not_soon_enough_t(const std::string& argument);};
+struct Not_soon_enough : public Argv {
+  Not_soon_enough(const std::string& argument);};
 
-struct Not_executable_t : public Argv_t {
-  Not_executable_t(const std::string& file_name);};
+struct Not_executable : public Argv {
+  Not_executable(const std::string& file_name);};
 
-struct Result_range_t : public Argv_t {
-  Result_range_t(const std::string& lhs, const std::string& rhs);};
+struct Result_range : public Argv {
+  Result_range(const std::string& lhs, const std::string& rhs);};
 
-struct Unclosed_brace_t : public Argv_t {
-  Unclosed_brace_t(const std::string& prefix);};
+struct Unclosed_brace : public Argv {
+  Unclosed_brace(const std::string& prefix);};
 
-struct Unclosed_parenthesis_t : public Argv_t {
-  Unclosed_parenthesis_t(const std::string& prefix);};
+struct Unclosed_parenthesis : public Argv {
+  Unclosed_parenthesis(const std::string& prefix);};
 
-struct Undefined_variable_t : public Argv_t {
-  Undefined_variable_t(const std::string& variable);};
+struct Undefined_variable : public Argv {
+  Undefined_variable(const std::string& variable);};
   
-class Old_argv_t {
+class Old_argv {
   char** focus;
   int argc_v;
 
  public:
-  Old_argv_t(const Argv_t& src);
-  ~Old_argv_t(void);
+  Old_argv(const Argv& src);
+  ~Old_argv(void);
   char** argv(void) {return focus;};
   int argc(void) {return argc_v;}; };
 

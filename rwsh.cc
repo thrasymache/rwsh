@@ -30,29 +30,29 @@
 
 // static initializers of basic types
 struct timezone Clock::no_timezone_v = {0, 0};
-int Executable_t::global_nesting(0);
-int Executable_t::caught_signal(0);
-bool Executable_t::in_signal_handler(false);
+int Executable::global_nesting(0);
+int Executable::caught_signal(0);
+bool Executable::in_signal_handler(false);
 
 // static initializers without dependancies
 Clock rwsh_clock;
-Executable_map_t executable_map;
+Executable_map executable_map;
 Plumber plumber;
-Rwsh_istream_p default_input(new Default_istream_t(0), true, true);
-Rwsh_ostream_p default_output(new Default_ostream_t(1), true, true),
-  default_error(new Default_ostream_t(2), true, true);
-Variable_map_t root_variable_map(true);
-Variable_map_t* vars = &root_variable_map;
-int Variable_map_t::dollar_question = -1;
-int& dollar_question = Variable_map_t::dollar_question;
-bool Variable_map_t::exit_requested = false;
+Rwsh_istream_p default_input(new Default_istream(0), true, true);
+Rwsh_ostream_p default_output(new Default_ostream(1), true, true),
+  default_error(new Default_ostream(2), true, true);
+Variable_map root_variable_map(true);
+Variable_map* vars = &root_variable_map;
+int Variable_map::dollar_question = -1;
+int& dollar_question = Variable_map::dollar_question;
+bool Variable_map::exit_requested = false;
 
 // static initializers with cross-component dependancies
-Argv_t Executable_t::call_stack;
-Variable_map_t* Argv_t::var_map = vars;
+Argv Executable::call_stack;
+Variable_map* Argv::var_map = vars;
 
 namespace {
-void signal_starter(int sig) {Executable_t::caught_signal = sig;}
+void signal_starter(int sig) {Executable::caught_signal = sig;}
 
 void register_signals(void) {
   signal(SIGHUP, signal_starter);
@@ -65,22 +65,22 @@ void register_signals(void) {
   signal(SIGUSR2, signal_starter);} } // end unnamed namespace
 
 int main(int argc, char *argv[]) {
-  Argv_t external_command_line(&argv[0], &argv[argc], 0, 
+  Argv external_command_line(&argv[0], &argv[argc], 0, 
                                default_input, default_output, default_error);
   internal_init();
-  Command_stream_t command_stream(std::cin, true);
+  Command_stream command_stream(std::cin, true);
   executable_map.run_if_exists(".init", external_command_line);
   register_signals();
-  Arg_script_t script("", 0);
-  Argv_t prompt;
+  Arg_script script("", 0);
+  Argv prompt;
   while (command_stream) {
     executable_map.run_if_exists("rwsh.prompt", prompt);
-    Argv_t command;
+    Argv command;
     try {
       if (!(command_stream >> script)) break;
       command = script.interpret(script.argv());}
-    catch (Failed_substitution_t exception) {command.push_back(".nop");}
-    catch (Argv_t exception) {command = exception;}
+    catch (Failed_substitution exception) {command.push_back(".nop");}
+    catch (Argv exception) {command = exception;}
     executable_map.run_if_exists("rwsh.before_command", command);
     if (!executable_map.run_if_exists("rwsh.run_logic", command))
        executable_map.run(command);
