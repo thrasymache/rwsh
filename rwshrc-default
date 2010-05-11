@@ -13,9 +13,14 @@ setf PATH &{c $HOME /bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin}
   .function $* {.selection_set s $1 $*2; &&{.which_path &&1 $PATH} @$s}}
 sfn cat 
 .function cd {
-  .selection_set s $1; .cd @$s
-  &{whichp pwd}
-  .set s (); .set s2 ()}
+  .selection_set s $1
+  .cd @$s
+  .set TEMP1 $?
+  .if .test_number_equal $TEMP1 1 {echo @$s does not exist}
+  .else_if .test_number_equal $TEMP1 2 {echo @$s is not a directory}
+  .else {
+    &{whichp pwd}
+    .set s (); .set s2 ()}}
 .function chmod {.selection_set s $2 $*3; &{whichp chmod} $1 @$s}
 .function cp {/bin/cp @$s $1}
 .function create {.selection_set s $1; &{whichp touch} $s}
