@@ -106,7 +106,7 @@ sfn wc
   echo substitution $1 failed
   echo call stack $*2}
 .function rwsh.help {
-  .echo this is the default configuration for rwsh (or something copied from it), documentation should be available at rwsh.sf.net $nl}
+  .echo this is the default configuration for rwsh \(or something copied from it\), documentation should be available at rwsh.sf.net $nl}
 .function rwsh.mismatched_brace {
   .echo mismatched brace: $1 $nl
   .return -1}
