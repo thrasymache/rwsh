@@ -17,6 +17,7 @@
   .echo unexpected command line: &* (
 )
   .source /etc/rwshrc-default}
+rwsh.help not defined 
 $# .init is tested by having test_init.sh define #
 
 -10
@@ -1163,7 +1164,9 @@ $# .source is tested by having test_init.sh define #
 
 -1
 $w .init
-{.set MAX_NESTING 4; .source /etc/rwshrc $*}
+{.set MAX_NESTING 4; .source /etc/rwshrc $*; .if .which_test rwsh.help {.if .test_not_empty &&{rwsh.help} {.nop}; .else {.echo rwsh.help produces no output 
+}}; .else {.echo rwsh.help not defined 
+}}
 0
 $
 

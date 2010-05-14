@@ -67,7 +67,8 @@ void register_signals(void) {
 int main(int argc, char *argv[]) {
   Argv external_command_line(&argv[0], &argv[argc], 0, 
                                default_input, default_output, default_error);
-  internal_init();
+  try {internal_init();}
+  catch (std::string& error) {default_error <<error;}
   Command_stream command_stream(std::cin, true);
   executable_map.run_if_exists(".init", external_command_line);
   register_signals();

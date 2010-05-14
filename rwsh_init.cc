@@ -31,17 +31,16 @@ void internal_init(void) {
   executable_map.set(new Builtin(".function", b_function));
   executable_map.set(new Builtin(".global", b_global));
   executable_map.set(new Builtin(".if", b_if));
-  executable_map.set(new Builtin(".importenv_overwrite", b_importenv_overwrite));
+  executable_map.set(new Builtin(".importenv_overwrite",
+                                 b_importenv_overwrite));
   executable_map.set(new Builtin(".importenv_preserve", b_importenv_preserve));
-  std::string::size_type point = 0;
   executable_map.set(new Function(".init", 
       "{.set MAX_NESTING 4\n"
           ".source /etc/rwshrc $*\n"
           ".if .which_test rwsh.help {"
             ".if .test_not_empty &&{rwsh.help} {.nop}\n"
             ".else {.echo rwsh.help produces no output (\n)}}\n"
-          ".else {.echo rwsh.help not defined (\n)}}", point, 0));
-  point = 0;
+          ".else {.echo rwsh.help not defined (\n)}}"));
   executable_map.set(new Function(".internal_errors", 
       "{.if .test_number_equal $# 1 {"
           ".echo rwsh.arguments_for_argfunction rwsh.bad_argfunction_style "
@@ -53,19 +52,17 @@ void internal_init(void) {
           "rwsh.sigint rwsh.sigquit rwsh.sigpipe rwsh.sigterm rwsh.sigtstp "
           "rwsh.sigusr1 rwsh.sigusr2 rwsh.undefined_variable "
           "rwsh.unreadable_dir}; "
-      ".else {.echo wrong argument count; .return -1}}", point, 0));
-  point = 0;
+      ".else {.echo wrong argument count; .return -1}}"));
   executable_map.set(new Function(".internal_features", 
       "{.if .test_number_equal $# 1 {"
           ".echo rwsh.after_command rwsh.before_command "
           "rwsh.prompt rwsh.raw_command rwsh.run_logic "
           "rwsh.shutdown rwsh.vars}; "
-      ".else {.echo wrong argument count; .return -1}}", point, 0));
-  point = 0;
+      ".else {.echo wrong argument count; .return -1}}"));
   executable_map.set(new Function(".internal_vars", 
       "{.if .test_number_equal $# 1 {"
           ".echo FIGNORE IF_TEST MAX_NESTING}; "
-      ".else {.echo wrong argument count; .return -1}}", point, 0));
+      ".else {.echo wrong argument count; .return -1}}"));
   executable_map.set(new Builtin(".is_default_input", b_is_default_input));
   executable_map.set(new Builtin(".is_default_output", b_is_default_output));
   executable_map.set(new Builtin(".is_default_error", b_is_default_error));

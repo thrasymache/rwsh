@@ -21,9 +21,8 @@
 #include "function.h"
 #include "variable_map.h"
 
-Function::Function(const std::string& name_i, const std::string& src,
-                       std::string::size_type& point, unsigned max_soon) :
-    name_v(name_i) {
+void Function::internal_constructor(const std::string& src,
+                             std::string::size_type& point, unsigned max_soon) {
   std::string::size_type tpoint = point;
   while (tpoint != std::string::npos && src[tpoint] != '}') {
     script.push_back(Arg_script(src, ++tpoint, max_soon));
@@ -34,6 +33,25 @@ Function::Function(const std::string& name_i, const std::string& src,
     throw Unclosed_brace(src.substr(0, point-1));
   if (!script.size()) script.push_back(Arg_script("", max_soon));
   point = tpoint + 1;}
+
+Function::Function(const std::string& name_i, const std::string& src,
+                   std::string::size_type& point, unsigned max_soon) :
+    name_v(name_i) {internal_constructor(src, point, max_soon);}
+
+Function::Function(const std::string& name_i, const std::string& src) :
+    name_v(name_i) {
+  std::string::size_type point = 0;
+  try {
+    internal_constructor(src, point, 0);
+    if (point != src.length())
+      throw "function with text following closing brace " + name_i + "\n" +
+          src.substr(point) + "\n";}
+  catch (Unclosed_brace argv) {
+    throw "unclosed brace on construction of function " + name_i + "\n" +
+      argv[3] + "\n";}
+  catch (Unclosed_parenthesis argv) {
+    throw "unclosed parenthesis on construction of function " + name_i + "\n" +
+      argv[3] + "\n";}}
 
 // generate a new function by unescaping argument functions and replacing
 // unescaped_argfunction with the argument function in argv

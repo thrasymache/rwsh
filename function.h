@@ -6,11 +6,14 @@ class Function : public Executable {
   Function(const std::string& name_i) : name_v(name_i), script() {};
   Function(const std::string& name_i, const std::vector<Arg_script>& src) : 
     name_v(name_i), script(src) {};
+  void internal_constructor(const std::string& src,
+                            std::string::size_type& point, unsigned max_soon);
  public:
   std::vector<Arg_script> script;
 
   Function(const std::string& name, const std::string& src,
-             std::string::size_type& point, unsigned max_soon);
+           std::string::size_type& point, unsigned max_soon);
+  Function(const std::string& name, const std::string& src);
   Function(const std::string& name_i, const Function* src) :
     name_v(name_i), script(src->script) {};
   Function* copy_pointer(void) const {
