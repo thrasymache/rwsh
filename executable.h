@@ -45,6 +45,7 @@ class Executable {
   static const int SIGBADIFN   = -12;
   static const int SIGARGFUNC  = -13;
   static const int SIGARGS     = -14;
+  static const int SIGEXARGFUNC  = -15;
   bool increment_nesting(const Argv& argv);
   bool decrement_nesting(const Argv& argv);
   static int caught_signal;

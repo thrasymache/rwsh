@@ -137,6 +137,9 @@ Double_redirection::Double_redirection(const std::string& first,
 
 Else_without_if::Else_without_if() {push_back("rwsh.else_without_if");}
 
+Excess_argfunction::Excess_argfunction() {
+  push_back("rwsh.excess_argfunction");}
+
 Failed_substitution::Failed_substitution(const std::string& function) {
   push_back("rwsh.failed_substitution");
   push_back(function);}

@@ -89,6 +89,8 @@ struct Double_redirection : public Argv {
 
 struct Else_without_if : public Argv {Else_without_if();};
 
+struct Excess_argfunction : public Argv {Excess_argfunction();};
+
 struct Failed_substitution : public Argv {
   Failed_substitution(const std::string& function);};
 

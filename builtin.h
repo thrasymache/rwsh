@@ -43,7 +43,7 @@ int b_var_exists(const Argv& argv);
 int b_version(const Argv& argv);
 int b_version_available(const Argv& argv);
 int b_version_compatible(const Argv& argv);
-int b_waiting_for(const Argv& argv);
+int b_waiting_for_binary(const Argv& argv);
 int b_waiting_for_shell(const Argv& argv);
 int b_waiting_for_user(const Argv& argv);
 int b_which_executable(const Argv& argv);

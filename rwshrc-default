@@ -143,8 +143,10 @@ sfn wc
 # misc
 .function ! {if $* {.return 1}; else {.return 0}}
 .function m {rwsh.argfunction}
-.function and {.if .return 1; .stepwise $* {.else_if_not $*}; .else}
-.function or {.if .return 1; .stepwise $* {.else_if $*}; .else}
+.function and {
+  .if .return 1 {.nop}; .stepwise $* {.else_if_not $* {.nop}}; .else {.nop}}
+.function or {
+  .if .return 1 {.nop}; .stepwise $* {.else_if $* {.nop}}; .else {.nop}}
 .global TESTABILITY (an external variable)
 .function st {/bin/rwsh -to >test.result.last
   &{whichp diff} -c test.result test.result.last}

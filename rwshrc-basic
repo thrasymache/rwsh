@@ -26,8 +26,8 @@
   .else_if .test_number_equal $TEMP1 4 {echo function &&1 did not exist to be erased}
   .else {.return $TEMP1}}
 .function if {.if $* {rwsh.argfunction}}
-.function if_only {.if $* {rwsh.argfunction}; .else}
-.function if_only_not {.if $*; .else {rwsh.argfunction}}
+.function if_only {.if $* {rwsh.argfunction}; .else {.nop}}
+.function if_only_not {.if $* {.nop}; .else {rwsh.argfunction}}
 .function timings {
   .echo last time (); .which_last_execution_time $*; c $nl
   .echo total time (); .which_total_execution_time $*; c $nl
@@ -52,7 +52,7 @@
   .else {echo no &&1}}
 .function whichp {
   .which_path $1 $PATH
-  .if .test_number_equal $? 0
+  .if .test_number_equal $? 0 {.nop}
   .else {echo &&1 not found in $PATH; .return 1}}
 .function while {.while $* {rwsh.argfunction}}
 .function var_exists {.var_exists $1}

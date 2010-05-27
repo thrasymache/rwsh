@@ -79,12 +79,12 @@ void internal_init(void) {
   executable_map.set(new Builtin(".test_is_number", b_test_is_number));
   executable_map.set(new Builtin(".test_less", b_test_less));
   executable_map.set(new Builtin(".test_not_empty", b_test_not_empty));
-  executable_map.set(new Builtin(".test_string_unequal", b_test_string_unequal));
+  executable_map.set(new Builtin(".test_string_unequal",
+                                   b_test_string_unequal));
   executable_map.set(new Builtin(".test_number_equal", b_test_number_equal));
   executable_map.set(new Builtin(".unset", b_unset));
   executable_map.set(new Builtin(".usleep", b_usleep));
-  executable_map.set(new Builtin(".b_waiting_for",
-                                   b_waiting_for));
+  executable_map.set(new Builtin(".waiting_for_binary", b_waiting_for_binary));
   executable_map.set(new Builtin(".waiting_for_shell", b_waiting_for_shell));
   executable_map.set(new Builtin(".waiting_for_user", b_waiting_for_user));
   executable_map.set(new Builtin(".which_executable", b_which_executable));

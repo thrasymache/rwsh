@@ -51,6 +51,8 @@ void Executable::signal_handler(void) {
   extern Variable_map* vars;
   Argv call_stack_copy;                                    //need for a copy: 
   switch (caught_signal) {
+    case SIGEXARGFUNC:
+      call_stack_copy.push_back("rwsh.excess_argfunction"); break;
     case SIGARGS: call_stack_copy.push_back("rwsh.argument_count"); break;
     case SIGARGFUNC:
       call_stack_copy.push_back("rwsh.missing_argfunction"); break;
@@ -213,6 +215,10 @@ int Builtin::operator() (const Argv& argv) {
     return -1;}
   catch (Missing_argfunction error) {
     caught_signal = SIGARGFUNC;
+    decrement_nesting(argv);
+    return -1;}
+  catch (Excess_argfunction error) {
+    caught_signal = SIGEXARGFUNC;
     decrement_nesting(argv);
     return -1;}}
 

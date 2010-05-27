@@ -431,7 +431,7 @@ hi
 $.if .return 0 {>dummy_file /bin/echo there}
 
 0
-$.else
+$.else {.nop}
 
 0
 $/bin/cat dummy_file
@@ -532,6 +532,10 @@ $.cd
 rwsh.argument_count : command not found ( rwsh.argument_count .cd ) 
 
 -1
+$.cd /bin {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .cd ) 
+
+-1
 $.cd /bin /
 rwsh.argument_count : command not found ( rwsh.argument_count .cd ) 
 
@@ -553,6 +557,10 @@ $.combine
 rwsh.argument_count : command not found ( rwsh.argument_count .combine ) 
 
 -1
+$.combine something {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .combine ) 
+
+-1
 $.combine on () e \ two ( ) $#
 one two 7
 0
@@ -564,6 +572,10 @@ $# .echo
 0
 $.echo
 rwsh.argument_count : command not found ( rwsh.argument_count .echo ) 
+
+-1
+$.echo something {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .echo ) 
 
 -1
 $.echo these are fixed strings
@@ -589,6 +601,10 @@ $.exec
 rwsh.argument_count : command not found ( rwsh.argument_count .exec ) 
 
 -1
+$.exec something {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .exec ) 
+
+-1
 $.fork m {.exec /bin/echo something; /bin/echo else}
 something
 
@@ -601,6 +617,10 @@ $# .for
 0
 $.for {e no arguments $1}
 rwsh.argument_count : command not found ( rwsh.argument_count .for ) 
+
+-1
+$.for no_argfunction
+rwsh.missing_argfunction : command not found ( rwsh.missing_argfunction .for ) 
 
 -1
 $.for 1 {e one argument $1}
@@ -724,8 +744,16 @@ $.global x y z
 rwsh.argument_count : command not found ( rwsh.argument_count .global ) 
 
 -1
+$.global x y {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .global ) 
+
+-1
 $.unset
 rwsh.argument_count : command not found ( rwsh.argument_count .unset ) 
+
+-1
+$.unset x {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .unset ) 
 
 -1
 $.unset x y
@@ -734,6 +762,10 @@ rwsh.argument_count : command not found ( rwsh.argument_count .unset )
 -1
 $.var_exists
 rwsh.argument_count : command not found ( rwsh.argument_count .var_exists ) 
+
+-1
+$.var_exists x {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .var_exists ) 
 
 -1
 $.var_exists x y
@@ -849,7 +881,19 @@ rwsh.argument_count : command not found ( rwsh.argument_count .else_if_not )
 
 -1
 $.else
-rwsh.else_without_if : command not found ( rwsh.else_without_if .else ) 
+rwsh.missing_argfunction : command not found ( rwsh.missing_argfunction .else ) 
+
+-1
+$.if missing argfunction
+rwsh.missing_argfunction : command not found ( rwsh.missing_argfunction .if ) 
+
+-1
+$.else_if missing argfunction
+rwsh.missing_argfunction : command not found ( rwsh.missing_argfunction .else_if ) 
+
+-1
+$.else_if_not missing argfunction
+rwsh.missing_argfunction : command not found ( rwsh.missing_argfunction .else_if_not ) 
 
 -1
 $.if .return 0 {e if true; .return 1}
@@ -968,6 +1012,10 @@ $.is_default_input 1
 rwsh.argument_count : command not found ( rwsh.argument_count .is_default_input ) 
 
 -1
+$.is_default_input {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .is_default_input ) 
+
+-1
 $m {.is_default_input <dummy_file}
 
 1
@@ -976,6 +1024,10 @@ $m {.is_default_input}
 0
 $.is_default_output 1
 rwsh.argument_count : command not found ( rwsh.argument_count .is_default_output ) 
+
+-1
+$.is_default_output {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .is_default_output ) 
 
 -1
 $e &{.is_default_output; .echo $?}
@@ -991,6 +1043,10 @@ $.is_default_error 1
 rwsh.argument_count : command not found ( rwsh.argument_count .is_default_error ) 
 
 -1
+$.is_default_error {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .is_default_error ) 
+
+-1
 $m {.is_default_error}
 
 0
@@ -1002,6 +1058,10 @@ $# .ls
 0
 $.ls
 rwsh.argument_count : command not found ( rwsh.argument_count .ls ) 
+
+-1
+$.ls /bin {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .ls ) 
 
 -1
 $.ls /bin /usr/
@@ -1016,6 +1076,9 @@ $# .nop
 
 0
 $.nop
+
+0
+$.nop {optional argfunc}
 
 0
 $.nop 1 2 3 4 5
@@ -1033,6 +1096,10 @@ rwsh.argument_count : command not found ( rwsh.argument_count .return )
 -1
 $.return 1 1
 rwsh.argument_count : command not found ( rwsh.argument_count .return ) 
+
+-1
+$.return 0 {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .return ) 
 
 -1
 $.return 0
@@ -1072,6 +1139,10 @@ $# .selection_set
 -1
 $.selection_set A
 rwsh.argument_count : command not found ( rwsh.argument_count .selection_set ) 
+
+-1
+$.selection_set A /usr {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .selection_set ) 
 
 -1
 $.selection_set A /usr
@@ -1130,6 +1201,10 @@ $.set B x
 rwsh.undefined_variable : command not found ( rwsh.undefined_variable B .set ) 
 
 -1
+$.set B x {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .set ) 
+
+-1
 $.set IF_TEST x
 
 2
@@ -1147,6 +1222,10 @@ $# .source
 0
 $.source
 rwsh.argument_count : command not found ( rwsh.argument_count .source ) 
+
+-1
+$.source /etc/hosts {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .source ) 
 
 -1
 $.source /*fu*bar*
@@ -1293,6 +1372,10 @@ $.test_string_equal x x x
 rwsh.argument_count : command not found ( rwsh.argument_count .test_string_equal ) 
 
 -1
+$.test_string_equal x x {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .test_string_equal ) 
+
+-1
 $.test_string_unequal x 
 rwsh.argument_count : command not found ( rwsh.argument_count .test_string_unequal ) 
 
@@ -1301,12 +1384,20 @@ $.test_string_unequal x x x
 rwsh.argument_count : command not found ( rwsh.argument_count .test_string_unequal ) 
 
 -1
+$.test_string_unequal x x {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .test_string_unequal ) 
+
+-1
 $.test_not_empty 
 rwsh.argument_count : command not found ( rwsh.argument_count .test_not_empty ) 
 
 -1
 $.test_not_empty x x
 rwsh.argument_count : command not found ( rwsh.argument_count .test_not_empty ) 
+
+-1
+$.test_not_empty x {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .test_not_empty ) 
 
 -1
 $.test_string_equal x y
@@ -1337,6 +1428,10 @@ $.test_is_number
 rwsh.argument_count : command not found ( rwsh.argument_count .test_is_number ) 
 
 -1
+$.test_is_number 42 {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .test_is_number ) 
+
+-1
 $.test_is_number ()
 
 1
@@ -1357,6 +1452,10 @@ $.test_is_number 6.022e23
 0
 $.test_number_equal 42
 rwsh.argument_count : command not found ( rwsh.argument_count .test_number_equal ) 
+
+-1
+$.test_number_equal 42 42 {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .test_number_equal ) 
 
 -1
 $.test_number_equal 42 42a
@@ -1401,6 +1500,10 @@ $.test_greater 6.022e23
 rwsh.argument_count : command not found ( rwsh.argument_count .test_greater ) 
 
 -1
+$.test_greater 6.022e23c 6.022e23 {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .test_greater ) 
+
+-1
 $.test_greater 6.022e23c 6.022e23
 rwsh.not_a_number : command not found ( rwsh.not_a_number 6.022e23c .test_greater ) 
 
@@ -1428,6 +1531,10 @@ $.test_greater 6.022e23 6.022e2
 0
 $.test_less 6.022e23
 rwsh.argument_count : command not found ( rwsh.argument_count .test_less ) 
+
+-1
+$.test_less 6.022b23 6.022e23 {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .test_less ) 
 
 -1
 $.test_less 6.022b23 6.022e23
@@ -1515,6 +1622,10 @@ $.waiting_for_shell j
 rwsh.argument_count : command not found ( rwsh.argument_count .waiting_for_shell ) 
 
 -1
+$.waiting_for_shell {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .waiting_for_shell ) 
+
+-1
 $# .waiting_for_shell
 
 -1
@@ -1522,7 +1633,22 @@ $.waiting_for_user j
 rwsh.argument_count : command not found ( rwsh.argument_count .waiting_for_user ) 
 
 -1
+$.waiting_for_user {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .waiting_for_user ) 
+
+-1
 $# .waiting_for_user
+
+-1
+$.waiting_for_binary j
+rwsh.argument_count : command not found ( rwsh.argument_count .waiting_for_binary ) 
+
+-1
+$.waiting_for_binary {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .waiting_for_binary ) 
+
+-1
+$# .waiting_for_binary
 
 -1
 $.which_return
@@ -1557,6 +1683,10 @@ $.usleep
 rwsh.argument_count : command not found ( rwsh.argument_count .usleep ) 
 
 -1
+$.usleep 8000 {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .usleep ) 
+
+-1
 $.usleep -6
 rwsh.input_range : command not found ( rwsh.input_range -6 .usleep ) 
 
@@ -1576,7 +1706,7 @@ $.which_execution_count j
 
 1
 $.which_execution_count .usleep
-4
+5
 0
 $.which_last_execution_time
 rwsh.argument_count : command not found ( rwsh.argument_count .which_last_execution_time ) 
@@ -1608,6 +1738,10 @@ $.which_path cat
 rwsh.argument_count : command not found ( rwsh.argument_count .which_path ) 
 
 -1
+$.which_path cat /bin {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .which_path ) 
+
+-1
 $.which_path cat \
 
 1
@@ -1634,6 +1768,10 @@ $.set N 4
 0
 $.while {e ARGS}
 rwsh.argument_count : command not found ( rwsh.argument_count .while ) 
+
+-1
+$.while tf
+rwsh.missing_argfunction : command not found ( rwsh.missing_argfunction .while ) 
 
 -1
 $.while tf {e printed; .set A 4}
@@ -1674,6 +1812,10 @@ rwsh.argument_count : command not found ( rwsh.argument_count .var_add )
 -1
 $.var_add A 1 2
 rwsh.argument_count : command not found ( rwsh.argument_count .var_add ) 
+
+-1
+$.var_add A 1 {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .var_add ) 
 
 -1
 $.var_add B 1
@@ -1749,6 +1891,10 @@ $.var_divide A 1 2
 rwsh.argument_count : command not found ( rwsh.argument_count .var_divide ) 
 
 -1
+$.var_divide A 1 {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .var_divide ) 
+
+-1
 $.var_divide B 1
 rwsh.undefined_variable : command not found ( rwsh.undefined_variable B .var_divide ) 
 
@@ -1816,6 +1962,10 @@ rwsh.argument_count : command not found ( rwsh.argument_count .var_subtract )
 -1
 $.var_subtract A 1 2
 rwsh.argument_count : command not found ( rwsh.argument_count .var_subtract ) 
+
+-1
+$.var_subtract A 1 {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .var_subtract ) 
 
 -1
 $.var_subtract B 1
@@ -1893,8 +2043,16 @@ $.version 1.0
 rwsh.argument_count : command not found ( rwsh.argument_count .version ) 
 
 -1
+$.version {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .version ) 
+
+-1
 $.version_available 1.0
 rwsh.argument_count : command not found ( rwsh.argument_count .version_available ) 
+
+-1
+$.version_available {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .version_available ) 
 
 -1
 $.version_compatible
@@ -1903,6 +2061,10 @@ rwsh.argument_count : command not found ( rwsh.argument_count .version_compatibl
 -1
 $.version_compatible 1.0 1.0
 rwsh.argument_count : command not found ( rwsh.argument_count .version_compatible ) 
+
+-1
+$.version_compatible 1.0 {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .version_compatible ) 
 
 -1
 $.version
@@ -2115,7 +2277,7 @@ $
 $# rwsh.run_logic
 
 0
-$f rwsh.run_logic {.if .return $1; .else_if $*2; .else}
+$f rwsh.run_logic {.if .return $1 {.nop}; .else_if $*2 {.nop}; .else {.nop}}
 
 0
 $0 e don't print
@@ -2176,6 +2338,14 @@ $# .importenv_preserve .importenv_overwrite
 $.global SHELL unmodified
 
 0
+$.importenv_preserve x
+rwsh.argument_count : command not found ( rwsh.argument_count .importenv_preserve ) 
+
+-1
+$.importenv_preserve {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .importenv_preserve ) 
+
+-1
 $.importenv_preserve
 
 0
@@ -2188,6 +2358,14 @@ unmodified
 $.unset TESTABILITY
 
 0
+$.importenv_overwrite x
+rwsh.argument_count : command not found ( rwsh.argument_count .importenv_overwrite ) 
+
+-1
+$.importenv_overwrite {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .importenv_overwrite ) 
+
+-1
 $.importenv_overwrite
 
 0
@@ -2203,8 +2381,12 @@ $
 $# exiting rwsh.shutdown
 
 0
-$.exit now
+$.exit excess_argument
 rwsh.argument_count : command not found ( rwsh.argument_count .exit ) 
+
+-1
+$.exit {excess argfunction}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .exit ) 
 
 -1
 $.exit

@@ -125,7 +125,7 @@ m {e hi >dummy_file >another}
 m {e hi >dummy_file}
 /bin/cat dummy_file
 .if .return 0 {>dummy_file /bin/echo there}
-.else
+.else {.nop}
 /bin/cat dummy_file
 m {m >dummy_file {e line 1 $nl; e line 2 longer $nl; .echo $nl; e ending}}
 /bin/cat <dummy_file
@@ -158,16 +158,19 @@ f x
 # builtin tests
 # .cd
 .cd
+.cd /bin {excess argfunc}
 .cd /bin /
 .cd /bin
 /bin/pwd
 
 # .combine
 .combine
+.combine something {excess argfunc}
 .combine on () e \ two ( ) $#
 
 # .echo
 .echo
+.echo something {excess argfunc}
 .echo these are fixed strings
 
 # .exec .fork
@@ -175,10 +178,12 @@ f x
 .fork e text
 .fork .return 1
 .exec
+.exec something {excess argfunc}
 .fork m {.exec /bin/echo something; /bin/echo else}
 
 # .for
 .for {e no arguments $1}
+.for no_argfunction
 .for 1 {e one argument $1}
 .for 1 2 3 4 {e four arguments $1 $nl}
 
@@ -215,9 +220,12 @@ g
 # .global .unset .var_exists 
 .global
 .global x y z
+.global x y {excess argfunc}
 .unset
+.unset x {excess argfunc}
 .unset x y
 .var_exists
+.var_exists x {excess argfunc}
 .var_exists x y
 .global 100 nihilism
 .unset #
@@ -254,6 +262,9 @@ e $x
 .else_if
 .else_if_not
 .else
+.if missing argfunction
+.else_if missing argfunction
+.else_if_not missing argfunction
 .if .return 0 {e if true; .return 1}
 .else {e else true; .return 3}
 .if .return 1 {e if false; .return 4}
@@ -292,26 +303,32 @@ e $x
 
 # .is_default_input .is_default_output .is_default_error
 .is_default_input 1
+.is_default_input {excess argfunc}
 m {.is_default_input <dummy_file}
 m {.is_default_input}
 .is_default_output 1
+.is_default_output {excess argfunc}
 e &{.is_default_output; .echo $?}
 m {.is_default_output >dummy_file}
 m {.is_default_output}
 .is_default_error 1
+.is_default_error {excess argfunc}
 m {.is_default_error}
 
 # .ls
 .ls
+.ls /bin {excess argfunc}
 .ls /bin /usr/
 
 # .nop
 .nop
+.nop {optional argfunc}
 .nop 1 2 3 4 5
 
 # .return
 .return
 .return 1 1
+.return 0 {excess argfunc}
 .return 0
 .return 1
 .return \
@@ -323,6 +340,7 @@ m {.is_default_error}
 
 # .selection_set
 .selection_set A
+.selection_set A /usr {excess argfunc}
 .selection_set A /usr
 e $A
 .selection_set A ./
@@ -341,12 +359,14 @@ e $A
 # .set
 .set A
 .set B x
+.set B x {excess argfunc}
 .set IF_TEST x
 .set A x
 e $A
 
 # .source
 .source
+.source /etc/hosts {excess argfunc}
 .source /*fu*bar*
 # if you actually have that file, something is seriously wrong
 .source /etc/hosts
@@ -374,10 +394,13 @@ wrapper 1 2
 # .test_string_equal .test_string_unequal .test_not_empty
 .test_string_equal x
 .test_string_equal x x x
+.test_string_equal x x {excess argfunc}
 .test_string_unequal x 
 .test_string_unequal x x x
+.test_string_unequal x x {excess argfunc}
 .test_not_empty 
 .test_not_empty x x
+.test_not_empty x {excess argfunc}
 .test_string_equal x y
 .test_string_equal x x
 .test_string_unequal x y
@@ -387,6 +410,7 @@ wrapper 1 2
 
 # .test_is_number .test_number_equal .test_greater .test_less
 .test_is_number
+.test_is_number 42 {excess argfunc}
 .test_is_number ()
 .test_is_number 42a
 .test_is_number 42
@@ -394,6 +418,7 @@ wrapper 1 2
 .test_is_number 6.022e9000000000
 .test_is_number 6.022e23
 .test_number_equal 42
+.test_number_equal 42 42 {excess argfunc}
 .test_number_equal 42 42a
 .test_number_equal 42b 42
 .test_number_equal 0 0.000000000000000000000000001
@@ -406,6 +431,7 @@ wrapper 1 2
 .test_number_equal 6.022e23 6.022e2
 .test_number_equal 6.022e23 .6022e24
 .test_greater 6.022e23
+.test_greater 6.022e23c 6.022e23 {excess argfunc}
 .test_greater 6.022e23c 6.022e23
 .test_greater 6.022e23 6.022e23e
 .test_greater 6.022e9000000000 .6022e23
@@ -414,6 +440,7 @@ wrapper 1 2
 .test_greater 6.022e23 .6022e24
 .test_greater 6.022e23 6.022e2
 .test_less 6.022e23
+.test_less 6.022b23 6.022e23 {excess argfunc}
 .test_less 6.022b23 6.022e23
 .test_less 6.022e23 6.022a23
 .test_less 6.022e9000000000 .6022e23
@@ -440,9 +467,14 @@ w rwsh.mapped_argfunction {>dummy_file}
 .which_executable rwsh.mapped_argfunction
 .which_executable rwsh.mapped_argfunction {rwsh.argfunction}
 .waiting_for_shell j
+.waiting_for_shell {excess argfunc}
 # .waiting_for_shell
 .waiting_for_user j
+.waiting_for_user {excess argfunc}
 # .waiting_for_user
+.waiting_for_binary j
+.waiting_for_binary {excess argfunc}
+# .waiting_for_binary
 .which_return
 .which_return rwsh.mapped_argfunction
 .which_return rwsh.mapped_argfunction {rwsh.argfunction}
@@ -453,6 +485,7 @@ w rwsh.mapped_argfunction {>dummy_file}
 # .usleep .which_execution_count .which_last_execution_time
 # .which_total_execution_time
 .usleep
+.usleep 8000 {excess argfunc}
 .usleep -6
 .usleep 5i
 .usleep 8000
@@ -468,6 +501,7 @@ w rwsh.mapped_argfunction {>dummy_file}
 
 # .which_path
 .which_path cat
+.which_path cat /bin {excess argfunc}
 .which_path cat \
 .which_path does<not>exist /bin:/usr/bin
 .which_path cat /bin:/usr/bin
@@ -477,6 +511,7 @@ w rwsh.mapped_argfunction {>dummy_file}
 .set A 0
 .set N 4
 .while {e ARGS}
+.while tf
 .while tf {e printed; .set A 4}
 .while tf {e skipped}
 .set A 0
@@ -489,6 +524,7 @@ w rwsh.mapped_argfunction {>dummy_file}
 # .var_add
 .var_add
 .var_add A 1 2
+.var_add A 1 {excess argfunc}
 .var_add B 1
 .set A A
 .var_add A 2 
@@ -510,6 +546,7 @@ e $A
 # .var_divide
 .var_divide A
 .var_divide A 1 2
+.var_divide A 1 {excess argfunc}
 .var_divide B 1
 .set A A
 .var_divide A 2 
@@ -530,6 +567,7 @@ e $A
 # .var_subtract
 .var_subtract
 .var_subtract A 1 2
+.var_subtract A 1 {excess argfunc}
 .var_subtract B 1
 .set A A
 .var_subtract A 2 
@@ -553,9 +591,12 @@ e $A
 
 # .version .version_available .version_compatible
 .version 1.0
+.version {excess argfunc}
 .version_available 1.0
+.version_available {excess argfunc}
 .version_compatible
 .version_compatible 1.0 1.0
+.version_compatible 1.0 {excess argfunc}
 .version
 .version_available
 .version_compatible 1.0
@@ -621,7 +662,7 @@ f rwsh.excessive_nesting {h}
 g
 
 # rwsh.run_logic
-f rwsh.run_logic {.if .return $1; .else_if $*2; .else}
+f rwsh.run_logic {.if .return $1 {.nop}; .else_if $*2 {.nop}; .else {.nop}}
 0 e don't print
 1 e do print
 1 f rwsh.run_logic
@@ -639,15 +680,20 @@ rwsh.vars
 
 # .importenv_preserve .importenv_overwrite
 .global SHELL unmodified
+.importenv_preserve x
+.importenv_preserve {excess argfunc}
 .importenv_preserve
 e $TESTABILITY
 e $SHELL
 .unset TESTABILITY
+.importenv_overwrite x
+.importenv_overwrite {excess argfunc}
 .importenv_overwrite
 e $TESTABILITY
 e $SHELL
 
 # exiting rwsh.shutdown
-.exit now
+.exit excess_argument
+.exit {excess argfunction}
 .exit
 .echo 1 2 3
