@@ -9,6 +9,7 @@
   .set last_command_return $?
   .echo $nl; .echo $last_command_return; .echo $nl}
 .function rwsh.prompt {.echo \$}
+.function rwsh.file_open_failure
 .function rwsh.shutdown {.echo $nl; .echo now terminating normally; .echo $nl}
 .function rwsh.vars {.internal_vars}
 .else_if .test_string_equal $2 -c {
@@ -1243,7 +1244,8 @@ $# .source is tested by having test_init.sh define #
 
 -1
 $w .init
-{.set MAX_NESTING 4; .source /etc/rwshrc $*; .if .which_test rwsh.help {.if .test_not_empty &&{rwsh.help} {.nop}; .else {.echo rwsh.help produces no output 
+{.set MAX_NESTING 4; .function rwsh.file_open_failure {.echo init file $1 does not exist (call stack $*2 ) 
+}; .source /etc/rwshrc $*; .if .which_test rwsh.help {.if .test_not_empty &&{rwsh.help} {.nop}; .else {.echo rwsh.help produces no output 
 }}; .else {.echo rwsh.help not defined 
 }}
 0

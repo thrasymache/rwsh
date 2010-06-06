@@ -36,6 +36,8 @@ void internal_init(void) {
   executable_map.set(new Builtin(".importenv_preserve", b_importenv_preserve));
   executable_map.set(new Function(".init", 
       "{.set MAX_NESTING 4\n"
+          ".function rwsh.file_open_failure {.echo init file $1 does not exist "
+          "\\(call stack $*2 \\) (\n)}\n"
           ".source /etc/rwshrc $*\n"
           ".if .which_test rwsh.help {"
             ".if .test_not_empty &&{rwsh.help} {.nop}\n"

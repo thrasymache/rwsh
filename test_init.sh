@@ -13,5 +13,6 @@
   .set last_command_return $?
   .echo $nl; .echo $last_command_return; .echo $nl}
 .function rwsh.prompt {.echo \$}
+.function rwsh.file_open_failure
 .function rwsh.shutdown {.echo $nl; .echo now terminating normally; .echo $nl}
 .function rwsh.vars {.internal_vars}
