@@ -4,6 +4,7 @@
 setf PATH &{c $HOME /bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin}
 .global BUILT_EXECUTABLE /bin/rwsh
 .global REGEX ()
+.global grep-sel ()
 .global s ()
 .global s2 ()
 .set FIGNORE .*
@@ -45,10 +46,17 @@ sfn ed
   .set REGEX $1
   .selection_set s $2 $*3
   &{whichp grep} $REGEX @$s}
+.function grep-sel {.set s $grep-sel}
 .function grepo {
   .set REGEX $2
   .selection_set s $3 $*4
   &{whichp grep} &&{e -; e &&1} $REGEX @$s}
+.function grepl {
+  .set REGEX $1
+  .selection_set s $2 $*3
+  .set grep-sel $s
+  .selection_set grep-sel &&{&{whichp grep} -l $REGEX @$s}$
+  echo $grep-sel}
 sfn gzip
 sfn gunzip
 .function home {cd $HOME}
@@ -68,6 +76,11 @@ sfn md5sum
   .selection_set s $2 $*3
   &{whichp grep} &&{c - &&1} $REGEX @$s}
 sfn rm 
+.function regrepl {
+  .selection_set s $1 $*2
+  .set grep-sel $s
+  .selection_set grep-sel &&{&{whichp grep} -l $REGEX @$s}$
+  echo $grep-sel}
 sfn sum
 sfn tail
 .function tail-f {.selection_set s $1 $*2; &{whichp tail} -f @$s}
