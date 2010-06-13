@@ -18,7 +18,8 @@ File_istream::File_istream(const std::string& name_i) : name(name_i),
 void File_istream::open(void) {
   file_descriptor = ::open(name.c_str(), O_RDONLY, S_IWUSR|S_IRUSR);
   dest = fdopen(file_descriptor, "r");
-  if (file_descriptor == -1 || !dest) throw File_open_failure(name);}
+  if (file_descriptor == -1 || !dest)
+    throw Signal_argv(Argv::File_open_failure, name);}
 
 File_istream::~File_istream() {
   if(dest) if (fclose(dest))
@@ -47,7 +48,8 @@ void File_ostream::open(void) {
   file_descriptor = ::open(name.c_str(), O_WRONLY|O_CREAT|O_TRUNC, 
                          S_IWUSR|S_IRUSR);
   dest = fdopen(file_descriptor, "w");
-  if (file_descriptor == -1 || !dest) throw File_open_failure(name);}
+  if (file_descriptor == -1 || !dest)
+    throw Signal_argv(Argv::File_open_failure, name);}
 
 File_ostream::~File_ostream() {
   if(dest) if (fclose(dest))

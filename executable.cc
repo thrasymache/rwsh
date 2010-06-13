@@ -51,21 +51,7 @@ void Executable::signal_handler(void) {
   extern Variable_map* vars;
   Argv call_stack_copy;                                    //need for a copy: 
   switch (caught_signal) {
-    case SIGEXARGFUNC:
-      call_stack_copy.push_back("rwsh.excess_argfunction"); break;
-    case SIGARGS: call_stack_copy.push_back("rwsh.argument_count"); break;
-    case SIGARGFUNC:
-      call_stack_copy.push_back("rwsh.missing_argfunction"); break;
-    case SIGBADIFN: call_stack_copy.push_back("rwsh.bad_if_nest"); break;
-    case SIGELSEWO: call_stack_copy.push_back("rwsh.else_without_if"); break;
-    case SIGIFBEFORE: call_stack_copy.push_back("rwsh.if_before_else"); break;
-    case SIGDIVZERO: call_stack_copy.push_back("rwsh.divide_by_zero"); break;
-    case SIGNAN: call_stack_copy.push_back("rwsh.not_a_number"); break;
-    case SIGRESRANGE: call_stack_copy.push_back("rwsh.result_range"); break;
-    case SIGRANGE: call_stack_copy.push_back("rwsh.input_range"); break;
-    case SIGNOEXEC: call_stack_copy.push_back("rwsh.not_executable"); break;
     case SIGSUB: call_stack_copy.push_back("rwsh.failed_substitution"); break;
-    case SIGFILE: call_stack_copy.push_back("rwsh.file_open_failure"); break;
     case SIGVAR: call_stack_copy.push_back("rwsh.undefined_variable"); break;
     case SIGEXNEST: call_stack_copy.push_back("rwsh.excessive_nesting"); break;
     case SIGHUP: call_stack_copy.push_back("rwsh.sighup"); break;
@@ -78,6 +64,7 @@ void Executable::signal_handler(void) {
     case SIGCHLD: call_stack_copy.push_back("rwsh.sigchld"); break;
     case SIGUSR1: call_stack_copy.push_back("rwsh.sigusr1"); break;
     case SIGUSR2: call_stack_copy.push_back("rwsh.sigusr2"); break;
+    case SIGRWSH: break;
     default: 
       call_stack_copy.push_back(".echo");
       call_stack_copy.push_back("caught unknown signal in");}
@@ -142,9 +129,9 @@ int Binary::operator() (const Argv& argv_i) {
     Clock::timeval_add(total_execution_time_v, last_execution_time_v);
     if (decrement_nesting(argv_i)) ret = dollar_question;
     return ret;}
-  catch (File_open_failure error) {
-    caught_signal = SIGFILE;
-    call_stack.push_back(error.str()); 
+  catch (Signal_argv error) {
+    caught_signal = SIGRWSH;
+    std::copy(error.begin(), error.end(), std::back_inserter(call_stack));
     decrement_nesting(argv_i);
     return -1;}}
 
@@ -166,59 +153,9 @@ int Builtin::operator() (const Argv& argv) {
     Clock::timeval_add(total_execution_time_v, last_execution_time_v);
     if (decrement_nesting(argv)) ret = dollar_question;
     return ret;}
-  catch (File_open_failure error) {
-    caught_signal = SIGFILE;
-    call_stack.push_back(error[1]); 
-    decrement_nesting(argv);
-    return -1;}
-  catch (Not_executable error) {
-    caught_signal = SIGNOEXEC;
-    call_stack.push_back(error[1]); 
-    decrement_nesting(argv);
-    return -1;}
-  catch (Input_range error) {
-    caught_signal = SIGRANGE;
-    call_stack.push_back(error[1]); 
-    decrement_nesting(argv);
-    return -1;}
-  catch (Result_range error) {
-    caught_signal = SIGRESRANGE;
-    call_stack.push_back(error[1]); 
-    call_stack.push_back(error[2]); 
-    decrement_nesting(argv);
-    return -1;}
-  catch (Not_a_number error) {
-    caught_signal = SIGNAN;
-    call_stack.push_back(error[1]); 
-    decrement_nesting(argv);
-    return -1;}
-  catch (Divide_by_zero error) {
-    caught_signal = SIGDIVZERO;
-    call_stack.push_back(error[1]); 
-    decrement_nesting(argv);
-    return -1;}
-  catch (If_before_else error) {
-    caught_signal = SIGIFBEFORE;
-    decrement_nesting(argv);
-    return -1;}
-  catch (Else_without_if error) {
-    caught_signal = SIGELSEWO;
-    decrement_nesting(argv);
-    return -1;}
-  catch (Bad_if_nest error) {
-    caught_signal = SIGBADIFN;
-    decrement_nesting(argv);
-    return -1;}
-  catch (Argument_count error) {
-    caught_signal = SIGARGS;
-    decrement_nesting(argv);
-    return -1;}
-  catch (Missing_argfunction error) {
-    caught_signal = SIGARGFUNC;
-    decrement_nesting(argv);
-    return -1;}
-  catch (Excess_argfunction error) {
-    caught_signal = SIGEXARGFUNC;
+  catch (Signal_argv error) {
+    caught_signal = SIGRWSH;
+    std::copy(error.begin(), error.end(), std::back_inserter(call_stack));
     decrement_nesting(argv);
     return -1;}}
 

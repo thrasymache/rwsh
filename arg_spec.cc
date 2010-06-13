@@ -66,7 +66,9 @@ Arg_spec::Arg_spec(const std::string& script, unsigned max_soon) :
     expand = true;
     if (key_end + 1 < script.length())
       try {word_selection = my_strtoi(script.substr(key_end+1));}
-      catch(...) {throw Invalid_word_selection(script.substr(key_end));}}
+      catch(...) {
+        throw Signal_argv(Argv::Invalid_word_selection,
+                          script.substr(key_end));}}
   if (!script.length()) type=FIXED;
   else if (script[0] == '$') {
     if (script.length() < 2) type=REFERENCE;
@@ -79,7 +81,8 @@ Arg_spec::Arg_spec(const std::string& script, unsigned max_soon) :
   else if (script[0] == '&') {
     if (script.length() < 2) type=SOON;
     else {
-      if (soon_level > max_soon) throw Not_soon_enough(script);
+      if (soon_level > max_soon)
+        throw Signal_argv(Argv::Not_soon_enough, script);
       if (script[i] == '*') {
         type=STAR_SOON;
         if (script.length() - i > 1) text=script.substr(i+1, key_end-i-1);
@@ -108,10 +111,12 @@ Arg_spec::Arg_spec(const std::string& src,
   substitution = new Function("rwsh.argfunction", src, tpoint, soon_level);
   if (soon_level+1 != point-style_start || src[style_start] != '&') {
     delete substitution;
-    throw Bad_argfunction_style(src.substr(style_start, tpoint-style_start));}
+    throw Signal_argv(Argv::Bad_argfunction_style,
+                      src.substr(style_start, tpoint-style_start));}
   if (soon_level > max_soon) {
     delete substitution;
-    throw Not_soon_enough(src.substr(style_start, tpoint-style_start));}
+    throw Signal_argv(Argv::Not_soon_enough,
+                      src.substr(style_start, tpoint-style_start));}
   if (tpoint < src.length()) switch (src[tpoint]) {
     case ' ': case ';': case '\n': case '}': break;
     case '$': {
@@ -128,7 +133,8 @@ Arg_spec::Arg_spec(const std::string& src,
           catch(...) {}}} // fall through
     default: {
       std::string::size_type token_end = src.find_first_of(" };", tpoint);
-      throw Invalid_word_selection(src.substr(tpoint, token_end-tpoint));}}
+      throw Signal_argv(Argv::Invalid_word_selection,
+                        src.substr(tpoint, token_end-tpoint));}}
   after_loop:
   point = tpoint;}
 
@@ -228,7 +234,7 @@ void Arg_spec::interpret(const Argv& src,
          std::vector<std::string> intermediate;
          tokenize_words(next, std::back_inserter(intermediate));
          if (word_selection >= intermediate.size())
-           throw Undefined_variable(str());
+           throw Signal_argv(Argv::Undefined_variable, str());
          else *res++ = intermediate[word_selection];}
       else if (!expand) *res++ = next;
       else tokenize_words(next, res);
@@ -254,7 +260,7 @@ void Arg_spec::interpret(const Argv& src,
          tokenize_words(override_stream.value(),
                         std::back_inserter(intermediate));
          if (word_selection >= intermediate.size())
-           throw Undefined_variable(str());
+           throw Signal_argv(Argv::Undefined_variable, str());
          else *res++ = intermediate[word_selection];}
       else if (expand) tokenize_words (override_stream.value(), res);
       else *res++ = override_stream.value();

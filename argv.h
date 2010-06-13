@@ -25,6 +25,36 @@ class Argv : private std::vector<std::string> {
   mutable Rwsh_istream_p input;
   mutable Rwsh_ostream_p output, error;
 
+  enum Sig_type {
+    Argument_count,
+    Arguments_for_argfunction,
+    Bad_argfunction_style,
+    Bad_if_nest, 
+    Divide_by_zero, 
+    Double_redirection,
+    Else_without_if,
+    Excess_argfunction,
+    Failed_substitution,
+    File_open_failure,
+    If_before_else,
+    Input_range,
+    Invalid_word_selection,
+    Line_continuation,
+    Mismatched_brace,
+    Mismatched_parenthesis,
+    Missing_argfunction,
+    Multiple_argfunctions,
+    Not_a_number,
+    Not_executable,
+    Not_soon_enough,
+    Result_range,
+    Unclosed_brace,
+    Unclosed_parenthesis,
+    Undefined_variable,
+    Signal_count};
+
+  static std::string signal_names[];
+
 // variables
   char** export_env(void) const;
   std::string get_var(const std::string& key) const;
@@ -68,63 +98,20 @@ class Argv : private std::vector<std::string> {
   std::string& operator[] (int i) {return Base::operator[](i);};
   const std::string& operator[] (int i) const {return Base::operator[](i);}; };
 
-struct Argument_count : public Argv {
-  Argument_count(unsigned given, unsigned expected);};
-
-struct Missing_argfunction : public Argv {Missing_argfunction();};
-
-struct Arguments_to_argfunction : public Argv {
-  Arguments_to_argfunction(const std::string& argfunction_type);};
-
-struct Bad_argfunction_style : public Argv {
-  Bad_argfunction_style(const std::string& argfunction_style);};
-
-struct Bad_if_nest : public Argv {Bad_if_nest();};
-
-struct Divide_by_zero : public Argv {
-  Divide_by_zero(const std::string& value);};
-
-struct Double_redirection : public Argv {
-  Double_redirection(const std::string& first, const std::string& second);};
-
-struct Else_without_if : public Argv {Else_without_if();};
-
-struct Excess_argfunction : public Argv {Excess_argfunction();};
+struct Signal_argv : public Argv {
+  Signal_argv(Sig_type signal);
+  Signal_argv(Sig_type signal, const std::string& value);
+  Signal_argv(Sig_type signal, const std::string& x, const std::string& y);
+  Signal_argv(Sig_type signal, int x, int y);};
 
 struct Failed_substitution : public Argv {
   Failed_substitution(const std::string& function);};
-
-struct File_open_failure : public Argv {
-  File_open_failure(const std::string& file_name);};
-
-struct If_before_else : public Argv {If_before_else();};
-
-struct Invalid_word_selection : public Argv {
-  Invalid_word_selection(const std::string& selection);};
-
-struct Input_range : public Argv {Input_range(const std::string& value);};
-
-struct Line_continuation : public Argv {Line_continuation();};
 
 struct Mismatched_brace : public Argv {
   Mismatched_brace(const std::string& prefix);};
 
 struct Mismatched_parenthesis : public Argv {
   Mismatched_parenthesis(const std::string& prefix);};
-
-struct Multiple_argfunctions : public Argv {Multiple_argfunctions();};
-
-struct Not_a_number : public Argv {
-  Not_a_number(const std::string& value);};
-
-struct Not_soon_enough : public Argv {
-  Not_soon_enough(const std::string& argument);};
-
-struct Not_executable : public Argv {
-  Not_executable(const std::string& file_name);};
-
-struct Result_range : public Argv {
-  Result_range(const std::string& lhs, const std::string& rhs);};
 
 struct Unclosed_brace : public Argv {
   Unclosed_brace(const std::string& prefix);};
@@ -134,7 +121,7 @@ struct Unclosed_parenthesis : public Argv {
 
 struct Undefined_variable : public Argv {
   Undefined_variable(const std::string& variable);};
-  
+
 class Old_argv {
   char** focus;
   int argc_v;

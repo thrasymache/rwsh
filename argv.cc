@@ -106,61 +106,29 @@ template<class In>char** copy_to_cstr(In first, In last, char** res) {
   *res = 0;
   return res;}
 
-Argument_count::Argument_count(unsigned given, unsigned expected) {
-  push_back("rwsh.argument_count");
-  /*push_back(given); push_back(expected);*/}
+Signal_argv::Signal_argv(Sig_type signal) {push_back(signal_names[signal]);}
 
-Missing_argfunction::Missing_argfunction() {
-  push_back("rwsh.missing_argfunction");}
-
-Arguments_to_argfunction::Arguments_to_argfunction(
-      const std::string& argfunction_type) {
-  push_back("rwsh.arguments_for_argfunction");
-  push_back(argfunction_type);}
-
-Bad_argfunction_style::Bad_argfunction_style(
-      const std::string& argfunction_style) {
-  push_back("rwsh.bad_argfunction_style");
-  push_back(argfunction_style);}
-
-Bad_if_nest::Bad_if_nest() {push_back("rwsh.bad_if_nest");}
-
-Divide_by_zero::Divide_by_zero(const std::string& value) {
-  push_back("rwsh.divide_by_zero");
+Signal_argv::Signal_argv(Sig_type signal, const std::string& value) {
+  push_back(signal_names[signal]);
   push_back(value);}
 
-Double_redirection::Double_redirection(const std::string& first, 
-      const std::string& second) {
-  push_back("rwsh.double_redirection");
-  push_back(first);
-  push_back(second);}
+Signal_argv::Signal_argv(Sig_type signal, const std::string& x,
+                         const std::string& y) {
+  push_back(signal_names[signal]);
+  push_back(x);
+  push_back(y);}
 
-Else_without_if::Else_without_if() {push_back("rwsh.else_without_if");}
-
-Excess_argfunction::Excess_argfunction() {
-  push_back("rwsh.excess_argfunction");}
+Signal_argv::Signal_argv(Sig_type signal, int x, int y) {
+  push_back(signal_names[signal]);
+  std::ostringstream x_str, y_str;
+  x_str <<x;
+  push_back(x_str.str());
+  y_str <<y;
+  push_back(y_str.str());}
 
 Failed_substitution::Failed_substitution(const std::string& function) {
   push_back("rwsh.failed_substitution");
   push_back(function);}
-
-File_open_failure::File_open_failure(const std::string& file_name) {
-  push_back("rwsh.file_open_failure");
-  push_back(file_name);}
-
-If_before_else::If_before_else() {push_back("rwsh.if_before_else");}
-
-Invalid_word_selection::Invalid_word_selection(
-      const std::string& selection) {
-  push_back("rwsh.invalid_word_selection");
-  push_back(selection);}
-
-Input_range::Input_range(const std::string& value) {
-  push_back("rwsh.input_range");
-  push_back(value);}
-
-Line_continuation::Line_continuation() {
-  push_back("rwsh.line_continuation");}
 
 Mismatched_brace::Mismatched_brace(const std::string& prefix) {
   push_back("rwsh.mismatched_brace");
@@ -169,26 +137,6 @@ Mismatched_brace::Mismatched_brace(const std::string& prefix) {
 Mismatched_parenthesis::Mismatched_parenthesis(const std::string& prefix) {
   push_back("rwsh.mismatched_parenthesis");
   push_back(prefix);}
-
-Multiple_argfunctions::Multiple_argfunctions() {
-  push_back("rwsh.multiple_argfunctions");}
-
-Not_soon_enough::Not_soon_enough(const std::string& argument) {
-  push_back("rwsh.not_soon_enough");
-  push_back(argument);}
-
-Not_executable::Not_executable(const std::string& file_name) {
-  push_back("rwsh.not_executable");
-  push_back(file_name);}
-
-Not_a_number::Not_a_number(const std::string& value) {
-  push_back("rwsh.not_a_number");
-  push_back(value);}
-
-Result_range::Result_range(const std::string& lhs, const std::string& rhs) {
-  push_back("rwsh.result_range");
-  push_back(lhs);
-  push_back(rhs);}
 
 Unclosed_brace::Unclosed_brace(const std::string& prefix) {
   push_back("rwsh.subprompt");
@@ -201,7 +149,7 @@ Unclosed_parenthesis::Unclosed_parenthesis(const std::string& prefix) {
 Undefined_variable::Undefined_variable(const std::string& variable) {
   push_back("rwsh.undefined_variable");
   push_back(variable);}
-  
+
 Old_argv::Old_argv(const Argv& src) : argc_v(src.size()) {
   focus = new char*[src.size()+1];
   copy_to_cstr(src.begin(), src.end(), focus);}

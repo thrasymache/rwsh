@@ -33,6 +33,32 @@ struct timezone Clock::no_timezone_v = {0, 0};
 int Executable::global_nesting(0);
 int Executable::caught_signal(0);
 bool Executable::in_signal_handler(false);
+std::string Argv::signal_names[] = {
+  "rwsh.argument_count",
+  "rwsh.arguments_for_argfunction",
+  "rwsh.bad_argfunction_style",
+  "rwsh.bad_if_nest", 
+  "rwsh.divide_by_zero",
+  "rwsh.double_redirection",
+  "rwsh.else_without_if",
+  "rwsh.excess_argfunction",
+  "rwsh.failed_substitution",
+  "rwsh.file_open_failure",
+  "rwsh.if_before_else",
+  "rwsh.input_range",
+  "rwsh.invalid_word_selection",
+  "rwsh.line_continuation",
+  "rwsh.mismatched_brace",
+  "rwsh.mismatched_parenthesis",
+  "rwsh.missing_argfunction",
+  "rwsh.multiple_argfunctions",
+  "rwsh.not_a_number",
+  "rwsh.not_executable",
+  "rwsh.not_soon_enough",
+  "rwsh.result_range",
+  "rwsh.unclosed_brace",
+  "rwsh.unclosed_parenthesis",
+  "rwsh.undefined_variable"};
 
 // static initializers without dependancies
 Clock rwsh_clock;

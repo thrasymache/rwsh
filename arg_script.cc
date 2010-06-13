@@ -117,7 +117,7 @@ std::string::size_type Arg_script::constructor(const std::string& src,
   if (is_argfunction_name(args.front().str()) &&  // argfunction_level handling
       args.front().str() != "rwsh.mapped_argfunction")
     if (args.size() != 1 || argfunction) 
-      throw Arguments_to_argfunction(args.front().str());
+      throw Signal_argv(Argv::Arguments_for_argfunction, args.front().str());
     else if (args.front().str() == "rwsh.unescaped_argfunction")
       argfunction_level = 1;
     else if (args.front().str() == "rwsh.argfunction") argfunction_level = 2;
@@ -129,12 +129,14 @@ std::string::size_type Arg_script::constructor(const std::string& src,
 void Arg_script::add_token(const std::string& src, unsigned max_soon) {
   switch (src[0]) {
     case '<':
-      if (!input.is_default()) throw Double_redirection(input.str(), src);
+      if (!input.is_default())
+        throw Signal_argv(Argv::Double_redirection, input.str(), src);
       else input = Rwsh_istream_p(new File_istream(src.substr(1)),
                                   false, false);
       break;
     case '>':
-      if (!output.is_default()) throw Double_redirection(output.str(), src);
+      if (!output.is_default())
+        throw Signal_argv(Argv::Double_redirection, output.str(), src);
       else output = Rwsh_ostream_p(new File_ostream(src.substr(1)),
                                    false, false);
       break;
@@ -148,7 +150,7 @@ std::string::size_type Arg_script::add_function(const std::string& src,
   if (style_start != f_start)
     args.push_back(Arg_spec(src, style_start, f_start, max_soon));
   else
-    if (argfunction) throw Multiple_argfunctions();
+    if (argfunction) throw Signal_argv(Argv::Multiple_argfunctions);
     else argfunction =
       new Function("rwsh.argfunction", src, f_start, max_soon+1);
   return f_start;}
