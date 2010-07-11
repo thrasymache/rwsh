@@ -1,5 +1,6 @@
 // Copyright (C) 2005-2008 Samuel Newbold
 
+#include <limits>
 #include <string>
 #include <sys/errno.h>
 
@@ -12,6 +13,8 @@ double my_strtod(const std::string& src) {
   double ret = strtold(focus, &endptr);
   if (!*focus || *endptr) throw E_nan();
   if (errno == ERANGE) {errno = 0; throw E_range();}
+  else if (ret == std::numeric_limits<double>::infinity() ||
+           ret == -std::numeric_limits<double>::infinity()) throw E_range();
   else if (errno) {errno = 0; throw E_generic();}
   else return ret;}
 
@@ -22,6 +25,8 @@ float my_strtof(const std::string& src) {
   float ret = strtof(focus, &endptr);
   if (!*focus || *endptr) throw E_nan();
   if (errno == ERANGE) {errno = 0; throw E_range();}
+  else if (ret == std::numeric_limits<float>::infinity() ||
+           ret == -std::numeric_limits<float>::infinity()) throw E_range();
   else if (errno) {errno = 0; throw E_generic();}
   else return ret;}
 

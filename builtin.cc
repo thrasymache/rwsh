@@ -8,6 +8,7 @@
 #include <fstream>
 #include <iterator>
 #include <list>
+#include <limits>
 #include <map>
 #include <stdio.h>
 #include <string>
