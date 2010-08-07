@@ -204,7 +204,6 @@ not_bin &{.echo $A}
 0
 $m $FOO {}
 rwsh.undefined_variable : command not found ( rwsh.undefined_variable FOO ) 
-rwsh.undefined_variable : command not found ( rwsh.undefined_variable FOO ) 
 
 -1
 $m {e $FOO}
@@ -228,7 +227,7 @@ $f rwsh.failed_substitution {e &&{.return 1}}
 0
 $m {e &&{.return 1}; e after}
 signal handler itself triggered signal
-&{.return 1} rwsh.failed_substitution
+rwsh.failed_substitution &{.return 1} rwsh.failed_substitution
 original call stack:
 &{.return 1} rwsh.mapped_argfunction m
 
@@ -2303,8 +2302,12 @@ $# rwsh.undefined_variable
 0
 $e $WRONG $WWRONG
 rwsh.undefined_variable : command not found ( rwsh.undefined_variable WRONG ) 
+
+-1
 $e &WWRONG
 rwsh.undefined_variable : command not found ( rwsh.undefined_variable WWRONG ) 
+
+-1
 $
 
 0

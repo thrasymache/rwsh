@@ -333,8 +333,7 @@ int b_selection_set(const Argv& argv) {
   if (argv.size() < 3) throw Signal_argv(Argv::Argument_count, argv.size()-1,2);
   if (argv.argfunction()) throw Signal_argv(Argv::Excess_argfunction);
   std::list<Entry_pattern> focus;
-  try {str_to_entry_pattern_list(argv.get_var(argv[1]), focus);}
-  catch (Undefined_variable error) {return -1;}
+  str_to_entry_pattern_list(argv.get_var(argv[1]), focus);
   std::string change = *(argv.begin()+2);
   for (Argv::const_iterator i = argv.begin()+3; i != argv.end(); ++i) 
     change += ' ' + *i;
@@ -352,8 +351,7 @@ int b_set(const Argv& argv) {
   for (Argv::const_iterator i = argv.begin()+2; i != argv.end()-1; ++i) 
     dest += *i + ' ';
   dest += argv.back();
-  try {return argv.set_var(argv[1], dest);}
-  catch (Undefined_variable) {return -1;}}
+  return argv.set_var(argv[1], dest);}
 
 // run the first argument as if it was a script, passing additional arguments
 // to that script
@@ -396,9 +394,7 @@ int b_stepwise(const Argv& argv) {
   for (Function::const_iterator i = f->script.begin(); 
        i != f->script.end(); ++i) {
     Argv body;
-    try {body = i->interpret(lookup);}
-    catch (Failed_substitution error) {break;}
-    catch (Undefined_variable error) {break;}
+    body = i->interpret(lookup);
     body.push_front("rwsh.mapped_argfunction");
     ret  = (*argv.argfunction())(body);
     if (Executable::unwind_stack()) {
@@ -420,8 +416,7 @@ int b_store_output(const Argv& argv) {
   int ret = (*argv.argfunction())(mapped_argv);
   if (Executable::unwind_stack()) return -1;
   if (ret) return ret;
-  try {argv.set_var(argv[1], text.value());}
-  catch (Undefined_variable) {return -1;}
+  argv.set_var(argv[1], text.value());
   return 0;}
 
 // return true if the two strings are the same
@@ -521,75 +516,70 @@ int b_usleep(const Argv& argv) {
 int b_var_add(const Argv& argv) {
   if (argv.size()!=3) throw Signal_argv(Argv::Argument_count, argv.size()-1, 2);
   if (argv.argfunction()) throw Signal_argv(Argv::Excess_argfunction);
-  try {
-    const std::string& var_str = argv.get_var(argv[1]);
-    double var_term;
-    try {var_term = my_strtod(var_str);}
-    catch (E_generic) {throw Signal_argv(Argv::Not_a_number, var_str);}
-    catch (E_nan) {throw Signal_argv(Argv::Not_a_number, var_str);}
-    catch (E_range) {throw Signal_argv(Argv::Input_range, var_str);}
-    double const_term;
-    try {const_term = my_strtod(argv[2]);}
-    catch (E_generic) {throw Signal_argv(Argv::Not_a_number, argv[2]);}
-    catch (E_nan) {throw Signal_argv(Argv::Not_a_number, argv[2]);}
-    catch (E_range) {throw Signal_argv(Argv::Input_range, argv[2]);}
-    double sum = var_term + const_term;
-    if (sum == 1e309 || sum == -1e309)
-      throw Signal_argv(Argv::Result_range, var_str, argv[2]);
-    std::ostringstream tmp; 
-    tmp <<sum;
-    argv.set_var(argv[1], tmp.str());
-    return 0;}
-  catch (Undefined_variable error) {return -1;}}
+  const std::string& var_str = argv.get_var(argv[1]);
+  double var_term;
+  try {var_term = my_strtod(var_str);}
+  catch (E_generic) {throw Signal_argv(Argv::Not_a_number, var_str);}
+  catch (E_nan) {throw Signal_argv(Argv::Not_a_number, var_str);}
+  catch (E_range) {throw Signal_argv(Argv::Input_range, var_str);}
+  double const_term;
+  try {const_term = my_strtod(argv[2]);}
+  catch (E_generic) {throw Signal_argv(Argv::Not_a_number, argv[2]);}
+  catch (E_nan) {throw Signal_argv(Argv::Not_a_number, argv[2]);}
+  catch (E_range) {throw Signal_argv(Argv::Input_range, argv[2]);}
+  double sum = var_term + const_term;
+  if (sum == std::numeric_limits<double>::infinity() ||
+      sum == -std::numeric_limits<double>::infinity())
+    throw Signal_argv(Argv::Result_range, var_str, argv[2]);
+  std::ostringstream tmp; 
+  tmp <<sum;
+  argv.set_var(argv[1], tmp.str());
+  return 0;}
 
 int b_var_subtract(const Argv& argv) {
   if (argv.size()!=3) throw Signal_argv(Argv::Argument_count, argv.size()-1, 2);
   if (argv.argfunction()) throw Signal_argv(Argv::Excess_argfunction);
-  try {
-    const std::string& var_str = argv.get_var(argv[1]);
-    double var_term;
-    try {var_term = my_strtod(var_str);}
-    catch (E_generic) {throw Signal_argv(Argv::Not_a_number, var_str);}
-    catch (E_nan) {throw Signal_argv(Argv::Not_a_number, var_str);}
-    catch (E_range) {throw Signal_argv(Argv::Input_range, var_str);}
-    double const_term;
-    try {const_term = my_strtod(argv[2]);}
-    catch (E_generic) {throw Signal_argv(Argv::Not_a_number, argv[2]);}
-    catch (E_nan) {throw Signal_argv(Argv::Not_a_number, argv[2]);}
-    catch (E_range) {throw Signal_argv(Argv::Input_range, argv[2]);}
-    double difference = var_term - const_term;
-    if (difference == 1e309 || difference == -1e309)
-      throw Signal_argv(Argv::Result_range, var_str, argv[2]);
-    std::ostringstream tmp; 
-    tmp <<difference;
-    argv.set_var(argv[1], tmp.str());
-    return 0;}
-  catch (Undefined_variable error) {return -1;}}
+  const std::string& var_str = argv.get_var(argv[1]);
+  double var_term;
+  try {var_term = my_strtod(var_str);}
+  catch (E_generic) {throw Signal_argv(Argv::Not_a_number, var_str);}
+  catch (E_nan) {throw Signal_argv(Argv::Not_a_number, var_str);}
+  catch (E_range) {throw Signal_argv(Argv::Input_range, var_str);}
+  double const_term;
+  try {const_term = my_strtod(argv[2]);}
+  catch (E_generic) {throw Signal_argv(Argv::Not_a_number, argv[2]);}
+  catch (E_nan) {throw Signal_argv(Argv::Not_a_number, argv[2]);}
+  catch (E_range) {throw Signal_argv(Argv::Input_range, argv[2]);}
+  double difference = var_term - const_term;
+  if (difference == 1e309 || difference == -1e309)
+    throw Signal_argv(Argv::Result_range, var_str, argv[2]);
+  std::ostringstream tmp; 
+  tmp <<difference;
+  argv.set_var(argv[1], tmp.str());
+  return 0;}
 
 int b_var_divide(const Argv& argv) {
   if (argv.size()!=3) throw Signal_argv(Argv::Argument_count, argv.size()-1, 2);
   if (argv.argfunction()) throw Signal_argv(Argv::Excess_argfunction);
-  try {
-    const std::string& var_str = argv.get_var(argv[1]);
-    double var_term;
-    try {var_term = my_strtod(var_str);}
-    catch (E_generic) {throw Signal_argv(Argv::Not_a_number, var_str);}
-    catch (E_nan) {throw Signal_argv(Argv::Not_a_number, var_str);}
-    catch (E_range) {throw Signal_argv(Argv::Input_range, var_str);}
-    double const_term;
-    try {const_term = my_strtod(argv[2]);}
-    catch (E_generic) {throw Signal_argv(Argv::Not_a_number, argv[2]);}
-    catch (E_nan) {throw Signal_argv(Argv::Not_a_number, argv[2]);}
-    catch (E_range) {throw Signal_argv(Argv::Input_range, argv[2]);}
-    if (const_term == 0) throw Signal_argv(Argv::Divide_by_zero, var_str);
-    double quotient = var_term / const_term;
-    if (quotient == 0 && var_term != 0)
-      throw Signal_argv(Argv::Result_range, var_str, argv[2]);
-    std::ostringstream tmp; 
-    tmp <<quotient;
-    argv.set_var(argv[1], tmp.str());
-    return 0;}
-  catch (Undefined_variable error) {return -1;}}
+  const std::string& var_str = argv.get_var(argv[1]);
+  double var_term;
+  try {var_term = my_strtod(var_str);}
+  catch (E_generic) {throw Signal_argv(Argv::Not_a_number, var_str);}
+  catch (E_nan) {throw Signal_argv(Argv::Not_a_number, var_str);}
+  catch (E_range) {throw Signal_argv(Argv::Input_range, var_str);}
+  double const_term;
+  try {const_term = my_strtod(argv[2]);}
+  catch (E_generic) {throw Signal_argv(Argv::Not_a_number, argv[2]);}
+  catch (E_nan) {throw Signal_argv(Argv::Not_a_number, argv[2]);}
+  catch (E_range) {throw Signal_argv(Argv::Input_range, argv[2]);}
+  if (const_term == 0) throw Signal_argv(Argv::Divide_by_zero, var_str);
+  double quotient = var_term / const_term;
+  if (quotient == 0 && var_term != 0)
+    throw Signal_argv(Argv::Result_range, var_str, argv[2]);
+  std::ostringstream tmp; 
+  tmp <<quotient;
+  argv.set_var(argv[1], tmp.str());
+  return 0;}
 
 int b_var_exists(const Argv& argv) {
   if (argv.size()!=2) throw Signal_argv(Argv::Argument_count, argv.size()-1, 1);

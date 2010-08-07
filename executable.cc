@@ -51,8 +51,6 @@ void Executable::signal_handler(void) {
   extern Variable_map* vars;
   Argv call_stack_copy;                                    //need for a copy: 
   switch (caught_signal) {
-    case SIGSUB: call_stack_copy.push_back("rwsh.failed_substitution"); break;
-    case SIGVAR: call_stack_copy.push_back("rwsh.undefined_variable"); break;
     case SIGEXNEST: call_stack_copy.push_back("rwsh.excessive_nesting"); break;
     case SIGHUP: call_stack_copy.push_back("rwsh.sighup"); break;
     case SIGINT: call_stack_copy.push_back("rwsh.sigint"); break;

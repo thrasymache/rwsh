@@ -60,10 +60,8 @@ std::string Argv::get_var(const std::string& key) const {
               case '8': case '9': case '0': {
       int n = std::atoi(key.c_str());
       if (size() > n) return (*this)[n];
-      else return std::string();} //{
-        //Executable::caught_signal = Executable::SIGVAR;
-        //Executable::call_stack.push_back(key);
-        //throw Undefined_variable(key);}}
+      else return std::string();}
+        //throw Signal_argv(Argv::Undefined_variable, key);}
     default: return var_map->get(key);}}
 
 int Argv::set_var(const std::string& key, const std::string& value) const {
@@ -126,10 +124,6 @@ Signal_argv::Signal_argv(Sig_type signal, int x, int y) {
   y_str <<y;
   push_back(y_str.str());}
 
-Failed_substitution::Failed_substitution(const std::string& function) {
-  push_back("rwsh.failed_substitution");
-  push_back(function);}
-
 Mismatched_brace::Mismatched_brace(const std::string& prefix) {
   push_back("rwsh.mismatched_brace");
   push_back(prefix);}
@@ -145,10 +139,6 @@ Unclosed_brace::Unclosed_brace(const std::string& prefix) {
 Unclosed_parenthesis::Unclosed_parenthesis(const std::string& prefix) {
   push_back("rwsh.subprompt");
   push_back(prefix);}
-
-Undefined_variable::Undefined_variable(const std::string& variable) {
-  push_back("rwsh.undefined_variable");
-  push_back(variable);}
 
 Old_argv::Old_argv(const Argv& src) : argc_v(src.size()) {
   focus = new char*[src.size()+1];

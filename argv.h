@@ -104,9 +104,6 @@ struct Signal_argv : public Argv {
   Signal_argv(Sig_type signal, const std::string& x, const std::string& y);
   Signal_argv(Sig_type signal, int x, int y);};
 
-struct Failed_substitution : public Argv {
-  Failed_substitution(const std::string& function);};
-
 struct Mismatched_brace : public Argv {
   Mismatched_brace(const std::string& prefix);};
 
@@ -118,9 +115,6 @@ struct Unclosed_brace : public Argv {
 
 struct Unclosed_parenthesis : public Argv {
   Unclosed_parenthesis(const std::string& prefix);};
-
-struct Undefined_variable : public Argv {
-  Undefined_variable(const std::string& variable);};
 
 class Old_argv {
   char** focus;

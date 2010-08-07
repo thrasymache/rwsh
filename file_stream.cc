@@ -81,7 +81,7 @@ Rwsh_ostream& File_ostream::operator<<(double r) {
 
 Rwsh_ostream& File_ostream::operator<<(struct timeval r) {
   if (!dest) open();
-  if (fprintf(dest, "%d.%06d", r.tv_sec, r.tv_usec) < 0)
+  if (fprintf(dest, "%ld.%06d", r.tv_sec, r.tv_usec) < 0)
     std::cerr <<"failed fprintf with errno " <<errno <<std::endl;
   return *this;}
   

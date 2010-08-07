@@ -38,18 +38,12 @@ const std::string& Variable_map::get(const std::string& key) {
     tmp <<dollar_question;
     (*this)["?"] = tmp.str();}
   std::map<std::string, std::string>::const_iterator i = find(key);
-  if (i == end()) {
-    Executable::caught_signal = Executable::SIGVAR;
-    Executable::call_stack.push_back(key);
-    throw Undefined_variable(key);}
+  if (i == end()) throw Signal_argv(Argv::Undefined_variable, key);
   else return i->second;}
 
 int Variable_map::set(const std::string& key, const std::string& value) {
   std::map<std::string, std::string>::iterator i = find(key);
-  if (i == end()) {
-    Executable::caught_signal = Executable::SIGVAR;
-    Executable::call_stack.push_back(key);
-    throw Undefined_variable(key);}
+  if (i == end()) throw Signal_argv(Argv::Undefined_variable, key);
   else {
     i->second = value;
     if (key == "MAX_NESTING") {

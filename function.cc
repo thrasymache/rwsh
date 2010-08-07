@@ -67,6 +67,7 @@ Function* Function::apply(const Argv& argv, unsigned nesting) const {
   
 // run the given function
 int Function::operator() (const Argv& src_argv) { 
+try {
   if (increment_nesting(src_argv)) return dollar_question;
   struct timeval start_time;
   gettimeofday(&start_time, rwsh_clock.no_timezone);
@@ -75,8 +76,8 @@ int Function::operator() (const Argv& src_argv) {
   for (const_iterator i = script.begin(); i != script.end(); ++i) {
     Argv dest_argv;
     try {dest_argv = i->interpret(src_argv);}
-    catch (Failed_substitution error) {break;}
-    catch (Undefined_variable error) {break;}
+    catch (Signal_argv error) {throw;}
+    catch (Argv error) {break;}
     ret = executable_map.run(dest_argv);
     if (unwind_stack()) break;}
   last_return = ret;
@@ -86,6 +87,11 @@ int Function::operator() (const Argv& src_argv) {
   Clock::timeval_add(total_execution_time_v, last_execution_time_v);
   if (decrement_nesting(src_argv)) ret = dollar_question;
   return ret;}
+  catch (Signal_argv error) {
+    caught_signal = SIGRWSH;
+    std::copy(error.begin(), error.end(), std::back_inserter(call_stack));
+    decrement_nesting(src_argv);
+    return -1;}}
 
 Function* Function::promote_soons(unsigned nesting) const {
   if (!this) return 0;

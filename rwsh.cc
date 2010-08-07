@@ -33,7 +33,7 @@ struct timezone Clock::no_timezone_v = {0, 0};
 int Executable::global_nesting(0);
 int Executable::caught_signal(0);
 bool Executable::in_signal_handler(false);
-std::string Argv::signal_names[] = {
+std::string Argv::signal_names[Argv::Signal_count] = {
   "rwsh.argument_count",
   "rwsh.arguments_for_argfunction",
   "rwsh.bad_argfunction_style",
@@ -106,7 +106,6 @@ int main(int argc, char *argv[]) {
     try {
       if (!(command_stream >> script)) break;
       command = script.interpret(script.argv());}
-    catch (Failed_substitution exception) {command.push_back(".nop");}
     catch (Argv exception) {command = exception;}
     executable_map.run_if_exists("rwsh.before_command", command);
     if (!executable_map.run_if_exists("rwsh.run_logic", command))
