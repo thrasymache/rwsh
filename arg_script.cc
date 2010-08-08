@@ -58,7 +58,8 @@ std::string::size_type parse_token(const std::string& src,
     token_start = add_quote(src, token_start, max_soon, dest);
     return src.find_first_not_of(token_separators, token_start+1);}
   else if (src[token_start] == ')')
-    throw Mismatched_parenthesis(src.substr(0, token_start+1));
+    throw Signal_argv(Argv::Mismatched_parenthesis,
+                      src.substr(0, token_start+1));
   std::string::size_type split = src.find_first_of(all_separators, token_start),
                          point = token_start;
   std::string token;
@@ -96,7 +97,7 @@ Arg_script::Arg_script(const std::string& src, unsigned max_soon) :
   point = constructor(src, point, max_soon);
   if (point < src.length())
     if (src[point] == '}' || src[point] == ';')
-      throw Mismatched_brace(src.substr(0, point+1));
+      throw Signal_argv(Argv::Mismatched_brace, src.substr(0, point+1));
     else abort();}
 
 Arg_script::Arg_script(const std::string& src,

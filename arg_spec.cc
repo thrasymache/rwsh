@@ -40,13 +40,13 @@ Out tokenize_words(const std::string& in, Out res) {
       ++nesting;}
     else if (in[i] == ')')
       if (nesting) --nesting;
-      else throw Mismatched_parenthesis(in.substr(0, i+1));
+      else throw Signal_argv(Argv::Mismatched_parenthesis, in.substr(0, i+1));
     else if (!nesting && isspace(in[i])) {
       if (in[i-1] == ')') *res++ = in.substr(token_start, i-token_start-1);
       else *res++ = in.substr(token_start, i-token_start);
       while (i<in.length() && isspace(in[i])) ++i;
       token_start = i--;}
-  if (nesting) throw Mismatched_parenthesis(in);
+  if (nesting) throw Signal_argv(Argv::Mismatched_parenthesis, in);
   if (token_start != i) *res = in.substr(token_start, i-token_start);
   return res;}
 

@@ -40,3 +40,7 @@ class Function : public Executable {
   typedef std::vector<Arg_script>::pointer pointer;
   typedef std::vector<Arg_script>::const_pointer const_pointer; };
 
+struct Unclosed_brace {
+  std::string prefix;
+  Unclosed_brace(const std::string& prefix_i) : prefix(prefix_i) {}};
+

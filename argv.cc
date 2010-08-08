@@ -124,22 +124,6 @@ Signal_argv::Signal_argv(Sig_type signal, int x, int y) {
   y_str <<y;
   push_back(y_str.str());}
 
-Mismatched_brace::Mismatched_brace(const std::string& prefix) {
-  push_back("rwsh.mismatched_brace");
-  push_back(prefix);}
-
-Mismatched_parenthesis::Mismatched_parenthesis(const std::string& prefix) {
-  push_back("rwsh.mismatched_parenthesis");
-  push_back(prefix);}
-
-Unclosed_brace::Unclosed_brace(const std::string& prefix) {
-  push_back("rwsh.subprompt");
-  push_back(prefix);}
-
-Unclosed_parenthesis::Unclosed_parenthesis(const std::string& prefix) {
-  push_back("rwsh.subprompt");
-  push_back(prefix);}
-
 Old_argv::Old_argv(const Argv& src) : argc_v(src.size()) {
   focus = new char*[src.size()+1];
   copy_to_cstr(src.begin(), src.end(), focus);}

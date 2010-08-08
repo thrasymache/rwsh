@@ -46,12 +46,12 @@ Function::Function(const std::string& name_i, const std::string& src) :
     if (point != src.length())
       throw "function with text following closing brace " + name_i + "\n" +
           src.substr(point) + "\n";}
-  catch (Unclosed_brace argv) {
+  catch (Unclosed_brace error) {
     throw "unclosed brace on construction of function " + name_i + "\n" +
-      argv[3] + "\n";}
-  catch (Unclosed_parenthesis argv) {
+      error.prefix + "\n";}
+  catch (Unclosed_parenthesis error) {
     throw "unclosed parenthesis on construction of function " + name_i + "\n" +
-      argv[3] + "\n";}}
+      error.prefix + "\n";}}
 
 // generate a new function by unescaping argument functions and replacing
 // unescaped_argfunction with the argument function in argv
@@ -77,7 +77,6 @@ try {
     Argv dest_argv;
     try {dest_argv = i->interpret(src_argv);}
     catch (Signal_argv error) {throw;}
-    catch (Argv error) {break;}
     ret = executable_map.run(dest_argv);
     if (unwind_stack()) break;}
   last_return = ret;
@@ -88,7 +87,7 @@ try {
   if (decrement_nesting(src_argv)) ret = dollar_question;
   return ret;}
   catch (Signal_argv error) {
-    caught_signal = SIGRWSH;
+    caught_signal = true;
     std::copy(error.begin(), error.end(), std::back_inserter(call_stack));
     decrement_nesting(src_argv);
     return -1;}}

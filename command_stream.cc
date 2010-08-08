@@ -20,6 +20,7 @@
 #include "command_stream.h"
 #include "executable.h"
 #include "executable_map.h"
+#include "function.h"
 #include "variable_map.h"
 
 Command_stream::Command_stream(std::istream& s, bool subprompt_i) :

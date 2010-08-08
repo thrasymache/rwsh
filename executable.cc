@@ -20,8 +20,25 @@
 #include "plumber.h"
 #include "variable_map.h"
 
+namespace {
+int unix2rwsh(int sig) {
+  switch (sig) {
+    case SIGHUP: return Argv::Sighup;
+    case SIGINT: return Argv::Sigint;
+    case SIGQUIT: return Argv::Sigquit;
+    case SIGPIPE: return Argv::Sigpipe;
+    case SIGTERM: return Argv::Sigterm;
+    case SIGTSTP: return Argv::Sigtstp;
+    case SIGCONT: return Argv::Sigcont;
+    case SIGCHLD: return Argv::Sigchld;
+    case SIGUSR1: return Argv::Sigusr1;
+    case SIGUSR2: return Argv::Sigusr2;
+    default: return Argv::Sigunknown;}}}
+
 bool Executable::increment_nesting(const Argv& argv) {
-  if (global_nesting > argv.max_nesting()+1) caught_signal = SIGEXNEST;
+  if (global_nesting > argv.max_nesting()+1) {
+    caught_signal = true;
+    call_stack.push_back("rwsh.excessive_nesting");}
   if (unwind_stack()) return true;
   else {
     ++executable_nesting;
@@ -37,6 +54,10 @@ bool Executable::decrement_nesting(const Argv& argv) {
   if (del_on_term && !executable_nesting) delete this;
   return unwind_stack();}
 
+void Executable::unix_signal_handler(int sig) {
+  Executable::caught_signal = true;
+  call_stack.push_back(Argv::signal_names[unix2rwsh(sig)]);}
+
 // code to call rwsh.excessive_nesting, separated out of operator() for clarity.
 // The requirements for stack unwinding to work properly are as 
 // follows: All things derived from Executable must call increment_nesting
@@ -50,27 +71,11 @@ bool Executable::decrement_nesting(const Argv& argv) {
 void Executable::signal_handler(void) {
   extern Variable_map* vars;
   Argv call_stack_copy;                                    //need for a copy: 
-  switch (caught_signal) {
-    case SIGEXNEST: call_stack_copy.push_back("rwsh.excessive_nesting"); break;
-    case SIGHUP: call_stack_copy.push_back("rwsh.sighup"); break;
-    case SIGINT: call_stack_copy.push_back("rwsh.sigint"); break;
-    case SIGQUIT: call_stack_copy.push_back("rwsh.sigquit"); break;
-    case SIGPIPE: call_stack_copy.push_back("rwsh.sigpipe"); break;
-    case SIGTERM: call_stack_copy.push_back("rwsh.sigterm"); break;
-    case SIGTSTP: call_stack_copy.push_back("rwsh.sigtstp"); break;
-    case SIGCONT: call_stack_copy.push_back("rwsh.sigcont"); break;
-    case SIGCHLD: call_stack_copy.push_back("rwsh.sigchld"); break;
-    case SIGUSR1: call_stack_copy.push_back("rwsh.sigusr1"); break;
-    case SIGUSR2: call_stack_copy.push_back("rwsh.sigusr2"); break;
-    case SIGRWSH: break;
-    default: 
-      call_stack_copy.push_back(".echo");
-      call_stack_copy.push_back("caught unknown signal in");}
   std::copy(call_stack.begin(), call_stack.end(), 
             std::back_inserter(call_stack_copy));
   call_stack = Argv();
   in_signal_handler = true;
-  caught_signal = SIGNONE;
+  caught_signal = false;
   vars->unset("IF_TEST");
   executable_map.run(call_stack_copy);
   if (unwind_stack()) {
@@ -84,7 +89,7 @@ void Executable::signal_handler(void) {
     default_output.flush();
     dollar_question = -1;
     call_stack = Argv();
-    caught_signal = SIGNONE;
+    caught_signal = false;
     vars->unset("IF_TEST");}
   in_signal_handler = false;}
 // need for a copy: if the internal function that runs for this signal itself
@@ -128,7 +133,7 @@ int Binary::operator() (const Argv& argv_i) {
     if (decrement_nesting(argv_i)) ret = dollar_question;
     return ret;}
   catch (Signal_argv error) {
-    caught_signal = SIGRWSH;
+    caught_signal = true;
     std::copy(error.begin(), error.end(), std::back_inserter(call_stack));
     decrement_nesting(argv_i);
     return -1;}}
@@ -152,7 +157,7 @@ int Builtin::operator() (const Argv& argv) {
     if (decrement_nesting(argv)) ret = dollar_question;
     return ret;}
   catch (Signal_argv error) {
-    caught_signal = SIGRWSH;
+    caught_signal = true;
     std::copy(error.begin(), error.end(), std::back_inserter(call_stack));
     decrement_nesting(argv);
     return -1;}}

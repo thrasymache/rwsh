@@ -31,7 +31,7 @@
 // static initializers of basic types
 struct timezone Clock::no_timezone_v = {0, 0};
 int Executable::global_nesting(0);
-int Executable::caught_signal(0);
+bool Executable::caught_signal(false);
 bool Executable::in_signal_handler(false);
 std::string Argv::signal_names[Argv::Signal_count] = {
   "rwsh.argument_count",
@@ -56,9 +56,18 @@ std::string Argv::signal_names[Argv::Signal_count] = {
   "rwsh.not_executable",
   "rwsh.not_soon_enough",
   "rwsh.result_range",
-  "rwsh.unclosed_brace",
-  "rwsh.unclosed_parenthesis",
-  "rwsh.undefined_variable"};
+  "rwsh.undefined_variable",
+  "rwsh.sighup",
+  "rwsh.sigint",
+  "rwsh.sigquit",
+  "rwsh.sigpipe",
+  "rwsh.sigterm",
+  "rwsh.sigtstp",
+  "rwsh.sigcont",
+  "rwsh.sigchld",
+  "rwsh.sigusr1",
+  "rwsh.sigusr2",
+  "rwsh.sigunknown"};
 
 // static initializers without dependancies
 Clock rwsh_clock;
@@ -78,17 +87,15 @@ Argv Executable::call_stack;
 Variable_map* Argv::var_map = vars;
 
 namespace {
-void signal_starter(int sig) {Executable::caught_signal = sig;}
-
 void register_signals(void) {
-  signal(SIGHUP, signal_starter);
-  signal(SIGINT, signal_starter);
-  signal(SIGQUIT, signal_starter);
-  signal(SIGPIPE, signal_starter);
-  signal(SIGTERM, signal_starter);
-  signal(SIGTSTP, signal_starter);
-  signal(SIGUSR1, signal_starter);
-  signal(SIGUSR2, signal_starter);} } // end unnamed namespace
+  signal(SIGHUP, Executable::unix_signal_handler);
+  signal(SIGINT, Executable::unix_signal_handler);
+  signal(SIGQUIT, Executable::unix_signal_handler);
+  signal(SIGPIPE, Executable::unix_signal_handler);
+  signal(SIGTERM, Executable::unix_signal_handler);
+  signal(SIGTSTP, Executable::unix_signal_handler);
+  signal(SIGUSR1, Executable::unix_signal_handler);
+  signal(SIGUSR2, Executable::unix_signal_handler);} } // end unnamed namespace
 
 int main(int argc, char *argv[]) {
   Argv external_command_line(&argv[0], &argv[argc], 0, 
@@ -106,7 +113,7 @@ int main(int argc, char *argv[]) {
     try {
       if (!(command_stream >> script)) break;
       command = script.interpret(script.argv());}
-    catch (Argv exception) {command = exception;}
+    catch (Signal_argv exception) {command = exception;}
     executable_map.run_if_exists("rwsh.before_command", command);
     if (!executable_map.run_if_exists("rwsh.run_logic", command))
        executable_map.run(command);

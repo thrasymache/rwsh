@@ -26,7 +26,7 @@ class fd_handler :
     buffer(buffer_i), buffer_size(buffer_size_i) {};
   bool operator()(const std::pair<int, Rwsh_ostream*>& focus) {
     int n = read(focus.first, buffer, buffer_size);
-    if (n <= 0 || Executable::caught_signal) {
+    if (n <= 0 || Executable::unwind_stack()) {
       int ret = ::close(focus.first);
       if (ret) std::cerr <<"failing close " <<focus.first <<"returned " <<ret 
                          <<std::endl;
@@ -60,7 +60,7 @@ void Plumber::wait(int *ret) {
                                         output_handlers.end(),
                                         fd_handler(buffer, sizeof buffer)));
   output_handlers.clear();
-  if (Executable::caught_signal) return;
+  if (Executable::unwind_stack()) return;
   struct timeval before, after;
   gettimeofday(&before, rwsh_clock.no_timezone);
   int wait_return = ::wait(ret);

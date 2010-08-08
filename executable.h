@@ -12,6 +12,7 @@ class Executable {
   unsigned execution_count_v;
   struct timeval last_execution_time_v;
   struct timeval total_execution_time_v;
+  static bool caught_signal;
 
  public:
   bool del_on_term;
@@ -30,17 +31,12 @@ class Executable {
     return total_execution_time_v;};
   bool is_running(void) const {return !!executable_nesting;};
 
-  static const int SIGNONE     =  0;
-  static const int SIGEXNEST   = -1;
-  static const int SIGVAR      = -2;
-  static const int SIGSUB      = -4;
-  static const int SIGRWSH  = -16;
   bool increment_nesting(const Argv& argv);
   bool decrement_nesting(const Argv& argv);
-  static int caught_signal;
   static Argv call_stack;
-  static bool unwind_stack(void) {return caught_signal != SIGNONE;}
+  static bool unwind_stack(void) {return caught_signal;}
   static void signal_handler(void);
+  static void unix_signal_handler(int sig);
 
   virtual int operator() (const Argv& argv) = 0;
   virtual const std::string& name(void) const = 0;

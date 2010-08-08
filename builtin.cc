@@ -374,7 +374,7 @@ int b_source(const Argv& argv) {
     try {
       if (!(command_stream >> script)) break;
       command = script.interpret(script_arg);}
-    catch (Argv exception) {command = exception;}
+    catch (Signal_argv exception) {command = exception;}
     ret = executable_map.run(command);}
   return ret;}
 

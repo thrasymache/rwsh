@@ -25,7 +25,7 @@ builtin.o: arg_spec.h rwsh_stream.h argv.h argv_star_var.cc arg_script.h \
 	function.h plumber.cc read_dir.cc selection.h tokenize.cc variable_map.h
 clock.o: clock.h
 command_stream.o: arg_spec.h rwsh_stream.h argv.h arg_script.h clock.h \
-	command_stream.h executable.h executable_map.h variable_map.h
+	command_stream.h executable.h executable_map.h function.h variable_map.h
 default_stream.o: rwsh_stream.h default_stream.h
 executable.o: rwsh_stream.h argv.h builtin.h clock.o executable.h \
 	executable_map.h plumber.h variable_map.h

@@ -48,9 +48,18 @@ class Argv : private std::vector<std::string> {
     Not_executable,
     Not_soon_enough,
     Result_range,
-    Unclosed_brace,
-    Unclosed_parenthesis,
     Undefined_variable,
+    Sighup,
+    Sigint,
+    Sigquit,
+    Sigpipe,
+    Sigterm,
+    Sigtstp,
+    Sigcont,
+    Sigchld,
+    Sigusr1,
+    Sigusr2,
+    Sigunknown,
     Signal_count};
 
   static std::string signal_names[];
@@ -103,18 +112,6 @@ struct Signal_argv : public Argv {
   Signal_argv(Sig_type signal, const std::string& value);
   Signal_argv(Sig_type signal, const std::string& x, const std::string& y);
   Signal_argv(Sig_type signal, int x, int y);};
-
-struct Mismatched_brace : public Argv {
-  Mismatched_brace(const std::string& prefix);};
-
-struct Mismatched_parenthesis : public Argv {
-  Mismatched_parenthesis(const std::string& prefix);};
-
-struct Unclosed_brace : public Argv {
-  Unclosed_brace(const std::string& prefix);};
-
-struct Unclosed_parenthesis : public Argv {
-  Unclosed_parenthesis(const std::string& prefix);};
 
 class Old_argv {
   char** focus;

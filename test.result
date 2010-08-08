@@ -2267,7 +2267,7 @@ $f rwsh.excessive_nesting {h}
 0
 $g
 signal handler itself triggered signal
-g h g h g h rwsh.excessive_nesting
+rwsh.excessive_nesting g h g h g h rwsh.excessive_nesting
 original call stack:
 g h g h g h g
 

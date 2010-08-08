@@ -31,6 +31,10 @@ class Arg_script {
   void promote_soons(unsigned);
   bool is_argfunction(void) const {return argfunction_level == 1;}; };
 
+struct Unclosed_parenthesis {
+  std::string prefix;
+  Unclosed_parenthesis(const std::string& prefix_i) : prefix(prefix_i) {}};
+
 bool is_argfunction_name(const std::string& focus);
 bool is_binary_name(const std::string& focus);
 bool is_builtin_name(const std::string& focus);
