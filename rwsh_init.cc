@@ -61,6 +61,7 @@ void internal_init(void) {
           "rwsh.prompt rwsh.raw_command rwsh.run_logic "
           "rwsh.shutdown rwsh.vars}; "
       ".else {.echo wrong argument count; .return -1}}"));
+  executable_map.set(new Builtin(".internal_functions", b_internal_functions));
   executable_map.set(new Function(".internal_vars", 
       "{.if .test_number_equal $# 1 {"
           ".echo FIGNORE IF_TEST MAX_NESTING}; "

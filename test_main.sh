@@ -293,12 +293,15 @@ e $x
 .if .return 0 {.else_if .return 0 {e nested syntax; .return 23}}
 .else {e already tested; .return 24}
 
-# .internal_errors .internal_features .internal_vars
+# .internal_errors .internal_features .internal_functions .internal_vars
 .internal_errors 1
 .internal_features 1
+.internal_functions 1
+.internal_functions {excess argfunc}
 .internal_vars 1
 .internal_errors
 .internal_features
+.internal_functions
 .internal_vars
 
 # .is_default_input .is_default_output .is_default_error

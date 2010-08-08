@@ -10,7 +10,7 @@ template<class Out> int read_dir(const std::string& filename, Out dest) {
   DIR *src = opendir(file.c_str());
   if (!src) {
     Argv error_argv;
-    error_argv.push_back("rwsh.unreadable_dir");
+    error_argv.push_back(Argv::signal_names[Argv::Unreadable_dir]);
     error_argv.push_back(file);
     executable_map.run(error_argv);
     return 2;}

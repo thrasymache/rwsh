@@ -38,10 +38,13 @@ std::string Argv::signal_names[Argv::Signal_count] = {
   "rwsh.arguments_for_argfunction",
   "rwsh.bad_argfunction_style",
   "rwsh.bad_if_nest", 
+  "rwsh.binary_not_found",
   "rwsh.divide_by_zero",
   "rwsh.double_redirection",
   "rwsh.else_without_if",
   "rwsh.excess_argfunction",
+  "rwsh.excessive_nesting",
+  "rwsh.executable_not_found",
   "rwsh.failed_substitution",
   "rwsh.file_open_failure",
   "rwsh.if_before_else",
@@ -56,7 +59,7 @@ std::string Argv::signal_names[Argv::Signal_count] = {
   "rwsh.not_executable",
   "rwsh.not_soon_enough",
   "rwsh.result_range",
-  "rwsh.undefined_variable",
+  "rwsh.selection_not_found",
   "rwsh.sighup",
   "rwsh.sigint",
   "rwsh.sigquit",
@@ -67,7 +70,9 @@ std::string Argv::signal_names[Argv::Signal_count] = {
   "rwsh.sigchld",
   "rwsh.sigusr1",
   "rwsh.sigusr2",
-  "rwsh.sigunknown"};
+  "rwsh.sigunknown",
+  "rwsh.undefined_variable",
+  "rwsh.unreadable_dir"};
 
 // static initializers without dependancies
 Clock rwsh_clock;

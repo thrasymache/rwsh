@@ -285,6 +285,14 @@ int b_importenv_preserve(const Argv& argv) {
       argv.global_var(src.substr(0, div), src.substr(div+1));}
   return 0;}
 
+// prints a list of all internal functions
+int b_internal_functions(const Argv& argv) {
+  if (argv.size()!=1) throw Signal_argv(Argv::Argument_count, argv.size()-1, 0);
+  if (argv.argfunction()) throw Signal_argv(Argv::Excess_argfunction);
+  for (int i = 0; i < Argv::Signal_count; ++i)
+    argv.output <<Argv::signal_names[i] <<" ";
+  return 0;}
+
 // returns one if the input stream is not the default_stream
 int b_is_default_input(const Argv& argv) {
   if(argv.size() != 1) throw Signal_argv(Argv::Argument_count, argv.size()-1,0);

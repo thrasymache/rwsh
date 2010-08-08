@@ -16,6 +16,7 @@ int b_function(const Argv& argv);
 int b_global(const Argv& argv);
 int b_importenv_overwrite(const Argv& argv);
 int b_importenv_preserve(const Argv& argv);
+int b_internal_functions(const Argv& argv);
 int b_is_default_input(const Argv& argv);
 int b_is_default_output(const Argv& argv);
 int b_is_default_error(const Argv& argv);

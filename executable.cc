@@ -37,8 +37,9 @@ int unix2rwsh(int sig) {
 
 bool Executable::increment_nesting(const Argv& argv) {
   if (global_nesting > argv.max_nesting()+1) {
+    //throw Signal_argv(Argv::Excessive_nesting);}
     caught_signal = true;
-    call_stack.push_back("rwsh.excessive_nesting");}
+    call_stack.push_back(Argv::signal_names[Argv::Excessive_nesting]);}
   if (unwind_stack()) return true;
   else {
     ++executable_nesting;
@@ -120,7 +121,7 @@ int Binary::operator() (const Argv& argv_i) {
       char **env = argv_i.export_env();
       int ret = execve(implementation.c_str(), argv.argv(), env);
       Argv error_argv;
-      error_argv.push_back("rwsh.binary_not_found");
+      error_argv.push_back(Argv::signal_names[Argv::Binary_not_found]);
       error_argv.push_back(argv_i[0]); 
       executable_map.run(error_argv);
       exit(ret);}

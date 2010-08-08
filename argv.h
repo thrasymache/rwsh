@@ -30,10 +30,13 @@ class Argv : private std::vector<std::string> {
     Arguments_for_argfunction,
     Bad_argfunction_style,
     Bad_if_nest, 
+    Binary_not_found,
     Divide_by_zero, 
     Double_redirection,
     Else_without_if,
     Excess_argfunction,
+    Excessive_nesting,
+    Executable_not_found,
     Failed_substitution,
     File_open_failure,
     If_before_else,
@@ -48,7 +51,7 @@ class Argv : private std::vector<std::string> {
     Not_executable,
     Not_soon_enough,
     Result_range,
-    Undefined_variable,
+    Selection_not_found,
     Sighup,
     Sigint,
     Sigquit,
@@ -60,6 +63,8 @@ class Argv : private std::vector<std::string> {
     Sigusr1,
     Sigusr2,
     Sigunknown,
+    Undefined_variable,
+    Unreadable_dir,
     Signal_count};
 
   static std::string signal_names[];

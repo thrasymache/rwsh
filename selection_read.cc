@@ -43,7 +43,7 @@ void selection_read(const std::string& src, Out res) {
     else partial_match_children(partial, *i, ignore, more);
     if (!partial.size()) {
       Argv argv;
-      argv.push_back("rwsh.selection_not_found");
+      argv.push_back(Argv::signal_names[Argv::Selection_not_found]);
       std::list<Entry_pattern>::const_iterator j = i;
       argv.push_back(entry_pattern_list_to_str(focus.begin(), ++j));
       argv.push_back(src);

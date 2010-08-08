@@ -981,7 +981,7 @@ rwsh.else_without_if : command not found ( rwsh.else_without_if .else )
 $
 
 -1
-$# .internal_errors .internal_features .internal_vars
+$# .internal_errors .internal_features .internal_functions .internal_vars
 
 -1
 $.internal_errors 1
@@ -989,6 +989,14 @@ wrong argument count
 -1
 $.internal_features 1
 wrong argument count
+-1
+$.internal_functions 1
+rwsh.argument_count : command not found ( rwsh.argument_count 1 0 .internal_functions ) 
+
+-1
+$.internal_functions {excess argfunc}
+rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .internal_functions ) 
+
 -1
 $.internal_vars 1
 wrong argument count
@@ -998,6 +1006,9 @@ rwsh.arguments_for_argfunction rwsh.bad_argfunction_style rwsh.binary_not_found 
 0
 $.internal_features
 rwsh.after_command rwsh.before_command rwsh.prompt rwsh.raw_command rwsh.run_logic rwsh.shutdown rwsh.vars
+0
+$.internal_functions
+rwsh.argument_count rwsh.arguments_for_argfunction rwsh.bad_argfunction_style rwsh.bad_if_nest rwsh.binary_not_found rwsh.divide_by_zero rwsh.double_redirection rwsh.else_without_if rwsh.excess_argfunction rwsh.excessive_nesting rwsh.executable_not_found rwsh.failed_substitution rwsh.file_open_failure rwsh.if_before_else rwsh.input_range rwsh.invalid_word_selection rwsh.line_continuation rwsh.mismatched_brace rwsh.mismatched_parenthesis rwsh.missing_argfunction rwsh.multiple_argfunctions rwsh.not_a_number rwsh.not_executable rwsh.not_soon_enough rwsh.result_range rwsh.selection_not_found rwsh.sighup rwsh.sigint rwsh.sigquit rwsh.sigpipe rwsh.sigterm rwsh.sigtstp rwsh.sigcont rwsh.sigchld rwsh.sigusr1 rwsh.sigusr2 rwsh.sigunknown rwsh.undefined_variable rwsh.unreadable_dir 
 0
 $.internal_vars
 FIGNORE IF_TEST MAX_NESTING
