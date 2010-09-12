@@ -10,6 +10,8 @@
   .echo $nl; .echo $last_command_return; .echo $nl}
 .function rwsh.prompt {.echo \$}
 .function rwsh.file_open_failure
+.for &{.internal_functions}$ {.function $1 {.echo $0 : command not found \( $*0 \) $nl; .return -1}}
+.function rwsh.executable_not_found
 .function rwsh.shutdown {.echo $nl; .echo now terminating normally; .echo $nl}
 .function rwsh.vars {.internal_vars}
 .else_if .test_string_equal $2 -c {
@@ -18,6 +20,7 @@
   .echo unexpected command line: &* (
 )
   .source /etc/rwshrc-default}
+rwsh.executable_not_found not defined 
 rwsh.help not defined 
 $# .init is tested by having test_init.sh define #
 
@@ -1008,7 +1011,7 @@ $.internal_features
 rwsh.after_command rwsh.before_command rwsh.prompt rwsh.raw_command rwsh.run_logic rwsh.shutdown rwsh.vars
 0
 $.internal_functions
-rwsh.argument_count rwsh.arguments_for_argfunction rwsh.bad_argfunction_style rwsh.bad_if_nest rwsh.binary_not_found rwsh.divide_by_zero rwsh.double_redirection rwsh.else_without_if rwsh.excess_argfunction rwsh.excessive_nesting rwsh.executable_not_found rwsh.failed_substitution rwsh.file_open_failure rwsh.if_before_else rwsh.input_range rwsh.invalid_word_selection rwsh.line_continuation rwsh.mismatched_brace rwsh.mismatched_parenthesis rwsh.missing_argfunction rwsh.multiple_argfunctions rwsh.not_a_number rwsh.not_executable rwsh.not_soon_enough rwsh.result_range rwsh.selection_not_found rwsh.sighup rwsh.sigint rwsh.sigquit rwsh.sigpipe rwsh.sigterm rwsh.sigtstp rwsh.sigcont rwsh.sigchld rwsh.sigusr1 rwsh.sigusr2 rwsh.sigunknown rwsh.undefined_variable rwsh.unreadable_dir 
+rwsh.argument_count rwsh.arguments_for_argfunction rwsh.bad_argfunction_style rwsh.bad_if_nest rwsh.binary_not_found rwsh.divide_by_zero rwsh.double_redirection rwsh.else_without_if rwsh.excess_argfunction rwsh.excessive_nesting rwsh.executable_not_found rwsh.failed_substitution rwsh.file_open_failure rwsh.if_before_else rwsh.input_range rwsh.invalid_word_selection rwsh.mismatched_brace rwsh.mismatched_parenthesis rwsh.missing_argfunction rwsh.multiple_argfunctions rwsh.not_a_number rwsh.not_executable rwsh.not_soon_enough rwsh.result_range rwsh.selection_not_found rwsh.sighup rwsh.sigint rwsh.sigquit rwsh.sigpipe rwsh.sigterm rwsh.sigtstp rwsh.sigcont rwsh.sigchld rwsh.sigusr1 rwsh.sigusr2 rwsh.sigunknown rwsh.undefined_variable rwsh.unreadable_dir 
 0
 $.internal_vars
 FIGNORE IF_TEST MAX_NESTING
@@ -1255,7 +1258,8 @@ $# .source is tested by having test_init.sh define #
 -1
 $w .init
 {.set MAX_NESTING 4; .function rwsh.file_open_failure {.echo init file $1 does not exist (call stack $*2 ) 
-}; .source /etc/rwshrc $*; .if .which_test rwsh.help {.if .test_not_empty &&{rwsh.help} {.nop}; .else {.echo rwsh.help produces no output 
+}; .source /etc/rwshrc $*; .for &{.internal_functions}$ {.if .which_test $1 {.nop}; .else {.echo &&1 not defined 
+}}; .if .which_test rwsh.help {.if .test_not_empty &&{rwsh.help} {.nop}; .else {.echo rwsh.help produces no output 
 }}; .else {.echo rwsh.help not defined 
 }}
 0

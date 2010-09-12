@@ -42,7 +42,7 @@ class Argv : private std::vector<std::string> {
     If_before_else,
     Input_range,
     Invalid_word_selection,
-    Line_continuation,
+    // Line_continuation,
     Mismatched_brace,
     Mismatched_parenthesis,
     Missing_argfunction,

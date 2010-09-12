@@ -50,7 +50,7 @@ std::string Argv::signal_names[Argv::Signal_count] = {
   "rwsh.if_before_else",
   "rwsh.input_range",
   "rwsh.invalid_word_selection",
-  "rwsh.line_continuation",
+  // "rwsh.line_continuation",
   "rwsh.mismatched_brace",
   "rwsh.mismatched_parenthesis",
   "rwsh.missing_argfunction",
@@ -107,6 +107,7 @@ int main(int argc, char *argv[]) {
                                default_input, default_output, default_error);
   try {internal_init();}
   catch (std::string& error) {default_error <<error;}
+  catch (Signal_argv& exception) {executable_map.run(exception);}
   Command_stream command_stream(std::cin, true);
   executable_map.run_if_exists(".init", external_command_line);
   register_signals();

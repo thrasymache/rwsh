@@ -102,39 +102,88 @@ sfn wc
 .function rwsh.arguments_for_argfunction {
   .echo cannot specify arguments for $1 directly $nl
   .return -1}
+.function rwsh.argument_count {
+  .echo wrong number of arguments: received $1, but wanted $2 for $3* $nl
+  .return -1}
 .function rwsh.autofunction {
   .function $1 {&&{.which_path &&1 $PATH} $*}
   # if_only .return 0 {.echo added &&1 to executable map $nl}}
 .function rwsh.bad_argfunction_style {
   .echo $1 is neither an argfunction nor a substitution $nl
   .return -1}
+.function rwsh.bad_if_nest {
+  .echo nested .if without .else with call stack: $* $nl
+  .return -1}
 .function rwsh.binary_not_found {
   .echo $1 : could not run binary $nl
   .return -1}
+.function rwsh.divide_by_zero {
+  .echo attempt to divide $1 by 0 with call stack: $*2 $nl
+  .return -1}
 .function rwsh.double_redirection {
-  .echo double redirection is not supported at this time: $1 and $2 $nl}
+  .echo double redirection is not supported at this time: $1 and $2 $nl
+  .return -1}
+.function rwsh.else_without_if {
+  .echo else without if with call stack: $* $nl
+  .return -1}
 .function rwsh.excessive_nesting {
-  .echo $nl function exceeded MAX_NESTING \( $MAX_NESTING \). call stack: $* $nl}
+  .echo $nl function exceeded MAX_NESTING \( $MAX_NESTING \). call stack: $* $nl
+  .return -1}
+.function rwsh.excess_argfunction {
+  .echo $1 does not accept an argfunction with call stack: $* $nl
+  .return -1}
+.function rwsh.executable_not_found {
+  .echo $1 : command not found \( $* \) $nl
+  .return -1}
 .function rwsh.failed_substitution {
   echo substitution $1 failed
   echo call stack $*2}
 .function rwsh.help {
   .echo this is the default configuration for rwsh \(or something copied from it\), documentation should be available at rwsh.sf.net $nl}
+.function rwsh.if_before_else {
+  .echo two .if commands without a .else between them with call stack : $* $nl
+  .return -1}
+.function rwsh.input_range {
+  .echo value $1 is out of usable numeric range $nl
+  .return -1}
+.function rwsh.invalid_word_selection {
+  .echo $* is not a valid word selection $nl
+  .return -1}
 .function rwsh.mismatched_brace {
   .echo mismatched brace: $1 $nl
   .return -1}
+.function rwsh.mismatched_parenthesis {
+  .echo mismatched parenthesis: $* $nl
+  .return -1}
+.function rwsh.missing_argfunction {
+  .echo $* requires an argfunction $nl
+  .return -1}
 .function rwsh.multiple_argfunctions {
   .echo multiple argfunctions not supported at this time $nl
+  .return -1}
+.function rwsh.not_a_number {
+  .echo $1 is not a number $nl
+  .echo call stack: $*2 $nl
+  .return -1}
+.function rwsh.not_executable {
+  .echo $1 is not executable $nl
+  .echo call stack: $*2
   .return -1}
 .function rwsh.not_soon_enough {
   .echo $1 attempts to substitute after the command has been run $nl
   .return -1}
 .function rwsh.prompt {.echo $s; .echo \$}
+.function rwsh.result_range {
+  .echo result of $3 with arguments $1 and $2 is out of range $nl
+  .echo call stack: $*3 $nl
+  .return -1}
 .function rwsh.selection_not_found {
   .echo no file matching pattern $1
   .if .test_string_unequal $1 $2 {.echo () for selection &&2 $nl}
   .else {.echo $nl}}
 .function rwsh.shutdown {.echo $nl}
+.function rwsh.sigcont {.echo $nl received SIGCONT: $* $nl}
+.function rwsh.sigchld {.echo $nl received SIGCHLD: $* $nl}
 .function rwsh.sighup {.echo $nl received SIGHUP: $* $nl}
 .function rwsh.sigint {.echo $nl received SIGINT: $* $nl}
 .function rwsh.sigquit {.echo $nl received SIGQUIT: $* $nl}
@@ -144,6 +193,7 @@ sfn wc
 .function rwsh.siginfo {.echo $nl received SIGINFO: $* $nl}
 .function rwsh.sigusr1 {.echo $nl received SIGUSR1: $* $nl}
 .function rwsh.sigusr2 {.echo $nl received SIGUSR2: $* $nl}
+.function rwsh.sigunknown {.echo $nl received unknown unix signal: $* $nl}
 .function rwsh.undefined_variable {
   .echo $1 was undefined with call stack $*2 $nl}
 .function rwsh.unreadable_dir {.echo cannot read directory $1 $nl}
