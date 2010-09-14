@@ -9,9 +9,7 @@
   .set last_command_return $?
   .echo $nl; .echo $last_command_return; .echo $nl}
 .function rwsh.prompt {.echo \$}
-.function rwsh.file_open_failure
-.for &{.internal_functions}$ {.function $1 {.echo $0 : command not found \( $*0 \) $nl; .return -1}}
-.function rwsh.executable_not_found
+.for &{.internal_functions}$ {.function $1 {.echo signal triggered: $0 \( $* \) $nl; .return -1}}
 .function rwsh.shutdown {.echo $nl; .echo now terminating normally; .echo $nl}
 .function rwsh.vars {.internal_vars}
 .else_if .test_string_equal $2 -c {
@@ -20,7 +18,6 @@
   .echo unexpected command line: &* (
 )
   .source /etc/rwshrc-default}
-rwsh.executable_not_found not defined 
 rwsh.help not defined 
 $# .init is tested by having test_init.sh define #
 
@@ -62,7 +59,7 @@ $.echo a \
 a 
 0
 $line continuation
-line : command not found ( line continuation ) 
+signal triggered: rwsh.executable_not_found ( line continuation ) 
 
 -1
 $.which_executable rwsh.mapped_argfunction {.nop}
@@ -73,22 +70,22 @@ $.which_executable rwsh.argfunction {
 {; multiple line argfunction}
 0
 $.nop rwsh.argfunction rwsh.mismatched_brace } 
-rwsh.mismatched_brace : command not found ( rwsh.mismatched_brace .nop rwsh.argfunction rwsh.mismatched_brace } ) 
+signal triggered: rwsh.mismatched_brace ( .nop rwsh.argfunction rwsh.mismatched_brace } ) 
 
 -1
 $.nop multiple statements \; on a line
 
 -1
 $.which_executable rwsh.argfunction {rwsh.multiple_argfunctions} {}
-rwsh.multiple_argfunctions : command not found ( rwsh.multiple_argfunctions ) 
+signal triggered: rwsh.multiple_argfunctions ( ) 
 
 -1
 $.which_executable rwsh.argfunction {rwsh.argfunction with text args}
-rwsh.arguments_for_argfunction : command not found ( rwsh.arguments_for_argfunction rwsh.argfunction ) 
+signal triggered: rwsh.arguments_for_argfunction ( rwsh.argfunction ) 
 
 -1
 $.which_executable rwsh.argfunction {rwsh.argfunction {with a function arg}}
-rwsh.arguments_for_argfunction : command not found ( rwsh.arguments_for_argfunction rwsh.argfunction ) 
+signal triggered: rwsh.arguments_for_argfunction ( rwsh.argfunction ) 
 
 -1
 $.which_executable rwsh.argfunction {{{{{{{{{{{}}}}}}}}}}}
@@ -152,19 +149,19 @@ $e A 1 2 3 4 5 6 7 $$$$$$$$$8
 A 1 2 3 4 5 6 7 /bin
 0
 $e &&A
-rwsh.not_soon_enough : command not found ( rwsh.not_soon_enough &&A ) 
+signal triggered: rwsh.not_soon_enough ( &&A ) 
 
 -1
 $m {e &&&A}
-rwsh.not_soon_enough : command not found ( rwsh.not_soon_enough &&&A ) 
+signal triggered: rwsh.not_soon_enough ( &&&A ) 
 
 -1
 $e &{e &&A}
-rwsh.not_soon_enough : command not found ( rwsh.not_soon_enough &&A ) 
+signal triggered: rwsh.not_soon_enough ( &&A ) 
 
 -1
 $e &&{e &A}
-rwsh.not_soon_enough : command not found ( rwsh.not_soon_enough &&{e &A} ) 
+signal triggered: rwsh.not_soon_enough ( &&{e &A} ) 
 
 -1
 $e &A
@@ -206,23 +203,23 @@ $m &{.echo $A} {e $1 &1}
 not_bin &{.echo $A}
 0
 $m $FOO {}
-rwsh.undefined_variable : command not found ( rwsh.undefined_variable FOO ) 
+signal triggered: rwsh.undefined_variable ( FOO ) 
 
 -1
 $m {e $FOO}
-rwsh.undefined_variable : command not found ( rwsh.undefined_variable FOO rwsh.mapped_argfunction m ) 
+signal triggered: rwsh.undefined_variable ( FOO rwsh.mapped_argfunction m ) 
 
 -1
 $m &{.return 1} {}
-rwsh.failed_substitution : command not found ( rwsh.failed_substitution &{.return 1} ) 
+signal triggered: rwsh.failed_substitution ( &{.return 1} ) 
 
 -1
 $m {e &{.return 1}}
-rwsh.failed_substitution : command not found ( rwsh.failed_substitution &{.return 1} ) 
+signal triggered: rwsh.failed_substitution ( &{.return 1} ) 
 
 -1
 $m {e &&{.return 1}; e after}
-rwsh.failed_substitution : command not found ( rwsh.failed_substitution &{.return 1} rwsh.mapped_argfunction m ) 
+signal triggered: rwsh.failed_substitution ( &{.return 1} rwsh.mapped_argfunction m ) 
 
 -1
 $f rwsh.failed_substitution {e &&{.return 1}}
@@ -242,7 +239,7 @@ $# bad_argfunction_style
 
 0
 $e x{e x}
-rwsh.bad_argfunction_style : command not found ( rwsh.bad_argfunction_style x{e x} ) 
+signal triggered: rwsh.bad_argfunction_style ( x{e x} ) 
 
 -1
 $e @/etc
@@ -252,13 +249,13 @@ $# rwsh.selection_not_found
 
 0
 $e @/*is*
-rwsh.selection_not_found : command not found ( rwsh.selection_not_found /*is* /*is* ) 
-rwsh.argument_count : command not found ( rwsh.argument_count 0 1 .echo e ) 
+signal triggered: rwsh.selection_not_found ( /*is* /*is* ) 
+signal triggered: rwsh.argument_count ( 0 1 .echo e ) 
 
 -1
 $e @test_main.cc
-rwsh.selection_not_found : command not found ( rwsh.selection_not_found test_main.cc test_main.cc ) 
-rwsh.argument_count : command not found ( rwsh.argument_count 0 1 .echo e ) 
+signal triggered: rwsh.selection_not_found ( test_main.cc test_main.cc ) 
+signal triggered: rwsh.argument_count ( 0 1 .echo e ) 
 
 -1
 $e @/bin
@@ -298,11 +295,11 @@ $e @$A
 rwsh.cc selection.h
 0
 $.return &{.return 0}
-rwsh.not_a_number : command not found ( rwsh.not_a_number  .return ) 
+signal triggered: rwsh.not_a_number (  .return ) 
 
 -1
 $.return &{e 0 $nl}
-rwsh.not_a_number : command not found ( rwsh.not_a_number 0 
+signal triggered: rwsh.not_a_number ( 0 
  .return ) 
 
 -1
@@ -317,7 +314,7 @@ $.set A ((zero zero) (one one) two three)
 
 0
 $m $A$$ {e $* $#}
-rwsh.invalid_word_selection : command not found ( rwsh.invalid_word_selection $$ ) 
+signal triggered: rwsh.invalid_word_selection ( $$ ) 
 
 -1
 $m $A {e $# $*}
@@ -330,15 +327,15 @@ $m $A$1 {e $# $*}
 2 one one
 0
 $m $A$10 {e $# $*}
-rwsh.undefined_variable : command not found ( rwsh.undefined_variable $A$10 ) 
+signal triggered: rwsh.undefined_variable ( $A$10 ) 
 
 -1
 $m &{e ((zero zero) (one one) two three)}@ {e $# $*}
-rwsh.invalid_word_selection : command not found ( rwsh.invalid_word_selection @ ) 
+signal triggered: rwsh.invalid_word_selection ( @ ) 
 
 -1
 $m &{e ((zero zero) (one one) two three)}$$ {e $# $*}
-rwsh.invalid_word_selection : command not found ( rwsh.invalid_word_selection $ ) 
+signal triggered: rwsh.invalid_word_selection ( $ ) 
 
 -1
 $m &{e ((zero zero) (one one) two three)} {e $# $*}
@@ -351,11 +348,11 @@ $m &{e ((zero zero) (one one) two three)}$1 {e $# $*}
 2 one one
 0
 $m &{e ((zero zero) (one one) two three)}$10 {e $# $*}
-rwsh.undefined_variable : command not found ( rwsh.undefined_variable &{e (zero zero) (one one) two three}$10 ) 
+signal triggered: rwsh.undefined_variable ( &{e (zero zero) (one one) two three}$10 ) 
 
 -1
 $m &{e (zero zero) \)one one two three}$1 {e $# $*}
-rwsh.mismatched_parenthesis : command not found ( rwsh.mismatched_parenthesis zero zero ) ) 
+signal triggered: rwsh.mismatched_parenthesis ( zero zero ) ) 
 
 -1
 $m &{e (zero zero) \)one one two three} {e $# $*}
@@ -382,17 +379,17 @@ a multi-line parenthesis
   enclosed string 4
 0
 $e a )mismatched parenthesis
-rwsh.mismatched_parenthesis : command not found ( rwsh.mismatched_parenthesis e a ) ) 
+signal triggered: rwsh.mismatched_parenthesis ( e a ) ) 
 
 -1
 $e a (multi-line parenthesis
   mismatch))
-rwsh.mismatched_parenthesis : command not found ( rwsh.mismatched_parenthesis e a (multi-line parenthesis
+signal triggered: rwsh.mismatched_parenthesis ( e a (multi-line parenthesis
   mismatch)) ) 
 
 -1
 $e (internal \)parenthesis \\ escape ) $#
-rwsh.mismatched_parenthesis : command not found ( rwsh.mismatched_parenthesis e (internal \)parenthesis \\ escape ) ) 
+signal triggered: rwsh.mismatched_parenthesis ( e (internal \)parenthesis \\ escape ) ) 
 
 -1
 $.unset A
@@ -414,15 +411,15 @@ $.else {}
 
 0
 $/bin/cat <dummy_file
-rwsh.file_open_failure : command not found ( rwsh.file_open_failure dummy_file /bin/cat ) 
+signal triggered: rwsh.file_open_failure ( dummy_file /bin/cat ) 
 
 -1
 $.for_each_line <dummy_file {e line of $# \( $* \)}
-rwsh.file_open_failure : command not found ( rwsh.file_open_failure dummy_file .for_each_line ) 
+signal triggered: rwsh.file_open_failure ( dummy_file .for_each_line ) 
 
 -1
 $m {e hi >dummy_file >another}
-rwsh.double_redirection : command not found ( rwsh.double_redirection >dummy_file >another ) 
+signal triggered: rwsh.double_redirection ( >dummy_file >another ) 
 
 -1
 $m {e hi >dummy_file}
@@ -451,15 +448,15 @@ line 2 longer
 ending
 0
 $.for_each_line x {}
-rwsh.argument_count : command not found ( rwsh.argument_count 1 0 .for_each_line ) 
+signal triggered: rwsh.argument_count ( 1 0 .for_each_line ) 
 
 -1
 $.for_each_line <dummy_file
-rwsh.missing_argfunction : command not found ( rwsh.missing_argfunction .for_each_line ) 
+signal triggered: rwsh.missing_argfunction ( .for_each_line ) 
 
 -1
 $.for_each_line <dummy_file <another {}
-rwsh.double_redirection : command not found ( rwsh.double_redirection <dummy_file <another ) 
+signal triggered: rwsh.double_redirection ( <dummy_file <another ) 
 
 -1
 $.for_each_line <dummy_file {e line of $# \( $* \) $nl}
@@ -532,15 +529,15 @@ $# .cd
 
 0
 $.cd
-rwsh.argument_count : command not found ( rwsh.argument_count 0 1 .cd ) 
+signal triggered: rwsh.argument_count ( 0 1 .cd ) 
 
 -1
 $.cd /bin {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .cd ) 
+signal triggered: rwsh.excess_argfunction ( .cd ) 
 
 -1
 $.cd /bin /
-rwsh.argument_count : command not found ( rwsh.argument_count 2 1 .cd ) 
+signal triggered: rwsh.argument_count ( 2 1 .cd ) 
 
 -1
 $.cd /bin
@@ -557,11 +554,11 @@ $# .combine
 
 0
 $.combine
-rwsh.argument_count : command not found ( rwsh.argument_count 0 1 .combine ) 
+signal triggered: rwsh.argument_count ( 0 1 .combine ) 
 
 -1
 $.combine something {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .combine ) 
+signal triggered: rwsh.excess_argfunction ( .combine ) 
 
 -1
 $.combine on () e \ two ( ) $#
@@ -574,11 +571,11 @@ $# .echo
 
 0
 $.echo
-rwsh.argument_count : command not found ( rwsh.argument_count 0 1 .echo ) 
+signal triggered: rwsh.argument_count ( 0 1 .echo ) 
 
 -1
 $.echo something {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .echo ) 
+signal triggered: rwsh.excess_argfunction ( .echo ) 
 
 -1
 $.echo these are fixed strings
@@ -591,7 +588,7 @@ $# .exec .fork
 
 0
 $.fork
-rwsh.argument_count : command not found ( rwsh.argument_count 0 1 .fork ) 
+signal triggered: rwsh.argument_count ( 0 1 .fork ) 
 
 -1
 $.fork e text
@@ -601,11 +598,11 @@ $.fork .return 1
 
 256
 $.exec
-rwsh.argument_count : command not found ( rwsh.argument_count 0 1 .exec ) 
+signal triggered: rwsh.argument_count ( 0 1 .exec ) 
 
 -1
 $.exec something {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .exec ) 
+signal triggered: rwsh.excess_argfunction ( .exec ) 
 
 -1
 $.fork m {.exec /bin/echo something; /bin/echo else}
@@ -619,11 +616,11 @@ $# .for
 
 0
 $.for {e no arguments $1}
-rwsh.argument_count : command not found ( rwsh.argument_count 0 1 .for ) 
+signal triggered: rwsh.argument_count ( 0 1 .for ) 
 
 -1
 $.for no_argfunction
-rwsh.missing_argfunction : command not found ( rwsh.missing_argfunction .for ) 
+signal triggered: rwsh.missing_argfunction ( .for ) 
 
 -1
 $.for 1 {e one argument $1}
@@ -643,7 +640,7 @@ $# .function
 
 0
 $.function
-rwsh.argument_count : command not found ( rwsh.argument_count 0 1 .function ) 
+signal triggered: rwsh.argument_count ( 0 1 .function ) 
 
 -1
 $.function /bin/echo {.echo $* $nl}
@@ -740,39 +737,39 @@ $# .global .unset .var_exists
 
 0
 $.global
-rwsh.argument_count : command not found ( rwsh.argument_count 0 2 .global ) 
+signal triggered: rwsh.argument_count ( 0 2 .global ) 
 
 -1
 $.global x y z
-rwsh.argument_count : command not found ( rwsh.argument_count 3 2 .global ) 
+signal triggered: rwsh.argument_count ( 3 2 .global ) 
 
 -1
 $.global x y {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .global ) 
+signal triggered: rwsh.excess_argfunction ( .global ) 
 
 -1
 $.unset
-rwsh.argument_count : command not found ( rwsh.argument_count 0 1 .unset ) 
+signal triggered: rwsh.argument_count ( 0 1 .unset ) 
 
 -1
 $.unset x {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .unset ) 
+signal triggered: rwsh.excess_argfunction ( .unset ) 
 
 -1
 $.unset x y
-rwsh.argument_count : command not found ( rwsh.argument_count 2 1 .unset ) 
+signal triggered: rwsh.argument_count ( 2 1 .unset ) 
 
 -1
 $.var_exists
-rwsh.argument_count : command not found ( rwsh.argument_count 0 1 .var_exists ) 
+signal triggered: rwsh.argument_count ( 0 1 .var_exists ) 
 
 -1
 $.var_exists x {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .var_exists ) 
+signal triggered: rwsh.excess_argfunction ( .var_exists ) 
 
 -1
 $.var_exists x y
-rwsh.argument_count : command not found ( rwsh.argument_count 2 1 .var_exists ) 
+signal triggered: rwsh.argument_count ( 2 1 .var_exists ) 
 
 -1
 $.global 100 nihilism
@@ -836,15 +833,15 @@ $# .store_output
 
 0
 $.store_output x
-rwsh.missing_argfunction : command not found ( rwsh.missing_argfunction .store_output ) 
+signal triggered: rwsh.missing_argfunction ( .store_output ) 
 
 -1
 $.store_output {e some text}
-rwsh.argument_count : command not found ( rwsh.argument_count 0 1 .store_output ) 
+signal triggered: rwsh.argument_count ( 0 1 .store_output ) 
 
 -1
 $.store_output x {e some text}
-rwsh.undefined_variable : command not found ( rwsh.undefined_variable x .store_output ) 
+signal triggered: rwsh.undefined_variable ( x .store_output ) 
 
 -1
 $.global x ()
@@ -872,31 +869,31 @@ $# .if .else_if .else_if_not .else
 
 0
 $.if
-rwsh.argument_count : command not found ( rwsh.argument_count 0 1 .if ) 
+signal triggered: rwsh.argument_count ( 0 1 .if ) 
 
 -1
 $.else_if
-rwsh.argument_count : command not found ( rwsh.argument_count 0 1 .else_if ) 
+signal triggered: rwsh.argument_count ( 0 1 .else_if ) 
 
 -1
 $.else_if_not
-rwsh.argument_count : command not found ( rwsh.argument_count 0 1 .else_if_not ) 
+signal triggered: rwsh.argument_count ( 0 1 .else_if_not ) 
 
 -1
 $.else
-rwsh.missing_argfunction : command not found ( rwsh.missing_argfunction .else ) 
+signal triggered: rwsh.missing_argfunction ( .else ) 
 
 -1
 $.if missing argfunction
-rwsh.missing_argfunction : command not found ( rwsh.missing_argfunction .if ) 
+signal triggered: rwsh.missing_argfunction ( .if ) 
 
 -1
 $.else_if missing argfunction
-rwsh.missing_argfunction : command not found ( rwsh.missing_argfunction .else_if ) 
+signal triggered: rwsh.missing_argfunction ( .else_if ) 
 
 -1
 $.else_if_not missing argfunction
-rwsh.missing_argfunction : command not found ( rwsh.missing_argfunction .else_if_not ) 
+signal triggered: rwsh.missing_argfunction ( .else_if_not ) 
 
 -1
 $.if .return 0 {e if true; .return 1}
@@ -912,11 +909,11 @@ $.else {e else false; .return 5}
 else false
 5
 $.else_if .return 0 {e not this one; .return 6}
-rwsh.else_without_if : command not found ( rwsh.else_without_if .else_if ) 
+signal triggered: rwsh.else_without_if ( .else_if ) 
 
 -1
 $.else_if_not .return 1 {e not this one; .return 7}
-rwsh.else_without_if : command not found ( rwsh.else_without_if .else_if_not ) 
+signal triggered: rwsh.else_without_if ( .else_if_not ) 
 
 -1
 $.if .return 1 {e nor this; .return 8}
@@ -959,26 +956,26 @@ $.if .return 0 {.if .return 1 {
 	   not to be printed; .return 20}
        .else_if .return 0 {
 	   e nested else_if; .return 21}}
-rwsh.bad_if_nest : command not found ( rwsh.bad_if_nest .if ) 
+signal triggered: rwsh.bad_if_nest ( .if ) 
 
 -1
 $.else {e else_if failed to appropriately set IF_TEST on exit; .return 22}
-rwsh.else_without_if : command not found ( rwsh.else_without_if .else ) 
+signal triggered: rwsh.else_without_if ( .else ) 
 
 -1
 $.if .nop {e set up}
 
 0
 $.if .nop {e if before else}
-rwsh.if_before_else : command not found ( rwsh.if_before_else .if ) 
+signal triggered: rwsh.if_before_else ( .if ) 
 
 -1
 $.if .return 0 {.else_if .return 0 {e nested syntax; .return 23}}
-rwsh.else_without_if : command not found ( rwsh.else_without_if .else_if rwsh.mapped_argfunction .if ) 
+signal triggered: rwsh.else_without_if ( .else_if rwsh.mapped_argfunction .if ) 
 
 -1
 $.else {e already tested; .return 24}
-rwsh.else_without_if : command not found ( rwsh.else_without_if .else ) 
+signal triggered: rwsh.else_without_if ( .else ) 
 
 -1
 $
@@ -994,11 +991,11 @@ $.internal_features 1
 wrong argument count
 -1
 $.internal_functions 1
-rwsh.argument_count : command not found ( rwsh.argument_count 1 0 .internal_functions ) 
+signal triggered: rwsh.argument_count ( 1 0 .internal_functions ) 
 
 -1
 $.internal_functions {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .internal_functions ) 
+signal triggered: rwsh.excess_argfunction ( .internal_functions ) 
 
 -1
 $.internal_vars 1
@@ -1023,11 +1020,11 @@ $# .is_default_input .is_default_output .is_default_error
 
 0
 $.is_default_input 1
-rwsh.argument_count : command not found ( rwsh.argument_count 1 0 .is_default_input ) 
+signal triggered: rwsh.argument_count ( 1 0 .is_default_input ) 
 
 -1
 $.is_default_input {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .is_default_input ) 
+signal triggered: rwsh.excess_argfunction ( .is_default_input ) 
 
 -1
 $m {.is_default_input <dummy_file}
@@ -1037,11 +1034,11 @@ $m {.is_default_input}
 
 0
 $.is_default_output 1
-rwsh.argument_count : command not found ( rwsh.argument_count 1 0 .is_default_output ) 
+signal triggered: rwsh.argument_count ( 1 0 .is_default_output ) 
 
 -1
 $.is_default_output {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .is_default_output ) 
+signal triggered: rwsh.excess_argfunction ( .is_default_output ) 
 
 -1
 $e &{.is_default_output; .echo $?}
@@ -1054,11 +1051,11 @@ $m {.is_default_output}
 
 0
 $.is_default_error 1
-rwsh.argument_count : command not found ( rwsh.argument_count 1 0 .is_default_error ) 
+signal triggered: rwsh.argument_count ( 1 0 .is_default_error ) 
 
 -1
 $.is_default_error {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .is_default_error ) 
+signal triggered: rwsh.excess_argfunction ( .is_default_error ) 
 
 -1
 $m {.is_default_error}
@@ -1071,11 +1068,11 @@ $# .ls
 
 0
 $.ls
-rwsh.argument_count : command not found ( rwsh.argument_count 0 1 .ls ) 
+signal triggered: rwsh.argument_count ( 0 1 .ls ) 
 
 -1
 $.ls /bin {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .ls ) 
+signal triggered: rwsh.excess_argfunction ( .ls ) 
 
 -1
 $.ls /bin /usr/
@@ -1105,15 +1102,15 @@ $# .return
 
 0
 $.return
-rwsh.argument_count : command not found ( rwsh.argument_count 0 1 .return ) 
+signal triggered: rwsh.argument_count ( 0 1 .return ) 
 
 -1
 $.return 1 1
-rwsh.argument_count : command not found ( rwsh.argument_count 2 1 .return ) 
+signal triggered: rwsh.argument_count ( 2 1 .return ) 
 
 -1
 $.return 0 {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .return ) 
+signal triggered: rwsh.excess_argfunction ( .return ) 
 
 -1
 $.return 0
@@ -1123,26 +1120,26 @@ $.return 1
 
 1
 $.return \
-rwsh.not_a_number : command not found ( rwsh.not_a_number  .return ) 
+signal triggered: rwsh.not_a_number (  .return ) 
 
 -1
 $.return O
-rwsh.not_a_number : command not found ( rwsh.not_a_number O .return ) 
+signal triggered: rwsh.not_a_number ( O .return ) 
 
 -1
 $.return 1E2
-rwsh.not_a_number : command not found ( rwsh.not_a_number 1E2 .return ) 
+signal triggered: rwsh.not_a_number ( 1E2 .return ) 
 
 -1
 $.return 2147483647
 
 2147483647
 $.return 2147483649
-rwsh.input_range : command not found ( rwsh.input_range 2147483649 .return ) 
+signal triggered: rwsh.input_range ( 2147483649 .return ) 
 
 -1
 $.return -2147483649
-rwsh.input_range : command not found ( rwsh.input_range -2147483649 .return ) 
+signal triggered: rwsh.input_range ( -2147483649 .return ) 
 
 -1
 $
@@ -1152,11 +1149,11 @@ $# .selection_set
 
 -1
 $.selection_set A
-rwsh.argument_count : command not found ( rwsh.argument_count 1 2 .selection_set ) 
+signal triggered: rwsh.argument_count ( 1 2 .selection_set ) 
 
 -1
 $.selection_set A /usr {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .selection_set ) 
+signal triggered: rwsh.excess_argfunction ( .selection_set ) 
 
 -1
 $.selection_set A /usr
@@ -1208,15 +1205,15 @@ $# .set
 
 0
 $.set A
-rwsh.argument_count : command not found ( rwsh.argument_count 1 2 .set ) 
+signal triggered: rwsh.argument_count ( 1 2 .set ) 
 
 -1
 $.set B x
-rwsh.undefined_variable : command not found ( rwsh.undefined_variable B .set ) 
+signal triggered: rwsh.undefined_variable ( B .set ) 
 
 -1
 $.set B x {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .set ) 
+signal triggered: rwsh.excess_argfunction ( .set ) 
 
 -1
 $.set IF_TEST x
@@ -1235,22 +1232,22 @@ $# .source
 
 0
 $.source
-rwsh.argument_count : command not found ( rwsh.argument_count 0 1 .source ) 
+signal triggered: rwsh.argument_count ( 0 1 .source ) 
 
 -1
 $.source /etc/hosts {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .source ) 
+signal triggered: rwsh.excess_argfunction ( .source ) 
 
 -1
 $.source /*fu*bar*
-rwsh.file_open_failure : command not found ( rwsh.file_open_failure /*fu*bar* .source ) 
+signal triggered: rwsh.file_open_failure ( /*fu*bar* .source ) 
 
 -1
 $# if you actually have that file, something is seriously wrong
 
 -1
 $.source /etc/hosts
-rwsh.not_executable : command not found ( rwsh.not_executable /etc/hosts .source ) 
+signal triggered: rwsh.not_executable ( /etc/hosts .source ) 
 
 -1
 $# .source is tested by having test_init.sh define #
@@ -1279,11 +1276,11 @@ $f d {e $* $nl; .stepwise $* {d $*}}
 
 0
 $.stepwise {e $* $nl}
-rwsh.argument_count : command not found ( rwsh.argument_count 0 1 .stepwise ) 
+signal triggered: rwsh.argument_count ( 0 1 .stepwise ) 
 
 -1
 $.stepwise wrapper 1 2
-rwsh.missing_argfunction : command not found ( rwsh.missing_argfunction .stepwise ) 
+signal triggered: rwsh.missing_argfunction ( .stepwise ) 
 
 -1
 $.stepwise stepwise {e $* $nl}
@@ -1314,7 +1311,7 @@ $wrapper 1 2
 0
 $.stepwise wrapper 1 2 {d $*}
 a 1 2 one 
-rwsh.excessive_nesting : command not found ( rwsh.excessive_nesting rwsh.mapped_argfunction a .stepwise d rwsh.mapped_argfunction wrapper .stepwise ) 
+signal triggered: rwsh.excessive_nesting ( rwsh.mapped_argfunction a .stepwise d rwsh.mapped_argfunction wrapper .stepwise ) 
 
 -1
 $.stepwise wrapper 1 2 {e $* $nl}
@@ -1381,39 +1378,39 @@ $# .test_string_equal .test_string_unequal .test_not_empty
 
 0
 $.test_string_equal x
-rwsh.argument_count : command not found ( rwsh.argument_count 1 2 .test_string_equal ) 
+signal triggered: rwsh.argument_count ( 1 2 .test_string_equal ) 
 
 -1
 $.test_string_equal x x x
-rwsh.argument_count : command not found ( rwsh.argument_count 3 2 .test_string_equal ) 
+signal triggered: rwsh.argument_count ( 3 2 .test_string_equal ) 
 
 -1
 $.test_string_equal x x {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .test_string_equal ) 
+signal triggered: rwsh.excess_argfunction ( .test_string_equal ) 
 
 -1
 $.test_string_unequal x 
-rwsh.argument_count : command not found ( rwsh.argument_count 1 2 .test_string_unequal ) 
+signal triggered: rwsh.argument_count ( 1 2 .test_string_unequal ) 
 
 -1
 $.test_string_unequal x x x
-rwsh.argument_count : command not found ( rwsh.argument_count 3 2 .test_string_unequal ) 
+signal triggered: rwsh.argument_count ( 3 2 .test_string_unequal ) 
 
 -1
 $.test_string_unequal x x {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .test_string_unequal ) 
+signal triggered: rwsh.excess_argfunction ( .test_string_unequal ) 
 
 -1
 $.test_not_empty 
-rwsh.argument_count : command not found ( rwsh.argument_count 0 1 .test_not_empty ) 
+signal triggered: rwsh.argument_count ( 0 1 .test_not_empty ) 
 
 -1
 $.test_not_empty x x
-rwsh.argument_count : command not found ( rwsh.argument_count 2 1 .test_not_empty ) 
+signal triggered: rwsh.argument_count ( 2 1 .test_not_empty ) 
 
 -1
 $.test_not_empty x {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .test_not_empty ) 
+signal triggered: rwsh.excess_argfunction ( .test_not_empty ) 
 
 -1
 $.test_string_equal x y
@@ -1441,11 +1438,11 @@ $# .test_is_number .test_number_equal .test_greater .test_less
 
 0
 $.test_is_number
-rwsh.argument_count : command not found ( rwsh.argument_count 0 1 .test_is_number ) 
+signal triggered: rwsh.argument_count ( 0 1 .test_is_number ) 
 
 -1
 $.test_is_number 42 {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .test_is_number ) 
+signal triggered: rwsh.excess_argfunction ( .test_is_number ) 
 
 -1
 $.test_is_number ()
@@ -1467,26 +1464,26 @@ $.test_is_number 6.022e23
 
 0
 $.test_number_equal 42
-rwsh.argument_count : command not found ( rwsh.argument_count 1 2 .test_number_equal ) 
+signal triggered: rwsh.argument_count ( 1 2 .test_number_equal ) 
 
 -1
 $.test_number_equal 42 42 {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .test_number_equal ) 
+signal triggered: rwsh.excess_argfunction ( .test_number_equal ) 
 
 -1
 $.test_number_equal 42 42a
-rwsh.not_a_number : command not found ( rwsh.not_a_number 42a .test_number_equal ) 
+signal triggered: rwsh.not_a_number ( 42a .test_number_equal ) 
 
 -1
 $.test_number_equal 42b 42
-rwsh.not_a_number : command not found ( rwsh.not_a_number 42b .test_number_equal ) 
+signal triggered: rwsh.not_a_number ( 42b .test_number_equal ) 
 
 -1
 $.test_number_equal 0 0.000000000000000000000000001
 
 1
 $.test_number_equal 1e-9000000000 1e-9000000001
-rwsh.input_range : command not found ( rwsh.input_range 1e-9000000000 .test_number_equal ) 
+signal triggered: rwsh.input_range ( 1e-9000000000 .test_number_equal ) 
 
 -1
 $.test_number_equal 0 0.0
@@ -1499,11 +1496,11 @@ $.test_number_equal 42 42
 
 0
 $.test_number_equal 6.022e9000000000 .6022e24
-rwsh.input_range : command not found ( rwsh.input_range 6.022e9000000000 .test_number_equal ) 
+signal triggered: rwsh.input_range ( 6.022e9000000000 .test_number_equal ) 
 
 -1
 $.test_number_equal 6.022e23 .6022e9000000001
-rwsh.input_range : command not found ( rwsh.input_range .6022e9000000001 .test_number_equal ) 
+signal triggered: rwsh.input_range ( .6022e9000000001 .test_number_equal ) 
 
 -1
 $.test_number_equal 6.022e23 6.022e2
@@ -1513,27 +1510,27 @@ $.test_number_equal 6.022e23 .6022e24
 
 0
 $.test_greater 6.022e23
-rwsh.argument_count : command not found ( rwsh.argument_count 1 2 .test_greater ) 
+signal triggered: rwsh.argument_count ( 1 2 .test_greater ) 
 
 -1
 $.test_greater 6.022e23c 6.022e23 {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .test_greater ) 
+signal triggered: rwsh.excess_argfunction ( .test_greater ) 
 
 -1
 $.test_greater 6.022e23c 6.022e23
-rwsh.not_a_number : command not found ( rwsh.not_a_number 6.022e23c .test_greater ) 
+signal triggered: rwsh.not_a_number ( 6.022e23c .test_greater ) 
 
 -1
 $.test_greater 6.022e23 6.022e23e
-rwsh.not_a_number : command not found ( rwsh.not_a_number 6.022e23e .test_greater ) 
+signal triggered: rwsh.not_a_number ( 6.022e23e .test_greater ) 
 
 -1
 $.test_greater 6.022e9000000000 .6022e23
-rwsh.input_range : command not found ( rwsh.input_range 6.022e9000000000 .test_greater ) 
+signal triggered: rwsh.input_range ( 6.022e9000000000 .test_greater ) 
 
 -1
 $.test_greater 6.022e23 .6022e9000000001
-rwsh.input_range : command not found ( rwsh.input_range .6022e9000000001 .test_greater ) 
+signal triggered: rwsh.input_range ( .6022e9000000001 .test_greater ) 
 
 -1
 $.test_greater 6.022e2 6.022e23
@@ -1546,27 +1543,27 @@ $.test_greater 6.022e23 6.022e2
 
 0
 $.test_less 6.022e23
-rwsh.argument_count : command not found ( rwsh.argument_count 1 2 .test_less ) 
+signal triggered: rwsh.argument_count ( 1 2 .test_less ) 
 
 -1
 $.test_less 6.022b23 6.022e23 {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .test_less ) 
+signal triggered: rwsh.excess_argfunction ( .test_less ) 
 
 -1
 $.test_less 6.022b23 6.022e23
-rwsh.not_a_number : command not found ( rwsh.not_a_number 6.022b23 .test_less ) 
+signal triggered: rwsh.not_a_number ( 6.022b23 .test_less ) 
 
 -1
 $.test_less 6.022e23 6.022a23
-rwsh.not_a_number : command not found ( rwsh.not_a_number 6.022a23 .test_less ) 
+signal triggered: rwsh.not_a_number ( 6.022a23 .test_less ) 
 
 -1
 $.test_less 6.022e9000000000 .6022e23
-rwsh.input_range : command not found ( rwsh.input_range 6.022e9000000000 .test_less ) 
+signal triggered: rwsh.input_range ( 6.022e9000000000 .test_less ) 
 
 -1
 $.test_less 6.022e23 .6022e9000000001
-rwsh.input_range : command not found ( rwsh.input_range .6022e9000000001 .test_less ) 
+signal triggered: rwsh.input_range ( .6022e9000000001 .test_less ) 
 
 -1
 $.test_less 6.022e23 6.022e2
@@ -1585,7 +1582,7 @@ $# .which_executable .which_test .which_return
 
 0
 $.which_test
-rwsh.argument_count : command not found ( rwsh.argument_count 0 1 .which_test ) 
+signal triggered: rwsh.argument_count ( 0 1 .which_test ) 
 
 -1
 $.which_test j
@@ -1601,7 +1598,7 @@ $.which_test rwsh.mapped_argfunction {rwsh.argfunction}
 
 0
 $.which_executable
-rwsh.argument_count : command not found ( rwsh.argument_count 0 1 .which_executable ) 
+signal triggered: rwsh.argument_count ( 0 1 .which_executable ) 
 
 -1
 $.which_executable j
@@ -1635,40 +1632,40 @@ $.which_executable rwsh.mapped_argfunction {rwsh.argfunction}
 {rwsh.argfunction}
 0
 $.waiting_for_shell j
-rwsh.argument_count : command not found ( rwsh.argument_count 1 0 .waiting_for_shell ) 
+signal triggered: rwsh.argument_count ( 1 0 .waiting_for_shell ) 
 
 -1
 $.waiting_for_shell {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .waiting_for_shell ) 
+signal triggered: rwsh.excess_argfunction ( .waiting_for_shell ) 
 
 -1
 $# .waiting_for_shell
 
 -1
 $.waiting_for_user j
-rwsh.argument_count : command not found ( rwsh.argument_count 1 0 .waiting_for_user ) 
+signal triggered: rwsh.argument_count ( 1 0 .waiting_for_user ) 
 
 -1
 $.waiting_for_user {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .waiting_for_user ) 
+signal triggered: rwsh.excess_argfunction ( .waiting_for_user ) 
 
 -1
 $# .waiting_for_user
 
 -1
 $.waiting_for_binary j
-rwsh.argument_count : command not found ( rwsh.argument_count 1 0 .waiting_for_binary ) 
+signal triggered: rwsh.argument_count ( 1 0 .waiting_for_binary ) 
 
 -1
 $.waiting_for_binary {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .waiting_for_binary ) 
+signal triggered: rwsh.excess_argfunction ( .waiting_for_binary ) 
 
 -1
 $# .waiting_for_binary
 
 -1
 $.which_return
-rwsh.argument_count : command not found ( rwsh.argument_count 0 1 .which_return ) 
+signal triggered: rwsh.argument_count ( 0 1 .which_return ) 
 
 -1
 $.which_return rwsh.mapped_argfunction
@@ -1696,26 +1693,26 @@ $# .which_total_execution_time
 
 0
 $.usleep
-rwsh.argument_count : command not found ( rwsh.argument_count 0 1 .usleep ) 
+signal triggered: rwsh.argument_count ( 0 1 .usleep ) 
 
 -1
 $.usleep 8000 {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .usleep ) 
+signal triggered: rwsh.excess_argfunction ( .usleep ) 
 
 -1
 $.usleep -6
-rwsh.input_range : command not found ( rwsh.input_range -6 .usleep ) 
+signal triggered: rwsh.input_range ( -6 .usleep ) 
 
 -1
 $.usleep 5i
-rwsh.not_a_number : command not found ( rwsh.not_a_number 5i .usleep ) 
+signal triggered: rwsh.not_a_number ( 5i .usleep ) 
 
 -1
 $.usleep 8000
 
 0
 $.which_execution_count
-rwsh.argument_count : command not found ( rwsh.argument_count 0 1 .which_execution_count ) 
+signal triggered: rwsh.argument_count ( 0 1 .which_execution_count ) 
 
 -1
 $.which_execution_count j
@@ -1725,7 +1722,7 @@ $.which_execution_count .usleep
 5
 0
 $.which_last_execution_time
-rwsh.argument_count : command not found ( rwsh.argument_count 0 1 .which_last_execution_time ) 
+signal triggered: rwsh.argument_count ( 0 1 .which_last_execution_time ) 
 
 -1
 $.which_last_execution_time j
@@ -1735,7 +1732,7 @@ $# .which_last_execution_time .usleep
 
 1
 $.which_total_execution_time
-rwsh.argument_count : command not found ( rwsh.argument_count 0 1 .which_total_execution_time ) 
+signal triggered: rwsh.argument_count ( 0 1 .which_total_execution_time ) 
 
 -1
 $.which_total_execution_time j
@@ -1751,11 +1748,11 @@ $# .which_path
 
 1
 $.which_path cat
-rwsh.argument_count : command not found ( rwsh.argument_count 1 2 .which_path ) 
+signal triggered: rwsh.argument_count ( 1 2 .which_path ) 
 
 -1
 $.which_path cat /bin {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .which_path ) 
+signal triggered: rwsh.excess_argfunction ( .which_path ) 
 
 -1
 $.which_path cat \
@@ -1783,11 +1780,11 @@ $.set N 4
 
 0
 $.while {e ARGS}
-rwsh.argument_count : command not found ( rwsh.argument_count 0 1 .while ) 
+signal triggered: rwsh.argument_count ( 0 1 .while ) 
 
 -1
 $.while tf
-rwsh.missing_argfunction : command not found ( rwsh.missing_argfunction .while ) 
+signal triggered: rwsh.missing_argfunction ( .while ) 
 
 -1
 $.while tf {e printed; .set A 4}
@@ -1823,48 +1820,48 @@ $# .var_add
 
 0
 $.var_add
-rwsh.argument_count : command not found ( rwsh.argument_count 0 2 .var_add ) 
+signal triggered: rwsh.argument_count ( 0 2 .var_add ) 
 
 -1
 $.var_add A 1 2
-rwsh.argument_count : command not found ( rwsh.argument_count 3 2 .var_add ) 
+signal triggered: rwsh.argument_count ( 3 2 .var_add ) 
 
 -1
 $.var_add A 1 {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .var_add ) 
+signal triggered: rwsh.excess_argfunction ( .var_add ) 
 
 -1
 $.var_add B 1
-rwsh.undefined_variable : command not found ( rwsh.undefined_variable B .var_add ) 
+signal triggered: rwsh.undefined_variable ( B .var_add ) 
 
 -1
 $.set A A
 
 0
 $.var_add A 2 
-rwsh.not_a_number : command not found ( rwsh.not_a_number A .var_add ) 
+signal triggered: rwsh.not_a_number ( A .var_add ) 
 
 -1
 $.set A 1e309
 
 0
 $.var_add A 2 
-rwsh.input_range : command not found ( rwsh.input_range 1e309 .var_add ) 
+signal triggered: rwsh.input_range ( 1e309 .var_add ) 
 
 -1
 $.set A -1e308
 
 0
 $.var_add A A
-rwsh.not_a_number : command not found ( rwsh.not_a_number A .var_add ) 
+signal triggered: rwsh.not_a_number ( A .var_add ) 
 
 -1
 $.var_add A 1e309
-rwsh.input_range : command not found ( rwsh.input_range 1e309 .var_add ) 
+signal triggered: rwsh.input_range ( 1e309 .var_add ) 
 
 -1
 $.var_add A -1e308
-rwsh.result_range : command not found ( rwsh.result_range -1e308 -1e308 .var_add ) 
+signal triggered: rwsh.result_range ( -1e308 -1e308 .var_add ) 
 
 -1
 $.var_add A 1e308
@@ -1877,7 +1874,7 @@ $e $A
 1e+308
 0
 $.var_add A 1e308
-rwsh.result_range : command not found ( rwsh.result_range 1e+308 1e308 .var_add ) 
+signal triggered: rwsh.result_range ( 1e+308 1e308 .var_add ) 
 
 -1
 $.var_add A -1e308
@@ -1887,7 +1884,7 @@ $e $A
 0
 0
 $.var_add A \
-rwsh.not_a_number : command not found ( rwsh.not_a_number  .var_add ) 
+signal triggered: rwsh.not_a_number (  .var_add ) 
 
 -1
 $e $A
@@ -1900,48 +1897,48 @@ $# .var_divide
 
 0
 $.var_divide A
-rwsh.argument_count : command not found ( rwsh.argument_count 1 2 .var_divide ) 
+signal triggered: rwsh.argument_count ( 1 2 .var_divide ) 
 
 -1
 $.var_divide A 1 2
-rwsh.argument_count : command not found ( rwsh.argument_count 3 2 .var_divide ) 
+signal triggered: rwsh.argument_count ( 3 2 .var_divide ) 
 
 -1
 $.var_divide A 1 {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .var_divide ) 
+signal triggered: rwsh.excess_argfunction ( .var_divide ) 
 
 -1
 $.var_divide B 1
-rwsh.undefined_variable : command not found ( rwsh.undefined_variable B .var_divide ) 
+signal triggered: rwsh.undefined_variable ( B .var_divide ) 
 
 -1
 $.set A A
 
 0
 $.var_divide A 2 
-rwsh.not_a_number : command not found ( rwsh.not_a_number A .var_divide ) 
+signal triggered: rwsh.not_a_number ( A .var_divide ) 
 
 -1
 $.set A 1e3000000000
 
 0
 $.var_divide A 2 
-rwsh.input_range : command not found ( rwsh.input_range 1e3000000000 .var_divide ) 
+signal triggered: rwsh.input_range ( 1e3000000000 .var_divide ) 
 
 -1
 $.set A 16.8
 
 0
 $.var_divide A A
-rwsh.not_a_number : command not found ( rwsh.not_a_number A .var_divide ) 
+signal triggered: rwsh.not_a_number ( A .var_divide ) 
 
 -1
 $.var_divide A 1e3000000000
-rwsh.input_range : command not found ( rwsh.input_range 1e3000000000 .var_divide ) 
+signal triggered: rwsh.input_range ( 1e3000000000 .var_divide ) 
 
 -1
 $.var_divide A 0 
-rwsh.divide_by_zero : command not found ( rwsh.divide_by_zero 16.8 .var_divide ) 
+signal triggered: rwsh.divide_by_zero ( 16.8 .var_divide ) 
 
 -1
 $.var_divide A 4.2 
@@ -1954,7 +1951,7 @@ $.set A 1.8e-20
 
 0
 $.var_divide A 1e308
-rwsh.result_range : command not found ( rwsh.result_range 1.8e-20 1e308 .var_divide ) 
+signal triggered: rwsh.result_range ( 1.8e-20 1e308 .var_divide ) 
 
 -1
 $.set A 0
@@ -1973,26 +1970,26 @@ $# .var_subtract
 
 0
 $.var_subtract
-rwsh.argument_count : command not found ( rwsh.argument_count 0 2 .var_subtract ) 
+signal triggered: rwsh.argument_count ( 0 2 .var_subtract ) 
 
 -1
 $.var_subtract A 1 2
-rwsh.argument_count : command not found ( rwsh.argument_count 3 2 .var_subtract ) 
+signal triggered: rwsh.argument_count ( 3 2 .var_subtract ) 
 
 -1
 $.var_subtract A 1 {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .var_subtract ) 
+signal triggered: rwsh.excess_argfunction ( .var_subtract ) 
 
 -1
 $.var_subtract B 1
-rwsh.undefined_variable : command not found ( rwsh.undefined_variable B .var_subtract ) 
+signal triggered: rwsh.undefined_variable ( B .var_subtract ) 
 
 -1
 $.set A A
 
 0
 $.var_subtract A 2 
-rwsh.not_a_number : command not found ( rwsh.not_a_number A .var_subtract ) 
+signal triggered: rwsh.not_a_number ( A .var_subtract ) 
 
 -1
 $.set A 3000000000
@@ -2005,7 +2002,7 @@ $.set A 1e308
 
 0
 $.var_subtract A -1e308
-rwsh.result_range : command not found ( rwsh.result_range 1e308 -1e308 .var_subtract ) 
+signal triggered: rwsh.result_range ( 1e308 -1e308 .var_subtract ) 
 
 -1
 $e $A
@@ -2015,7 +2012,7 @@ $.set A -2147483648
 
 0
 $.var_subtract A A
-rwsh.not_a_number : command not found ( rwsh.not_a_number A .var_subtract ) 
+signal triggered: rwsh.not_a_number ( A .var_subtract ) 
 
 -1
 $.var_subtract A 3000000000
@@ -2043,7 +2040,7 @@ $e $A
 -7.29496e+09
 0
 $.var_subtract A \
-rwsh.not_a_number : command not found ( rwsh.not_a_number  .var_subtract ) 
+signal triggered: rwsh.not_a_number (  .var_subtract ) 
 
 -1
 $e $A
@@ -2056,31 +2053,31 @@ $# .version .version_available .version_compatible
 
 0
 $.version 1.0
-rwsh.argument_count : command not found ( rwsh.argument_count 1 0 .version ) 
+signal triggered: rwsh.argument_count ( 1 0 .version ) 
 
 -1
 $.version {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .version ) 
+signal triggered: rwsh.excess_argfunction ( .version ) 
 
 -1
 $.version_available 1.0
-rwsh.argument_count : command not found ( rwsh.argument_count 1 0 .version_available ) 
+signal triggered: rwsh.argument_count ( 1 0 .version_available ) 
 
 -1
 $.version_available {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .version_available ) 
+signal triggered: rwsh.excess_argfunction ( .version_available ) 
 
 -1
 $.version_compatible
-rwsh.argument_count : command not found ( rwsh.argument_count 0 1 .version_compatible ) 
+signal triggered: rwsh.argument_count ( 0 1 .version_compatible ) 
 
 -1
 $.version_compatible 1.0 1.0
-rwsh.argument_count : command not found ( rwsh.argument_count 2 1 .version_compatible ) 
+signal triggered: rwsh.argument_count ( 2 1 .version_compatible ) 
 
 -1
 $.version_compatible 1.0 {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .version_compatible ) 
+signal triggered: rwsh.excess_argfunction ( .version_compatible ) 
 
 -1
 $.version
@@ -2102,7 +2099,7 @@ $# binary test implicitly tests Old_argv_t
 
 0
 $/bn/echo 1 2 3
-rwsh.binary_not_found : command not found ( rwsh.binary_not_found /bn/echo ) 
+signal triggered: rwsh.binary_not_found ( /bn/echo ) 
 
 65280
 $/bin/echo 1 2 3
@@ -2140,7 +2137,7 @@ $# rwsh.arguments_for_argfunction rwsh.before_command rwsh.binary_not_found
 
 0
 $w x {rwsh.escaped_argfunction me}
-rwsh.arguments_for_argfunction : command not found ( rwsh.arguments_for_argfunction rwsh.escaped_argfunction ) 
+signal triggered: rwsh.arguments_for_argfunction ( rwsh.escaped_argfunction ) 
 
 -1
 $f rwsh.before_command {.echo $*0; .echo $nl}
@@ -2148,7 +2145,7 @@ $f rwsh.before_command {.echo $*0; .echo $nl}
 0
 $/bn
 rwsh.before_command /bn
-rwsh.binary_not_found : command not found ( rwsh.binary_not_found /bn ) 
+signal triggered: rwsh.binary_not_found ( /bn ) 
 
 65280
 $f rwsh.before_command
@@ -2169,7 +2166,7 @@ $f rwsh.autofunction {e $*0 $nl}
 0
 $z 1 2 3
 rwsh.autofunction z 1 2 3 
-z : command not found ( z 1 2 3 ) 
+signal triggered: rwsh.executable_not_found ( z 1 2 3 ) 
 
 -1
 $w z
@@ -2179,8 +2176,8 @@ $f rwsh.autofunction {y $*0}
 
 0
 $z 1 2 3
-y : command not found ( y rwsh.autofunction z 1 2 3 ) 
-z : command not found ( z 1 2 3 ) 
+signal triggered: rwsh.executable_not_found ( y rwsh.autofunction z 1 2 3 ) 
+signal triggered: rwsh.executable_not_found ( z 1 2 3 ) 
 
 -1
 $w z
@@ -2274,7 +2271,7 @@ $f h {g}
 
 0
 $g
-rwsh.excessive_nesting : command not found ( rwsh.excessive_nesting g h g h g h g ) 
+signal triggered: rwsh.excessive_nesting ( g h g h g h g ) 
 
 -1
 $f rwsh.excessive_nesting {h}
@@ -2316,11 +2313,11 @@ $# rwsh.undefined_variable
 
 0
 $e $WRONG $WWRONG
-rwsh.undefined_variable : command not found ( rwsh.undefined_variable WRONG ) 
+signal triggered: rwsh.undefined_variable ( WRONG ) 
 
 -1
 $e &WWRONG
-rwsh.undefined_variable : command not found ( rwsh.undefined_variable WWRONG ) 
+signal triggered: rwsh.undefined_variable ( WWRONG ) 
 
 -1
 $
@@ -2359,11 +2356,11 @@ $.global SHELL unmodified
 
 0
 $.importenv_preserve x
-rwsh.argument_count : command not found ( rwsh.argument_count 1 0 .importenv_preserve ) 
+signal triggered: rwsh.argument_count ( 1 0 .importenv_preserve ) 
 
 -1
 $.importenv_preserve {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .importenv_preserve ) 
+signal triggered: rwsh.excess_argfunction ( .importenv_preserve ) 
 
 -1
 $.importenv_preserve
@@ -2379,11 +2376,11 @@ $.unset TESTABILITY
 
 0
 $.importenv_overwrite x
-rwsh.argument_count : command not found ( rwsh.argument_count 1 0 .importenv_overwrite ) 
+signal triggered: rwsh.argument_count ( 1 0 .importenv_overwrite ) 
 
 -1
 $.importenv_overwrite {excess argfunc}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .importenv_overwrite ) 
+signal triggered: rwsh.excess_argfunction ( .importenv_overwrite ) 
 
 -1
 $.importenv_overwrite
@@ -2402,11 +2399,11 @@ $# exiting rwsh.shutdown
 
 0
 $.exit excess_argument
-rwsh.argument_count : command not found ( rwsh.argument_count 1 0 .exit ) 
+signal triggered: rwsh.argument_count ( 1 0 .exit ) 
 
 -1
 $.exit {excess argfunction}
-rwsh.excess_argfunction : command not found ( rwsh.excess_argfunction .exit ) 
+signal triggered: rwsh.excess_argfunction ( .exit ) 
 
 -1
 $.exit
