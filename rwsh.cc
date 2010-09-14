@@ -72,7 +72,8 @@ std::string Argv::signal_names[Argv::Signal_count] = {
   "rwsh.sigusr2",
   "rwsh.sigunknown",
   "rwsh.undefined_variable",
-  "rwsh.unreadable_dir"};
+  "rwsh.unreadable_dir",
+  "rwsh.version_incompatible"};
 
 // static initializers without dependancies
 Clock rwsh_clock;

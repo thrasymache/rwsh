@@ -618,7 +618,7 @@ int b_version_compatible(const Argv& argv) {
   if (argv.size()!=2) throw Signal_argv(Argv::Argument_count, argv.size()-1, 1);
   if (argv.argfunction()) throw Signal_argv(Argv::Excess_argfunction);
   else if (argv[1] == version_str) return 0;
-  else return 1;}
+  else throw Signal_argv(Argv::Version_incompatible, argv[1]);}
 
 // prints the total amount of time the shell has not been waiting for user input
 int b_waiting_for_binary(const Argv& argv) {

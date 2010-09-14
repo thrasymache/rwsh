@@ -197,6 +197,10 @@ sfn wc
 .function rwsh.undefined_variable {
   .echo $1 was undefined with call stack $*2 $nl}
 .function rwsh.unreadable_dir {.echo cannot read directory $1 $nl}
+.function rwsh.version_incompatible {
+  .echo this shell is not compatible with requested version $1 $nl
+  .echo call stack: $*2 $nl
+  .return -1}
 .function rwsh.vars {
   .internal_vars
   echo $nl HOME $HOME

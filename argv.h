@@ -65,6 +65,7 @@ class Argv : private std::vector<std::string> {
     Sigunknown,
     Undefined_variable,
     Unreadable_dir,
+    Version_incompatible,
     Signal_count};
 
   static std::string signal_names[];
