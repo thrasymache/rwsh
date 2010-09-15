@@ -289,8 +289,9 @@ int b_importenv_preserve(const Argv& argv) {
 int b_internal_functions(const Argv& argv) {
   if (argv.size()!=1) throw Signal_argv(Argv::Argument_count, argv.size()-1, 0);
   if (argv.argfunction()) throw Signal_argv(Argv::Excess_argfunction);
-  for (int i = 0; i < Argv::Signal_count; ++i)
-    argv.output <<Argv::signal_names[i] <<" ";
+  argv.output <<Argv::signal_names[0];
+  for (int i = 1; i < Argv::Signal_count; ++i)
+    argv.output <<"\n" <<Argv::signal_names[i];
   return 0;}
 
 // returns one if the input stream is not the default_stream

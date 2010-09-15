@@ -51,6 +51,7 @@ class Argv : private std::vector<std::string> {
     Not_executable,
     Not_soon_enough,
     Result_range,
+    Prompt,
     Selection_not_found,
     Sighup,
     Sigint,

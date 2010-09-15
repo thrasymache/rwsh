@@ -8,8 +8,8 @@
 .function rwsh.after_command {
   .set last_command_return $?
   .echo $nl; .echo $last_command_return; .echo $nl}
-.function rwsh.prompt {.echo \$}
 .for &{.internal_functions}$ {.function $1 {.echo signal triggered: $0 \( $* \) $nl; .return -1}}
+.function rwsh.prompt {.echo \$}
 .function rwsh.shutdown {.echo $nl; .echo now terminating normally; .echo $nl}
 .function rwsh.vars {.internal_vars}
 .else_if .test_string_equal $2 -c {
@@ -1005,10 +1005,49 @@ $.internal_errors
 rwsh.arguments_for_argfunction rwsh.bad_argfunction_style rwsh.binary_not_found rwsh.double_redirection rwsh.excessive_nesting rwsh.executable_not_found rwsh.failed_substitution rwsh.invalid_word_selection rwsh.mismatched_brace rwsh.multiple_argfunctions rwsh.not_soon_enough rwsh.selection_not_found rwsh.sighup rwsh.sigint rwsh.sigquit rwsh.sigpipe rwsh.sigterm rwsh.sigtstp rwsh.sigusr1 rwsh.sigusr2 rwsh.undefined_variable rwsh.unreadable_dir
 0
 $.internal_features
-rwsh.after_command rwsh.before_command rwsh.prompt rwsh.raw_command rwsh.run_logic rwsh.shutdown rwsh.vars
+rwsh.after_command rwsh.before_command rwsh.raw_command rwsh.run_logic rwsh.shutdown rwsh.vars
 0
 $.internal_functions
-rwsh.argument_count rwsh.arguments_for_argfunction rwsh.bad_argfunction_style rwsh.bad_if_nest rwsh.binary_not_found rwsh.divide_by_zero rwsh.double_redirection rwsh.else_without_if rwsh.excess_argfunction rwsh.excessive_nesting rwsh.executable_not_found rwsh.failed_substitution rwsh.file_open_failure rwsh.if_before_else rwsh.input_range rwsh.invalid_word_selection rwsh.mismatched_brace rwsh.mismatched_parenthesis rwsh.missing_argfunction rwsh.multiple_argfunctions rwsh.not_a_number rwsh.not_executable rwsh.not_soon_enough rwsh.result_range rwsh.selection_not_found rwsh.sighup rwsh.sigint rwsh.sigquit rwsh.sigpipe rwsh.sigterm rwsh.sigtstp rwsh.sigcont rwsh.sigchld rwsh.sigusr1 rwsh.sigusr2 rwsh.sigunknown rwsh.undefined_variable rwsh.unreadable_dir rwsh.version_incompatible 
+rwsh.argument_count
+rwsh.arguments_for_argfunction
+rwsh.bad_argfunction_style
+rwsh.bad_if_nest
+rwsh.binary_not_found
+rwsh.divide_by_zero
+rwsh.double_redirection
+rwsh.else_without_if
+rwsh.excess_argfunction
+rwsh.excessive_nesting
+rwsh.executable_not_found
+rwsh.failed_substitution
+rwsh.file_open_failure
+rwsh.if_before_else
+rwsh.input_range
+rwsh.invalid_word_selection
+rwsh.mismatched_brace
+rwsh.mismatched_parenthesis
+rwsh.missing_argfunction
+rwsh.multiple_argfunctions
+rwsh.not_a_number
+rwsh.not_executable
+rwsh.not_soon_enough
+rwsh.result_range
+rwsh.prompt
+rwsh.selection_not_found
+rwsh.sighup
+rwsh.sigint
+rwsh.sigquit
+rwsh.sigpipe
+rwsh.sigterm
+rwsh.sigtstp
+rwsh.sigcont
+rwsh.sigchld
+rwsh.sigusr1
+rwsh.sigusr2
+rwsh.sigunknown
+rwsh.undefined_variable
+rwsh.unreadable_dir
+rwsh.version_incompatible
 0
 $.internal_vars
 FIGNORE IF_TEST MAX_NESTING

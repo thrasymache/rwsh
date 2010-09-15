@@ -61,7 +61,7 @@ void internal_init(void) {
   executable_map.set(new Function(".internal_features", 
       "{.if .test_number_equal $# 1 {"
           ".echo rwsh.after_command rwsh.before_command "
-          "rwsh.prompt rwsh.raw_command rwsh.run_logic "
+          "rwsh.raw_command rwsh.run_logic "
           "rwsh.shutdown rwsh.vars}; "
       ".else {.echo wrong argument count; .return -1}}"));
   executable_map.set(new Builtin(".internal_functions", b_internal_functions));

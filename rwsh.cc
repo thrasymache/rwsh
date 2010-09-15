@@ -59,6 +59,7 @@ std::string Argv::signal_names[Argv::Signal_count] = {
   "rwsh.not_executable",
   "rwsh.not_soon_enough",
   "rwsh.result_range",
+  "rwsh.prompt",
   "rwsh.selection_not_found",
   "rwsh.sighup",
   "rwsh.sigint",
@@ -114,8 +115,9 @@ int main(int argc, char *argv[]) {
   register_signals();
   Arg_script script("", 0);
   Argv prompt;
+  prompt.push_back("rwsh.prompt");
   while (command_stream) {
-    executable_map.run_if_exists("rwsh.prompt", prompt);
+    executable_map.run(prompt);
     Argv command;
     try {
       if (!(command_stream >> script)) break;

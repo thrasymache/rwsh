@@ -47,6 +47,7 @@ sfn ed
   .selection_set s $2 $*3
   &{whichp grep} $REGEX @$s}
 .function grep-sel {.set s $grep-sel}
+.function gs {grep-sel}
 .function grepo {
   .set REGEX $2
   .selection_set s $3 $*4
