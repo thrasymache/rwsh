@@ -48,12 +48,14 @@ Command_stream& Command_stream::operator>> (Arg_script& dest) {
       cmd += '\n';}
     catch (...) {
       Argv raw_command;
+      raw_command.push_back(Argv::signal_names[Argv::Raw_command]);
       raw_command.push_back(cmd);
-      executable_map.run_if_exists("rwsh.raw_command", raw_command);
+      executable_map.run(raw_command);
       throw;}}
   Argv raw_command;
+  raw_command.push_back(Argv::signal_names[Argv::Raw_command]);
   raw_command.push_back(cmd);
-  executable_map.run_if_exists("rwsh.raw_command", raw_command);
+  executable_map.run(raw_command);
   if (Executable::unwind_stack()) return *this;
   return *this;}
 

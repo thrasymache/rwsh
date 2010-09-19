@@ -50,9 +50,11 @@ class Argv : private std::vector<std::string> {
     Not_a_number,
     Not_executable,
     Not_soon_enough,
+    Raw_command,
     Result_range,
     Prompt,
     Selection_not_found,
+    Shutdown,
     Sighup,
     Sigint,
     Sigquit,
@@ -66,6 +68,7 @@ class Argv : private std::vector<std::string> {
     Sigunknown,
     Undefined_variable,
     Unreadable_dir,
+    Vars,
     Version_incompatible,
     Signal_count};
 

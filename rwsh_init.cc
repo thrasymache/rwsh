@@ -46,23 +46,10 @@ void internal_init(void) {
             ".if .test_not_empty &&{rwsh.help} {.nop}\n"
             ".else {.echo rwsh.help produces no output (\n)}}\n"
           ".else {.echo rwsh.help not defined (\n)}}"));
-  executable_map.set(new Function(".internal_errors", 
-      "{.if .test_number_equal $# 1 {"
-          ".echo rwsh.arguments_for_argfunction rwsh.bad_argfunction_style "
-          "rwsh.binary_not_found rwsh.double_redirection "
-          "rwsh.excessive_nesting rwsh.executable_not_found "
-          "rwsh.failed_substitution rwsh.invalid_word_selection "
-          "rwsh.mismatched_brace rwsh.multiple_argfunctions "
-          "rwsh.not_soon_enough rwsh.selection_not_found rwsh.sighup "
-          "rwsh.sigint rwsh.sigquit rwsh.sigpipe rwsh.sigterm rwsh.sigtstp "
-          "rwsh.sigusr1 rwsh.sigusr2 rwsh.undefined_variable "
-          "rwsh.unreadable_dir}; "
-      ".else {.echo wrong argument count; .return -1}}"));
   executable_map.set(new Function(".internal_features", 
       "{.if .test_number_equal $# 1 {"
           ".echo rwsh.after_command rwsh.before_command "
-          "rwsh.raw_command rwsh.run_logic "
-          "rwsh.shutdown rwsh.vars}; "
+          "rwsh.raw_command rwsh.run_logic}; "
       ".else {.echo wrong argument count; .return -1}}"));
   executable_map.set(new Builtin(".internal_functions", b_internal_functions));
   executable_map.set(new Function(".internal_vars", 
@@ -75,6 +62,7 @@ void internal_init(void) {
   executable_map.set(new Builtin(".ls", b_ls));
   executable_map.set(new Builtin(".nop", b_nop));
   executable_map.set(new Builtin(".return", b_return));
+  executable_map.set(new Function("rwsh.raw_command", "{.nop $*}"));
   executable_map.set(new Builtin(".set", b_set));
   executable_map.set(new Builtin(".selection_set", b_selection_set));
   executable_map.set(new Builtin(".source", b_source));

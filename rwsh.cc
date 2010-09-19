@@ -58,9 +58,11 @@ std::string Argv::signal_names[Argv::Signal_count] = {
   "rwsh.not_a_number",
   "rwsh.not_executable",
   "rwsh.not_soon_enough",
+  "rwsh.raw_command",
   "rwsh.result_range",
   "rwsh.prompt",
   "rwsh.selection_not_found",
+  "rwsh.shutdown",
   "rwsh.sighup",
   "rwsh.sigint",
   "rwsh.sigquit",
@@ -74,6 +76,7 @@ std::string Argv::signal_names[Argv::Signal_count] = {
   "rwsh.sigunknown",
   "rwsh.undefined_variable",
   "rwsh.unreadable_dir",
+  "rwsh.vars",
   "rwsh.version_incompatible"};
 
 // static initializers without dependancies
@@ -111,11 +114,13 @@ int main(int argc, char *argv[]) {
   catch (std::string& error) {default_error <<error;}
   catch (Signal_argv& exception) {executable_map.run(exception);}
   Command_stream command_stream(std::cin, true);
-  executable_map.run_if_exists(".init", external_command_line);
+  external_command_line.push_front(".init");
+  executable_map.run(external_command_line);
+  external_command_line.pop_front();
   register_signals();
   Arg_script script("", 0);
   Argv prompt;
-  prompt.push_back("rwsh.prompt");
+  prompt.push_back(Argv::signal_names[Argv::Prompt]);
   while (command_stream) {
     executable_map.run(prompt);
     Argv command;
@@ -127,5 +132,7 @@ int main(int argc, char *argv[]) {
     if (!executable_map.run_if_exists("rwsh.run_logic", command))
        executable_map.run(command);
     executable_map.run_if_exists("rwsh.after_command", command);}
-  executable_map.run_if_exists("rwsh.shutdown", external_command_line);
+  external_command_line.push_front(Argv::signal_names[Argv::Shutdown]);
+  executable_map.run(external_command_line);
+  external_command_line.pop_front();
   return dollar_question;}
