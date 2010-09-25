@@ -104,19 +104,23 @@ template<class In>char** copy_to_cstr(In first, In last, char** res) {
   *res = 0;
   return res;}
 
-Signal_argv::Signal_argv(Sig_type signal) {push_back(signal_names[signal]);}
+Signal_argv::Signal_argv(Sig_type signal_i) : signal(signal_i) {
+  push_back(signal_names[signal]);}
 
-Signal_argv::Signal_argv(Sig_type signal, const std::string& value) {
+Signal_argv::Signal_argv(Sig_type signal_i, const std::string& value) : 
+    signal(signal_i) {
   push_back(signal_names[signal]);
   push_back(value);}
 
-Signal_argv::Signal_argv(Sig_type signal, const std::string& x,
-                         const std::string& y) {
+Signal_argv::Signal_argv(Sig_type signal_i, const std::string& x,
+                         const std::string& y) :
+    signal(signal_i) {
   push_back(signal_names[signal]);
   push_back(x);
   push_back(y);}
 
-Signal_argv::Signal_argv(Sig_type signal, int x, int y) {
+Signal_argv::Signal_argv(Sig_type signal_i, int x, int y) :
+    signal(signal_i) {
   push_back(signal_names[signal]);
   std::ostringstream x_str, y_str;
   x_str <<x;

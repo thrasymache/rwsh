@@ -25,6 +25,7 @@ int b_nop(const Argv& argv);
 int b_return(const Argv& argv);
 int b_set(const Argv& argv);
 int b_selection_set(const Argv& argv);
+int b_signal_handler(const Argv& argv);
 int b_source(const Argv& argv);
 int b_stepwise(const Argv& argv);
 int b_store_output(const Argv& argv);

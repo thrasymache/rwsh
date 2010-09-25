@@ -12,7 +12,7 @@ class Executable {
   unsigned execution_count_v;
   struct timeval last_execution_time_v;
   struct timeval total_execution_time_v;
-  static bool caught_signal;
+  static Argv::Sig_type caught_signal;
 
  public:
   bool del_on_term;
@@ -34,7 +34,7 @@ class Executable {
   bool increment_nesting(const Argv& argv);
   bool decrement_nesting(const Argv& argv);
   static Argv call_stack;
-  static bool unwind_stack(void) {return caught_signal;}
+  static Argv::Sig_type unwind_stack(void) {return caught_signal;}
   static void signal_handler(void);
   static void unix_signal_handler(int sig);
 

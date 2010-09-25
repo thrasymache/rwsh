@@ -7,9 +7,18 @@
 .global last_command_return -10
 .global A \
 .global N \
-.function rwsh.before_command {.return $last_command_return}
 
 # tests multi-line commands within a sourced script
+# .function rwsh.run_logic {
+  .return $last_command_return
+  # .signal_handler &{.internal_functions}$ {&&* {rwsh.argfunction}}
+  # rwsh.mapped_argfunction {&&* {rwsh.argfunction}}
+   &&* {rwsh.argfunction}
+  .set last_command_return $?
+  .echo $nl
+  .echo $last_command_return
+  .echo $nl}
+.function rwsh.before_command {.return $last_command_return}
 .function rwsh.after_command {
   .set last_command_return $?
   .echo $nl; .echo $last_command_return; .echo $nl}

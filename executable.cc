@@ -21,7 +21,7 @@
 #include "variable_map.h"
 
 namespace {
-int unix2rwsh(int sig) {
+Argv::Sig_type unix2rwsh(int sig) {
   switch (sig) {
     case SIGHUP: return Argv::Sighup;
     case SIGINT: return Argv::Sigint;
@@ -38,7 +38,7 @@ int unix2rwsh(int sig) {
 bool Executable::increment_nesting(const Argv& argv) {
   if (global_nesting > argv.max_nesting()+1) {
     //throw Signal_argv(Argv::Excessive_nesting);}
-    caught_signal = true;
+    caught_signal = Argv::Excessive_nesting;
     call_stack.push_back(Argv::signal_names[Argv::Excessive_nesting]);}
   if (unwind_stack()) return true;
   else {
@@ -56,8 +56,8 @@ bool Executable::decrement_nesting(const Argv& argv) {
   return unwind_stack();}
 
 void Executable::unix_signal_handler(int sig) {
-  Executable::caught_signal = true;
-  call_stack.push_back(Argv::signal_names[unix2rwsh(sig)]);}
+  caught_signal = unix2rwsh(sig);
+  call_stack.push_back(Argv::signal_names[caught_signal]);}
 
 // code to call rwsh.excessive_nesting, separated out of operator() for clarity.
 // The requirements for stack unwinding to work properly are as 
@@ -76,7 +76,7 @@ void Executable::signal_handler(void) {
             std::back_inserter(call_stack_copy));
   call_stack = Argv();
   in_signal_handler = true;
-  caught_signal = false;
+  caught_signal = Argv::No_signal;
   vars->unset("IF_TEST");
   executable_map.run(call_stack_copy);
   if (unwind_stack()) {
@@ -90,7 +90,7 @@ void Executable::signal_handler(void) {
     default_output.flush();
     dollar_question = -1;
     call_stack = Argv();
-    caught_signal = false;
+    caught_signal = Argv::No_signal;
     vars->unset("IF_TEST");}
   in_signal_handler = false;}
 // need for a copy: if the internal function that runs for this signal itself
@@ -134,7 +134,7 @@ int Binary::operator() (const Argv& argv_i) {
     if (decrement_nesting(argv_i)) ret = dollar_question;
     return ret;}
   catch (Signal_argv error) {
-    caught_signal = true;
+    caught_signal = error.signal;
     std::copy(error.begin(), error.end(), std::back_inserter(call_stack));
     decrement_nesting(argv_i);
     return -1;}}
@@ -158,7 +158,7 @@ int Builtin::operator() (const Argv& argv) {
     if (decrement_nesting(argv)) ret = dollar_question;
     return ret;}
   catch (Signal_argv error) {
-    caught_signal = true;
+    caught_signal = error.signal;
     std::copy(error.begin(), error.end(), std::back_inserter(call_stack));
     decrement_nesting(argv);
     return -1;}}

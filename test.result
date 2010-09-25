@@ -3,9 +3,18 @@ signal triggered: rwsh.raw_command ( .function rwsh.raw_command {.echo $1; .echo
 .global last_command_return -10
 .global A \
 .global N \
-.function rwsh.before_command {.return $last_command_return}
 
 # tests multi-line commands within a sourced script
+# .function rwsh.run_logic {
+  .return $last_command_return
+  # .signal_handler &{.internal_functions}$ {&&* {rwsh.argfunction}}
+  # rwsh.mapped_argfunction {&&* {rwsh.argfunction}}
+   &&* {rwsh.argfunction}
+  .set last_command_return $?
+  .echo $nl
+  .echo $last_command_return
+  .echo $nl}
+.function rwsh.before_command {.return $last_command_return}
 .function rwsh.after_command {
   .set last_command_return $?
   .echo $nl; .echo $last_command_return; .echo $nl}
@@ -108,6 +117,18 @@ $f e {.echo $*}
 0
 $f m {rwsh.argfunction}
 
+0
+$.which_executable f
+{.function $1 {rwsh.argfunction}}
+0
+$.which_executable w
+{.which_executable $1 {rwsh.argfunction}}
+0
+$.which_executable e
+{.echo $*}
+0
+$.which_executable m
+{rwsh.argfunction}
 0
 $w e
 {.echo $*}
@@ -999,7 +1020,7 @@ $.internal_vars 1
 wrong argument count
 -1
 $.internal_features
-rwsh.after_command rwsh.before_command rwsh.raw_command rwsh.run_logic
+rwsh.after_command rwsh.before_command rwsh.run_logic
 0
 $.internal_functions
 rwsh.argument_count
@@ -1264,6 +1285,27 @@ x
 $
 
 0
+$# .signal_handler
+
+0
+$.signal_handler {.return A}
+signal triggered: rwsh.argument_count ( 0 1 .signal_handler ) 
+
+-1
+$.signal_handler rwsh.not_a_number rwsh.executable_not_found {.return A}
+signal triggered: rwsh.not_a_number ( A .return ) 
+
+-1
+$.signal_handler rwsh.not_a_number rwsh.executable_not_found {.eturn A}
+signal triggered: rwsh.executable_not_found ( .eturn A ) 
+
+-1
+$.signal_handler rwsh.not_a_number rwsh.executable_not_found {.echo A}
+A
+0
+$
+
+0
 $# .source
 
 0
@@ -1291,7 +1333,7 @@ $# .source is tested by having test_init.sh define #
 -1
 $w .init
 {.set MAX_NESTING 4; .function rwsh.file_open_failure {.echo init file $1 does not exist (call stack $*2 ) 
-}; .source /etc/rwshrc $*; .for &{.internal_functions}$ {.if .which_test $1 {.nop}; .else {.echo &&1 not defined 
+}; .function rwsh.raw_command {.nop $*}; .source /etc/rwshrc $*; .for &{.internal_functions}$ {.if .which_test $1 {.nop}; .else {.echo &&1 not defined 
 }}; .if .which_test rwsh.help {.if .test_not_empty &&{rwsh.help} {.nop}; .else {.echo rwsh.help produces no output 
 }}; .else {.echo rwsh.help not defined 
 }}

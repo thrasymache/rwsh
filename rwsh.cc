@@ -31,9 +31,10 @@
 // static initializers of basic types
 struct timezone Clock::no_timezone_v = {0, 0};
 int Executable::global_nesting(0);
-bool Executable::caught_signal(false);
+Argv::Sig_type Executable::caught_signal(Argv::No_signal);
 bool Executable::in_signal_handler(false);
 std::string Argv::signal_names[Argv::Signal_count] = {
+  "no signal",
   "rwsh.argument_count",
   "rwsh.arguments_for_argfunction",
   "rwsh.bad_argfunction_style",

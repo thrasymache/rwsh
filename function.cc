@@ -87,7 +87,7 @@ try {
   if (decrement_nesting(src_argv)) ret = dollar_question;
   return ret;}
   catch (Signal_argv error) {
-    caught_signal = true;
+    caught_signal = error.signal;
     std::copy(error.begin(), error.end(), std::back_inserter(call_stack));
     decrement_nesting(src_argv);
     return -1;}}

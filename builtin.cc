@@ -289,8 +289,8 @@ int b_importenv_preserve(const Argv& argv) {
 int b_internal_functions(const Argv& argv) {
   if (argv.size()!=1) throw Signal_argv(Argv::Argument_count, argv.size()-1, 0);
   if (argv.argfunction()) throw Signal_argv(Argv::Excess_argfunction);
-  argv.output <<Argv::signal_names[0];
-  for (int i = 1; i < Argv::Signal_count; ++i)
+  argv.output <<Argv::signal_names[1];
+  for (int i = 2; i < Argv::Signal_count; ++i)
     argv.output <<"\n" <<Argv::signal_names[i];
   return 0;}
 
@@ -361,6 +361,22 @@ int b_set(const Argv& argv) {
     dest += *i + ' ';
   dest += argv.back();
   return argv.set_var(argv[1], dest);}
+
+// run the handler for specified signals
+int b_signal_handler(const Argv& argv) {
+  if (argv.size() < 2) throw Signal_argv(Argv::Argument_count, argv.size()-1,1);
+  if (!argv.argfunction()) throw Signal_argv(Argv::Missing_argfunction);
+  Argv mapped_argv;
+  mapped_argv.push_back("rwsh.mapped_argfunction");
+  mapped_argv.output = argv.output.child_stream();
+  int ret = (*argv.argfunction())(mapped_argv);
+  if (Executable::unwind_stack()) {
+    for (Argv::const_iterator i = argv.begin() +1; i != argv.end(); ++i) 
+      if (*i == Argv::signal_names[Executable::unwind_stack()]) {
+        Executable::call_stack.pop_back(); // get rid of rwsh.mapped_argfunction
+        Executable::signal_handler();}
+    return -1;}
+  return ret;}
 
 // run the first argument as if it was a script, passing additional arguments
 // to that script

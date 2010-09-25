@@ -97,7 +97,8 @@ sfn wc
 .function unselect {.set s ()}
 
 # internal functions
-.function rwsh.after_command {
+.function rwsh.run_logic {
+  $*
   .set TEMP1 $?
   if_only_not .test_number_equal $TEMP1 0 {echo &&1 returned $TEMP1}}
 .function rwsh.arguments_for_argfunction {

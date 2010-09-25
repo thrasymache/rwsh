@@ -38,6 +38,7 @@ void internal_init(void) {
       "{.set MAX_NESTING 4\n"
           ".function rwsh.file_open_failure {.echo init file $1 does not exist "
           "\\(call stack $*2 \\) (\n)}\n"
+          ".function rwsh.raw_command {.nop $*}\n"
           ".source /etc/rwshrc $*\n"
           ".for &{.internal_functions}$ {" //.echo $1; .which_executable $1}\n"
             ".if .which_test $1 {.nop}\n"
@@ -48,8 +49,7 @@ void internal_init(void) {
           ".else {.echo rwsh.help not defined (\n)}}"));
   executable_map.set(new Function(".internal_features", 
       "{.if .test_number_equal $# 1 {"
-          ".echo rwsh.after_command rwsh.before_command "
-          "rwsh.raw_command rwsh.run_logic}; "
+          ".echo rwsh.after_command rwsh.before_command rwsh.run_logic}; "
       ".else {.echo wrong argument count; .return -1}}"));
   executable_map.set(new Builtin(".internal_functions", b_internal_functions));
   executable_map.set(new Function(".internal_vars", 
@@ -62,9 +62,9 @@ void internal_init(void) {
   executable_map.set(new Builtin(".ls", b_ls));
   executable_map.set(new Builtin(".nop", b_nop));
   executable_map.set(new Builtin(".return", b_return));
-  executable_map.set(new Function("rwsh.raw_command", "{.nop $*}"));
   executable_map.set(new Builtin(".set", b_set));
   executable_map.set(new Builtin(".selection_set", b_selection_set));
+  executable_map.set(new Builtin(".signal_handler", b_signal_handler));
   executable_map.set(new Builtin(".source", b_source));
   executable_map.set(new Builtin(".stepwise", b_stepwise));
   executable_map.set(new Builtin(".store_output", b_store_output));

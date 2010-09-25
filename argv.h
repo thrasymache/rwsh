@@ -26,6 +26,7 @@ class Argv : private std::vector<std::string> {
   mutable Rwsh_ostream_p output, error;
 
   enum Sig_type {
+    No_signal,
     Argument_count,
     Arguments_for_argfunction,
     Bad_argfunction_style,
@@ -113,11 +114,14 @@ class Argv : private std::vector<std::string> {
   void push_front(const std::string& x) {Base::insert(Base::begin(), x);};
   void pop_front(void) {Base::erase(Base::begin());};
   void push_back(const std::string& x) {Base::push_back(x);};
+  void pop_back(void) {Base::pop_back();};
   size_type size(void) const {return Base::size();};
   std::string& operator[] (int i) {return Base::operator[](i);};
   const std::string& operator[] (int i) const {return Base::operator[](i);}; };
 
 struct Signal_argv : public Argv {
+  Argv::Sig_type signal;
+
   Signal_argv(Sig_type signal);
   Signal_argv(Sig_type signal, const std::string& value);
   Signal_argv(Sig_type signal, const std::string& x, const std::string& y);

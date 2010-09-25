@@ -27,6 +27,10 @@ line continuation
 f w {.which_executable $1 {rwsh.argfunction}}
 f e {.echo $*}
 f m {rwsh.argfunction}
+.which_executable f
+.which_executable w
+.which_executable e
+.which_executable m
 w e
 w () {}
 e text that doesn't have a prompt appended
@@ -364,6 +368,12 @@ e $A
 .set IF_TEST x
 .set A x
 e $A
+
+# .signal_handler
+.signal_handler {.return A}
+.signal_handler rwsh.not_a_number rwsh.executable_not_found {.return A}
+.signal_handler rwsh.not_a_number rwsh.executable_not_found {.eturn A}
+.signal_handler rwsh.not_a_number rwsh.executable_not_found {.echo A}
 
 # .source
 .source
