@@ -128,6 +128,12 @@ Signal_argv::Signal_argv(Sig_type signal_i, int x, int y) :
   y_str <<y;
   push_back(y_str.str());}
 
+Signal_argv::Signal_argv(Sig_type signal_i, const Argv& src) {
+  signal = signal_i;
+  push_back(signal_names[signal]);
+  //Executable::caught_signal = signal;
+  std::copy(src.begin(), src.end(), std::back_inserter(*this));}
+
 Old_argv::Old_argv(const Argv& src) : argc_v(src.size()) {
   focus = new char*[src.size()+1];
   copy_to_cstr(src.begin(), src.end(), focus);}

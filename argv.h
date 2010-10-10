@@ -121,11 +121,11 @@ class Argv : private std::vector<std::string> {
 
 struct Signal_argv : public Argv {
   Argv::Sig_type signal;
-
   Signal_argv(Sig_type signal);
   Signal_argv(Sig_type signal, const std::string& value);
   Signal_argv(Sig_type signal, const std::string& x, const std::string& y);
-  Signal_argv(Sig_type signal, int x, int y);};
+  Signal_argv(Sig_type signal, int x, int y);
+  Signal_argv(Sig_type signal, const Argv& src);};
 
 class Old_argv {
   char** focus;

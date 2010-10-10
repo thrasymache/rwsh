@@ -1292,15 +1292,15 @@ $.signal_handler {.return A}
 signal triggered: rwsh.argument_count ( 0 1 .signal_handler ) 
 
 -1
-$.signal_handler rwsh.not_a_number rwsh.executable_not_found {.return A}
+$m {.signal_handler rwsh.not_a_number rwsh.executable_not_found {.return A}}
 signal triggered: rwsh.not_a_number ( A .return ) 
 
 -1
-$.signal_handler rwsh.not_a_number rwsh.executable_not_found {.eturn A}
+$m {.signal_handler rwsh.not_a_number rwsh.executable_not_found {.eturn A}}
 signal triggered: rwsh.executable_not_found ( .eturn A ) 
 
 -1
-$.signal_handler rwsh.not_a_number rwsh.executable_not_found {.echo A}
+$m {.signal_handler rwsh.not_a_number rwsh.executable_not_found {.echo A}}
 A
 0
 $
@@ -2255,7 +2255,7 @@ $f rwsh.autofunction {y $*0}
 
 0
 $z 1 2 3
-signal triggered: rwsh.executable_not_found ( y rwsh.autofunction z 1 2 3 ) 
+signal triggered: rwsh.executable_not_found ( y rwsh.autofunction z 1 2 3 rwsh.autofunction ) 
 signal triggered: rwsh.executable_not_found ( z 1 2 3 ) 
 
 -1
@@ -2296,6 +2296,10 @@ $
 $# rwsh.executable_not_found
 
 0
+$m {m {x; e should not be printed}}
+signal triggered: rwsh.executable_not_found ( x rwsh.mapped_argfunction m rwsh.mapped_argfunction m ) 
+
+-1
 $f rwsh.executable_not_found
 
 0

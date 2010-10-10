@@ -48,7 +48,13 @@ bool Executable_map::run_if_exists(const std::string& key, Argv& argv) {
   argv.push_front(key);
   Executable* i = find(argv);
   if (i) {
-    (*i)(argv);
+    try {(*i)(argv);}
+    catch (Signal_argv error) {
+      std::copy(error.begin(), error.end(),
+                std::back_inserter(Executable::call_stack));
+      Executable::caught_signal = error.signal;
+      Executable::signal_handler();
+      return -1;}
     if (Executable::unwind_stack()) Executable::signal_handler();
     argv.pop_front();
     return true;}
@@ -57,6 +63,7 @@ bool Executable_map::run_if_exists(const std::string& key, Argv& argv) {
     return false;}}
 
 int Executable_map::run(Argv& argv) {
+  try {
   Executable* i = find(argv);                       // first check for key
   if (i) return (*i)(argv);
   else if (argv[0][0] == '/') {                       // insert a binary
@@ -70,14 +77,22 @@ int Executable_map::run(Argv& argv) {
     i = find(argv);                                   // second check for key
     if (i) return (*i)(argv);}
   return not_found(argv);}
+  catch (Signal_argv error) {
+    std::copy(error.begin(), error.end(),
+              std::back_inserter(Executable::call_stack));
+    Executable::caught_signal = error.signal;
+    if (!Executable::global_nesting && !Executable::in_signal_handler)
+      Executable::signal_handler();
+    return -1;}}
 
 int Executable_map::not_found(Argv& argv) {
   argv.push_front(Argv::signal_names[Argv::Executable_not_found]);
   Executable* i = find(argv);
-  if (i) return (*i)(argv);
-  std::string::size_type point = 0;
-  set(new Function(Argv::signal_names[Argv::Executable_not_found],
-                   "{.echo $1 (: command not found) \\( $* \\) (\n)\n"
-                   ".return -1}", point, 0));      // reset executable_not_found
-  return (*find(argv))(argv);}
+  if (!i) {
+    std::string::size_type point = 0;
+    set(new Function(Argv::signal_names[Argv::Executable_not_found],
+                     "{.echo $1 (: command not found) \\( $* \\) (\n)\n"
+                     ".return -1}", point, 0));}   // reset executable_not_found
+  argv.pop_front();
+  throw Signal_argv(Argv::Executable_not_found, argv);}
 

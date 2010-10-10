@@ -371,9 +371,9 @@ e $A
 
 # .signal_handler
 .signal_handler {.return A}
-.signal_handler rwsh.not_a_number rwsh.executable_not_found {.return A}
-.signal_handler rwsh.not_a_number rwsh.executable_not_found {.eturn A}
-.signal_handler rwsh.not_a_number rwsh.executable_not_found {.echo A}
+m {.signal_handler rwsh.not_a_number rwsh.executable_not_found {.return A}}
+m {.signal_handler rwsh.not_a_number rwsh.executable_not_found {.eturn A}}
+m {.signal_handler rwsh.not_a_number rwsh.executable_not_found {.echo A}}
 
 # .source
 .source
@@ -650,6 +650,7 @@ f rwsh.autofunction
 # m {e &{e hi #>dummy_file}}
 
 # rwsh.executable_not_found
+m {m {x; e should not be printed}}
 f rwsh.executable_not_found
 w rwsh.executable_not_found
 w x

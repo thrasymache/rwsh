@@ -1,6 +1,8 @@
 // Copyright (C) 2005, 2006, 2007 Samuel Newbold
 
 class Executable {
+ friend class Signal_argv;
+ friend class Executable_map;
  private:
   static int global_nesting;
   static bool excessive_nesting;
