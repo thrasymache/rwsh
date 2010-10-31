@@ -74,9 +74,7 @@ try {
   ++execution_count_v;
   int ret;
   for (const_iterator i = script.begin(); i != script.end(); ++i) {
-    Argv dest_argv;
-    try {dest_argv = i->interpret(src_argv);}
-    catch (Signal_argv error) {throw;}
+    Argv dest_argv = i->interpret(src_argv);
     ret = executable_map.run(dest_argv);
     if (unwind_stack()) break;}
   last_return = ret;

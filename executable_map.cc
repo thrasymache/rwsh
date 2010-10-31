@@ -48,13 +48,7 @@ bool Executable_map::run_if_exists(const std::string& key, Argv& argv) {
   argv.push_front(key);
   Executable* i = find(argv);
   if (i) {
-    try {(*i)(argv);}
-    catch (Signal_argv error) {
-      std::copy(error.begin(), error.end(),
-                std::back_inserter(Executable::call_stack));
-      Executable::caught_signal = error.signal;
-      Executable::signal_handler();
-      return -1;}
+    (*i)(argv);
     if (Executable::unwind_stack()) Executable::signal_handler();
     argv.pop_front();
     return true;}
@@ -64,23 +58,23 @@ bool Executable_map::run_if_exists(const std::string& key, Argv& argv) {
 
 int Executable_map::run(Argv& argv) {
   try {
-  Executable* i = find(argv);                       // first check for key
-  if (i) return (*i)(argv);
-  else if (argv[0][0] == '/') {                       // insert a binary
-    set(new Binary(argv[0]));
-    return (*find(argv))(argv);}
-  if (is_function_name(argv[0])) {                    // try autofunction
-    if (in_autofunction) return not_found(argv);        // nested autofunction
-    in_autofunction = true;
-    run_if_exists("rwsh.autofunction", argv);
-    in_autofunction = false;
-    i = find(argv);                                   // second check for key
-    if (i) return (*i)(argv);}
-  return not_found(argv);}
+    Executable* i = find(argv);                       // first check for key
+    if (i) return (*i)(argv);
+    else if (argv[0][0] == '/') {                       // insert a binary
+      set(new Binary(argv[0]));
+      return (*find(argv))(argv);}
+    if (is_function_name(argv[0])) {                    // try autofunction
+      if (in_autofunction) return not_found(argv);        // nested autofunction
+      in_autofunction = true;
+      run_if_exists("rwsh.autofunction", argv);
+      in_autofunction = false;
+      i = find(argv);                                   // second check for key
+      if (i) return (*i)(argv);}
+    return not_found(argv);}
   catch (Signal_argv error) {
+    Executable::caught_signal = error.signal;
     std::copy(error.begin(), error.end(),
               std::back_inserter(Executable::call_stack));
-    Executable::caught_signal = error.signal;
     if (!Executable::global_nesting && !Executable::in_signal_handler)
       Executable::signal_handler();
     return -1;}}

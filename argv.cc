@@ -113,14 +113,12 @@ Signal_argv::Signal_argv(Sig_type signal_i, const std::string& value) :
   push_back(value);}
 
 Signal_argv::Signal_argv(Sig_type signal_i, const std::string& x,
-                         const std::string& y) :
-    signal(signal_i) {
+                         const std::string& y) : signal(signal_i) {
   push_back(signal_names[signal]);
   push_back(x);
   push_back(y);}
 
-Signal_argv::Signal_argv(Sig_type signal_i, int x, int y) :
-    signal(signal_i) {
+Signal_argv::Signal_argv(Sig_type signal_i, int x, int y) : signal(signal_i) {
   push_back(signal_names[signal]);
   std::ostringstream x_str, y_str;
   x_str <<x;
@@ -128,10 +126,8 @@ Signal_argv::Signal_argv(Sig_type signal_i, int x, int y) :
   y_str <<y;
   push_back(y_str.str());}
 
-Signal_argv::Signal_argv(Sig_type signal_i, const Argv& src) {
-  signal = signal_i;
+Signal_argv::Signal_argv(Sig_type signal_i, const Argv& src) : signal(signal_i){
   push_back(signal_names[signal]);
-  //Executable::caught_signal = signal;
   std::copy(src.begin(), src.end(), std::back_inserter(*this));}
 
 Old_argv::Old_argv(const Argv& src) : argc_v(src.size()) {
