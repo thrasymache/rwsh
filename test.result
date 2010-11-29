@@ -71,6 +71,12 @@ $line continuation
 signal triggered: rwsh.executable_not_found ( line continuation ) 
 
 -1
+$ .echo ignore leading space
+ignore leading space
+0
+$	.echo ignore leading tab
+ignore leading tab
+0
 $.which_executable rwsh.mapped_argfunction {.nop}
 {.nop}
 0
@@ -673,6 +679,9 @@ $.function .exit {.nop}
 $.function rwsh.escaped_argfunction {.nop}
 
 3
+$.function a
+
+4
 $.function a {.nop}
 
 0
@@ -2127,7 +2136,7 @@ $e $A
 $
 
 0
-$# .version .version_available .version_compatible
+$# .version .version_compatible
 
 0
 $.version 1.0
@@ -2136,14 +2145,6 @@ signal triggered: rwsh.argument_count ( 1 0 .version )
 -1
 $.version {excess argfunc}
 signal triggered: rwsh.excess_argfunction ( .version ) 
-
--1
-$.version_available 1.0
-signal triggered: rwsh.argument_count ( 1 0 .version_available ) 
-
--1
-$.version_available {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .version_available ) 
 
 -1
 $.version_compatible
@@ -2159,9 +2160,6 @@ signal triggered: rwsh.excess_argfunction ( .version_compatible )
 
 -1
 $.version
-0.2.1+
-0
-$.version_available
 0.2.1+
 0
 $.version_compatible 1.0

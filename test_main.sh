@@ -12,6 +12,8 @@
 .echo \$tokens \} \{ \; \\ \) \(
 .echo a \
 line continuation
+ .echo ignore leading space
+	.echo ignore leading tab
 .which_executable rwsh.mapped_argfunction {.nop}
 .which_executable rwsh.argfunction {
   multiple line argfunction }
@@ -196,6 +198,7 @@ f x
 .function /bin/echo {.echo $* $nl}
 .function .exit {.nop}
 .function rwsh.escaped_argfunction {.nop}
+.function a
 .function a {.nop}
 .which_executable a
 a 1 2 3
@@ -600,16 +603,13 @@ e $A
 .var_subtract A \
 e $A
 
-# .version .version_available .version_compatible
+# .version .version_compatible
 .version 1.0
 .version {excess argfunc}
-.version_available 1.0
-.version_available {excess argfunc}
 .version_compatible
 .version_compatible 1.0 1.0
 .version_compatible 1.0 {excess argfunc}
 .version
-.version_available
 .version_compatible 1.0
 .version_compatible 0.2.1+
 

@@ -620,15 +620,6 @@ int b_version(const Argv& argv) {
   argv.output <<version_str;
   return 0;}
 
-// write to standard output a list of the version with which this shell is 
-// compatible
-int b_version_available(const Argv& argv) {
-  if (argv.size()!=1) throw Signal_argv(Argv::Argument_count, argv.size()-1, 0);
-  if (argv.argfunction()) throw Signal_argv(Argv::Excess_argfunction);
-  argv.output <<version_str;
-  argv.output.flush();
-  return 0;}
-
 // return true if the given version string is compatible with the version
 // of this shell
 int b_version_compatible(const Argv& argv) {
@@ -769,12 +760,10 @@ int b_while(const Argv& argv) {
                 argv.input, argv.output.child_stream(), argv.error);
   while (!executable_map.run(lookup)) {
     if (Executable::unwind_stack()) return -1;
-    if (argv.argfunction()) {
-      Argv mapped_argv;
-      mapped_argv.push_back("rwsh.mapped_argfunction");
-      mapped_argv.output = argv.output.child_stream();
-      ret = (*argv.argfunction())(mapped_argv);
-      if (Executable::unwind_stack()) return -1;}
-    else ret = 0;}
+    Argv mapped_argv;
+    mapped_argv.push_back("rwsh.mapped_argfunction");
+    mapped_argv.output = argv.output.child_stream();
+    ret = (*argv.argfunction())(mapped_argv);
+    if (Executable::unwind_stack()) return -1;}
   return ret;}
 

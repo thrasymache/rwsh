@@ -97,6 +97,5 @@ void internal_init(void) {
   executable_map.set(new Builtin(".var_divide", b_var_divide));
   executable_map.set(new Builtin(".var_exists", b_var_exists));
   executable_map.set(new Builtin(".version", b_version));
-  executable_map.set(new Builtin(".version_available", b_version_available));
   executable_map.set(new Builtin(".version_compatible", b_version_compatible));}
 

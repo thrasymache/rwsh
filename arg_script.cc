@@ -93,7 +93,7 @@ Arg_script::Arg_script(const Rwsh_istream_p& input_i,
 Arg_script::Arg_script(const std::string& src, unsigned max_soon) :
   argfunction(0), argfunction_level(0),
   input(default_input), output(default_output), error(default_error) {
-  std::string::size_type point = 0; 
+  std::string::size_type point = src.find_first_not_of(" \t", 0); 
   point = constructor(src, point, max_soon);
   if (point < src.length())
     if (src[point] == '}' || src[point] == ';')
