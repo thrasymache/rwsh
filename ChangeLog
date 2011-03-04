@@ -1,39 +1,34 @@
-rwsh v0.3
-  A list of changes too long for it to be worth enumerating them,...
-  though it is worth mentioning that all builtins now begin with a "." rather
-  than a "%" character
-
-rwsh v0.2.2 -
-  * builtins added: %combine, %exec, %for_each_line, %fork, %is_default_input,
-      %is_default_output, %is_default_error, %test_greater, %test_is_number,
-      %test_number_equal, %test_less, %waiting_for_shell, %waiting_for_user,
-      %which_execution_count, %which_last_execution_time,
-      %which_total_execution_time
-  * builtins removed: %newline
-  * internal_functions: rwsh.double_redirection rwsh.file_open_failure
+rwsh v0.3 - command substitution
+  * builtins added: append_to_errno, combine, error_unit, exec, for, 
+      for_each_line, fork, if_errno, if_errno_is, importenv_overwrite, 
+      importenv_preserve, is_default_input, is_default_output, is_default_error,      stepwise, test_greater, test_is_number, test_less, test_not_equal, 
+      test_number_equal, waiting_for_shell, waiting_for_user,
+      which_executable, which_execution_count, which_last_execution_time, 
+      which_test, which_total_execution_time, which_path, which_return, while, 
+      var_add version_available, version_compatible
+  * builtins removed: append_to_errno, autofunction, error_unit, false, 
+      if_errno, if_errno_is, importenv, newline, printenv, true
+  * internal_functions: rwsh.bad_argfunction_style, rwsh.double_redirection, 
+      rwsh.file_open_failure, rwsh.not_soon_enough, rwsh.failed_substitution, 
+      rwsh.undefined_variable
   * file redirection
+  * command substitution z &{x y} - executes x y and makes its output an
+      argument to z 
+  * evaluate soon: &x is the value of x at the start of the function,
+      &&x is the value of x at the start of the containing argfunction
   * &*, $VAR$, $VAR$WORD, &{f}$, and &{f}$WORD
+  * reference variables - $$X prints the value of the variable named by X
+  * source no longer runs internal functions other than rwsh.raw_command
   * /etc/rwshrc does all command-processing
   * /etc/rwshrc supports -c flag
   * newlines supported within argfunctions
   * selection read and write support relative paths
-
-rwsh v0.2.1 - command substitution
-  * builtins: %append_to_errno, %error_unit, %for, %if_errno, %if_errno_is, 
-      %importenv_overwrite, %importenv_preserve, %stepwise, %test_not_equal, 
-      %which_executable, %which_test, %which_path, %which_return, %while, 
-      %var_add %version_available, %version_compatible
-  * internal_functions: rwsh.bad_argfunction_style, rwsh.not_soon_enough,
-      rwsh.failed_substitution, rwsh.undefined_variable
-  * evaluate soon: &x is the value of x at the start of the function,
-      &&x is the value of x at the start of the outermost argfunction
-  * command substitution z &{x y} - executes x y and makes its output an
-      argument to z 
-  * %source no longer runs internal functions other than rwsh.raw_command
-  * ERRNO prevents execution of control flow builtins
-  * reference variables - $$X prints the value of the variable named by X
+  * ERRNO prevents execution of control flow builtins, then all conditions that 
+      would have caused ERRNO to be set are replaced with signals
   * fixed rwsh.mapped_argfunction {$*} crash
-  * removed %autofunction, %false, %importenv, %printenv, %true
+  * Then a list of changes too long for it to be worth enumerating them,...
+      though it is worth mentioning that all builtins now begin with a "."
+      rather than a "%" character
 
 rwsh v0.2 - scripts
   * can source scripts
