@@ -17,6 +17,8 @@
 
 
 
+
+  
   
   
   
@@ -50,6 +52,8 @@
 
 
 
+
+  
   
   
   
@@ -71,6 +75,7 @@
 
 
 <body>
+
 
 
 Builtins take a fixed number of arguments, and will throw an argument
@@ -97,22 +102,27 @@ for shell functions.
 
 
 
+
 The .cd changes the current working directory to the path given as its
 argument. If successful it sets CWD to the argument that was passed to
 it. It returns the value returned by chdir.<br>
 
 
 
+
 &nbsp;&nbsp;&nbsp; .cd does not open any file descriptors
 <h3>.combine</h3>
+
 
 The .combine command prints its arguments without any intervening
 space. It does not append a newline. Note that this is the way to
 combine the contents of multiple variables or to combine the contents
 of a variable with fixed text in a single word.<br>
 
+
 &nbsp;&nbsp;&nbsp; .combine opens the output file descriptor.
 <h3>.echo</h3>
+
 
 
 
@@ -136,7 +146,9 @@ the .newline builtin.<br>
 
 
 
+
 &nbsp;&nbsp;&nbsp; .echo opens the output file descriptor.<br>
+
 
 
 
@@ -154,6 +166,7 @@ the .newline builtin.<br>
 
 <h3>.else</h3>
 
+
 .else does not take any arguments, it runs its argfunction if IF_TEST
 is false, and then sets IF_TEST to the empty string. It is a syntax
 error for .else to occur except following .if and zero or more .else_if
@@ -162,8 +175,10 @@ without a .else.<br>
 
 
 
+
 &nbsp;&nbsp;&nbsp; .else does not itself open any file descriptors.
 <h3>.else_if</h3>
+
 
 
 
@@ -186,7 +201,9 @@ between .if and .else.<br>
 
 
 
+
 &nbsp;&nbsp;&nbsp; .else_if does not itself open any file descriptors.<br>
+
 
 
 
@@ -219,9 +236,11 @@ between .if and .else.<br>
 
 
 
+
 .else_if_not is identical to .else_if except that it sets IF_TEST to
 true and runs its argfunction only if the result of running its
 arguments returns nonzero.<br>
+
 
 
 
@@ -235,7 +254,9 @@ arguments returns nonzero.<br>
 
 
 
+
 <h3>.exec</h3>
+
 
 .exec attempts to replace the shell with another executable using the
 exec system call. The first argument is the name of the executable, any
@@ -245,16 +266,20 @@ descriptors are the default input, output, and error for the
 executable. .exec can only return non-zero since it will never return
 on success.<br>
 
+
 &nbsp;&nbsp;&nbsp; .exec does not open any file descriptors.<br>
 
 
+
 <h3>.exit</h3>
+
 
 .exit causes the shell to exit before the next command is requested
 from the user. It does not terminate any function (i.e. commands after
 .exit in a function will be run). After any enclosing functions
 complete, rwsh.shutdown will be run before the shell actually
 terminates.<br>
+
 
 
 
@@ -269,11 +294,14 @@ terminates.<br>
 
 
 
+
 .for runs its argfunction once for each of its arguments, passing the argument to the argfunction each time as $1.<br>
 
 
 
+
 &nbsp;&nbsp;&nbsp; .for does not open any file descriptors.<br>
+
 
 
 
@@ -291,7 +319,9 @@ terminates.<br>
 
 
 
+
 .for_each_line runs its argfunction once for each line of its input, passing the line as arguments to its argfunction.<br>
+
 
 
 
@@ -299,7 +329,9 @@ terminates.<br>
 <h3>.fork</h3>
 
 
+
 <h3>.function</h3>
+
 
 
 
@@ -320,7 +352,9 @@ terminates.<br>
 
 
 
+
 &nbsp;&nbsp;&nbsp; .function does not open any file descriptors.<br>
+
 
 
 
@@ -347,6 +381,7 @@ terminates.<br>
 
 
 
+
 .global takes two arguments, a variable name and a value. If the
 variable does not exist it is added to the variable_map with the given
 value, if the variable does exist, then .global returns 1 and does not
@@ -355,7 +390,9 @@ the termination of the enclosing function.<br>
 
 
 
+
 &nbsp;&nbsp;&nbsp; .global does not open any file descriptors.<br>
+
 
 
 
@@ -381,6 +418,7 @@ the termination of the enclosing function.<br>
 
 
 
+
 .if executes its arguments as a command, and then runs its argument
 function&nbsp;if it has one and if the command returned 0. It is a
 syntax error for .if to follow another .if, .else_if, or .else_if_not,
@@ -388,6 +426,7 @@ unless there is an .else between them. It is not a syntax error for .if
 to have no argfunction. .if returns -1 on a syntax error, the return
 value of its argfunction if it is run, and 0 otherwise. It sets IF_TEST
 to true if its arguments returned 0, and to false otherwise.<br>
+
 
 
 
@@ -401,7 +440,9 @@ to true if its arguments returned 0, and to false otherwise.<br>
 
 
 
+
 <h3>.importenv_overwrite</h3>
+
 
 
 
@@ -424,8 +465,10 @@ external value is taken.<br>
 
 
 
+
 &nbsp;&nbsp;&nbsp; .importenv_overwrite does not open any file descriptors.
 <h3>.importenv_preserve</h3>
+
 
 
 
@@ -438,6 +481,7 @@ external value is taken.<br>
 .importenv causes the environment that rwsh was run in to be imported
 into the variable map. If a variable exists in both environments, the
 internal value is taken.<br>
+
 
 
 
@@ -463,10 +507,11 @@ internal value is taken.<br>
 
 
 
+
 .internal_errors takes no arguments. It prints a list of those internal
 functions which are run whether they exist or not (and will thus result
-in rwsh.executable_not_found errors if they do not exist). Except for
-rwsh.init they are all reporting errors themselves.<br>
+in rwsh.executable_not_found errors if they do not exist). Except for .init they are all reporting errors themselves.<br>
+
 
 
 
@@ -486,7 +531,9 @@ rwsh.init they are all reporting errors themselves.<br>
 
 
 
+
 .internal_features takes no arguments. It prints a list of those internal functions which are run only if they exist.<br>
+
 
 
 
@@ -506,8 +553,10 @@ rwsh.init they are all reporting errors themselves.<br>
 
 
 
+
 .internal_vars takes no arguments. It prints a list of those variables
 that are written by the shell itself or affect the running of builtins.<br>
+
 
 
 
@@ -521,7 +570,9 @@ that are written by the shell itself or affect the running of builtins.<br>
 
 
 
+
 returns 1 if its input has been redirected away from the stdin of the shell.<br>
+
 
 
 
@@ -535,7 +586,9 @@ returns 1 if its input has been redirected away from the stdin of the shell.<br>
 
 
 
+
 returns 1 if its output has been redirected away from the stdout of the shell.<br>
+
 
 
 
@@ -549,12 +602,15 @@ returns 1 if its output has been redirected away from the stdout of the shell.<b
 
 
 
+
 returns 1 if its error has been redirected away from the stdout of the shell.<br>
+
 
 
 
 &nbsp;&nbsp;&nbsp; .is_default_error does not open any file descriptors.
 <h3>.ls</h3>
+
 
 
 
@@ -578,7 +634,9 @@ use /bin/ls rather than .ls.<br>
 
 
 
+
 &nbsp;&nbsp;&nbsp; .ls opens its output.<br>
+
 
 
 
@@ -611,11 +669,14 @@ use /bin/ls rather than .ls.<br>
 
 
 
+
 .nop ignores its arguments, and leaves $? unchanged<br>
 
 
 
+
 &nbsp;&nbsp;&nbsp; .nop does not open any file descriptors.<br>
+
 
 
 
@@ -648,12 +709,15 @@ use /bin/ls rather than .ls.<br>
 
 
 
+
 .return takes one argument, which it converts to an integer, and then
 returns that value. It has more error conditions than any other builtin, besides .var_add and .var_divide.<br>
 
 
 
+
 &nbsp;&nbsp;&nbsp; .return does not open any file descriptors.<br>
+
 
 
 
@@ -686,13 +750,16 @@ returns that value. It has more error conditions than any other builtin, besides
 
 
 
+
 .set changes the value of a variable in the variable map. the first argument is the
 name of the variable, its second and any additional arguments are the value of the
 variable.<br>
 
 
 
+
 &nbsp;&nbsp;&nbsp; .set does not open any file descriptors.<br>
+
 
 
 
@@ -726,14 +793,17 @@ variable.<br>
 
 
 
+
 .selection_set is described in the selection document. Briefly, it is a
 variant of .set, that treats the current value of the variable as a
 path that should be modified by the second argument.<br>
 
 
 
+
 &nbsp;&nbsp;&nbsp; .selection_set does not open any file descriptors.
 <h3>.source</h3>
+
 
 
 
@@ -755,8 +825,10 @@ returned by the script it ran.<br>
 
 
 
+
 &nbsp;&nbsp;&nbsp; .source does not open any file descriptors (the script gets opened as a new file descriptor)
 <h3>.stepwise</h3>
+
 
 
 
@@ -781,8 +853,10 @@ shell replacing each ";" with "||", and "&amp;&amp;" respectively.<br>
 
 
 
+
 &nbsp;&nbsp;&nbsp; .stepwise does not itself open any file descriptors.
 <h3>.store_output</h3>
+
 .store_output takes one argument and one argfunction. It runs the
 argfunction and if the argfunction returns zero, it stores the output
 in the variable named by its argument
@@ -790,8 +864,10 @@ in the variable named by its argument
 by the argfunction. This is the way to handle cases where you want a
 substitution, but also want specific handling of any error.<br>
 
+
 &nbsp;&nbsp;&nbsp; .store_output does not itself open any file descriptors.
 <h3>.test_equal</h3>
+
 
 
 
@@ -807,27 +883,34 @@ strings.<br>
 
 
 
+
 &nbsp;&nbsp;&nbsp; .test_equal does not open any file descriptors.
 
 <h3>.test_greater</h3>
+
 
 .test_greater takes two arguments. It returns 0 if both arguments
 convert to numbers and the first argument is numerically greater than the
 second argument. It returns 1 if the first argument is numerically less than or equal to the second argument.<br>
 
+
 &nbsp;&nbsp;&nbsp; .test_greater does not open any file descriptors.
 <h3>.test_less</h3>
+
 
 .test_less takes two arguments. It returns 0 if both arguments convert
 to numbers and the first argument is numerically less than the second
 argument. It returns 1 if the first argument is numerically greater
 than or equal to the second argument.<br>
 
+
 &nbsp;&nbsp;&nbsp; .test_less does not open any file descriptors.
 <h3>.test_is_number</h3>
 
 
+
 .test_is_number takes one argument. It returns 0 if that argument can convert to a floating point number.<br>
+
 
 
 
@@ -848,12 +931,15 @@ than or equal to the second argument.<br>
 
 
 
+
 .test_not_empty takes one argument. It returns 0 if that argument is not the empty string.<br>
+
 
 
 
 &nbsp;&nbsp;&nbsp; .test_not_empty does not open any file descriptors.
 <h3>.test_not_equal</h3>
+
 
 
 
@@ -869,7 +955,9 @@ are the same string.<br>
 
 
 
+
 &nbsp;&nbsp;&nbsp; .test_not_equal does not open any file descriptors.<br>
+
 
 
 
@@ -882,11 +970,13 @@ are the same string.<br>
 <h3>.test_number_equal</h3>
 
 
+
 .test_number_equal takes two arguments. It returns 0 if both of those
 arguments convert to the same floating point number. It returns 1 if
 those two arguments convert to different floating point numbers. It
 throws an error if it cannot convert either argument to a double
 presion float.<br>
+
 
 
 &nbsp;&nbsp;&nbsp; .test_number_equal does not open any file descriptors.
@@ -900,7 +990,9 @@ presion float.<br>
 
 
 
+
 .unset takes one argument, the name of a variable to remove from the variable map.<br>
+
 
 
 
@@ -908,11 +1000,14 @@ presion float.<br>
 <h3>.usleep</h3>
 
 
+
 .usleep takes one argument and then sleeps the shell for the specified number of microseconds.<br>
+
 
 
 &nbsp;&nbsp;&nbsp; .usleep does not open any file descriptors.
 <h3>.var_add</h3>
+
 
 
 
@@ -927,7 +1022,9 @@ value to add to this variable.&nbsp;&nbsp;The set of errors is argument_count, n
 
 
 
+
 &nbsp;&nbsp;&nbsp; .var_add does not open any file descriptors.<br>
+
 
 
 
@@ -935,13 +1032,16 @@ value to add to this variable.&nbsp;&nbsp;The set of errors is argument_count, n
 <h3>.var_subtract</h3>
 
 
+
 .var_subtract takes two arguments, the name of a variable and an integer
 value to subtract from this variable.&nbsp;The set of errors is argument_count, not_a_number, input_range, and result_range.<br>
 
 
 
+
 &nbsp;&nbsp;&nbsp; .var_divide does not open any file descriptors.
 <h3>.var_divide</h3>
+
 
 
 .var_divide takes two arguments, the name of a variable and an integer
@@ -951,8 +1051,10 @@ divide_by_zero.<br>
 
 
 
+
 &nbsp;&nbsp;&nbsp; .var_divide does not open any file descriptors.
 <h3>.var_exists</h3>
+
 
 
 
@@ -968,7 +1070,9 @@ set it returns 1.<br>
 
 
 
+
 &nbsp;&nbsp;&nbsp; .var_exists does not open any file descriptors.<br>
+
 
 
 
@@ -995,7 +1099,9 @@ set it returns 1.<br>
 
 
 
+
 .version prints out the version of rwsh that is currently running<br>
+
 
 
 
@@ -1016,7 +1122,9 @@ set it returns 1.<br>
 
 
 
+
 .version_available takes no arguments, and prints out a list of those that would return true if passed to .version_compatible.<br>
+
 
 
 
@@ -1029,10 +1137,12 @@ set it returns 1.<br>
 <h3>.version_compatible</h3>
 
 
+
 .version_compatible takes one argument, and returns 0 if that argument
 is an rwsh version number compatible with this one. At the current
 time, only the current version will cause .version_compatible to return
 0.<br>
+
 
 
 
@@ -1042,13 +1152,16 @@ time, only the current version will cause .version_compatible to return
 
 
 
+
 .waiting_for_binary prints the total amount of time that the shell has
 spent waiting for other processes that it has forked to terminate.<br>
 
 
 
+
 &nbsp;&nbsp;&nbsp; .waiting_for_binary opens its output.
 <h3>.waiting_for_shell</h3>
+
 
 
 
@@ -1061,7 +1174,9 @@ exactly equal the wall time elapsed since startup.<br>
 
 
 
+
 &nbsp;&nbsp;&nbsp; Although it probably doesn't matter, all of the timing calculations are included within .waiting_for_shell.<br>
+
 
 
 
@@ -1075,12 +1190,15 @@ exactly equal the wall time elapsed since startup.<br>
 
 
 
+
 .waiting_for_user prints the total amount of time that the shell has spent waiting for commands to be entered.<br>
+
 
 
 
 &nbsp;&nbsp;&nbsp; .waiting_for_user opens its output.
 <h3>.which_executable</h3>
+
 
 
 
@@ -1110,6 +1228,7 @@ and are printed with just their enclosing braces.<br>
 
 
 
+
 &nbsp;&nbsp;&nbsp; .which_executable opens its output.<br>
 
 
@@ -1120,7 +1239,9 @@ and are printed with just their enclosing braces.<br>
 
 
 
+
 <br>
+
 
 
 
@@ -1137,9 +1258,11 @@ and are printed with just their enclosing braces.<br>
 
 
 
+
 .which_execution_count prints the number of times that the executable
 specified by its first argument has been run. It returns 1 if the
 executable does not exist in the executable map.<br>
+
 
 
 
@@ -1153,7 +1276,9 @@ executable does not exist in the executable map.<br>
 
 
 
+
 <br>
+
 
 
 
@@ -1169,12 +1294,14 @@ executable does not exist in the executable map.<br>
 
 
 
+
 .which_last_execution_time prints the amount of time that&nbsp;the
 executable
 specified by its first argument took to run the last time it was run.
 This is wall time as opposed to time that the shell was active. It
 returns 1 if the
 executable does not exist in the executable map.<br>
+
 
 
 
@@ -1188,7 +1315,9 @@ executable does not exist in the executable map.<br>
 
 
 
+
 <br>
+
 
 
 
@@ -1205,9 +1334,11 @@ executable does not exist in the executable map.<br>
 
 
 
+
 .which_total_execution_time prints the amount of time that the executable
 specified by its first argument has taken to run since it was added to the executable map. It returns 1 if the
 executable does not exist in the executable map.<br>
+
 
 
 
@@ -1222,10 +1353,12 @@ executable does not exist in the executable map.<br>
 
 
 
+
 .which_path takes two arguments. The first is the name of the
 executable to search for, the second is the colon-separated search path
 within which to look for it. If an executable is found, it is printed,
 otherwise an error is returned.<br>
+
 
 
 
@@ -1246,6 +1379,7 @@ otherwise an error is returned.<br>
 
 
 
+
 .which_return takes one argument, the name of an executable in the
 executable map. If the executable is found, then it prints the last
 value returned by that executable, and then returns 0. If the
@@ -1254,8 +1388,10 @@ rwsh.argfunction or rwsh.mapped_argfunction, then it returns 2.<br>
 
 
 
+
 &nbsp;&nbsp;&nbsp; .which_return opens its output.
 <h3>.which_test</h3>
+
 
 
 
@@ -1271,7 +1407,9 @@ the executable map. If one is found it returns 0. Otherwise it returns
 
 
 
+
 &nbsp;&nbsp;&nbsp; .which_test does not open any file descriptors.<br>
+
 
 
 
@@ -1284,6 +1422,7 @@ the executable map. If one is found it returns 0. Otherwise it returns
 <h3>.while</h3>
 
 
+
 .while runs its arguments as a command, and for each time that they
 return 0, it runs its argument function. &nbsp;Note: a loop of the form
 ".while .return $X {...}" will either not run its argument function or
@@ -1291,6 +1430,7 @@ run it until it throws an error. &nbsp;$X is interpretted once, before
 the
 statement is run, and however the argument function might change the
 value of X, it cannot change the value that it used to have.<br>
+
 
 
 

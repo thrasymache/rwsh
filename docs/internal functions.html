@@ -8,6 +8,8 @@
 
 
 
+
+  
   
   
   
@@ -23,6 +25,8 @@
 
 
 
+
+  
   
   
   
@@ -35,6 +39,7 @@
 
 
 <body>
+
 
 Rather than using a shell variable with its own language of special
 characters to configure the prompt, rwsh uses an internal function.
@@ -54,7 +59,9 @@ rwsh.executable_not_found is run instead.<br>
 
 
 
+
 <br>
+
 
 
 
@@ -69,7 +76,9 @@ rwsh.executable_not_found is run instead.<br>
 
 
 
+
 <h3>rwsh.after_command</h3>
+
 
 
 
@@ -78,6 +87,7 @@ rwsh.executable_not_found is run instead.<br>
 
 After each command completes, rwsh.after_command is run with the entire command line as its arguments.
 <h3>rwsh.autofunction</h3>
+
 
 
 
@@ -97,6 +107,7 @@ binary that it finds to the executable map as a function.
 
 
 
+
 Before any command is run, the entire command is passed to
 rwsh.before_command (if it exists). The command is run only if
 rwsh.before_command returns 0.<br>
@@ -107,7 +118,9 @@ rwsh.before_command returns 0.<br>
 
 
 
+
 <h3>rwsh.prompt</h3>
+
 
 
 
@@ -124,7 +137,9 @@ arguments.<br>
 
 
 
+
 <h3>rwsh.raw_command</h3>
+
 
 
 
@@ -134,6 +149,7 @@ This function is passed the entire command line as a single argument,
 before it is parsed, and will thus have the command as typed, rather
 than the command that will be run.
 <h3>rwsh.run_logic</h3>
+
 If it exists, this command is passed the entire command line and takes
 responsibility for actually running the command. If this function fails
 early enough, the command will not be run.
@@ -144,13 +160,16 @@ early enough, the command will not be run.
 
 
 
+
 This function is run immediately before the shell exits (i.e. after the
 exit builtin is run, or after the shell receives EOF from stdin). Its
 arguments are the same as those that were used to initialize the shell.
 (The arguments to the rwsh executable itself, not the last set of
-arguments passed to rwsh.init.)<br>
+arguments passed to&nbsp;.init.)<br>
+
 
 <h3>rwsh.vars</h3>
+
 
 
 
@@ -169,7 +188,9 @@ other functionality.<br>
 
 
 
+
 <h2>error messages</h2>
+
 
 Note, it any of the functions below produce an error that causes the
 stack to unwind, then a generic error message will be printed for both
@@ -180,13 +201,16 @@ messages.
 
 
 <h3>rwsh.argument_count</h3>
+
 If a command is requested with the wrong
 number of arguments, then rwsh.argument_count is run instead. Currently
 this is limited to builtins and no diagnostic information is passed to
 rwsh.argument_count. In a future version there will be diagnostic
 information passed as arguments, and functions run with the wrong
 number of arguments will produce this error as well.<br>
+
 <h3>rwsh.arguments_for_argfunction</h3>
+
 
 
 
@@ -209,6 +233,7 @@ rwsh.escaped_argfunction).</p>
 
 
 
+
 <p>If you find that you want to pass arguments to an argfunction, this
 is the purpose of rwsh.mapped_argfunction. While the second example
 given above would require two argument functions which is not currently
@@ -221,7 +246,9 @@ supported, the first one could be written as "fn x {fn $1
 
 
 
+
 <h3>rwsh.bad_argfunction_style</h3>
+
 
 
 
@@ -236,7 +263,9 @@ the argument function with the bad style.<br>
 
 
 
+
 <h3>rwsh.bad_if_nest</h3>
+
 <p>if-else blocks do not need to all be at the same nesting level - you
 can define functions that act like .if, .else_if, .else, etc. with
 differing semantics, which will result in a function returning after
@@ -246,11 +275,17 @@ need to be nested within eachother properly. That is to say that if
 invocation, then ".else" needs to occur within that same argument
 function. If it does not, then an error will be thrown when the
 argument function returns.</p>
+
 <p>For example, this will generate an error:</p>
+
 <pre>.if .return 0 {<br>    .if .return $x {.nop}}<br>.else {.echo this line will never be reached}<br>.else {.echo nor this}<br></pre>
+
 <p>But this will not:</p>
+
 <pre>.if .return 0 {<br>    rwsh.mapped_argfunction {<br>        .if .return $x {.nop}}<br>    rwsh.mapped_argfunction {<br>        rwsh.mapped_argfunction {<br>            .else {.echo valid}}}}<br>.else {.echo still valid}</pre>
+
 <h3>rwsh.binary_not_found</h3>
+
 
 
 
@@ -262,14 +297,18 @@ If the execve() system call fails when attempting to run a binary,
 rwsh.binary_not_found is called with the name of the binary as its only
 argument.
 <h3>rwsh.divide_by_zero</h3>
+
 If the second argument to .var_divide is "0", or a number that converts to 0, then this error will be thrown.
 <h3>rwsh.double_redirection</h3>
+
 If a command line has two output redirections, or two input
 redirections, then this error is thrown. Both of these constructions
 will be supported in a later version.
 <h3>rwsh.else_without_if</h3>
+
 if ".else" is called before ".if", then this error will be thrown.
 <h3>rwsh.executable_not_found</h3>
+
 
 
 
@@ -289,6 +328,7 @@ executable's name is in $0.</p>
 
 
 
+
 <p>rwsh.executable_not_found ends up being an incredibly important
 error message because if some other error occurs, for which the
 corresponding internal function has not been defined (e.g. if the error
@@ -300,7 +340,7 @@ rwsh.executable_not_found is being called in response to an error, then
 the user will not know the arguments to that error function, which will
 themselves be useful information. The second implication is that it is
 unacceptable for rwsh.executable_not_found to not be defined if it is
-called. It is not defined before rwsh.init is called, and it isn't a
+called. It is not defined before .init is called, and it isn't a
 crisis if it isn't initialized immediately. However, if it is called
 and it is not defined, then it will be defined to a default value and
 that will be run.</p>
@@ -311,7 +351,9 @@ that will be run.</p>
 
 
 
+
 <h3>rwsh.excessive_nesting</h3>
+
 
 
 
@@ -335,7 +377,9 @@ It
 is also useful to have an error message in these situations that does
 not fill several screens.</p>
 
+
 <h3>rwsh.failed_substitution</h3>
+
 
 
 
@@ -346,14 +390,18 @@ first argument being the substitution that failed.<br>
 
 
 
+
 <h3>rwsh.file_open_failure</h3>
+
 If a file input or output redirection cannot open its target, or if
 .source cannot open its first argument, then this error is thrown. The
 name of the file that could not be openned is passed as the first
 argument.
 <h3>rwsh.if_before_else</h3>
+
 If two ".if" commands occur, without a ".else" command between them, then this error is thrown.
-<h3>rwsh.init</h3>
+<h3>.init</h3>
+
 
 
 
@@ -363,21 +411,27 @@ If two ".if" commands occur, without a ".else" command between them, then this e
 
 This function is responsible for all of the initialization of the
 shell. The command
-line that started rwsh is passed to rwsh.init as its arguments. It
-doesn't do any good to change rwsh.init after the shell has started,
+line that started rwsh is passed to .init as its arguments. It
+doesn't do any good to change .init after the shell has started,
 but it can be examined to see what initialization has been done, and it
 can be run as a command to reinitialize&nbsp;the shell, possibly with
-different arguments.
+different arguments. This is why it is named like a built-in rather than like an internal function.
 
 <h3>rwsh.input_range</h3>
+
 If any of the builtins that take a numerical argument are passed a
 number outside of the range of a double-precision floating point
 number, then this error will be thrown.
 <h3>rwsh.invalid_word_selection</h3>
+
 <h3><br>
+
 </h3>
+
 <h3>rwsh.line_continuation</h3>
+
 <h3>rwsh.mismatched_brace</h3>
+
 
 
 
@@ -389,7 +443,9 @@ as to where an argument function begins and ends), then rwsh.mismatched
 brace is called instead. It's one argument is the command string up to
 and including the first unmatched brace.
 <h3>rwsh.mismatched_parenthesis</h3>
+
 <h3>rwsh.multiple_argfunctions</h3>
+
 
 
 
@@ -404,8 +460,11 @@ separate command. If a command is requested with multiple argfunctions,
 then rwsh.multiple_argfunctions is called instead. It does not take any
 arguments.
 <h3>rwsh.not_a_number</h3>
+
 <h3>rwsh.not_executable</h3>
+
 <h3>rwsh.not_soon_enough</h3>
+
 
 
 
@@ -416,7 +475,9 @@ delayed past the execution of the statement in which it occurs (e.g.
 case, an rwsh.not_soon_enough error is thrown, it's argument is the
 argument specification that is delayed too far.
 <h3>rwsh.result_range</h3>
+
 <h3>rwsh.selection_not_found</h3>
+
 
 
 
@@ -435,7 +496,9 @@ selection as its second argument. For example, a command line that read
 
 
 
+
 <h3>rwsh.sighup rwsh.sigint rwsh.sigquit rwsh.sigpipe rwsh.sigterm rwsh.sigstp rwsh.sigcont&nbsp;rwsh.sigusr1 rwsh.sigusr2</h3>
+
 
 
 
@@ -445,7 +508,9 @@ If the shell receives any of these signals, then it will unwind the
 stack, and pass the call stack as the arguments to the corresponding
 internal function.
 <h3>rwsh.subprompt</h3>
+
 <h3>rwsh.undefined_variable</h3>
+
 
 
 If an argument specification reads a variable that is not set, or
@@ -456,7 +521,9 @@ the variable.<br>
 
 
 
+
 <h3>rwsh.unreadable_dir</h3>
+
 
 
 
@@ -465,6 +532,7 @@ the variable.<br>
 If a selection read encounters a directory to which you do not have
 read permissions, then rwsh.unreadable_dir is called with the name of
 that directory as its argument.<br>
+
 
 
 

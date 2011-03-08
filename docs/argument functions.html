@@ -3,11 +3,15 @@
 <head>
 
 
+
+  
   
   
   <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
 
 
+
+  
   
   
   <title>argument functions</title>
@@ -17,10 +21,13 @@
 <body>
 
 
+
 Along with normal text arguments, commands can include argument functions enclosed in braces. For example,<br>
 
 
+
 .function sel {echo $SELECT}<br>
+
 The function builtin is passed "sel" as $1 and "echo $SELECT" as an
 argument function. The function builtin creates a new function in the
 executable map using $1 for the name and the argument function for the
@@ -36,7 +43,9 @@ equivalent to the command given above.) Empty braces ("{}") refer to
 the same empty command that a blank line does.<br>
 
 
+
 <br>
+
 
 
 There are also four constructs named like internal functions to permit
@@ -48,71 +57,94 @@ be used as arguments to commands without the shell interfering. Of them
 only rwsh.mapped_argfunction can take arguments itself.<br>
 
 
+
 <br>
+
 
 
 <h3>rwsh.mapped_argfunction</h3>
 
 
+
 rwsh.mapped_argfunction executes its argument function with the given arguments. For example<br>
 
 
+
 <br>
+
 
 
 rwsh.mapped_argfunction z c {echo x y $1; echo a b $2; echo $0}<br>
 
 
+
 <br>
+
 
 
 will output<br>
 
 
+
 <br>
+
 
 
 x y z<br>
 
 
+
 a b c<br>
+
 
 
 rwsh.mapped_argfunction<br>
 
 
+
 <br>
+
 
 
 Nested argument functions are possible, and variables are not
 interpretted for argument functions until they are run. For example<br>
 
 
+
 rwsh.mapped_argfunction 1 2 3 {echo $*; rwsh.mapped_argfunction a b $1 {echo $*; rwsh.mapped_argfunction x $2 $3 {echo $*}}}<br>
 
 
+
 <br>
+
 
 
 will output<br>
 
 
+
 <br>
+
 
 
 1 2 3<br>
 
 
+
 a b 1<br>
+
 
 
 x b 1<br>
 
 
+
 <br>
 
 
+
 <h3>rwsh.unescaped_argfunction and rwsh.argfunction</h3>
+
 Suppose that you wanted a function to provide a shorter name for
 .function. What you need is a way of passing the argument function for
 the current function an an argument function to the command that it
@@ -121,76 +153,101 @@ rwsh.unescaped_argfunction is replaced by the current argument function
 and rwsh.argfunction is replaced by rwsh.unescaped_argfunction.<br>
 
 
+
 <br>
+
 
 
 so if you type<br>
 
 
+
 .function fn {.function $* {rwsh.argfunction}}<br>
 
 
+
 <br>
+
 
 
 the result of interpretting the command line results in<br>
 
 
+
 <br>
+
 
 
 .function fn {.function $* {rwsh.unescaped_argfunction}}<br>
 
 
+
 <br>
+
 
 
 which places ".function $* {rwsh.unescaped_argfunction}" in the executable_map with name fn.<br>
 
 
+
 <br>
+
 
 
 if you then type <br>
 
 
+
 <br>
+
 
 
 fn sel {echo $SELECT}<br>
 
 
+
 <br>
+
 
 
 the command is unchanged by interpretation, and the function that is stored under fn gets interpretted to be<br>
 
 
+
 <br>
+
 
 
 %function sel {echo $SELECT}<br>
 
 
+
 <br>
+
 
 
 If we had instead typed<br>
 
 
+
 .function fn {.function $* {rwsh.unescaped_argfunction}}<br>
 
 
+
 <br>
+
 
 
 It would have been interpretted to result in<br>
 
 
+
 .function fn {.function $* {.function $* {rwsh.unescaped_argfunction}}}<br>
 
 
+
 <br>
+
 
 
 The result would have been a function that takes an argument function
@@ -198,7 +255,9 @@ and defines a second function which, when run, would define a function
 to execute the argument function that was passed to the first function.<br>
 
 
+
 <br>
+
 
 
 The which command seeks to describe what is in the executable map in
@@ -206,28 +265,37 @@ the terms that you would use to put it there rather than what is
 actually there. Thus<br>
 
 
+
 which fn<br>
 
 
+
 <br>
+
 
 
 prints out<br>
 
 
+
 .function fn {.function $* {rwsh.argfunction}}<br>
 
 
+
 <br>
+
 
 
 instead of what is stored, which is<br>
 
 
+
 .function $* {rwsh.unescaped_argfunction}<br>
 
 
+
 <br>
+
 
 
 The which command also recognizes the names rwsh.mapped_argfunction and
@@ -237,55 +305,71 @@ print out is omitted for various reasons. For example, we could define
 fn_v<br>
 
 
+
 <br>
+
 
 
 fn fn_v {.echo adding \ ; which rwsh.argfunction {rwsh.argfunction}; .echo \ to executable map as $1; fn $* {rwsh.argfunction}}<br>
 
 
+
 <br>
+
 
 
 then running<br>
 
 
+
 fn_v sel {echo $SELECT}<br>
 
 
+
 <br>
+
 
 
 would print out<br>
 
 
+
 adding {echo $SELECT} to executable map as sel<br>
 
 
+
 <br>
+
 
 
 <h3>rwsh.escaped_argfunction</h3>
-
-
-Suppose you wanted to define rwsh.init such that it defined a function
-fn which was equivalent to .function. It needs to incorporate the
-argument function, but not rwsh.init's argument function, fn's argument
+Suppose you wanted to define a function fn-fn such that it defined a
+function with the name of its first argument which was equivalent to
+.function. It needs to incorporate the
+argument function, but not its own argument function, the new
+function's argument
 function. The solution is rwsh.escaped_argfunction, which is replaced
-by rwsh.argfunction when interpretted. If that was all we wanted to
-have in rwsh.init, it would be defined as follows:<br>
+by rwsh.argfunction when interpretted. fn-fn can be defined as follows:<br>
 
 
-.function rwsh.init {.function fn {.function $* {rwsh.escaped_argfunction}}}<br>
+
+.function fn-fn {.function $1 {.function $* {rwsh.escaped_argfunction}}}<br>
+
 
 <br>
+
 
 <h3>argfunction call as the result of an interpretation</h3>
 
+
 If you gave the command<br>
+
 
 rwsh.mapped_argfunction {echo x; rwsh.mapped_argfunction rwsh.argfunction {$1}}<br>
 
+
 <br>
+
 
 There is a problem: if rwsh.argfunction was given directly as an
 executable, since rwsh.argfunction is only recognized as an executable
@@ -294,11 +378,15 @@ interpretted when there is any argument function for it to be replaced
 with. &nbsp;As a result, only rwsh.mapped_argfunction is supported as
 the result of an interpretation<br>
 
+
 rwsh.mapped_argfunction rwsh.mapped_argfunction xyy {$1 $2 {echo $1}}<br>
+
 
 <br>
 
+
 will print<br>
+
 
 xxy
 </body>
