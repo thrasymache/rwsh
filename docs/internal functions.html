@@ -9,6 +9,10 @@
 
 
 
+
+
+  
+  
   
   
   
@@ -26,6 +30,10 @@
 
 
 
+
+
+  
+  
   
   
   
@@ -39,6 +47,8 @@
 
 
 <body>
+
+
 
 
 Rather than using a shell variable with its own language of special
@@ -60,7 +70,11 @@ rwsh.executable_not_found is run instead.<br>
 
 
 
+
+
 <br>
+
+
 
 
 
@@ -77,7 +91,11 @@ rwsh.executable_not_found is run instead.<br>
 
 
 
+
+
 <h3>rwsh.after_command</h3>
+
+
 
 
 
@@ -87,6 +105,8 @@ rwsh.executable_not_found is run instead.<br>
 
 After each command completes, rwsh.after_command is run with the entire command line as its arguments.
 <h3>rwsh.autofunction</h3>
+
+
 
 
 
@@ -108,6 +128,8 @@ binary that it finds to the executable map as a function.
 
 
 
+
+
 Before any command is run, the entire command is passed to
 rwsh.before_command (if it exists). The command is run only if
 rwsh.before_command returns 0.<br>
@@ -119,7 +141,11 @@ rwsh.before_command returns 0.<br>
 
 
 
+
+
 <h3>rwsh.prompt</h3>
+
+
 
 
 
@@ -138,7 +164,11 @@ arguments.<br>
 
 
 
+
+
 <h3>rwsh.raw_command</h3>
+
+
 
 
 
@@ -150,10 +180,14 @@ before it is parsed, and will thus have the command as typed, rather
 than the command that will be run.
 <h3>rwsh.run_logic</h3>
 
+
+
 If it exists, this command is passed the entire command line and takes
 responsibility for actually running the command. If this function fails
 early enough, the command will not be run.
 <h3>rwsh.shutdown</h3>
+
+
 
 
 
@@ -168,7 +202,11 @@ arguments are the same as those that were used to initialize the shell.
 arguments passed to&nbsp;.init.)<br>
 
 
+
+
 <h3>rwsh.vars</h3>
+
+
 
 
 
@@ -189,18 +227,24 @@ other functionality.<br>
 
 
 
+
+
 <h2>error messages</h2>
+
+
 
 
 Note, it any of the functions below produce an error that causes the
 stack to unwind, then a generic error message will be printed for both
 errors rather than calling the internal function used to report errors
 on the secondary error. This prevents an infinite recursion of error
-messages.
+messages. Note that while ".init" is not an error message it falls into this category because it must exist.
 
 
 
 <h3>rwsh.argument_count</h3>
+
+
 
 If a command is requested with the wrong
 number of arguments, then rwsh.argument_count is run instead. Currently
@@ -209,7 +253,11 @@ rwsh.argument_count. In a future version there will be diagnostic
 information passed as arguments, and functions run with the wrong
 number of arguments will produce this error as well.<br>
 
+
+
 <h3>rwsh.arguments_for_argfunction</h3>
+
+
 
 
 
@@ -234,6 +282,8 @@ rwsh.escaped_argfunction).</p>
 
 
 
+
+
 <p>If you find that you want to pass arguments to an argfunction, this
 is the purpose of rwsh.mapped_argfunction. While the second example
 given above would require two argument functions which is not currently
@@ -247,7 +297,11 @@ supported, the first one could be written as "fn x {fn $1
 
 
 
+
+
 <h3>rwsh.bad_argfunction_style</h3>
+
+
 
 
 
@@ -264,27 +318,43 @@ the argument function with the bad style.<br>
 
 
 
+
+
 <h3>rwsh.bad_if_nest</h3>
+
+
 
 <p>if-else blocks do not need to all be at the same nesting level - you
 can define functions that act like .if, .else_if, .else, etc. with
 differing semantics, which will result in a function returning after
 .if was called, but before .else was called. However, if-else blocks
-need to be nested within eachother properly. That is to say that if
-".if" occurrs within the argument function of a different .if
+need to be nested within each other properly. That is to say that if
+".if" occurs within the argument function of a different .if
 invocation, then ".else" needs to occur within that same argument
 function. If it does not, then an error will be thrown when the
 argument function returns.</p>
 
+
+
 <p>For example, this will generate an error:</p>
+
+
 
 <pre>.if .return 0 {<br>    .if .return $x {.nop}}<br>.else {.echo this line will never be reached}<br>.else {.echo nor this}<br></pre>
 
+
+
 <p>But this will not:</p>
+
+
 
 <pre>.if .return 0 {<br>    rwsh.mapped_argfunction {<br>        .if .return $x {.nop}}<br>    rwsh.mapped_argfunction {<br>        rwsh.mapped_argfunction {<br>            .else {.echo valid}}}}<br>.else {.echo still valid}</pre>
 
+
+
 <h3>rwsh.binary_not_found</h3>
+
+
 
 
 
@@ -298,16 +368,57 @@ rwsh.binary_not_found is called with the name of the binary as its only
 argument.
 <h3>rwsh.divide_by_zero</h3>
 
+
+
 If the second argument to .var_divide is "0", or a number that converts to 0, then this error will be thrown.
 <h3>rwsh.double_redirection</h3>
+
+
 
 If a command line has two output redirections, or two input
 redirections, then this error is thrown. Both of these constructions
 will be supported in a later version.
 <h3>rwsh.else_without_if</h3>
 
+
+
 if ".else" is called before ".if", then this error will be thrown.
+<h3>rwsh.excessive_nesting</h3>
+
+
+
+
+
+
+
+
+
+
+<p>If a function nests more than $MAX_NESTING times, execution will be
+aborted and rwsh.excessive_nesting will be called with the call stack
+as arguments (the name of the last function to be called is in $1, the
+function that called it is in $2, and so on). If $MAX_NESTING is "0",
+undefined or has some value other than a positive number, then
+functions may be called, but they may not themselves call functions. If
+$MAX_NESTING is "1", then functions may call other functions, but those
+functions may only call builtins and binaries. This is necessary
+because an infinitely recursive function would cause the shell to
+crash. (This behavior can be observed by setting MAX_NESTING to an
+absurdly high value, and then running a function that calls itself, or
+by running a function that always calls itself in a shell like bash.)
+It
+is also useful to have an error message in these situations that does
+not fill several screens.</p>
+
+
+
+
+<h3>rwsh.excess_argfunction</h3>
+
+If a builtin that cannot use an argument function is called with an argument function, this error will be thrown. 
 <h3>rwsh.executable_not_found</h3>
+
+
 
 
 
@@ -321,6 +432,8 @@ executable_map after calling rwsh.autofunction, then
 rwsh.executable_not_found is called with the same command line as was
 going to be passed to the missing executable, meaning that the
 executable's name is in $0.</p>
+
+
 
 
 
@@ -352,33 +465,11 @@ that will be run.</p>
 
 
 
-<h3>rwsh.excessive_nesting</h3>
-
-
-
-
-
-
-
-
-<p>If a function nests more than $MAX_NESTING times, execution will be
-aborted and rwsh.excessive_nesting will be called with the call stack
-as arguments (the name of the last function to be called is in $1, the
-function that called it is in $2, and so on). If $MAX_NESTING is "0",
-undefined or has some value other than a positive number, then
-functions may be called, but they may not themselves call functions. If
-$MAX_NESTING is "1", then functions may call other functions, but those
-functions may only call builtins and binaries. This is necessary
-because an infinitely recursive function would cause the shell to
-crash. (This behavior can be observed by setting MAX_NESTING to an
-absurdly high value, and then running a function that calls itself, or
-by running a function that always calls itself in a shell like bash.)
-It
-is also useful to have an error message in these situations that does
-not fill several screens.</p>
 
 
 <h3>rwsh.failed_substitution</h3>
+
+
 
 
 
@@ -391,16 +482,24 @@ first argument being the substitution that failed.<br>
 
 
 
+
+
 <h3>rwsh.file_open_failure</h3>
+
+
 
 If a file input or output redirection cannot open its target, or if
 .source cannot open its first argument, then this error is thrown. The
-name of the file that could not be openned is passed as the first
+name of the file that could not be opened is passed as the first
 argument.
 <h3>rwsh.if_before_else</h3>
 
+
+
 If two ".if" commands occur, without a ".else" command between them, then this error is thrown.
 <h3>.init</h3>
+
+
 
 
 
@@ -419,18 +518,21 @@ different arguments. This is why it is named like a built-in rather than like an
 
 <h3>rwsh.input_range</h3>
 
+
+
 If any of the builtins that take a numerical argument are passed a
 number outside of the range of a double-precision floating point
 number, then this error will be thrown.
 <h3>rwsh.invalid_word_selection</h3>
 
-<h3><br>
 
-</h3>
 
-<h3>rwsh.line_continuation</h3>
-
+If a word selection (i.e. something following a dollar sign following a
+variable name) is not a number, this error will be thrown. Its argument
+will be the text that was the word selection.
 <h3>rwsh.mismatched_brace</h3>
+
+
 
 
 
@@ -443,8 +545,16 @@ as to where an argument function begins and ends), then rwsh.mismatched
 brace is called instead. It's one argument is the command string up to
 and including the first unmatched brace.
 <h3>rwsh.mismatched_parenthesis</h3>
+If a parenthesis is found for which no mate can be found, this error
+will be thrown with the offending text passed as an argument. Note that
+this will generally be an excess close parenthesis since in the
+presence of an excess open parenthesis the parser will continue taking
+more text until a mate is found.
+
 
 <h3>rwsh.multiple_argfunctions</h3>
+
+
 
 
 
@@ -460,10 +570,22 @@ separate command. If a command is requested with multiple argfunctions,
 then rwsh.multiple_argfunctions is called instead. It does not take any
 arguments.
 <h3>rwsh.not_a_number</h3>
+If any builtin that expects a number as an argument (such as .var_add,
+.test_less, or .return) gets instead something that is not simply
+numerical (e.g. "many", "three", or "3a"), this error is thrown with
+the text that was where a number should have been passed as an argument.
+
 
 <h3>rwsh.not_executable</h3>
 
+
+
+If a script is sourced that does not have the executable permission bit
+set, this error is thrown and the name of the script is passed as an
+argument.
 <h3>rwsh.not_soon_enough</h3>
+
+
 
 
 
@@ -475,8 +597,14 @@ delayed past the execution of the statement in which it occurs (e.g.
 case, an rwsh.not_soon_enough error is thrown, it's argument is the
 argument specification that is delayed too far.
 <h3>rwsh.result_range</h3>
+If the result of an arithmetic operation does not fit in a double
+precision number on the machine, this error is thrown with the two
+components of the arithmetic operation passed as arguments
+
 
 <h3>rwsh.selection_not_found</h3>
+
+
 
 
 
@@ -489,15 +617,21 @@ argument specification that is delayed too far.
 rwsh.selection_not_found is called, with the smallest part of the
 selection that did not find a match as its first argument and the full
 selection as its second argument. For example, a command line that read
-"/bin/ls @/ussr/local/" would result in a call of
-"rwsh.selection_not_found /ussr /ussr/local/*"</p>
+"/bin/ls @/usrr/local/" would result in a call of
+"rwsh.selection_not_found /usrr /usrr/local/*"</p>
 
 
 
 
 
 
-<h3>rwsh.sighup rwsh.sigint rwsh.sigquit rwsh.sigpipe rwsh.sigterm rwsh.sigstp rwsh.sigcont&nbsp;rwsh.sigusr1 rwsh.sigusr2</h3>
+
+
+<h3>rwsh.sighup rwsh.sigint rwsh.sigquit rwsh.sigpipe rwsh.sigterm
+rwsh.sigtstp rwsh.sigcont rwsh.sigchld rwsh.sigusr1 rwsh.sigusr2
+rwsh.sigunknown</h3>
+
+
 
 
 
@@ -507,9 +641,11 @@ selection as its second argument. For example, a command line that read
 If the shell receives any of these signals, then it will unwind the
 stack, and pass the call stack as the arguments to the corresponding
 internal function.
-<h3>rwsh.subprompt</h3>
+
 
 <h3>rwsh.undefined_variable</h3>
+
+
 
 
 
@@ -522,7 +658,11 @@ the variable.<br>
 
 
 
+
+
 <h3>rwsh.unreadable_dir</h3>
+
+
 
 
 
@@ -532,6 +672,19 @@ the variable.<br>
 If a selection read encounters a directory to which you do not have
 read permissions, then rwsh.unreadable_dir is called with the name of
 that directory as its argument.<br>
+
+<h3>rwsh.version_incompatible</h3>
+If .version_compatible is run with the version string different from
+the set of versions that this shell is compatible with, then this error
+will be thrown with the requested version as an argument. At the
+current time there are so many changes between one release and the next
+that this will occur if the version string passed is not identical to
+that printed by .version. At some point in the future (likely after
+1.0), the shell will be backwards compatible for scripts that do not
+depend upon bugs or the absence of features, for some range of
+versions. At that time this error will only be thrown if the version is
+outside of that range of compatible versions.
+
 
 
 

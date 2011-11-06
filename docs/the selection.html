@@ -3,16 +3,9 @@
 <head>
 
 
-
-  
-  
   
   <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
 
-
-
-  
-  
   
   <title>the selection</title>
 </head>
@@ -21,42 +14,32 @@
 <body>
 
 
-
 Most of my time using a shell involves searching for some files and
 then doing something with them. As a somewhat contrived example:<br>
 
 
-
 <br>
-
 
 
 ls /usr/local<br>
 
 
-
 ls /usr/local/teTeX<br>
-
 
 
 ls /usr/local/teTeX/include<br>
 
 
-
 ls /usr/local/teTeX/include/kpathsea<br>
-
 
 
 ls /usr/local/teTeX/include/kpathsea/c-*<br>
 
 
-
 less /usr/local/teTeX/include/kpathsea/c-*<br>
 
 
-
 <br>
-
 
 
 One might repetitively use cd in order to keep the paths shorter, or
@@ -65,61 +48,46 @@ from what you're trying to do. For contrast, the corresponding, normal
 rwsh sequence would be<br>
 
 
-
 <br>
-
 
 
 ls /usr/local/<br>
 
 
-
 ls teTeX/<br>
-
 
 
 ls include/<br>
 
 
-
 ls kpathsea/<br>
-
 
 
 ls c-*<br>
 
 
-
 less<br>
-
 
 
 <br>
 
 
-
-The argument to each command adds to the previous selection. (The&nbsp;/
-before "usr" clears the previous selection.) Finally, since the desired files are
+The argument to each command adds to the previous selection.
+(The&nbsp;/
+before "usr" clears the previous selection.) Finally, since the desired
+files are
 already selected, less does not need any arguments. This is
 accomplished by each command being a shell function using selection set
 and selection read. Both ls and less could be defined as follows:<br>
 
 
-
 <br>
 
 
-
-function ls {.selection_set SELECT $1;&nbsp;/bin/ls -d @$SELECT}<br>
-
-
-
-function less {.selection_set SELECT $1;&nbsp;/usr/bin/less @$SELECT}<br>
-
+<pre>function ls {.selection_set s $1;&nbsp;/bin/ls -d @$s}<br><br>function less {.selection_set s $1;&nbsp;/usr/bin/less<br>@$s}<br></pre>
 
 
 <br>
-
 
 
 .selection_set takes a shell variable as its first argument, it uses
@@ -128,10 +96,12 @@ shell variable. If no argument is given, then the existing pattern is
 not changed. @ is the selection read operator, which converts the
 pattern into a list of the files matched by that pattern. @ can be
 followed by a text string or $ and a shell variable. There is nothing
-special about the variable SELECT, except that both of the functions
-use it to store the regular expression that they get their file list from.<br>
-<br>
+special about the variable s, except that both of the functions
+use it to store the regular expression that they get their file list
+from.<br>
 
+
+<br>
 
 
 Since this accomplished using a normal shell variable, it is trivial to
@@ -139,6 +109,8 @@ implement commands like ftp's lls to explore a second selection, while
 leaving the first unchanged. Since the filename matching patterns are
 only treated specially by .selection_set and selection read, grep could
 be defined by<br>
+
+
 function grep {.set REGEX $1; .selection_set s $2 $*3; /usr/bin/grep
 $REGEX @$s} The first argument is neither used by .selection_set nor
 selection read
@@ -155,78 +127,90 @@ expression as its second argument, and optionally a list of files as
 subsequent arguments.<br>
 
 
-
 <br>
 
 
+The user interface of grep can be improved beyond removing the need to escape
+the regular expression used for pattern matching. grep can be used to
+modify the selection that will be used by subsequent commands. The
+version that I have been using involves the following two functions:<br>
+
+<pre>.function grepl {<br>&nbsp; .set REGEX $1<br>&nbsp; .selection_set s $2 $*3<br>&nbsp; .set grep-sel $s<br>&nbsp; .selection_set grep-sel &amp;&amp;{&amp;{whichp grep} -l $REGEX @$s}$<br>&nbsp; echo $grep-sel}<br>.function gs {.set s $grep-sel}</pre>
+
+This sets the variable grep-sel to be the list of files that match the
+pattern, if the list appears correct, then this can be made the active
+selection by running gs. This is only one of many possible
+implementations: if efficiency is not an issue (you are always looking
+at a small amount of data), then the statement that modifies grep-sel
+can be added to normal grep commands, running grep twice. A more
+complicated implementation could parse the output of grep to identify
+the files mentioned, and set the variable accordingly.<br>
+
+<br>
 
 @ (selection read)<br>
-
 
 
 <ul>
 
 
+  <li>Steps in a filename pattern are text separated by forward
+slashes ("/").</li>
 
-  <li>Steps in a filename pattern are text separated by forward slashes ("/").</li>
 
-
-
-  <li>If a step consists of "..", the effect is to undo the previous
+  <li>If a step consists of "..", the effect is to undo the
+previous
 step. ("." is not handled specially, but works normally because it is
-part of the file system. There is currently no way within a selection read to refer to the file
+part of the file system. There is currently no way within a selection
+read to refer to the file
 link in each directory named "..".)</li>
 
 
-
-  <li>Otherwise a step may consist of any combination of text and star
+  <li>Otherwise a step may consist of any combination of text and
+star
 ("*") characters. Text matches itself, a star matches zero or more of
-any character in a filename. ("?" and other metacharacters are not supported at this time.)</li>
+any character in a filename. ("?" and other metacharacters are not
+supported at this time.)</li>
 
 
-
-  <li>If there is an empty step (other than before the first slash or
+  <li>If there is an empty step (other than
 after the final slash), that is if there&nbsp;are two consecutive
 forward slashes at any point in a filename pattern, the effect is to
 move to the root of the file system. Thus @/usr/local//bin is
 equivalent to @/bin.</li>
 
 
-
-  <li>If the end of a patten is an empty step (i.e. the pattern ends
+  <li>If the end of a patten is an empty step (i.e. the pattern
+ends
 with a forward slash), the pattern is read as if the final step was a
 star. Thus "@/usr/" is equivalent to "@/usr/*"</li>
-
 
 
 </ul>
 
 
-
 <br>
-
 
 
 .selection_set &lt;variable&gt; &lt;pattern&gt;<br>
 
 
-
 &lt;variable&gt;
-is converted into a filename pattern and then &lt;pattern&gt; is added
-to it. The last part of the pattern in &lt;variable&gt; is replaced by
-the first part of &lt;pattern&gt;, unless &lt;pattern&gt; begins with a
+is converted into a filename pattern and then &lt;pattern&gt;
+is added
+to it. The last part of the pattern in &lt;variable&gt; is
+replaced by
+the first part of &lt;pattern&gt;, unless
+&lt;pattern&gt; begins with a
 /. As with selection read, a pattern that ends with a / is read as if
 it ended with /*. <br>
-
 
 
 <ul>
 
 
-
   <li>If &lt;variable&gt; contains "/usr/local", and
 &lt;pattern&gt; is "bin", the result is "/usr/bin".&nbsp;</li>
-
 
 
   <li>If &lt;variable&gt;
@@ -234,25 +218,25 @@ instead contains "/usr/local/", it is read as "/usr/local/*", and the
 result is "/usr/local/bin".&nbsp;</li>
 
 
-
   <li>If &lt;variable&gt; again contains
-"/usr/local", but &lt;pattern&gt; is "./bin", then the result is
+"/usr/local", but &lt;pattern&gt; is "./bin", then the result
+is
 "/usr/local/bin".&nbsp;</li>
 
 
-
-  <li>If &lt;variable&gt; contains&nbsp;"/usr/local/bin" and
-&lt;pattern&gt; is "..", then the ".." replaces the "bin", and the
+  <li>If &lt;variable&gt;
+contains&nbsp;"/usr/local/bin" and
+&lt;pattern&gt; is "..", then the ".." replaces the "bin", and
+the
 effect of the ".." is to remove "local", resulting in "/usr".&nbsp;</li>
 
 
-
-  <li>Similarly if &lt;variable&gt; contains "/usr/local/bin" and &lt;pattern&gt; is "../bin", the result is "/usr/bin".</li>
-
+  <li>Similarly if &lt;variable&gt; contains
+"/usr/local/bin" and &lt;pattern&gt; is "../bin", the result is
+"/usr/bin".</li>
 
 
 </ul>
-
 
 
 </body>
