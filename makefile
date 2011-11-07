@@ -53,6 +53,10 @@ all: rwsh librwsh.a
 clean:
 	rm *.o
 dist:
-	tar -czf rwsh-0.1.tar.gz *.h *.cc COPYING ChangeLog makefile README \
-		test_init.sh test_main.sh test.result test_rwsh
+	mkdir rwsh-0.3
+	cp -r *.h *.cc *.sh rwshrc* \
+		COPYING Changelog docs KnownBugs makefile README test.result \
+		rwsh-0.3
+	tar -czf rwsh-0.3.tar.gz rwsh-0.3
+	rm -r rwsh-0.3
 

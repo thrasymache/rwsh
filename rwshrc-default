@@ -77,6 +77,9 @@ sfn md5sum
   .selection_set s $2 $*3
   &{whichp grep} &&{c - &&1} $REGEX @$s}
 sfn rm 
+.function rm-r {
+  .selection_set s $1 $*2
+  &{whichp rm} -r @$s}
 .function regrepl {
   .selection_set s $1 $*2
   .set grep-sel $s
@@ -218,7 +221,7 @@ sfn wc
 .function or {
   .if .return 1 {.nop}; .stepwise $* {.else_if $* {.nop}}; .else {.nop}}
 .global TESTABILITY (an external variable)
-.function st {/bin/rwsh -to >test.result.last
+.function st {/bin/rwsh -to <test_main.sh >test.result.last
   &{whichp diff} -c test.result test.result.last}
 .function bless-t {/bin/cp test.result.last test.result}
 .function to {/bin/rwsh -to}

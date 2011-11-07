@@ -63,3 +63,13 @@ query to this value could include the increment since the timer started.
 .waiting_for_binary does not include time that the shell is waiting to do input
 and output to processes. This time is included in .waiting_for_shell, though
 only the processing time in the shell should be included.
+
+there is an issue with argfunction handling that prevents rwsh.run_logic from
+appropriately substituting argfunctions when the substitution is itself nested
+in an argfunction. If that description isn't sufficiently clear, there are two
+examples commented out in the definition of rwsh.run_logic in test_init.sh
+Note that the definition is itelf commented out. If rwsh.run_logic is itself
+uncommented, the behavior is essentially the the same as it is now, but using
+either of the other implementations of rwsh.run_logic will produce broken
+behavior.
+

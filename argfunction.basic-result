@@ -1,0 +1,228 @@
+signal triggered: rwsh.raw_command ( .function rwsh.raw_command {.echo $1; .echo $nl} ) 
+.function # {.nop}
+.global last_command_return -10
+.global A \
+.global N \
+
+# tests multi-line commands within a sourced script
+# .function rwsh.run_logic {
+  # .return $last_command_return
+  # .signal_handler &{.internal_functions}$ {&&* {rwsh.argfunction}}
+  # rwsh.mapped_argfunction {&&* {rwsh.argfunction}}
+  &&* {rwsh.argfunction}
+  # .set last_command_return $?
+  # .echo $nl
+  # .echo $last_command_return
+  # .echo $nl}
+.function rwsh.before_command {.return $last_command_return}
+.function rwsh.after_command {
+  .set last_command_return $?
+  .echo $nl; .echo $last_command_return; .echo $nl}
+.function rwsh.prompt {.echo \$}
+.function rwsh.shutdown {.echo $nl; .echo now terminating normally; .echo $nl}
+.function rwsh.vars {.internal_vars}
+.else_if .test_string_equal $2 -c {
+  rwsh.mapped_argfunction &3 {.source /etc/rwshrc-basic; $1$; .exit}}
+.else {
+  .echo unexpected command line: &* (
+)
+  .source /etc/rwshrc-default}
+rwsh.help not defined 
+$.echo $nl $nl $nl $nl
+
+ 
+ 
+ 
+
+0
+$.return 0
+
+0
+$.function fw {
+  .function f1 {rwsh.argfunction}
+  .which_executable f1; .echo $nl
+  f1 f2 {rwsh.argfunction}
+  .which_executable f2; .echo $nl
+  .function f1; .function f2}
+
+0
+$fw {.echo hi $nl; .function $1 {rwsh.argfunction}}
+{.echo hi $nl; .function $1 {rwsh.argfunction}}
+hi 
+{.echo hi $nl; .function $1 {rwsh.argfunction}}
+
+0
+$fw {.while .return 1 {.function $1 {rwsh.argfunction}}}
+{.while .return 1 {.function $1 {rwsh.argfunction}}}
+
+
+4
+$.function f1 {
+  .echo function name $1 $nl
+  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .echo $nl end of function body $nl}
+
+0
+$f1 f2 {
+  .echo noname $1 $nl
+  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .echo $nl end of nothing $nl}
+function name f2 
+{; .echo noname $1 $nl; .which_executable rwsh.argfunction {rwsh.argfunction}; .echo $nl end of nothing $nl}
+ end of function body 
+
+0
+$fw {
+  .echo function name $1 $nl
+  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .echo $nl end of function body $nl}
+{; .echo function name $1 $nl; .which_executable rwsh.argfunction {rwsh.argfunction}; .echo $nl end of function body $nl}
+function name f2 
+{; .echo function name $1 $nl; .which_executable rwsh.argfunction {rwsh.argfunction}; .echo $nl end of function body $nl}
+ end of function body 
+
+
+4
+$fw {.for 1 2 3 {
+  .echo function name $1 $nl
+  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .echo $nl end of function body $nl}}
+{.for 1 2 3 {; .echo function name $1 $nl; .which_executable rwsh.argfunction {rwsh.argfunction}; .echo $nl end of function body $nl}}
+function name 1 
+{.for 1 2 3 {; .echo function name $1 $nl; .which_executable rwsh.argfunction; .echo $nl end of function body $nl}}
+ end of function body 
+function name 2 
+{.for 1 2 3 {; .echo function name $1 $nl; .which_executable rwsh.argfunction; .echo $nl end of function body $nl}}
+ end of function body 
+function name 3 
+{.for 1 2 3 {; .echo function name $1 $nl; .which_executable rwsh.argfunction; .echo $nl end of function body $nl}}
+ end of function body 
+
+
+4
+$fw {.for 1 2 3 {rwsh.mapped_argfunction $1 {
+  .echo function name &&1 $nl
+  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .echo $nl end of function body $nl}}}
+{.for 1 2 3 {rwsh.mapped_argfunction $1 {; .echo function name &1 $nl; .which_executable rwsh.argfunction {rwsh.argfunction}; .echo $nl end of function body $nl}}}
+function name f2 
+{.for 1 2 3 {rwsh.mapped_argfunction $1 {; .echo function name &1 $nl; .which_executable rwsh.argfunction; .echo $nl end of function body $nl}}}
+ end of function body 
+function name f2 
+{.for 1 2 3 {rwsh.mapped_argfunction $1 {; .echo function name &1 $nl; .which_executable rwsh.argfunction; .echo $nl end of function body $nl}}}
+ end of function body 
+function name f2 
+{.for 1 2 3 {rwsh.mapped_argfunction $1 {; .echo function name &1 $nl; .which_executable rwsh.argfunction; .echo $nl end of function body $nl}}}
+ end of function body 
+
+
+4
+$fw {rwsh.mapped_argfunction $1 {.for 1 2 3 {
+  .echo function name &&1 $nl
+  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .echo $nl end of function body $nl}}}
+{rwsh.mapped_argfunction $1 {.for 1 2 3 {; .echo function name &1 $nl; .which_executable rwsh.argfunction {rwsh.argfunction}; .echo $nl end of function body $nl}}}
+function name f2 
+{rwsh.mapped_argfunction $1 {.for 1 2 3 {; .echo function name &1 $nl; .which_executable rwsh.argfunction {.for 1 2 3 {; .echo function name f2 $nl; .which_executable rwsh.argfunction {rwsh.mapped_argfunction $1 {.for 1 2 3 {; .echo function name &&&&&&1 $nl; .which_executable rwsh.argfunction; .echo $nl end of function body $nl}}}; .echo $nl end of function body $nl}}; .echo $nl end of function body $nl}}}
+ end of function body 
+function name f2 
+{rwsh.mapped_argfunction $1 {.for 1 2 3 {; .echo function name &1 $nl; .which_executable rwsh.argfunction {.for 1 2 3 {; .echo function name f2 $nl; .which_executable rwsh.argfunction {rwsh.mapped_argfunction $1 {.for 1 2 3 {; .echo function name &&&&&&1 $nl; .which_executable rwsh.argfunction; .echo $nl end of function body $nl}}}; .echo $nl end of function body $nl}}; .echo $nl end of function body $nl}}}
+ end of function body 
+function name f2 
+{rwsh.mapped_argfunction $1 {.for 1 2 3 {; .echo function name &1 $nl; .which_executable rwsh.argfunction {.for 1 2 3 {; .echo function name f2 $nl; .which_executable rwsh.argfunction {rwsh.mapped_argfunction $1 {.for 1 2 3 {; .echo function name &&&&&&1 $nl; .which_executable rwsh.argfunction; .echo $nl end of function body $nl}}}; .echo $nl end of function body $nl}}; .echo $nl end of function body $nl}}}
+ end of function body 
+
+
+4
+$fw {rwsh.mapped_argfunction rwsh.not_a_number {
+  .echo function name &&1 $nl
+  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .echo $nl end of function body $nl}}
+{rwsh.mapped_argfunction rwsh.not_a_number {; .echo function name &1 $nl; .which_executable rwsh.argfunction {rwsh.argfunction}; .echo $nl end of function body $nl}}
+function name f2 
+{rwsh.mapped_argfunction rwsh.not_a_number {; .echo function name &1 $nl; .which_executable rwsh.argfunction {; .echo function name f2 $nl; .which_executable rwsh.argfunction {rwsh.mapped_argfunction rwsh.not_a_number {; .echo function name &&&&1 $nl; .which_executable rwsh.argfunction {rwsh.argfunction}; .echo $nl end of function body $nl}}; .echo $nl end of function body $nl}; .echo $nl end of function body $nl}}
+ end of function body 
+
+
+4
+$fw {.signal_handler rwsh.not_a_number {
+  .echo function name &&1 $nl
+  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .echo $nl end of function body $nl}}
+{.signal_handler rwsh.not_a_number {; .echo function name &1 $nl; .which_executable rwsh.argfunction {rwsh.argfunction}; .echo $nl end of function body $nl}}
+function name f2 
+{.signal_handler rwsh.not_a_number {; .echo function name &1 $nl; .which_executable rwsh.argfunction; .echo $nl end of function body $nl}}
+ end of function body 
+
+
+4
+$fw {.for 1 2 3 {.signal_handler rwsh.not_a_number {
+  .echo function name &&1 $nl
+  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .echo $nl end of function body $nl}}}
+{.for 1 2 3 {.signal_handler rwsh.not_a_number {; .echo function name &1 $nl; .which_executable rwsh.argfunction {rwsh.argfunction}; .echo $nl end of function body $nl}}}
+function name f2 
+{.for 1 2 3 {.signal_handler rwsh.not_a_number {; .echo function name &1 $nl; .which_executable rwsh.argfunction; .echo $nl end of function body $nl}}}
+ end of function body 
+function name f2 
+{.for 1 2 3 {.signal_handler rwsh.not_a_number {; .echo function name &1 $nl; .which_executable rwsh.argfunction; .echo $nl end of function body $nl}}}
+ end of function body 
+function name f2 
+{.for 1 2 3 {.signal_handler rwsh.not_a_number {; .echo function name &1 $nl; .which_executable rwsh.argfunction; .echo $nl end of function body $nl}}}
+ end of function body 
+
+
+4
+$fw {.signal_handler rwsh.not_a_number {.for 1 2 3 {
+  .echo function name &&1 $nl
+  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .echo $nl end of function body $nl}}}
+{.signal_handler rwsh.not_a_number {.for 1 2 3 {; .echo function name &1 $nl; .which_executable rwsh.argfunction {rwsh.argfunction}; .echo $nl end of function body $nl}}}
+function name f2 
+{.signal_handler rwsh.not_a_number {.for 1 2 3 {; .echo function name &1 $nl; .which_executable rwsh.argfunction; .echo $nl end of function body $nl}}}
+ end of function body 
+function name f2 
+{.signal_handler rwsh.not_a_number {.for 1 2 3 {; .echo function name &1 $nl; .which_executable rwsh.argfunction; .echo $nl end of function body $nl}}}
+ end of function body 
+function name f2 
+{.signal_handler rwsh.not_a_number {.for 1 2 3 {; .echo function name &1 $nl; .which_executable rwsh.argfunction; .echo $nl end of function body $nl}}}
+ end of function body 
+
+
+4
+$fw {rwsh.mapped_argfunction $1 {
+  .echo function name &&1 $nl
+  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .echo $nl end of function body $nl}}
+{rwsh.mapped_argfunction $1 {; .echo function name &1 $nl; .which_executable rwsh.argfunction {rwsh.argfunction}; .echo $nl end of function body $nl}}
+function name f2 
+{rwsh.mapped_argfunction $1 {; .echo function name &1 $nl; .which_executable rwsh.argfunction {; .echo function name f2 $nl; .which_executable rwsh.argfunction {rwsh.mapped_argfunction $1 {; .echo function name &&&&1 $nl; .which_executable rwsh.argfunction {rwsh.argfunction}; .echo $nl end of function body $nl}}; .echo $nl end of function body $nl}; .echo $nl end of function body $nl}}
+ end of function body 
+
+
+4
+$fw {rwsh.mapped_argfunction $1 {.for a b {
+  .echo function name &&1 $nl
+  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .echo $nl end of function body $nl}}}
+{rwsh.mapped_argfunction $1 {.for a b {; .echo function name &1 $nl; .which_executable rwsh.argfunction {rwsh.argfunction}; .echo $nl end of function body $nl}}}
+function name f2 
+{rwsh.mapped_argfunction $1 {.for a b {; .echo function name &1 $nl; .which_executable rwsh.argfunction {.for a b {; .echo function name f2 $nl; .which_executable rwsh.argfunction {rwsh.mapped_argfunction $1 {.for a b {; .echo function name &&&&&&1 $nl; .which_executable rwsh.argfunction; .echo $nl end of function body $nl}}}; .echo $nl end of function body $nl}}; .echo $nl end of function body $nl}}}
+ end of function body 
+function name f2 
+{rwsh.mapped_argfunction $1 {.for a b {; .echo function name &1 $nl; .which_executable rwsh.argfunction {.for a b {; .echo function name f2 $nl; .which_executable rwsh.argfunction {rwsh.mapped_argfunction $1 {.for a b {; .echo function name &&&&&&1 $nl; .which_executable rwsh.argfunction; .echo $nl end of function body $nl}}}; .echo $nl end of function body $nl}}; .echo $nl end of function body $nl}}}
+ end of function body 
+
+
+4
+$# fw {rwsh.mapped_argfunction {.function $1 {rwsh.argfunction}}}
+
+4
+$.return 0
+
+0
+$.exit
+
+0
+
+now terminating normally

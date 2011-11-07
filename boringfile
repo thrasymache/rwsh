@@ -4,5 +4,6 @@
 ^rwsh$
 ^rwsh.tar.gz$
 ^test.result.last$
+^argfunction.result.last$
 
 
