@@ -1,1 +1,0 @@
-/usr/bin/test_rwsh_out | diff -c /usr/share/rwsh/test.result -
