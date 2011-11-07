@@ -7,9 +7,9 @@ signal triggered: rwsh.raw_command ( .function rwsh.raw_command {.echo $1; .echo
 # tests multi-line commands within a sourced script
 # .function rwsh.run_logic {
   .return $last_command_return
-  # .signal_handler &{.internal_functions}$ {&&* {rwsh.argfunction}}
+  .signal_handler &{.internal_functions}$ {&&* {rwsh.argfunction}}
   # rwsh.mapped_argfunction {&&* {rwsh.argfunction}}
-   &&* {rwsh.argfunction}
+  # &&* {rwsh.argfunction}
   .set last_command_return $?
   .echo $nl
   .echo $last_command_return
@@ -28,24 +28,27 @@ signal triggered: rwsh.raw_command ( .function rwsh.raw_command {.echo $1; .echo
 )
   .source /etc/rwshrc-default}
 rwsh.help not defined 
+$.return 0
+
+0
 $# .init is tested by having test_init.sh define #
 
--10
+0
 $
 
--10
+0
 $# argv tests
 
--10
+0
 $.nop
 
--10
+0
 $     .nop
 
--10
+0
 $.nop 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
 
--10
+0
 $.echo 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
 0
@@ -505,7 +508,10 @@ $# soon level promotion
 $.global A 0
 
 0
-$.set MAX_NESTING 44
+$.global OLD_NESTING $MAX_NESTING
+
+0
+$.set MAX_NESTING 46
 
 0
 $f x {.var_add A 1
@@ -540,10 +546,13 @@ $x {x {x {x {e &{.echo &A $A} &&{.echo &A &&A $A} &&&{.echo &A &&A &&&A $A} &&&&
 $f x
 
 0
-$.set MAX_NESTING 5
+$.set MAX_NESTING $OLD_NESTING
 
 0
 $.unset A
+
+0
+$.unset OLD_NESTING
 
 0
 $
@@ -1312,6 +1321,9 @@ signal triggered: rwsh.executable_not_found ( .eturn A )
 $m {.signal_handler rwsh.not_a_number rwsh.executable_not_found {.echo A}}
 A
 0
+$m .echo hi {.signal_handler &{.internal_functions}$ {&&*}}
+hi
+0
 $
 
 0
@@ -1398,7 +1410,7 @@ $wrapper 1 2
 0
 $.stepwise wrapper 1 2 {d $*}
 a 1 2 one 
-signal triggered: rwsh.excessive_nesting ( rwsh.mapped_argfunction a .stepwise d rwsh.mapped_argfunction wrapper .stepwise ) 
+signal triggered: rwsh.excessive_nesting ( e d rwsh.mapped_argfunction a .stepwise d rwsh.mapped_argfunction wrapper .stepwise ) 
 
 -1
 $.stepwise wrapper 1 2 {e $* $nl}
@@ -1410,7 +1422,7 @@ a 1 2 three
 $.set A $MAX_NESTING
 
 0
-$.set MAX_NESTING 12
+$.set MAX_NESTING 13
 
 0
 $.stepwise wrapper 1 2 {d $*}
@@ -1767,8 +1779,8 @@ $.which_return .which_return
 $.which_return j
 
 1
-$.which_return #
--1
+$.which_return .waiting_for_binary
+0
 0
 $
 
@@ -2160,13 +2172,13 @@ signal triggered: rwsh.excess_argfunction ( .version_compatible )
 
 -1
 $.version
-0.2.1+
+0.3
 0
 $.version_compatible 1.0
 signal triggered: rwsh.version_incompatible ( 1.0 .version_compatible ) 
 
 -1
-$.version_compatible 0.2.1+
+$.version_compatible 0.3
 
 0
 $
@@ -2352,7 +2364,7 @@ $f h {g}
 
 0
 $g
-signal triggered: rwsh.excessive_nesting ( g h g h g h g ) 
+signal triggered: rwsh.excessive_nesting ( g h g h g h g h g ) 
 
 -1
 $f rwsh.excessive_nesting {h}
@@ -2360,9 +2372,9 @@ $f rwsh.excessive_nesting {h}
 0
 $g
 signal handler itself triggered signal
-rwsh.excessive_nesting g h g h g h rwsh.excessive_nesting
+rwsh.excessive_nesting g h g h g h g h rwsh.excessive_nesting
 original call stack:
-g h g h g h g
+g h g h g h g h g
 
 -1
 $
@@ -2420,7 +2432,7 @@ $/usr/bin/printenv
 ?=0
 A=-7.29496e+09
 FIGNORE=*de*
-MAX_NESTING=5
+MAX_NESTING=7
 N=4
 last_command_return=0
 nl=

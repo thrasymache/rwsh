@@ -1,3 +1,4 @@
+.return 0
 # .init is tested by having test_init.sh define #
 
 # argv tests
@@ -143,7 +144,8 @@ m {m >dummy_file {e line 1 $nl; e line 2 longer $nl; .echo $nl; e ending}}
 
 # soon level promotion
 .global A 0
-.set MAX_NESTING 44
+.global OLD_NESTING $MAX_NESTING
+.set MAX_NESTING 46
 f x {.var_add A 1
      m {.var_add A 1
         m {.var_add A 1
@@ -158,8 +160,9 @@ x {e &{.echo &A $A} &&{.echo &A &&A $A} $A}
 .set A 0
 x {x {x {x {e &{.echo &A $A} &&{.echo &A &&A $A} &&&{.echo &A &&A &&&A $A} &&&&{.echo &A &&A &&&A &&&&A $A} &&&&&{.echo &A &&A &&&A &&&&A &&&&&A $A} $A}}}}
 f x
-.set MAX_NESTING 5
+.set MAX_NESTING $OLD_NESTING
 .unset A
+.unset OLD_NESTING
 
 # builtin tests
 # .cd
@@ -377,6 +380,7 @@ e $A
 m {.signal_handler rwsh.not_a_number rwsh.executable_not_found {.return A}}
 m {.signal_handler rwsh.not_a_number rwsh.executable_not_found {.eturn A}}
 m {.signal_handler rwsh.not_a_number rwsh.executable_not_found {.echo A}}
+m .echo hi {.signal_handler &{.internal_functions}$ {&&*}}
 
 # .source
 .source
@@ -401,7 +405,7 @@ wrapper 1 2
 .stepwise wrapper 1 2 {d $*}
 .stepwise wrapper 1 2 {e $* $nl}
 .set A $MAX_NESTING
-.set MAX_NESTING 12
+.set MAX_NESTING 13
 .stepwise wrapper 1 2 {d $*}
 .set MAX_NESTING $A 
 
@@ -494,7 +498,7 @@ w rwsh.mapped_argfunction {>dummy_file}
 .which_return rwsh.mapped_argfunction {rwsh.argfunction}
 .which_return .which_return
 .which_return j
-.which_return #
+.which_return .waiting_for_binary
 
 # .usleep .which_execution_count .which_last_execution_time
 # .which_total_execution_time
@@ -611,7 +615,7 @@ e $A
 .version_compatible 1.0 {excess argfunc}
 .version
 .version_compatible 1.0
-.version_compatible 0.2.1+
+.version_compatible 0.3
 
 # binary test implicitly tests Old_argv_t
 /bn/echo 1 2 3

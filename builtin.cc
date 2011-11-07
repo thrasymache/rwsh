@@ -611,7 +611,7 @@ int b_var_exists(const Argv& argv) {
   if (argv.argfunction()) throw Signal_argv(Argv::Excess_argfunction);
   else return !argv.var_exists(argv[1]);}
 
-static const std::string version_str("0.2.1+");
+static const std::string version_str("0.3");
 
 // write to standard output the version of rwsh
 int b_version(const Argv& argv) {

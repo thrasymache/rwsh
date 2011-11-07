@@ -47,7 +47,7 @@ sfn ed
   .selection_set s $2 $*3
   &{whichp grep} $REGEX @$s}
 .function grep-sel {.set s $grep-sel}
-.function gs {grep-sel}
+.function gs {.set s $grep-sel}
 .function grepo {
   .set REGEX $2
   .selection_set s $3 $*4
@@ -98,7 +98,8 @@ sfn wc
 
 # internal functions
 .function rwsh.run_logic {
-  $* {rwsh.argfunction}
+   .signal_handler &{.internal_functions}$ {&&* {rwsh.argfunction}}
+  # $* {rwsh.argfunction}
   .set TEMP1 $?
   if_only_not .test_number_equal $TEMP1 0 {echo &&1 returned $TEMP1}}
 .function rwsh.arguments_for_argfunction {
