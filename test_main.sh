@@ -79,6 +79,10 @@ e @/etc
 # rwsh.selection_not_found
 e @/*is*
 e @test_main.cc
+e @e*c
+e @test_files/*xx
+e @test_files/*x*x*x*x
+e @test_files/*xyxy
 e @/bin
 e @/usr/*bin
 e @/etc/rwsh*
@@ -615,7 +619,7 @@ e $A
 .version_compatible 1.0 {excess argfunc}
 .version
 .version_compatible 1.0
-.version_compatible 0.3
+.version_compatible 0.3+
 
 # binary test implicitly tests Old_argv_t
 /bn/echo 1 2 3

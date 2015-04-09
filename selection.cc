@@ -37,19 +37,18 @@ Simple_pattern::Simple_pattern(const std::string& src) {
       j = k;}
     while (j < std::string::npos);}}
 
-// recursive function to determine matches after initial text 
+// recursive function to determine matches after initial text. recursivity deals
+// with keeping track of current attempted string position in case current
+// position fails to match, but subsequent position will succeed.
 bool Simple_pattern::find_terms(size_type cur_term, const std::string& s) 
         const {
   if (cur_term == terms.size())
     if (unterminated || !s.length()) return true;
     else return false;
-  std::string::size_type i = 0; 
-  do {
-    i = s.find(terms[cur_term], i);
-    if (i == std::string::npos) return false;
-    i += terms[cur_term].length();
-    if (find_terms(cur_term+1, s.substr(i))) return true;}
-  while (i < s.length() - terms[cur_term].length());
+  for (std::string::size_type  i = s.find(terms[cur_term]);
+       i != std::string::npos; i = s.find(terms[cur_term], i+1))
+    if (find_terms(cur_term+1, s.substr(i + terms[cur_term].length())))
+      return true;
   return false;}
 
 // returns true if s matches the entry pattern

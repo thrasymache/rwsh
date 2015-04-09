@@ -288,6 +288,20 @@ signal triggered: rwsh.selection_not_found ( test_main.cc test_main.cc )
 signal triggered: rwsh.argument_count ( 0 1 .echo e ) 
 
 -1
+$e @e*c
+executable.cc executable_map.cc
+0
+$e @test_files/*xx
+test_files/ixxx
+0
+$e @test_files/*x*x*x*x
+signal triggered: rwsh.selection_not_found ( test_files/*x*x*x*x test_files/*x*x*x*x ) 
+signal triggered: rwsh.argument_count ( 0 1 .echo e ) 
+
+-1
+$e @test_files/*xyxy
+test_files/ixyxyxy
+0
 $e @/bin
 /bin
 0
@@ -2172,13 +2186,13 @@ signal triggered: rwsh.excess_argfunction ( .version_compatible )
 
 -1
 $.version
-0.3
+0.3+
 0
 $.version_compatible 1.0
 signal triggered: rwsh.version_incompatible ( 1.0 .version_compatible ) 
 
 -1
-$.version_compatible 0.3
+$.version_compatible 0.3+
 
 0
 $

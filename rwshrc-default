@@ -1,7 +1,7 @@
 .source /etc/rwshrc-basic
 
 # set up environment
-setf PATH &{c $HOME /bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin}
+setf PATH &{c $HOME /bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/git/bin}
 .global BUILT_EXECUTABLE /bin/rwsh
 .global REGEX ()
 .global grep-sel ()

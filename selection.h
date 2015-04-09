@@ -1,5 +1,6 @@
 // Copyright (C) 2005, 2006 Samuel Newbold
 
+// a set of fixed text terms separated by wildcards to match directory entries
 class Simple_pattern {
   bool only_text, unterminated;
   std::string initial;
@@ -13,6 +14,7 @@ class Simple_pattern {
   bool match(const std::string& s) const;
   std::string str(void) const;};
 
+// a set of unrelated Simple_pattern options, to match directory entries
 class Entry_pattern {
   std::vector<Simple_pattern> options;
   bool only_text;
