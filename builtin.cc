@@ -165,7 +165,26 @@ int b_function(const Argv& argv) {
   else if (!argv.argfunction()) {
     return 4 * !executable_map.erase(*(argv.begin()+1));}
   else {
-    executable_map.set(new Function(argv[1], argv.argfunction()));
+    executable_map.set(new Function(argv[1], argv.end(), argv.end(), true,
+                                    argv.argfunction()->script));
+    return 0;}}
+
+// add argfunction to executable map with name $1 and arguments $*2
+// the arguments must include all options that can be passed to this function
+int b_function_all_options(const Argv& argv) {
+  if (argv.size() < 2) throw Signal_argv(Argv::Argument_count, argv.size()-1,1);
+  else if (is_binary_name(argv[1])) return 1;
+  Argv lookup(argv.begin()+1, argv.begin()+2, NULL, 
+                default_input, default_output, default_error);
+  Executable *e = executable_map.find(lookup);
+  if (e && dynamic_cast<Builtin*>(e)) return 2;
+  else if (is_argfunction_name(argv[1])) return 3;
+  else if (!argv.argfunction()) {
+    return 4 * !executable_map.erase(*(argv.begin()+1));}
+  else {
+    Function *focus = new Function(argv[1], argv.begin()+2, argv.end(), false,
+                                   argv.argfunction()->script);
+    executable_map.set(focus);
     return 0;}}
 
 // add a variable to the variable map that will remain after the enclosing

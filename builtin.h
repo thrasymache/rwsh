@@ -13,6 +13,7 @@ int b_for(const Argv& argv);
 int b_for_each_line(const Argv& argv);
 int b_fork(const Argv& argv);
 int b_function(const Argv& argv);
+int b_function_all_options(const Argv& argv);
 int b_global(const Argv& argv);
 int b_importenv_overwrite(const Argv& argv);
 int b_importenv_preserve(const Argv& argv);

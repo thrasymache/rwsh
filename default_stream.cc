@@ -24,7 +24,7 @@ Rwsh_istream& Default_istream::getline(std::string& dest) {
 
 int Default_istream::fd(void) {return fd_v;}
 
-std::string Default_istream::str(void) const {return "";}
+std::string Default_istream::str(void) const {return "<&1";}
 
 Default_ostream::Default_ostream(int fd_i) : fd_v(fd_i) {
   switch (fd_v) {
@@ -61,5 +61,5 @@ int Default_ostream::fd(void) {return fd_v;}
 
 void Default_ostream::flush(void) {implementation->flush();}
 
-std::string Default_ostream::str(void) const {return "";}
+std::string Default_ostream::str(void) const {return ">&0";}
 

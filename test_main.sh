@@ -231,6 +231,15 @@ b
 f g {e hi $nl; f g {e there $nl}; f h {e nothing here}; g}
 g
 
+# .function_all_options
+.function_all_options
+.function_all_options a {e option function}
+a
+.function_all_options a arg ga {e option function}
+a 1 2
+.function_all_options a arg ga fee fie foe fum {e option function}
+a 1 2 3 4 5 6
+
 # .global .unset .var_exists 
 .global
 .global x y z

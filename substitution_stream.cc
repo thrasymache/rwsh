@@ -47,4 +47,4 @@ int Substitution_stream::fd(void) {
   return fds[1];}
 
 std::string Substitution_stream::str(void) const {
-  return "&{}";}
+  return ">&{}";}

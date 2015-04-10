@@ -29,6 +29,8 @@ void internal_init(void) {
   executable_map.set(new Builtin(".for_each_line", b_for_each_line));
   executable_map.set(new Builtin(".fork", b_fork));
   executable_map.set(new Builtin(".function", b_function));
+  executable_map.set(new Builtin(".function_all_options",
+                                   b_function_all_options));
   executable_map.set(new Builtin(".global", b_global));
   executable_map.set(new Builtin(".if", b_if));
   executable_map.set(new Builtin(".importenv_overwrite",

@@ -2,10 +2,11 @@
 
 class Function : public Executable {
   std::string name_v;
+  std::vector<std::string> parameters;
+  bool positional_parameters;
 
-  Function(const std::string& name_i) : name_v(name_i), script() {};
-  Function(const std::string& name_i, const std::vector<Arg_script>& src) : 
-    name_v(name_i), script(src) {};
+  Function(const std::string& name_i) : name_v(name_i), parameters(),
+                                       positional_parameters(true), script() {};
   void internal_constructor(const std::string& src,
                             std::string::size_type& point, unsigned max_soon);
  public:
@@ -14,11 +15,15 @@ class Function : public Executable {
   Function(const std::string& name, const std::string& src,
            std::string::size_type& point, unsigned max_soon);
   Function(const std::string& name, const std::string& src);
-  Function(const std::string& name_i, const Function* src) :
-    name_v(name_i), script(src->script) {};
+  Function(const std::string& name_i, Argv::const_iterator first_parameter,
+           Argv::const_iterator parameter_end, bool positional_parameters_i,
+           const std::vector<Arg_script>& src) : 
+    name_v(name_i), parameters(first_parameter, parameter_end),
+    positional_parameters(positional_parameters_i), script(src) {};
   Function* copy_pointer(void) const {
     if (!this) return 0;
-    else return new Function(name_v, script);};
+    else return new Function(name_v, parameters.begin(), parameters.end(),
+                             positional_parameters, script);};
   int operator() (const Argv& src_argv);
   Function* apply(const Argv& argv, unsigned nesting) const ;
   const std::string& name(void) const {return name_v;};

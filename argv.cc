@@ -21,7 +21,7 @@ Argv::Argv(void) : argfunction_v(0),
 
 Argv::Argv(const Argv& src) : Base(src), 
   argfunction_v(src.argfunction()->copy_pointer()), 
-  input(default_input), output(default_output), error(default_error) {}
+  input(src.input), output(src.output), error(src.error) {}
 
 Argv& Argv::operator=(const Argv& src) {
   Base::clear(); 

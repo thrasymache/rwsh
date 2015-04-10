@@ -36,10 +36,11 @@ void Function::internal_constructor(const std::string& src,
 
 Function::Function(const std::string& name_i, const std::string& src,
                    std::string::size_type& point, unsigned max_soon) :
-    name_v(name_i) {internal_constructor(src, point, max_soon);}
+    name_v(name_i), parameters(), positional_parameters(true) {
+  internal_constructor(src, point, max_soon);}
 
 Function::Function(const std::string& name_i, const std::string& src) :
-    name_v(name_i) {
+    name_v(name_i), parameters(), positional_parameters(true) {
   std::string::size_type point = 0;
   try {
     internal_constructor(src, point, 0);
@@ -66,33 +67,41 @@ Function* Function::apply(const Argv& argv, unsigned nesting) const {
     return result;}}
   
 // run the given function
-int Function::operator() (const Argv& src_argv) { 
-try {
-  if (increment_nesting(src_argv)) return dollar_question;
-  struct timeval start_time;
-  gettimeofday(&start_time, rwsh_clock.no_timezone);
-  ++execution_count_v;
-  int ret;
-  for (const_iterator i = script.begin(); i != script.end(); ++i) {
-    Argv dest_argv = i->interpret(src_argv);
-    ret = executable_map.run(dest_argv);
-    if (unwind_stack()) break;}
-  last_return = ret;
-  struct timeval end_time;
-  gettimeofday(&end_time, rwsh_clock.no_timezone);
-  last_execution_time_v = Clock::timeval_sub(end_time, start_time);
-  Clock::timeval_add(total_execution_time_v, last_execution_time_v);
-  if (decrement_nesting(src_argv)) ret = dollar_question;
-  return ret;}
+int Function::operator() (const Argv& invoking_argv) { 
+  try {
+    if (increment_nesting(invoking_argv)) return dollar_question;
+    struct timeval start_time;
+    gettimeofday(&start_time, rwsh_clock.no_timezone);
+    ++execution_count_v;
+    Argv interpreted_argv(invoking_argv);
+    if (!positional_parameters) {
+      default_output <<"you're in the extra new code";
+      for (std::vector<std::string>::const_iterator i = parameters.begin();
+           i != parameters.end(); ++i)
+         default_output <<"; " <<*i;
+      default_output <<"\n";}
+    int ret;
+    for (const_iterator i = script.begin(); i != script.end(); ++i) {
+      Argv statement_argv = i->interpret(interpreted_argv);
+      ret = executable_map.run(statement_argv);
+      if (unwind_stack()) break;}
+    last_return = ret;
+    struct timeval end_time;
+    gettimeofday(&end_time, rwsh_clock.no_timezone);
+    last_execution_time_v = Clock::timeval_sub(end_time, start_time);
+    Clock::timeval_add(total_execution_time_v, last_execution_time_v);
+    if (decrement_nesting(invoking_argv)) ret = dollar_question;
+    return ret;}
   catch (Signal_argv error) {
     caught_signal = error.signal;
     std::copy(error.begin(), error.end(), std::back_inserter(call_stack));
-    decrement_nesting(src_argv);
+    decrement_nesting(invoking_argv);
     return -1;}}
 
 Function* Function::promote_soons(unsigned nesting) const {
   if (!this) return 0;
-  Function* result = new Function(name_v, script);
+  Function* result = new Function(name_v, parameters.begin(), parameters.end(),
+                                  positional_parameters, script);
   for (iterator i = result->script.begin(); i != result->script.end(); ++i) 
     i->promote_soons(nesting);
   return result;}
