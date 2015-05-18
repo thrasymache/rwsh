@@ -2,7 +2,7 @@
 // external programs, the latter executes commands that are implemented by
 // functions in builtin.cc.
 //
-// Copyright (C) 2005, 2006, 2007 Samuel Newbold
+// Copyright (C) 2005-2015 Samuel Newbold
 
 #include <map>
 #include <string>
@@ -12,7 +12,7 @@
 
 #include "rwsh_stream.h"
 
-#include "argv.h"
+#include "argm.h"
 #include "builtin.h"
 #include "clock.h"
 #include "executable.h"
@@ -21,35 +21,35 @@
 #include "variable_map.h"
 
 namespace {
-Argv::Sig_type unix2rwsh(int sig) {
+Argm::Sig_type unix2rwsh(int sig) {
   switch (sig) {
-    case SIGHUP: return Argv::Sighup;
-    case SIGINT: return Argv::Sigint;
-    case SIGQUIT: return Argv::Sigquit;
-    case SIGPIPE: return Argv::Sigpipe;
-    case SIGTERM: return Argv::Sigterm;
-    case SIGTSTP: return Argv::Sigtstp;
-    case SIGCONT: return Argv::Sigcont;
-    case SIGCHLD: return Argv::Sigchld;
-    case SIGUSR1: return Argv::Sigusr1;
-    case SIGUSR2: return Argv::Sigusr2;
-    default: return Argv::Sigunknown;}}}
+    case SIGHUP: return Argm::Sighup;
+    case SIGINT: return Argm::Sigint;
+    case SIGQUIT: return Argm::Sigquit;
+    case SIGPIPE: return Argm::Sigpipe;
+    case SIGTERM: return Argm::Sigterm;
+    case SIGTSTP: return Argm::Sigtstp;
+    case SIGCONT: return Argm::Sigcont;
+    case SIGCHLD: return Argm::Sigchld;
+    case SIGUSR1: return Argm::Sigusr1;
+    case SIGUSR2: return Argm::Sigusr2;
+    default: return Argm::Sigunknown;}}}
 
-bool Executable::increment_nesting(const Argv& argv) {
-  if (global_nesting > argv.max_nesting()+1) {
-    //throw Signal_argv(Argv::Excessive_nesting);}
-    caught_signal = Argv::Excessive_nesting;
-    call_stack.push_back(Argv::signal_names[Argv::Excessive_nesting]);}
+bool Executable::increment_nesting(const Argm& argm) {
+  if (global_nesting > argm.max_nesting()+1) {
+    //throw Signal_argm(Argm::Excessive_nesting);}
+    caught_signal = Argm::Excessive_nesting;
+    call_stack.push_back(Argm::signal_names[Argm::Excessive_nesting]);}
   if (unwind_stack()) return true;
   else {
     ++executable_nesting;
     ++global_nesting;
     return false;}}
 
-bool Executable::decrement_nesting(const Argv& argv) {
+bool Executable::decrement_nesting(const Argm& argm) {
   --global_nesting;
   if (unwind_stack()) {
-    call_stack.push_back(argv[0]);
+    call_stack.push_back(argm[0]);
     if (!global_nesting && !in_signal_handler) signal_handler();}
   --executable_nesting;
   if (del_on_term && !executable_nesting) delete this;
@@ -57,7 +57,7 @@ bool Executable::decrement_nesting(const Argv& argv) {
 
 void Executable::unix_signal_handler(int sig) {
   caught_signal = unix2rwsh(sig);
-  call_stack.push_back(Argv::signal_names[caught_signal]);}
+  call_stack.push_back(Argm::signal_names[caught_signal]);}
 
 // code to call rwsh.excessive_nesting, separated out of operator() for clarity.
 // The requirements for stack unwinding to work properly are as 
@@ -70,14 +70,13 @@ void Executable::unix_signal_handler(int sig) {
 // main does not need to do this handling, because anything 
 // that it calls directly will have an initial nesting of 0.
 void Executable::signal_handler(void) {
-  extern Variable_map* vars;
-  Argv call_stack_copy;                                    //need for a copy: 
+  Argm call_stack_copy;                                    //need for a copy: 
   std::copy(call_stack.begin(), call_stack.end(), 
             std::back_inserter(call_stack_copy));
-  call_stack = Argv();
+  call_stack = Argm();
   in_signal_handler = true;
-  caught_signal = Argv::No_signal;
-  vars->unset("IF_TEST");
+  caught_signal = Argm::No_signal;
+  Variable_map::global_map->unset("IF_TEST");
   executable_map.run(call_stack_copy);
   if (unwind_stack()) {
     default_output <<"signal handler itself triggered signal\n";
@@ -89,9 +88,9 @@ void Executable::signal_handler(void) {
     default_output <<"\n";
     default_output.flush();
     dollar_question = -1;
-    call_stack = Argv();
-    caught_signal = Argv::No_signal;
-    vars->unset("IF_TEST");}
+    call_stack = Argm();
+    caught_signal = Argm::No_signal;
+    Variable_map::global_map->unset("IF_TEST");}
   in_signal_handler = false;}
 // need for a copy: if the internal function that runs for this signal itself
 //     triggers a signal then it will unwind the stack and write to call_stack. 
@@ -102,28 +101,28 @@ Binary::Binary(const std::string& impl) : implementation(impl) {}
 
 #include <iostream>
 // run the given binary
-int Binary::operator() (const Argv& argv_i) {
+int Binary::operator() (const Argm& argm_i) {
   try {
-    if (increment_nesting(argv_i)) return dollar_question;
+    if (increment_nesting(argm_i)) return dollar_question;
     struct timeval start_time;
     gettimeofday(&start_time, rwsh_clock.no_timezone);
     ++execution_count_v;
     int ret,
-        input = argv_i.input.fd(),
-        output = argv_i.output.fd(),
-        error = argv_i.error.fd();
+        input = argm_i.input.fd(),
+        output = argm_i.output.fd(),
+        error = argm_i.error.fd();
     if (!fork()) {  
       plumber.after_fork();
       if (dup2(input, 0) < 0) std::cerr <<"dup2 didn't like changing input\n";
       if (dup2(output, 1) < 0) std::cerr <<"dup2 didn't like changing output\n";
       if (dup2(error, 2) < 0) std::cerr <<"dup2 didn't like changing error\n";
-      Old_argv argv(argv_i);
-      char **env = argv_i.export_env();
+      Old_argv argv(argm_i);
+      char **env = argm_i.export_env();
       int ret = execve(implementation.c_str(), argv.argv(), env);
-      Argv error_argv;
-      error_argv.push_back(Argv::signal_names[Argv::Binary_not_found]);
-      error_argv.push_back(argv_i[0]); 
-      executable_map.run(error_argv);
+      Argm error_argm;
+      error_argm.push_back(Argm::signal_names[Argm::Binary_not_found]);
+      error_argm.push_back(argm_i[0]); 
+      executable_map.run(error_argm);
       exit(ret);}
     else plumber.wait(&ret);
     dollar_question = last_return = ret;
@@ -131,35 +130,35 @@ int Binary::operator() (const Argv& argv_i) {
     gettimeofday(&end_time, rwsh_clock.no_timezone);
     last_execution_time_v = Clock::timeval_sub(end_time, start_time);
     Clock::timeval_add(total_execution_time_v, last_execution_time_v);
-    if (decrement_nesting(argv_i)) ret = dollar_question;
+    if (decrement_nesting(argm_i)) ret = dollar_question;
     return ret;}
-  catch (Signal_argv error) {
+  catch (Signal_argm error) {
     caught_signal = error.signal;
     std::copy(error.begin(), error.end(), std::back_inserter(call_stack));
-    decrement_nesting(argv_i);
+    decrement_nesting(argm_i);
     return -1;}}
 
 Builtin::Builtin(const std::string& name_i, 
-                       int (*impl)(const Argv& argv)) : 
+                       int (*impl)(const Argm& argm)) : 
   implementation(impl), name_v(name_i) {}
 
 // run the given builtin
-int Builtin::operator() (const Argv& argv) {
+int Builtin::operator() (const Argm& argm) {
   try {
-    if (increment_nesting(argv)) return dollar_question;
+    if (increment_nesting(argm)) return dollar_question;
     struct timeval start_time;
     gettimeofday(&start_time, rwsh_clock.no_timezone);
     ++execution_count_v;
-    int ret = dollar_question = last_return = (*implementation)(argv);
+    int ret = dollar_question = last_return = (*implementation)(argm);
     struct timeval end_time;
     gettimeofday(&end_time, rwsh_clock.no_timezone);
     last_execution_time_v = Clock::timeval_sub(end_time, start_time);
     Clock::timeval_add(total_execution_time_v, last_execution_time_v);
-    if (decrement_nesting(argv)) ret = dollar_question;
+    if (decrement_nesting(argm)) ret = dollar_question;
     return ret;}
-  catch (Signal_argv error) {
+  catch (Signal_argm error) {
     caught_signal = error.signal;
     std::copy(error.begin(), error.end(), std::back_inserter(call_stack));
-    decrement_nesting(argv);
+    decrement_nesting(argm);
     return -1;}}
 

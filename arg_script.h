@@ -1,4 +1,4 @@
-// Copyright (C) 2006, 2007 Samuel Newbold
+// Copyright (C) 2006-2015 Samuel Newbold
 
 class Arg_script {
   std::vector<Arg_spec> args;
@@ -18,16 +18,16 @@ class Arg_script {
   ~Arg_script(void);
   std::string::size_type constructor(const std::string& src,
                               std::string::size_type point, unsigned max_soon);
-  Argv argv(void) const;
+  Argm argm(void) const;
   void add_token(const std::string& src, unsigned max_soon);
   std::string::size_type add_function(const std::string& src,
                                       std::string::size_type style_start,
                                       std::string::size_type f_start,
                                       unsigned max_soon);
-  void apply(const Argv& src, unsigned nesting,
+  void apply(const Argm& src, unsigned nesting,
              std::back_insert_iterator<std::vector<Arg_script> > res) const;
   std::string str(void) const;
-  Argv interpret(const Argv& src) const;
+  Argm interpret(const Argm& src) const;
   void promote_soons(unsigned);
   bool is_argfunction(void) const {return argfunction_level == 1;}; };
 

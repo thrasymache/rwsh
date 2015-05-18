@@ -3,8 +3,11 @@
 class Variable_map : private std::map<std::string, std::string> {
   typedef std::map<std::string, std::string> Base;
 
-  unsigned max_nesting_v;
+  static unsigned max_nesting_v;
 public:
+
+  static Variable_map *global_map;
+
   Variable_map(bool root);
   static int dollar_question;
   static bool exit_requested;

@@ -1,6 +1,6 @@
 // The templates for selection read.
 //
-// Copyright (C) 2006, 2007 Samuel Newbold
+// Copyright (C) 2006-2015 Samuel Newbold
 
 // modify partial by treating each element as a directory, and then replacing
 // that element with the entries in that directory that match entry_pattern,
@@ -24,10 +24,9 @@ void partial_match_children(In& partial, const Entry_pattern& entry_pattern,
 // treat src as a selection, add matching files to res.
 template<class Out>
 void selection_read(const std::string& src, Out res) {
-  extern Variable_map* vars;
   std::list<Entry_pattern> focus;
   str_to_entry_pattern_list(src, focus);
-  Entry_pattern ignore(vars->get("FIGNORE"));
+  Entry_pattern ignore(Variable_map::global_map->get("FIGNORE"));
   std::list<std::string> partial(1);
   for (std::list<Entry_pattern>::const_iterator i=focus.begin(); 
        i!=focus.end() && partial.size(); ++i){// each path step in the selection
@@ -42,11 +41,11 @@ void selection_read(const std::string& src, Out res) {
         if (stat(j->c_str(), &sb)) {j = partial.erase(j); --j;}}
     else partial_match_children(partial, *i, ignore, more);
     if (!partial.size()) {
-      Argv argv;
-      argv.push_back(Argv::signal_names[Argv::Selection_not_found]);
+      Argm argm;
+      argm.push_back(Argm::signal_names[Argm::Selection_not_found]);
       std::list<Entry_pattern>::const_iterator j = i;
-      argv.push_back(entry_pattern_list_to_str(focus.begin(), ++j));
-      argv.push_back(src);
-      executable_map.run(argv);}}
+      argm.push_back(entry_pattern_list_to_str(focus.begin(), ++j));
+      argm.push_back(src);
+      executable_map.run(argm);}}
   copy(partial.begin(), partial.end(), res);}
 

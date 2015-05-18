@@ -1,7 +1,7 @@
 // The definition of selection_write and the Entry_pattern class which is 
 // used to implement selections.
 //
-// Copyright (C) 2005, 2006, 2007 Samuel Newbold
+// Copyright (C) 2005-2015 Samuel Newbold
 
 #include <dirent.h>
 #include <fcntl.h>
@@ -16,7 +16,7 @@
 
 #include "rwsh_stream.h"
 
-#include "argv.h"
+#include "argm.h"
 #include "selection.h"
 #include "tokenize.cc"
 

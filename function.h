@@ -1,4 +1,4 @@
-// Copyright (C) 2005, 2006, 2007 Samuel Newbold
+// Copyright (C) 2005-2015 Samuel Newbold
 
 class Function : public Executable {
   std::string name_v;
@@ -15,8 +15,8 @@ class Function : public Executable {
   Function(const std::string& name, const std::string& src,
            std::string::size_type& point, unsigned max_soon);
   Function(const std::string& name, const std::string& src);
-  Function(const std::string& name_i, Argv::const_iterator first_parameter,
-           Argv::const_iterator parameter_end, bool positional_parameters_i,
+  Function(const std::string& name_i, Argm::const_iterator first_parameter,
+           Argm::const_iterator parameter_end, bool positional_parameters_i,
            const std::vector<Arg_script>& src) : 
     name_v(name_i), parameters(first_parameter, parameter_end),
     positional_parameters(positional_parameters_i), script(src) {};
@@ -24,8 +24,8 @@ class Function : public Executable {
     if (!this) return 0;
     else return new Function(name_v, parameters.begin(), parameters.end(),
                              positional_parameters, script);};
-  int operator() (const Argv& src_argv);
-  Function* apply(const Argv& argv, unsigned nesting) const ;
+  int operator() (const Argm& src_argm);
+  Function* apply(const Argm& argm, unsigned nesting) const ;
   const std::string& name(void) const {return name_v;};
   Function* promote_soons(unsigned nesting) const;
   std::string str() const; 

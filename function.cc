@@ -2,7 +2,7 @@
 // arguments passed to an executable and/or tie several other executables into
 // a single executable.
 //
-// Copyright (C) 2006, 2007 Samuel Newbold
+// Copyright (C) 2006-2015 Samuel Newbold
 
 #include <iterator>
 #include <map>
@@ -13,7 +13,7 @@
 #include "arg_spec.h"
 #include "rwsh_stream.h"
 
-#include "argv.h"
+#include "argm.h"
 #include "arg_script.h"
 #include "clock.h"
 #include "executable.h"
@@ -55,25 +55,25 @@ Function::Function(const std::string& name_i, const std::string& src) :
       error.prefix + "\n";}}
 
 // generate a new function by unescaping argument functions and replacing
-// unescaped_argfunction with the argument function in argv
-Function* Function::apply(const Argv& argv, unsigned nesting) const {
+// unescaped_argfunction with the argument function in argm
+Function* Function::apply(const Argm& argm, unsigned nesting) const {
   if (script[0].is_argfunction()) 
-    return argv.argfunction()->promote_soons(nesting);
+    return argm.argfunction()->promote_soons(nesting);
   else {
     Function* result = new Function(name());
     std::back_insert_iterator<std::vector<Arg_script> > ins(result->script);
     for (const_iterator i = script.begin(); i != script.end(); ++i) {
-      i->apply(argv, nesting, ins);}
+      i->apply(argm, nesting, ins);}
     return result;}}
   
 // run the given function
-int Function::operator() (const Argv& invoking_argv) { 
+int Function::operator() (const Argm& invoking_argm) { 
   try {
-    if (increment_nesting(invoking_argv)) return dollar_question;
+    if (increment_nesting(invoking_argm)) return dollar_question;
     struct timeval start_time;
     gettimeofday(&start_time, rwsh_clock.no_timezone);
     ++execution_count_v;
-    Argv interpreted_argv(invoking_argv);
+    Argm interpreted_argm(invoking_argm);
     if (!positional_parameters) {
       default_output <<"you're in the extra new code";
       for (std::vector<std::string>::const_iterator i = parameters.begin();
@@ -82,20 +82,20 @@ int Function::operator() (const Argv& invoking_argv) {
       default_output <<"\n";}
     int ret;
     for (const_iterator i = script.begin(); i != script.end(); ++i) {
-      Argv statement_argv = i->interpret(interpreted_argv);
-      ret = executable_map.run(statement_argv);
+      Argm statement_argm = i->interpret(interpreted_argm);
+      ret = executable_map.run(statement_argm);
       if (unwind_stack()) break;}
     last_return = ret;
     struct timeval end_time;
     gettimeofday(&end_time, rwsh_clock.no_timezone);
     last_execution_time_v = Clock::timeval_sub(end_time, start_time);
     Clock::timeval_add(total_execution_time_v, last_execution_time_v);
-    if (decrement_nesting(invoking_argv)) ret = dollar_question;
+    if (decrement_nesting(invoking_argm)) ret = dollar_question;
     return ret;}
-  catch (Signal_argv error) {
+  catch (Signal_argm error) {
     caught_signal = error.signal;
     std::copy(error.begin(), error.end(), std::back_inserter(call_stack));
-    decrement_nesting(invoking_argv);
+    decrement_nesting(invoking_argm);
     return -1;}}
 
 Function* Function::promote_soons(unsigned nesting) const {

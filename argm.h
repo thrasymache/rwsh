@@ -1,23 +1,23 @@
-// Copyright (C) 2005, 2006, 2007 Samuel Newbold
+// Copyright (C) 2005-2015 Samuel Newbold
 
 class Function;
 class Variable_map;
 
-class Argv : private std::vector<std::string> {
+class Argm : private std::vector<std::string> {
   typedef std::vector<std::string> Base;
   Function* argfunction_v;
-  static Variable_map* var_map;
+  Variable_map* parent_map;
 
  public:
-  Argv(void);
+  Argm(void);
   template <class String_it> 
-  Argv(String_it first_string, String_it last_string,
+  Argm(String_it first_string, String_it last_string,
          Function* argfunction_i, 
          Rwsh_istream_p input_i, Rwsh_ostream_p output_i,
          Rwsh_ostream_p error_i);
-  Argv(const Argv& src);
-  ~Argv(void);
-  Argv& operator=(const Argv& src);
+  Argm(const Argm& src);
+  ~Argm(void);
+  Argm& operator=(const Argm& src);
   std::string str(void) const;
   Function* argfunction(void) const {return argfunction_v;};
   void set_argfunction(Function* val);
@@ -119,20 +119,20 @@ class Argv : private std::vector<std::string> {
   std::string& operator[] (int i) {return Base::operator[](i);};
   const std::string& operator[] (int i) const {return Base::operator[](i);}; };
 
-struct Signal_argv : public Argv {
-  Argv::Sig_type signal;
-  Signal_argv(Sig_type signal);
-  Signal_argv(Sig_type signal, const std::string& value);
-  Signal_argv(Sig_type signal, const std::string& x, const std::string& y);
-  Signal_argv(Sig_type signal, int x, int y);
-  Signal_argv(Sig_type signal, const Argv& src);};
+struct Signal_argm : public Argm {
+  Argm::Sig_type signal;
+  Signal_argm(Sig_type signal);
+  Signal_argm(Sig_type signal, const std::string& value);
+  Signal_argm(Sig_type signal, const std::string& x, const std::string& y);
+  Signal_argm(Sig_type signal, int x, int y);
+  Signal_argm(Sig_type signal, const Argm& src);};
 
 class Old_argv {
   char** focus;
   int argc_v;
 
  public:
-  Old_argv(const Argv& src);
+  Old_argv(const Argm& src);
   ~Old_argv(void);
   char** argv(void) {return focus;};
   int argc(void) {return argc_v;}; };

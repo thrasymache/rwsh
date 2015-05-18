@@ -1,6 +1,6 @@
 // The main function for rwsh
 //
-// Copyright (C) 2005-2008 Samuel Newbold
+// Copyright (C) 2005-2015 Samuel Newbold
 
 #include <iostream>
 #include <list>
@@ -13,7 +13,7 @@
 #include "arg_spec.h"
 #include "rwsh_stream.h"
 
-#include "argv.h"
+#include "argm.h"
 #include "arg_script.h"
 #include "clock.h"
 #include "command_stream.h"
@@ -26,14 +26,14 @@
 #include "selection.h"
 #include "variable_map.h"
 
-#include "argv_star_var.cc"
+#include "argm_star_var.cc"
 
 // static initializers of basic types
 struct timezone Clock::no_timezone_v = {0, 0};
 int Executable::global_nesting(0);
-Argv::Sig_type Executable::caught_signal(Argv::No_signal);
+Argm::Sig_type Executable::caught_signal(Argm::No_signal);
 bool Executable::in_signal_handler(false);
-std::string Argv::signal_names[Argv::Signal_count] = {
+std::string Argm::signal_names[Argm::Signal_count] = {
   "no signal",
   "rwsh.argument_count",
   "rwsh.arguments_for_argfunction",
@@ -88,14 +88,14 @@ Rwsh_istream_p default_input(new Default_istream(0), true, true);
 Rwsh_ostream_p default_output(new Default_ostream(1), true, true),
   default_error(new Default_ostream(2), true, true);
 Variable_map root_variable_map(true);
-Variable_map* vars = &root_variable_map;
+Variable_map* Variable_map::global_map = &root_variable_map;
+unsigned Variable_map::max_nesting_v = 0;
 int Variable_map::dollar_question = -1;
 int& dollar_question = Variable_map::dollar_question;
 bool Variable_map::exit_requested = false;
 
 // static initializers with cross-component dependancies
-Argv Executable::call_stack;
-Variable_map* Argv::var_map = vars;
+Argm Executable::call_stack;
 
 namespace {
 void register_signals(void) {
@@ -109,31 +109,31 @@ void register_signals(void) {
   signal(SIGUSR2, Executable::unix_signal_handler);} } // end unnamed namespace
 
 int main(int argc, char *argv[]) {
-  Argv external_command_line(&argv[0], &argv[argc], 0, 
+  Argm external_command_line(&argv[0], &argv[argc], 0, 
                                default_input, default_output, default_error);
   try {internal_init();}
   catch (std::string& error) {default_error <<error;}
-  catch (Signal_argv& exception) {executable_map.run(exception);}
+  catch (Signal_argm& exception) {executable_map.run(exception);}
   Command_stream command_stream(std::cin, true);
   external_command_line.push_front(".init");
   executable_map.run(external_command_line);
   external_command_line.pop_front();
   register_signals();
   Arg_script script("", 0);
-  Argv prompt;
-  prompt.push_back(Argv::signal_names[Argv::Prompt]);
+  Argm prompt;
+  prompt.push_back(Argm::signal_names[Argm::Prompt]);
   while (command_stream) {
     executable_map.run(prompt);
-    Argv command;
+    Argm command;
     try {
       if (!(command_stream >> script)) break;
-      command = script.interpret(script.argv());}
-    catch (Signal_argv exception) {command = exception;}
+      command = script.interpret(script.argm());}
+    catch (Signal_argm exception) {command = exception;}
     executable_map.run_if_exists("rwsh.before_command", command);
     if (!executable_map.run_if_exists("rwsh.run_logic", command))
        executable_map.run(command);
     executable_map.run_if_exists("rwsh.after_command", command);}
-  external_command_line.push_front(Argv::signal_names[Argv::Shutdown]);
+  external_command_line.push_front(Argm::signal_names[Argm::Shutdown]);
   executable_map.run(external_command_line);
   external_command_line.pop_front();
   return dollar_question;}

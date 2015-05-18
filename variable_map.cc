@@ -1,7 +1,7 @@
 // Functions to implement a variable map, and permit it to be exported as the
 // environment for child processes.
 //
-// Copyright (C) 2006, 2007 Samuel Newbold
+// Copyright (C) 2006-2015 Samuel Newbold
 
 #include <map>
 #include <stdlib.h>
@@ -11,13 +11,13 @@
 
 #include "rwsh_stream.h"
 
-#include "argv.h"
+#include "argm.h"
 #include "executable.h"
 #include "variable_map.h"
 
 char** env;
 
-Variable_map::Variable_map(bool root) : max_nesting_v(0) {
+Variable_map::Variable_map(bool root) {
   if(root) {
     add("?", "");
     add("FIGNORE", "");
@@ -38,12 +38,12 @@ const std::string& Variable_map::get(const std::string& key) {
     tmp <<dollar_question;
     (*this)["?"] = tmp.str();}
   std::map<std::string, std::string>::const_iterator i = find(key);
-  if (i == end()) throw Signal_argv(Argv::Undefined_variable, key);
+  if (i == end()) throw Signal_argm(Argm::Undefined_variable, key);
   else return i->second;}
 
 int Variable_map::set(const std::string& key, const std::string& value) {
   std::map<std::string, std::string>::iterator i = find(key);
-  if (i == end()) throw Signal_argv(Argv::Undefined_variable, key);
+  if (i == end()) throw Signal_argm(Argm::Undefined_variable, key);
   else {
     i->second = value;
     if (key == "MAX_NESTING") {
@@ -68,12 +68,10 @@ char** copy_to_char_star_star(In first, In last, char** res) {
   *res = 0;
   return res;}
 
-extern Variable_map* vars;
-
 // return the variable map in a way that can be passed to child processes
 char** Variable_map::export_env(void) const {
   delete env;
-  env = new char*[vars->size() + 1];
+  env = new char*[global_map->size() + 1];
   copy_to_char_star_star(this->begin(), this->end(), env);
   return env;}
 

@@ -1,9 +1,9 @@
 // The definition of the Arg_script class which contains a vector of 
 // Arg_spec objects and a Function*, and which represents the mapping 
-// between the Argv that was passed to the function and the Argv that will 
+// between the Argm that was passed to the function and the Argm that will 
 // be used to run a given executable.
 //
-// Copyright (C) 2006, 2007 Samuel Newbold
+// Copyright (C) 2006-2015 Samuel Newbold
 
 #include <exception>
 #include <fstream>
@@ -15,7 +15,7 @@
 #include "arg_spec.h"
 #include "rwsh_stream.h"
 
-#include "argv.h"
+#include "argm.h"
 #include "arg_script.h"
 #include "executable.h"
 #include "file_stream.h"
@@ -58,7 +58,7 @@ std::string::size_type parse_token(const std::string& src,
     token_start = add_quote(src, token_start, max_soon, dest);
     return src.find_first_not_of(token_separators, token_start+1);}
   else if (src[token_start] == ')')
-    throw Signal_argv(Argv::Mismatched_parenthesis,
+    throw Signal_argm(Argm::Mismatched_parenthesis,
                       src.substr(0, token_start+1));
   std::string::size_type split = src.find_first_of(all_separators, token_start),
                          point = token_start;
@@ -97,7 +97,7 @@ Arg_script::Arg_script(const std::string& src, unsigned max_soon) :
   point = constructor(src, point, max_soon);
   if (point < src.length())
     if (src[point] == '}' || src[point] == ';')
-      throw Signal_argv(Argv::Mismatched_brace, src.substr(0, point+1));
+      throw Signal_argm(Argm::Mismatched_brace, src.substr(0, point+1));
     else abort();}
 
 Arg_script::Arg_script(const std::string& src,
@@ -118,7 +118,7 @@ std::string::size_type Arg_script::constructor(const std::string& src,
   if (is_argfunction_name(args.front().str()) &&  // argfunction_level handling
       args.front().str() != "rwsh.mapped_argfunction")
     if (args.size() != 1 || argfunction) 
-      throw Signal_argv(Argv::Arguments_for_argfunction, args.front().str());
+      throw Signal_argm(Argm::Arguments_for_argfunction, args.front().str());
     else if (args.front().str() == "rwsh.unescaped_argfunction")
       argfunction_level = 1;
     else if (args.front().str() == "rwsh.argfunction") argfunction_level = 2;
@@ -131,13 +131,13 @@ void Arg_script::add_token(const std::string& src, unsigned max_soon) {
   switch (src[0]) {
     case '<':
       if (!input.is_default())
-        throw Signal_argv(Argv::Double_redirection, input.str(), src);
+        throw Signal_argm(Argm::Double_redirection, input.str(), src);
       else input = Rwsh_istream_p(new File_istream(src.substr(1)),
                                   false, false);
       break;
     case '>':
       if (!output.is_default())
-        throw Signal_argv(Argv::Double_redirection, output.str(), src);
+        throw Signal_argm(Argm::Double_redirection, output.str(), src);
       else output = Rwsh_ostream_p(new File_ostream(src.substr(1)),
                                    false, false);
       break;
@@ -151,7 +151,7 @@ std::string::size_type Arg_script::add_function(const std::string& src,
   if (style_start != f_start)
     args.push_back(Arg_spec(src, style_start, f_start, max_soon));
   else
-    if (argfunction) throw Signal_argv(Argv::Multiple_argfunctions);
+    if (argfunction) throw Signal_argm(Argm::Multiple_argfunctions);
     else argfunction =
       new Function("rwsh.argfunction", src, f_start, max_soon+1);
   return f_start;}
@@ -174,9 +174,9 @@ Arg_script& Arg_script::operator=(const Arg_script& src) {
 Arg_script::~Arg_script(void) {
   delete argfunction;}
 
-// naively create an Argv from Arg_script. string constructor for Argv.
-Argv Arg_script::argv(void) const {
-  Argv result;
+// naively create an Argm from Arg_script. string constructor for Argm.
+Argm Arg_script::argm(void) const {
+  Argm result;
   if (!argfunction_level) {
     for(std::vector<Arg_spec>::const_iterator i=args.begin();
       i != args.end(); ++i) result.push_back(i->str());
@@ -205,9 +205,9 @@ std::string Arg_script::str(void) const {
   else if (argfunction_level == 2) return "rwsh.escaped_argfunction";
   else {abort(); return "";}} // unhandled argfunction_level
 
-// produce a destination Argv from the source Argv according to this script
-Argv Arg_script::interpret(const Argv& src) const {
-  Argv result;
+// produce a destination Argm from the source Argm according to this script
+Argm Arg_script::interpret(const Argm& src) const {
+  Argm result;
   if (!input.is_default()) result.input = input;
   else result.input = src.input.child_stream();
   if (!output.is_default()) result.output = output;
@@ -231,8 +231,8 @@ Argv Arg_script::interpret(const Argv& src) const {
   return result;}
 
 // produce a new Arg_script by unescaping argument functions and replacing
-// unescaped_argfunction with argv.argfunction
-void Arg_script::apply(const Argv& src, unsigned nesting,
+// unescaped_argfunction with argm.argfunction
+void Arg_script::apply(const Argm& src, unsigned nesting,
              std::back_insert_iterator<std::vector<Arg_script> > res) const {
   if (this->argfunction_level) {
     Arg_script result(*this);

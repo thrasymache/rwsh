@@ -1,9 +1,9 @@
 // The definition of the Executable_map class, which defines the mapping
-// between executable names and Executable objects. It takes an Argv as its
-// key so that it can return argument functions which are part of the Argv
+// between executable names and Executable objects. It takes an Argm as its
+// key so that it can return argument functions which are part of the Argm
 // object.
 //
-// Copyright (C) 2005, 2006, 2007 Samuel Newbold
+// Copyright (C) 2005-2015 Samuel Newbold
 
 #include <map>
 #include <string>
@@ -12,7 +12,7 @@
 #include "arg_spec.h"
 #include "rwsh_stream.h"
 
-#include "argv.h"
+#include "argm.h"
 #include "arg_script.h"
 #include "executable.h"
 #include "executable_map.h"
@@ -38,40 +38,40 @@ Executable_map::size_type Executable_map::erase (const std::string& key) {
     Base::erase(pos);
     return 1;}}
 
-Executable* Executable_map::find(const Argv& key) {
+Executable* Executable_map::find(const Argm& key) {
   iterator i = Base::find(key[0]);
   if (i != end()) return i->second;
   else if (key[0] == "rwsh.mapped_argfunction") return key.argfunction(); 
   else return NULL;}
 
-bool Executable_map::run_if_exists(const std::string& key, Argv& argv) {
-  argv.push_front(key);
-  Executable* i = find(argv);
+bool Executable_map::run_if_exists(const std::string& key, Argm& argm) {
+  argm.push_front(key);
+  Executable* i = find(argm);
   if (i) {
-    (*i)(argv);
+    (*i)(argm);
     if (Executable::unwind_stack()) Executable::signal_handler();
-    argv.pop_front();
+    argm.pop_front();
     return true;}
   else {
-    argv.pop_front();
+    argm.pop_front();
     return false;}}
 
-int Executable_map::run(Argv& argv) {
+int Executable_map::run(Argm& argm) {
   try {
-    Executable* i = find(argv);                       // first check for key
-    if (i) return (*i)(argv);
-    else if (argv[0][0] == '/') {                       // insert a binary
-      set(new Binary(argv[0]));
-      return (*find(argv))(argv);}
-    if (is_function_name(argv[0])) {                    // try autofunction
-      if (in_autofunction) return not_found(argv);        // nested autofunction
+    Executable* i = find(argm);                       // first check for key
+    if (i) return (*i)(argm);
+    else if (argm[0][0] == '/') {                       // insert a binary
+      set(new Binary(argm[0]));
+      return (*find(argm))(argm);}
+    if (is_function_name(argm[0])) {                    // try autofunction
+      if (in_autofunction) return not_found(argm);        // nested autofunction
       in_autofunction = true;
-      run_if_exists("rwsh.autofunction", argv);
+      run_if_exists("rwsh.autofunction", argm);
       in_autofunction = false;
-      i = find(argv);                                   // second check for key
-      if (i) return (*i)(argv);}
-    return not_found(argv);}
-  catch (Signal_argv error) {
+      i = find(argm);                                   // second check for key
+      if (i) return (*i)(argm);}
+    return not_found(argm);}
+  catch (Signal_argm error) {
     Executable::caught_signal = error.signal;
     std::copy(error.begin(), error.end(),
               std::back_inserter(Executable::call_stack));
@@ -79,14 +79,14 @@ int Executable_map::run(Argv& argv) {
       Executable::signal_handler();
     return -1;}}
 
-int Executable_map::not_found(Argv& argv) {
-  argv.push_front(Argv::signal_names[Argv::Executable_not_found]);
-  Executable* i = find(argv);
+int Executable_map::not_found(Argm& argm) {
+  argm.push_front(Argm::signal_names[Argm::Executable_not_found]);
+  Executable* i = find(argm);
   if (!i) {
     std::string::size_type point = 0;
-    set(new Function(Argv::signal_names[Argv::Executable_not_found],
+    set(new Function(Argm::signal_names[Argm::Executable_not_found],
                      "{.echo $1 (: command not found) \\( $* \\) (\n)\n"
                      ".return -1}", point, 0));}   // reset executable_not_found
-  argv.pop_front();
-  throw Signal_argv(Argv::Executable_not_found, argv);}
+  argm.pop_front();
+  throw Signal_argm(Argm::Executable_not_found, argm);}
 

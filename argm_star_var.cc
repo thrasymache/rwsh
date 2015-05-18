@@ -1,22 +1,23 @@
-// The template star_var from the Argv class. It is separated out because gcc
+// The template star_var from the Argm class. It is separated out because gcc
 // won't export templates, so it must be included directly in each file where
 // it is used.
 //
-// Copyright (C) 2006 Samuel Newbold
+// Copyright (C) 2006-2015 Samuel Newbold
 
-// constructor of Argv from a pair of iterators
+// constructor of Argm from a pair of iterators
 template <class String_it> 
-inline Argv::Argv(String_it first_string, String_it last_string,
+inline Argm::Argm(String_it first_string, String_it last_string,
        Function* argfunction_i, 
        Rwsh_istream_p input_i, Rwsh_ostream_p output_i,
        Rwsh_ostream_p error_i) :
   Base(first_string, last_string),
   argfunction_v(argfunction_i->copy_pointer()), 
-  input(input_i), output(output_i), error(error_i) {};
+  input(input_i), output(output_i), error(error_i),
+  parent_map(Variable_map::global_map) {};
 
 // write the strings corresponding to $*
 template<class Out>
-inline Out Argv::star_var(const std::string& key, unsigned reference_level, 
+inline Out Argm::star_var(const std::string& key, unsigned reference_level, 
                      Out res) const {
   int n = std::atoi(key.c_str());
   if (n < 0) n = 0;
@@ -28,7 +29,7 @@ inline Out Argv::star_var(const std::string& key, unsigned reference_level,
   return res;}
 
 template<> std::back_insert_iterator<std::vector<Arg_spec> >
-inline Argv::star_var(const std::string& key, unsigned reference_level, 
+inline Argm::star_var(const std::string& key, unsigned reference_level, 
                 std::back_insert_iterator<std::vector<Arg_spec> > res) const {
   int n = std::atoi(key.c_str());
   if (n < 0) n = 0;

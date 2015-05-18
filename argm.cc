@@ -1,7 +1,7 @@
-// The definition of the Argv class, which contains the arguments that may
+// The definition of the Argm class, which contains the arguments that may
 // be passed to an executable.
 //
-// Copyright (C) 2005, 2006, 2007 Samuel Newbold
+// Copyright (C) 2005-2015 Samuel Newbold
 
 #include <map>
 #include <sstream>
@@ -10,20 +10,22 @@
 #include "arg_spec.h"
 #include "rwsh_stream.h"
 
-#include "argv.h"
+#include "argm.h"
 #include "arg_script.h"
 #include "executable.h"
 #include "function.h"
 #include "variable_map.h"
 
-Argv::Argv(void) : argfunction_v(0), 
-  input(default_input), output(default_output), error(default_error) {}
+Argm::Argm(void) : argfunction_v(0), 
+  input(default_input), output(default_output), error(default_error),
+  parent_map(Variable_map::global_map) {}
 
-Argv::Argv(const Argv& src) : Base(src), 
+Argm::Argm(const Argm& src) : Base(src), 
   argfunction_v(src.argfunction()->copy_pointer()), 
-  input(src.input), output(src.output), error(src.error) {}
+  input(src.input), output(src.output), error(src.error),
+  parent_map(Variable_map::global_map) {}
 
-Argv& Argv::operator=(const Argv& src) {
+Argm& Argm::operator=(const Argm& src) {
   Base::clear(); 
   std::copy(src.begin(), src.end(), std::back_inserter(*this));
   delete argfunction_v;
@@ -32,11 +34,11 @@ Argv& Argv::operator=(const Argv& src) {
   output = src.output;
   error = src.error;}
 
-Argv::~Argv(void) {
+Argm::~Argm(void) {
   delete argfunction_v;}
 
 // convert to a string. inverse of constructor.
-std::string Argv::str(void) const {
+std::string Argm::str(void) const {
   std::string result;
   for (const_iterator i=begin(); i != end()-1; ++i) result += *i + ' ';
   result += back();
@@ -46,11 +48,11 @@ std::string Argv::str(void) const {
   if (argfunction()) result += " " + argfunction()->str();
   return result;}
 
-void Argv::set_argfunction(Function* val) {argfunction_v = val;};
+void Argm::set_argfunction(Function* val) {argfunction_v = val;};
 
 // returns variables that are defined in the argument vector other than $* 
 // (i.e. positional parameters and $#)
-std::string Argv::get_var(const std::string& key) const {
+std::string Argm::get_var(const std::string& key) const {
   switch (key[0]) {
     case '#': {
       std::ostringstream str;
@@ -61,40 +63,40 @@ std::string Argv::get_var(const std::string& key) const {
       int n = std::atoi(key.c_str());
       if (size() > n) return (*this)[n];
       else return std::string();}
-        //throw Signal_argv(Argv::Undefined_variable, key);}
-    default: return var_map->get(key);}}
+        //throw Signal_argm(Argm::Undefined_variable, key);}
+    default: return parent_map->get(key);}}
 
-int Argv::set_var(const std::string& key, const std::string& value) const {
+int Argm::set_var(const std::string& key, const std::string& value) const {
   switch (key[0]) {
     case '#': case '1': case '2': case '3': case '4': case '5': case '6': 
               case '7': case '8': case '9': case '0': return 2;
-    default: return var_map->set(key, value);}}
+    default: return parent_map->set(key, value);}}
 
-bool Argv::var_exists(const std::string& key) const {
+bool Argm::var_exists(const std::string& key) const {
   switch (key[0]) {
     case '#': case '*': return true; 
     case '1': case '2': case '3': case '4': case '5': case '6': 
               case '7': case '8': case '9': case '0': {
       int n = std::atoi(key.c_str());
       return size() > n;}
-    default: return var_map->exists(key);}}
+    default: return parent_map->exists(key);}}
 
-int Argv::global_var(const std::string& key, 
+int Argm::global_var(const std::string& key, 
                         const std::string& value) const {
   switch (key[0]) {
     case '#': case '*': case '1': case '2': case '3': case '4': case '5': 
               case '6': case '7': case '8': case '9': case '0': return 2;
-    default: return var_map->add(key, value);}}
+    default: return parent_map->add(key, value);}}
 
-int Argv::unset_var(const std::string& key) const {
+int Argm::unset_var(const std::string& key) const {
   switch (key[0]) {
     case '#': case '*': case '1': case '2': case '3': case '4': case '5': 
               case '6': case '7': case '8': case '9': case '0': return 3;
-    default: return var_map->unset(key);}}
+    default: return parent_map->unset(key);}}
 
-unsigned Argv::max_nesting(void) const {return var_map->max_nesting();}
+unsigned Argm::max_nesting(void) const {return parent_map->max_nesting();}
 
-char** Argv::export_env(void) const {return var_map->export_env();}
+char** Argm::export_env(void) const {return parent_map->export_env();}
 
 // algorithm that is the meat of Old_argv constructor
 template<class In>char** copy_to_cstr(In first, In last, char** res) {
@@ -104,21 +106,21 @@ template<class In>char** copy_to_cstr(In first, In last, char** res) {
   *res = 0;
   return res;}
 
-Signal_argv::Signal_argv(Sig_type signal_i) : signal(signal_i) {
+Signal_argm::Signal_argm(Sig_type signal_i) : signal(signal_i) {
   push_back(signal_names[signal]);}
 
-Signal_argv::Signal_argv(Sig_type signal_i, const std::string& value) : 
+Signal_argm::Signal_argm(Sig_type signal_i, const std::string& value) : 
     signal(signal_i) {
   push_back(signal_names[signal]);
   push_back(value);}
 
-Signal_argv::Signal_argv(Sig_type signal_i, const std::string& x,
+Signal_argm::Signal_argm(Sig_type signal_i, const std::string& x,
                          const std::string& y) : signal(signal_i) {
   push_back(signal_names[signal]);
   push_back(x);
   push_back(y);}
 
-Signal_argv::Signal_argv(Sig_type signal_i, int x, int y) : signal(signal_i) {
+Signal_argm::Signal_argm(Sig_type signal_i, int x, int y) : signal(signal_i) {
   push_back(signal_names[signal]);
   std::ostringstream x_str, y_str;
   x_str <<x;
@@ -126,11 +128,11 @@ Signal_argv::Signal_argv(Sig_type signal_i, int x, int y) : signal(signal_i) {
   y_str <<y;
   push_back(y_str.str());}
 
-Signal_argv::Signal_argv(Sig_type signal_i, const Argv& src) : signal(signal_i){
+Signal_argm::Signal_argm(Sig_type signal_i, const Argm& src) : signal(signal_i){
   push_back(signal_names[signal]);
   std::copy(src.begin(), src.end(), std::back_inserter(*this));}
 
-Old_argv::Old_argv(const Argv& src) : argc_v(src.size()) {
+Old_argv::Old_argv(const Argm& src) : argc_v(src.size()) {
   focus = new char*[src.size()+1];
   copy_to_cstr(src.begin(), src.end(), focus);}
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2005, 2006, 2007 Samuel Newbold
+// Copyright (C) 2005-2015 Samuel Newbold
 
 class Executable {
   friend class Executable_map;
@@ -13,7 +13,7 @@ class Executable {
   unsigned execution_count_v;
   struct timeval last_execution_time_v;
   struct timeval total_execution_time_v;
-  static Argv::Sig_type caught_signal;
+  static Argm::Sig_type caught_signal;
 
  public:
   bool del_on_term;
@@ -32,14 +32,14 @@ class Executable {
     return total_execution_time_v;};
   bool is_running(void) const {return !!executable_nesting;};
 
-  bool increment_nesting(const Argv& argv);
-  bool decrement_nesting(const Argv& argv);
-  static Argv call_stack;
-  static Argv::Sig_type unwind_stack(void) {return caught_signal;}
+  bool increment_nesting(const Argm& argm);
+  bool decrement_nesting(const Argm& argm);
+  static Argm call_stack;
+  static Argm::Sig_type unwind_stack(void) {return caught_signal;}
   static void signal_handler(void);
   static void unix_signal_handler(int sig);
 
-  virtual int operator() (const Argv& argv) = 0;
+  virtual int operator() (const Argm& argm) = 0;
   virtual const std::string& name(void) const = 0;
   virtual std::string str() const = 0;};
 
@@ -47,16 +47,16 @@ class Binary : public Executable {
   std::string implementation;
  public:
   Binary(const std::string& impl);
-  virtual int operator() (const Argv& argv);
+  virtual int operator() (const Argm& argm);
   virtual const std::string& name(void) const {return implementation;};
   virtual std::string str() const {return implementation;}; };
 
 class Builtin : public Executable {
-  int (*implementation)(const Argv& argv);
+  int (*implementation)(const Argm& argm);
   std::string name_v;
  public:
-  Builtin(const std::string& name, int (*impl)(const Argv& argv));
-  virtual int operator() (const Argv& argv);
+  Builtin(const std::string& name, int (*impl)(const Argm& argm));
+  virtual int operator() (const Argm& argm);
   virtual const std::string& name(void) const {return name_v;};
   virtual std::string str() const {return name_v;}; };
 

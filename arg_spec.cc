@@ -1,7 +1,7 @@
 // The definition of the Arg_spec class which contains a single argument
 // specifier (e.g. a fixed string, a variable read, a selection read or $*).
 //
-// Copyright (C) 2006, 2007 Samuel Newbold
+// Copyright (C) 2006-2015 Samuel Newbold
 
 #include <dirent.h>
 #include <fcntl.h>
@@ -15,7 +15,7 @@
 #include "arg_spec.h"
 #include "rwsh_stream.h"
 
-#include "argv.h"
+#include "argm.h"
 #include "arg_script.h"
 #include "executable.h"
 #include "executable_map.h"
@@ -27,7 +27,7 @@
 #include "tokenize.cc"
 #include "variable_map.h"
 
-#include "argv_star_var.cc"
+#include "argm_star_var.cc"
 #include "selection_read.cc"
 
 namespace {
@@ -40,13 +40,13 @@ Out tokenize_words(const std::string& in, Out res) {
       ++nesting;}
     else if (in[i] == ')')
       if (nesting) --nesting;
-      else throw Signal_argv(Argv::Mismatched_parenthesis, in.substr(0, i+1));
+      else throw Signal_argm(Argm::Mismatched_parenthesis, in.substr(0, i+1));
     else if (!nesting && isspace(in[i])) {
       if (in[i-1] == ')') *res++ = in.substr(token_start, i-token_start-1);
       else *res++ = in.substr(token_start, i-token_start);
       while (i<in.length() && isspace(in[i])) ++i;
       token_start = i--;}
-  if (nesting) throw Signal_argv(Argv::Mismatched_parenthesis, in);
+  if (nesting) throw Signal_argm(Argm::Mismatched_parenthesis, in);
   if (token_start != i) *res = in.substr(token_start, i-token_start);
   return res;}
 
@@ -67,7 +67,7 @@ Arg_spec::Arg_spec(const std::string& script, unsigned max_soon) :
     if (key_end + 1 < script.length())
       try {word_selection = my_strtoi(script.substr(key_end+1));}
       catch(...) {
-        throw Signal_argv(Argv::Invalid_word_selection,
+        throw Signal_argm(Argm::Invalid_word_selection,
                           script.substr(key_end));}}
   if (!script.length()) type=FIXED;
   else if (script[0] == '$') {
@@ -82,7 +82,7 @@ Arg_spec::Arg_spec(const std::string& script, unsigned max_soon) :
     if (script.length() < 2) type=SOON;
     else {
       if (soon_level > max_soon)
-        throw Signal_argv(Argv::Not_soon_enough, script);
+        throw Signal_argm(Argm::Not_soon_enough, script);
       if (script[i] == '*') {
         type=STAR_SOON;
         if (script.length() - i > 1) text=script.substr(i+1, key_end-i-1);
@@ -111,11 +111,11 @@ Arg_spec::Arg_spec(const std::string& src,
   substitution = new Function("rwsh.argfunction", src, tpoint, soon_level);
   if (soon_level+1 != point-style_start || src[style_start] != '&') {
     delete substitution;
-    throw Signal_argv(Argv::Bad_argfunction_style,
+    throw Signal_argm(Argm::Bad_argfunction_style,
                       src.substr(style_start, tpoint-style_start));}
   if (soon_level > max_soon) {
     delete substitution;
-    throw Signal_argv(Argv::Not_soon_enough,
+    throw Signal_argm(Argm::Not_soon_enough,
                       src.substr(style_start, tpoint-style_start));}
   if (tpoint < src.length()) switch (src[tpoint]) {
     case ' ': case ';': case '\n': case '}': break;
@@ -133,7 +133,7 @@ Arg_spec::Arg_spec(const std::string& src,
           catch(...) {}}} // fall through
     default: {
       std::string::size_type token_end = src.find_first_of(" };", tpoint);
-      throw Signal_argv(Argv::Invalid_word_selection,
+      throw Signal_argm(Argm::Invalid_word_selection,
                         src.substr(tpoint, token_end-tpoint));}}
   after_loop:
   point = tpoint;}
@@ -153,7 +153,7 @@ Arg_spec::Arg_spec(const Arg_spec& src) :
 
 Arg_spec::~Arg_spec() {delete substitution;}
 
-void Arg_spec::apply(const Argv& src, unsigned nesting,
+void Arg_spec::apply(const Argm& src, unsigned nesting,
                 std::back_insert_iterator<std::vector<Arg_spec> > res) const {
   switch(type) {
     case SOON: 
@@ -179,10 +179,10 @@ void Arg_spec::apply(const Argv& src, unsigned nesting,
                                           new_substitution, text);
       else {
         Substitution_stream override_stream;
-        Argv temp_argv(src);
-        temp_argv.output = override_stream.child_stream();
-        if ((*new_substitution)(temp_argv))
-          throw Signal_argv(Argv::Failed_substitution, str());
+        Argm temp_argm(src);
+        temp_argm.output = override_stream.child_stream();
+        if ((*new_substitution)(temp_argm))
+          throw Signal_argm(Argm::Failed_substitution, str());
         *res++ = Arg_spec(FIXED, 0, 0, 0, -1, 0, override_stream.value());}
       break;}
     default: *res++ = *this;}}  // most types are not affected by apply
@@ -218,10 +218,10 @@ std::string Arg_spec::str(void) const {
     case SUBSTITUTION: return "&" + base + substitution->str() + tail;
     default: abort();}}
 
-// produce one or more strings for destination Argv from Arg_spec and source
-// Argv
-void Arg_spec::interpret(const Argv& src,
-                           std::back_insert_iterator<Argv> res) const {
+// produce one or more strings for destination Argm from Arg_spec and source
+// Argm
+void Arg_spec::interpret(const Argm& src,
+                           std::back_insert_iterator<Argm> res) const {
   switch(type) {
     case FIXED:      *res++ = text; break;
     case REFERENCE: case SOON: {
@@ -232,7 +232,7 @@ void Arg_spec::interpret(const Argv& src,
          std::vector<std::string> intermediate;
          tokenize_words(next, std::back_inserter(intermediate));
          if (word_selection >= intermediate.size())
-           throw Signal_argv(Argv::Undefined_variable, str());
+           throw Signal_argm(Argm::Undefined_variable, str());
          else *res++ = intermediate[word_selection];}
       else if (!expand) *res++ = next;
       else tokenize_words(next, res);
@@ -247,16 +247,16 @@ void Arg_spec::interpret(const Argv& src,
     case SUBSTITUTION: {
       if (soon_level) abort(); // constructor guarantees SOONs are already done
       Substitution_stream override_stream;
-      Argv temp_argv(src);
-      temp_argv.output = override_stream.child_stream();
-      if ((*substitution)(temp_argv))
-        throw Signal_argv(Argv::Failed_substitution, str());
+      Argm temp_argm(src);
+      temp_argm.output = override_stream.child_stream();
+      if ((*substitution)(temp_argm))
+        throw Signal_argm(Argm::Failed_substitution, str());
       if (word_selection != -1) {
          std::vector<std::string> intermediate;
          tokenize_words(override_stream.value(),
                         std::back_inserter(intermediate));
          if (word_selection >= intermediate.size())
-           throw Signal_argv(Argv::Undefined_variable, str());
+           throw Signal_argm(Argm::Undefined_variable, str());
          else *res++ = intermediate[word_selection];}
       else if (expand) tokenize_words (override_stream.value(), res);
       else *res++ = override_stream.value();

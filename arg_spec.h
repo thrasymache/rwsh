@@ -1,6 +1,6 @@
-// Copyright (C) 2006, 2007 Samuel Newbold
+// Copyright (C) 2006-2015 Samuel Newbold
 
-class Argv;
+class Argm;
 class Function;
 
 enum Arg_type {FIXED, REFERENCE, SOON, STAR_REF, STAR_SOON, SELECTION,
@@ -25,10 +25,10 @@ class Arg_spec {
              Function* substitution, std::string text);
   Arg_spec(const Arg_spec& src);
   ~Arg_spec();
-  void apply(const Argv& src, unsigned nesting,
+  void apply(const Argm& src, unsigned nesting,
              std::back_insert_iterator<std::vector<Arg_spec> > res) const;
-  void interpret(const Argv& src,
-                 std::back_insert_iterator<Argv> res) const;
+  void interpret(const Argm& src,
+                 std::back_insert_iterator<Argm> res) const;
   void promote_soons(unsigned nesting);
   std::string str(void) const; };
 

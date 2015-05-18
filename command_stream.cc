@@ -1,8 +1,8 @@
 // The definition of the Command_stream class. It is constructed from a 
-// standard stream and defines an input operator for Argv objects. It also
+// standard stream and defines an input operator for Argm objects. It also
 // handles the calling of rwsh.prompt.
 //
-// Copyright (C) 2005, 2006, 2007 Samuel Newbold
+// Copyright (C) 2005-215 Samuel Newbold
 
 #include <iostream>
 #include <map>
@@ -14,7 +14,7 @@
 #include "arg_spec.h"
 #include "rwsh_stream.h"
 
-#include "argv.h"
+#include "argm.h"
 #include "arg_script.h"
 #include "clock.h"
 #include "command_stream.h"
@@ -47,13 +47,13 @@ Command_stream& Command_stream::operator>> (Arg_script& dest) {
     catch (Unclosed_brace exception) {
       cmd += '\n';}
     catch (...) {
-      Argv raw_command;
-      raw_command.push_back(Argv::signal_names[Argv::Raw_command]);
+      Argm raw_command;
+      raw_command.push_back(Argm::signal_names[Argm::Raw_command]);
       raw_command.push_back(cmd);
       executable_map.run(raw_command);
       throw;}}
-  Argv raw_command;
-  raw_command.push_back(Argv::signal_names[Argv::Raw_command]);
+  Argm raw_command;
+  raw_command.push_back(Argm::signal_names[Argm::Raw_command]);
   raw_command.push_back(cmd);
   executable_map.run(raw_command);
   if (Executable::unwind_stack()) return *this;

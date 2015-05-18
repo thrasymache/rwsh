@@ -1,4 +1,4 @@
-// Copyright (C) 2005, 2006 Samuel Newbold
+// Copyright (C) 2005-2015 Samuel Newbold
 
 // a set of fixed text terms separated by wildcards to match directory entries
 class Simple_pattern {
