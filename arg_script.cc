@@ -218,7 +218,7 @@ Argm Arg_script::interpret(const Argm& src) const {
     for (std::vector<Arg_spec>::const_iterator i = args.begin();
       i != args.end(); ++i) 
       i->interpret(src, std::back_inserter(result));
-    if (!result.size()) result.push_back("");
+    if (!result.argc()) result.push_back("");
     if (argfunction) result.set_argfunction(argfunction->apply(src, 0));}
   else if (is_argfunction()) {
     result.push_back("rwsh.mapped_argfunction");

@@ -13,7 +13,8 @@ inline Argm::Argm(String_it first_string, String_it last_string,
   Base(first_string, last_string),
   argfunction_v(argfunction_i->copy_pointer()), 
   input(input_i), output(output_i), error(error_i),
-  parent_map(Variable_map::global_map) {};
+  parent_map(Variable_map::global_map) {
+    argc_v = Base::size();};
 
 // write the strings corresponding to $*
 template<class Out>

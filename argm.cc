@@ -16,11 +16,11 @@
 #include "function.h"
 #include "variable_map.h"
 
-Argm::Argm(void) : argfunction_v(0), 
+Argm::Argm(void) : argc_v(0), argfunction_v(0), 
   input(default_input), output(default_output), error(default_error),
   parent_map(Variable_map::global_map) {}
 
-Argm::Argm(const Argm& src) : Base(src), 
+Argm::Argm(const Argm& src) : Base(src), argc_v(src.argc()),
   argfunction_v(src.argfunction()->copy_pointer()), 
   input(src.input), output(src.output), error(src.error),
   parent_map(Variable_map::global_map) {}
@@ -28,6 +28,7 @@ Argm::Argm(const Argm& src) : Base(src),
 Argm& Argm::operator=(const Argm& src) {
   Base::clear(); 
   std::copy(src.begin(), src.end(), std::back_inserter(*this));
+  argc_v = src.argc_v;
   delete argfunction_v;
   argfunction_v = src.argfunction()->copy_pointer();
   input = src.input;
@@ -50,8 +51,8 @@ std::string Argm::str(void) const {
 
 void Argm::set_argfunction(Function* val) {argfunction_v = val;};
 
-// returns variables that are defined in the argument vector other than $* 
-// (i.e. positional parameters and $#)
+// returns variables that are defined in the current argument map other than $*
+// (e.g. positional parameters and $#)
 std::string Argm::get_var(const std::string& key) const {
   switch (key[0]) {
     case '#': {
@@ -132,8 +133,8 @@ Signal_argm::Signal_argm(Sig_type signal_i, const Argm& src) : signal(signal_i){
   push_back(signal_names[signal]);
   std::copy(src.begin(), src.end(), std::back_inserter(*this));}
 
-Old_argv::Old_argv(const Argm& src) : argc_v(src.size()) {
-  focus = new char*[src.size()+1];
+Old_argv::Old_argv(const Argm& src) : argc_v(src.argc()) {
+  focus = new char*[src.argc()+1];
   copy_to_cstr(src.begin(), src.end(), focus);}
 
 Old_argv::~Old_argv(void) {

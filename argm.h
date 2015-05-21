@@ -5,6 +5,7 @@ class Variable_map;
 
 class Argm : private std::vector<std::string> {
   typedef std::vector<std::string> Base;
+  unsigned argc_v;
   Function* argfunction_v;
   Variable_map* parent_map;
 
@@ -86,38 +87,27 @@ class Argm : private std::vector<std::string> {
   int unset_var(const std::string& key) const;
   bool var_exists(const std::string& key) const;
 
-// vector semantics
-  typedef Base::value_type value_type;
-  typedef Base::allocator_type allocator_type;
+// map semantics
   typedef Base::size_type size_type;
-  typedef Base::difference_type difference_type;
   typedef Base::iterator iterator;
   typedef Base::const_iterator const_iterator;
-  typedef Base::reverse_iterator reverse_iterator;
-  typedef Base::const_reverse_iterator const_reverse_iterator;
-  typedef Base::pointer pointer;
-  typedef Base::const_pointer const_pointer;
-  typedef Base::reference reference;
   typedef Base::const_reference const_reference;
 
-  iterator begin(void) {return Base::begin();};
+// vector semantics: this structure is not kept as a vector, and to the extent
+// possible should be thought of as a map, but it is also a representation of a
+// command line, and so there is an assigned order to its members, and some
+// operations should only need or want to know that much
   const_iterator begin(void) const {return Base::begin();};
-  iterator end(void) {return Base::end();};
   const_iterator end(void) const {return Base::end();};
-  const_reference front(void) const {return Base::front();};
-  reference front(void) {return Base::front();};
-  const_reference back(void) const {return Base::back();};
-  reference back(void) {return Base::back();};
-  iterator erase(iterator key) {return Base::erase(key);}
-  iterator erase(iterator first, iterator last) {
-    return Base::erase(first, last);}
-  void push_front(const std::string& x) {Base::insert(Base::begin(), x);};
-  void pop_front(void) {Base::erase(Base::begin());};
-  void push_back(const std::string& x) {Base::push_back(x);};
-  void pop_back(void) {Base::pop_back();};
-  size_type size(void) const {return Base::size();};
-  std::string& operator[] (int i) {return Base::operator[](i);};
-  const std::string& operator[] (int i) const {return Base::operator[](i);}; };
+  const_reference back(void) const {return (*this)[argc()-1];};
+  void push_front(const std::string& x) {Base::insert(Base::begin(), x); ++argc_v;};
+  void pop_front(void) {Base::erase(Base::begin()); --argc_v;};
+  //later//void push_back(const std::string& x) {(*this)[argc_v++] = x;};
+  void push_back(const std::string& x) {Base::push_back(x); argc_v++;};
+  void pop_back(void) {Base::pop_back(); --argc_v;};
+  unsigned argc(void) const {return argc_v;};
+  reference operator[] (int i) {return Base::operator[](i);};
+  const_reference operator[] (int i) const {return Base::operator[](i);}; };
 
 struct Signal_argm : public Argm {
   Argm::Sig_type signal;

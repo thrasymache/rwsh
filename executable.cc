@@ -70,9 +70,7 @@ void Executable::unix_signal_handler(int sig) {
 // main does not need to do this handling, because anything 
 // that it calls directly will have an initial nesting of 0.
 void Executable::signal_handler(void) {
-  Argm call_stack_copy;                                    //need for a copy: 
-  std::copy(call_stack.begin(), call_stack.end(), 
-            std::back_inserter(call_stack_copy));
+  Argm call_stack_copy(call_stack);                          //need for a copy:
   call_stack = Argm();
   in_signal_handler = true;
   caught_signal = Argm::No_signal;
