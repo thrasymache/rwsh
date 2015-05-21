@@ -16,6 +16,20 @@ inline Argm::Argm(String_it first_string, String_it last_string,
   parent_map(Variable_map::global_map) {
     argc_v = Base::size();};
 
+// constructor of Argm from an initial argument and a  pair of iterators
+template <class String_it> 
+inline Argm::Argm(const std::string& first_string,
+       String_it second_string, String_it last_string,
+       Function* argfunction_i, 
+       Rwsh_istream_p input_i, Rwsh_ostream_p output_i,
+       Rwsh_ostream_p error_i) :
+  Base(second_string, last_string),
+  argfunction_v(argfunction_i->copy_pointer()), 
+  input(input_i), output(output_i), error(error_i),
+  parent_map(Variable_map::global_map) {
+    Base::insert(Base::begin(), first_string);
+    argc_v = Base::size();};
+
 // write the strings corresponding to $*
 template<class Out>
 inline Out Argm::star_var(const std::string& key, unsigned reference_level, 

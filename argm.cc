@@ -16,8 +16,10 @@
 #include "function.h"
 #include "variable_map.h"
 
-Argm::Argm(void) : argc_v(0), argfunction_v(0), 
-  input(default_input), output(default_output), error(default_error),
+Argm::Argm(Rwsh_istream_p input_i, Rwsh_ostream_p output_i,
+           Rwsh_ostream_p error_i) :
+  argc_v(0), argfunction_v(0), 
+  input(input_i), output(output_i), error(error_i),
   parent_map(Variable_map::global_map) {}
 
 Argm::Argm(const Argm& src) : Base(src), argc_v(src.argc()),
@@ -107,21 +109,24 @@ template<class In>char** copy_to_cstr(In first, In last, char** res) {
   *res = 0;
   return res;}
 
-Signal_argm::Signal_argm(Sig_type signal_i) : signal(signal_i) {
+Signal_argm::Signal_argm(Sig_type signal_i) :
+    Argm(default_input, default_output, default_error), signal(signal_i) {
   push_back(signal_names[signal]);}
 
 Signal_argm::Signal_argm(Sig_type signal_i, const std::string& value) : 
-    signal(signal_i) {
+    Argm(default_input, default_output, default_error), signal(signal_i) {
   push_back(signal_names[signal]);
   push_back(value);}
 
 Signal_argm::Signal_argm(Sig_type signal_i, const std::string& x,
-                         const std::string& y) : signal(signal_i) {
+                         const std::string& y) :
+    Argm(default_input, default_output, default_error), signal(signal_i) {
   push_back(signal_names[signal]);
   push_back(x);
   push_back(y);}
 
-Signal_argm::Signal_argm(Sig_type signal_i, int x, int y) : signal(signal_i) {
+Signal_argm::Signal_argm(Sig_type signal_i, int x, int y) :
+    Argm(default_input, default_output, default_error), signal(signal_i) {
   push_back(signal_names[signal]);
   std::ostringstream x_str, y_str;
   x_str <<x;
@@ -129,7 +134,8 @@ Signal_argm::Signal_argm(Sig_type signal_i, int x, int y) : signal(signal_i) {
   y_str <<y;
   push_back(y_str.str());}
 
-Signal_argm::Signal_argm(Sig_type signal_i, const Argm& src) : signal(signal_i){
+Signal_argm::Signal_argm(Sig_type signal_i, const Argm& src) :
+    Argm(default_input, default_output, default_error), signal(signal_i) {
   push_back(signal_names[signal]);
   std::copy(src.begin(), src.end(), std::back_inserter(*this));}
 

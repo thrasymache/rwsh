@@ -1,4 +1,4 @@
-// Copyright (C) 2006, 2007 Samuel Newbold
+// Copyright (C) 2006-2015 Samuel Newbold
 
 class Variable_map : private std::map<std::string, std::string> {
   typedef std::map<std::string, std::string> Base;

@@ -2,7 +2,7 @@
 // standard stream and defines an input operator for Argm objects. It also
 // handles the calling of rwsh.prompt.
 //
-// Copyright (C) 2005-215 Samuel Newbold
+// Copyright (C) 2005-2015 Samuel Newbold
 
 #include <iostream>
 #include <map>
@@ -47,14 +47,10 @@ Command_stream& Command_stream::operator>> (Arg_script& dest) {
     catch (Unclosed_brace exception) {
       cmd += '\n';}
     catch (...) {
-      Argm raw_command;
-      raw_command.push_back(Argm::signal_names[Argm::Raw_command]);
-      raw_command.push_back(cmd);
+      Signal_argm raw_command(Argm::Raw_command, cmd);
       executable_map.run(raw_command);
       throw;}}
-  Argm raw_command;
-  raw_command.push_back(Argm::signal_names[Argm::Raw_command]);
-  raw_command.push_back(cmd);
+  Signal_argm raw_command(Argm::Raw_command, cmd);
   executable_map.run(raw_command);
   if (Executable::unwind_stack()) return *this;
   return *this;}

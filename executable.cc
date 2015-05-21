@@ -71,22 +71,24 @@ void Executable::unix_signal_handler(int sig) {
 // that it calls directly will have an initial nesting of 0.
 void Executable::signal_handler(void) {
   Argm call_stack_copy(call_stack);                          //need for a copy:
-  call_stack = Argm();
+  call_stack = Argm(default_input, default_output, default_error);
   in_signal_handler = true;
   caught_signal = Argm::No_signal;
   Variable_map::global_map->unset("IF_TEST");
   executable_map.run(call_stack_copy);
   if (unwind_stack()) {
     default_output <<"signal handler itself triggered signal\n";
-    call_stack.push_front(".echo");
-    b_echo(call_stack);
+    Argm temp_call_stack(".echo", call_stack.begin(), call_stack.end(),
+                         call_stack.argfunction(),
+                         call_stack.input, call_stack.output, call_stack.error);
+    call_stack = Argm(default_input, default_output, default_error);
+    b_echo(temp_call_stack);
     default_output <<"\noriginal call stack:\n";
     call_stack_copy[0] = ".echo";
     b_echo(call_stack_copy);
     default_output <<"\n";
     default_output.flush();
     dollar_question = -1;
-    call_stack = Argm();
     caught_signal = Argm::No_signal;
     Variable_map::global_map->unset("IF_TEST");}
   in_signal_handler = false;}
@@ -117,9 +119,7 @@ int Binary::operator() (const Argm& argm_i) {
       Old_argv argv(argm_i);
       char **env = argm_i.export_env();
       int ret = execve(implementation.c_str(), argv.argv(), env);
-      Argm error_argm;
-      error_argm.push_back(Argm::signal_names[Argm::Binary_not_found]);
-      error_argm.push_back(argm_i[0]); 
+      Signal_argm error_argm(Argm::Binary_not_found, argm_i[0]); 
       executable_map.run(error_argm);
       exit(ret);}
     else plumber.wait(&ret);

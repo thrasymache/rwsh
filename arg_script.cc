@@ -176,14 +176,11 @@ Arg_script::~Arg_script(void) {
 
 // naively create an Argm from Arg_script. string constructor for Argm.
 Argm Arg_script::argm(void) const {
-  Argm result;
+  Argm result(input, output, error);
   if (!argfunction_level) {
     for(std::vector<Arg_spec>::const_iterator i=args.begin();
       i != args.end(); ++i) result.push_back(i->str());
-    result.set_argfunction(argfunction->copy_pointer());
-    result.input = input;
-    result.output = output;
-    result.error = error;}
+    result.set_argfunction(argfunction->copy_pointer());}
   else if (argfunction_level == 1) result.push_back("rwsh.argfunction");
   else if (argfunction_level == 2) result.push_back("rwsh.escaped_argfunction");
   else abort(); // unhandled argfunction_level
@@ -207,13 +204,9 @@ std::string Arg_script::str(void) const {
 
 // produce a destination Argm from the source Argm according to this script
 Argm Arg_script::interpret(const Argm& src) const {
-  Argm result;
-  if (!input.is_default()) result.input = input;
-  else result.input = src.input.child_stream();
-  if (!output.is_default()) result.output = output;
-  else result.output = src.output.child_stream();
-  if (!error.is_default()) result.error = error;
-  else result.error = src.error.child_stream();
+  Argm result(!input.is_default()?  input:  src.input.child_stream(),
+              !output.is_default()? output: src.output.child_stream(),
+              !error.is_default()?  error:  src.error.child_stream());
   if (!argfunction_level) {
     for (std::vector<Arg_spec>::const_iterator i = args.begin();
       i != args.end(); ++i) 

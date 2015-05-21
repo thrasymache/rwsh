@@ -9,9 +9,7 @@ template<class Out> int read_dir(const std::string& filename, Out dest) {
   if (stat(file.c_str(), &sb) || (sb.st_mode & S_IFMT) != S_IFDIR) return 1;
   DIR *src = opendir(file.c_str());
   if (!src) {
-    Argm error_argm;
-    error_argm.push_back(Argm::signal_names[Argm::Unreadable_dir]);
-    error_argm.push_back(file);
+    Signal_argm error_argm(Argm::Unreadable_dir, file);
     executable_map.run(error_argm);
     return 2;}
   struct dirent entry;

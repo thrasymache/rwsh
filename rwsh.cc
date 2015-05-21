@@ -95,7 +95,7 @@ int& dollar_question = Variable_map::dollar_question;
 bool Variable_map::exit_requested = false;
 
 // static initializers with cross-component dependancies
-Argm Executable::call_stack;
+Argm Executable::call_stack(default_input, default_output, default_error);
 
 namespace {
 void register_signals(void) {
@@ -109,22 +109,19 @@ void register_signals(void) {
   signal(SIGUSR2, Executable::unix_signal_handler);} } // end unnamed namespace
 
 int main(int argc, char *argv[]) {
-  Argm external_command_line(&argv[0], &argv[argc], 0, 
-                               default_input, default_output, default_error);
   try {internal_init();}
   catch (std::string& error) {default_error <<error;}
   catch (Signal_argm& exception) {executable_map.run(exception);}
   Command_stream command_stream(std::cin, true);
-  external_command_line.push_front(".init");
-  executable_map.run(external_command_line);
-  external_command_line.pop_front();
+  Argm init_command(".init", &argv[0], &argv[argc], 0, 
+                             default_input, default_output, default_error);
+  executable_map.run(init_command);
   register_signals();
   Arg_script script("", 0);
-  Argm prompt;
-  prompt.push_back(Argm::signal_names[Argm::Prompt]);
+  Signal_argm prompt(Argm::Prompt);
   while (command_stream) {
     executable_map.run(prompt);
-    Argm command;
+    Argm command(default_input, default_output, default_error);
     try {
       if (!(command_stream >> script)) break;
       command = script.interpret(script.argm());}
@@ -133,7 +130,8 @@ int main(int argc, char *argv[]) {
     if (!executable_map.run_if_exists("rwsh.run_logic", command))
        executable_map.run(command);
     executable_map.run_if_exists("rwsh.after_command", command);}
-  external_command_line.push_front(Argm::signal_names[Argm::Shutdown]);
-  executable_map.run(external_command_line);
-  external_command_line.pop_front();
+  Argm shutdown_command(Argm::signal_names[Argm::Shutdown],
+                        &argv[0], &argv[argc], 0, 
+                        default_input, default_output, default_error);
+  executable_map.run(shutdown_command);
   return dollar_question;}

@@ -10,12 +10,16 @@ class Argm : private std::vector<std::string> {
   Variable_map* parent_map;
 
  public:
-  Argm(void);
+  Argm(Rwsh_istream_p input_i, Rwsh_ostream_p output_i, Rwsh_ostream_p error_i);
   template <class String_it> 
   Argm(String_it first_string, String_it last_string,
-         Function* argfunction_i, 
-         Rwsh_istream_p input_i, Rwsh_ostream_p output_i,
-         Rwsh_ostream_p error_i);
+       Function* argfunction_i, 
+       Rwsh_istream_p input_i, Rwsh_ostream_p output_i, Rwsh_ostream_p error_i);
+  template <class String_it> 
+  Argm(const std::string& first_string,
+       String_it second_string, String_it last_string,
+       Function* argfunction_i, 
+       Rwsh_istream_p input_i, Rwsh_ostream_p output_i, Rwsh_ostream_p error_i);
   Argm(const Argm& src);
   ~Argm(void);
   Argm& operator=(const Argm& src);
@@ -100,8 +104,6 @@ class Argm : private std::vector<std::string> {
   const_iterator begin(void) const {return Base::begin();};
   const_iterator end(void) const {return Base::end();};
   const_reference back(void) const {return (*this)[argc()-1];};
-  void push_front(const std::string& x) {Base::insert(Base::begin(), x); ++argc_v;};
-  void pop_front(void) {Base::erase(Base::begin()); --argc_v;};
   //later//void push_back(const std::string& x) {(*this)[argc_v++] = x;};
   void push_back(const std::string& x) {Base::push_back(x); argc_v++;};
   void pop_back(void) {Base::pop_back(); --argc_v;};

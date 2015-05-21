@@ -1,4 +1,4 @@
-// Copyright (C) 2007 Samuel Newbold
+// Copyright (C) 2007-2015 Samuel Newbold
 
 #include <errno.h>
 #include <iostream>

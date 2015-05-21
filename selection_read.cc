@@ -41,11 +41,9 @@ void selection_read(const std::string& src, Out res) {
         if (stat(j->c_str(), &sb)) {j = partial.erase(j); --j;}}
     else partial_match_children(partial, *i, ignore, more);
     if (!partial.size()) {
-      Argm argm;
-      argm.push_back(Argm::signal_names[Argm::Selection_not_found]);
       std::list<Entry_pattern>::const_iterator j = i;
-      argm.push_back(entry_pattern_list_to_str(focus.begin(), ++j));
-      argm.push_back(src);
+      Signal_argm argm(Argm::Selection_not_found,
+                       entry_pattern_list_to_str(focus.begin(), ++j), src);
       executable_map.run(argm);}}
   copy(partial.begin(), partial.end(), res);}
 

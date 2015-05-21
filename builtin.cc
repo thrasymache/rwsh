@@ -89,9 +89,7 @@ int b_exec(const Argm& argm) {
   Old_argv old_argv(lookup);
   char **env = argm.export_env();
   int ret = execve(lookup[0].c_str(), old_argv.argv(), env);
-  Argm error_argm;
-  error_argm.push_back("rwsh.binary_not_found");
-  error_argm.push_back(argm[0]); 
+  Signal_argm error_argm(Argm::Binary_not_found, argm[0]); 
   executable_map.run(error_argm);
   return ret;}
 
@@ -108,10 +106,7 @@ int b_for(const Argm& argm) {
   if (argm.argc() < 2) throw Signal_argm(Argm::Argument_count, argm.argc()-1,1);
   if (!argm.argfunction()) throw Signal_argm(Argm::Missing_argfunction);
   int ret = -1;
-  Argm body;
-  body.input = argm.input;
-  body.output = argm.output;
-  body.error = argm.error;
+  Argm body(argm.input, argm.output, argm.error);
   body.push_back("rwsh.mapped_argfunction");
   body.push_back("");
   for (Argm::const_iterator i = ++argm.begin(); i != argm.end(); ++i) {
@@ -130,7 +125,8 @@ int b_for_each_line(const Argm& argm) {
   int ret = -1;
   while(!argm.input.fail()) { 
     std::string line;
-    Argm body;
+    // shouldn't interfere with input being consumed by this builtin
+    Argm body(default_input, argm.output, argm.error);
     body.push_back("rwsh.mapped_argfunction");
     argm.input.getline(line);
     if (argm.input.fail() && !line.size()) break;
@@ -203,9 +199,8 @@ int if_core(const Argm& argm, bool logic) {
     argm.unset_var("IF_TEST");
     int ret;
     if (argm.argfunction()) {
-      Argm mapped_argm;
+      Argm mapped_argm(argm.input, argm.output.child_stream(), argm.error);
       mapped_argm.push_back("rwsh.mapped_argfunction");
-      mapped_argm.output = argm.output.child_stream();
       ret = (*argm.argfunction())(mapped_argm);}
     else ret = 0;
     if (argm.var_exists("IF_TEST")) {
@@ -263,9 +258,8 @@ int b_else(const Argm& argm) {
   else if (argm.get_var("IF_TEST") == "false") 
     if (argm.argfunction()) {
       argm.unset_var("IF_TEST");
-      Argm mapped_argm;
+      Argm mapped_argm(argm.input, argm.output.child_stream(), argm.error);
       mapped_argm.push_back("rwsh.mapped_argfunction");
-      mapped_argm.output = argm.output.child_stream();
       (*argm.argfunction())(mapped_argm);
       if (argm.var_exists("IF_TEST")) {
         argm.unset_var("IF_TEST");
@@ -385,9 +379,8 @@ int b_set(const Argm& argm) {
 int b_signal_handler(const Argm& argm) {
   if (argm.argc() < 2) throw Signal_argm(Argm::Argument_count, argm.argc()-1,1);
   if (!argm.argfunction()) throw Signal_argm(Argm::Missing_argfunction);
-  Argm mapped_argm;
+  Argm mapped_argm(argm.input, argm.output.child_stream(), argm.error);
   mapped_argm.push_back("rwsh.mapped_argfunction");
-  mapped_argm.output = argm.output.child_stream();
   int ret = (*argm.argfunction())(mapped_argm);
   if (Executable::unwind_stack()) {
     for (Argm::const_iterator i = argm.begin() +1; i != argm.end(); ++i) 
@@ -414,12 +407,12 @@ int b_source(const Argm& argm) {
   Arg_script script("", 0);
   int ret = -1;
   while (command_stream && !Executable::unwind_stack()) {
-    Argm command;
     try {
       if (!(command_stream >> script)) break;
-      command = script.interpret(script_arg);}
-    catch (Signal_argm exception) {command = exception;}
-    ret = executable_map.run(command);}
+      Argm command(script.interpret(script_arg));
+      ret = executable_map.run(command);}
+    catch (Signal_argm exception) {
+      ret = executable_map.run(exception);}}
   return ret;}
 
 // run the argument function once with each command in the specified function
@@ -437,8 +430,9 @@ int b_stepwise(const Argm& argm) {
   int ret = -1;
   for (Function::const_iterator i = f->script.begin(); 
        i != f->script.end(); ++i) {
-    Argm body(i->interpret(lookup));
-    body.push_front("rwsh.mapped_argfunction");
+    Argm body_i(i->interpret(lookup));
+    Argm body("rwsh.mapped_argfunction", body_i.begin(), body_i.end(), 0,
+                body_i.input, body_i.output, body_i.error);
     ret  = (*argm.argfunction())(body);
     if (Executable::unwind_stack()) {
       ret = -1;
@@ -452,10 +446,9 @@ int b_store_output(const Argm& argm) {
   if (argm.argc()!=2) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 1);
   if (!argm.argfunction()) throw Signal_argm(Argm::Missing_argfunction);
   if (isargvar(argm[1]) || argm[1] == "IF_TEST") return 2;
-  Argm mapped_argm;
-  mapped_argm.push_back("rwsh.mapped_argfunction");
   Substitution_stream text;
-  mapped_argm.output = text.child_stream();
+  Argm mapped_argm(argm.input, text.child_stream(), argm.error);
+  mapped_argm.push_back("rwsh.mapped_argfunction");
   int ret = (*argm.argfunction())(mapped_argm);
   if (Executable::unwind_stack()) return -1;
   if (ret) return ret;
@@ -778,9 +771,8 @@ int b_while(const Argm& argm) {
                 argm.input, argm.output.child_stream(), argm.error);
   while (!executable_map.run(lookup)) {
     if (Executable::unwind_stack()) return -1;
-    Argm mapped_argm;
+    Argm mapped_argm(argm.input, argm.output.child_stream(), argm.error);
     mapped_argm.push_back("rwsh.mapped_argfunction");
-    mapped_argm.output = argm.output.child_stream();
     ret = (*argm.argfunction())(mapped_argm);
     if (Executable::unwind_stack()) return -1;}
   return ret;}

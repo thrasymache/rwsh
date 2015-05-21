@@ -44,16 +44,15 @@ Executable* Executable_map::find(const Argm& key) {
   else if (key[0] == "rwsh.mapped_argfunction") return key.argfunction(); 
   else return NULL;}
 
-bool Executable_map::run_if_exists(const std::string& key, Argm& argm) {
-  argm.push_front(key);
-  Executable* i = find(argm);
+bool Executable_map::run_if_exists(const std::string& key, Argm& argm_i) {
+  Argm temp_argm(key, argm_i.begin(), argm_i.end(), argm_i.argfunction(),
+            argm_i.input, argm_i.output, argm_i.error);
+  Executable* i = find(temp_argm);
   if (i) {
-    (*i)(argm);
+    (*i)(temp_argm);
     if (Executable::unwind_stack()) Executable::signal_handler();
-    argm.pop_front();
     return true;}
   else {
-    argm.pop_front();
     return false;}}
 
 int Executable_map::run(Argm& argm) {
@@ -79,14 +78,13 @@ int Executable_map::run(Argm& argm) {
       Executable::signal_handler();
     return -1;}}
 
-int Executable_map::not_found(Argm& argm) {
-  argm.push_front(Argm::signal_names[Argm::Executable_not_found]);
-  Executable* i = find(argm);
+int Executable_map::not_found(Argm& argm_i) {
+  Signal_argm temp_argm(Argm::Executable_not_found, argm_i[0]);
+  Executable* i = find(temp_argm);
   if (!i) {
     std::string::size_type point = 0;
     set(new Function(Argm::signal_names[Argm::Executable_not_found],
                      "{.echo $1 (: command not found) \\( $* \\) (\n)\n"
                      ".return -1}", point, 0));}   // reset executable_not_found
-  argm.pop_front();
-  throw Signal_argm(Argm::Executable_not_found, argm);}
+  throw Signal_argm(Argm::Executable_not_found, argm_i);}
 

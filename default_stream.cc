@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Samuel Newbold
+// Copyright (C) 2008-2015 Samuel Newbold
 
 #include <iostream>
 #include <iomanip>
