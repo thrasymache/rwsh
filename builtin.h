@@ -21,6 +21,7 @@ int b_internal_functions(const Argm& argm);
 int b_is_default_input(const Argm& argm);
 int b_is_default_output(const Argm& argm);
 int b_is_default_error(const Argm& argm);
+int b_local(const Argm& argm);
 int b_ls(const Argm& argm);
 int b_nop(const Argm& argm);
 int b_return(const Argm& argm);

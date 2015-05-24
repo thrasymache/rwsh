@@ -69,17 +69,25 @@ Function* Function::apply(const Argm& argm, unsigned nesting) const {
 // run the given function
 int Function::operator() (const Argm& invoking_argm) { 
   try {
-    if (increment_nesting(invoking_argm)) return dollar_question;
+    if (increment_nesting(invoking_argm)) return Variable_map::dollar_question;
     struct timeval start_time;
     gettimeofday(&start_time, rwsh_clock.no_timezone);
     ++execution_count_v;
-    Argm interpreted_argm(invoking_argm);
+    Variable_map locals_map(invoking_argm.parent_map());
+    Argm interpreted_argm(invoking_argm.begin(), invoking_argm.end(),
+               invoking_argm.argfunction(), &locals_map,
+               invoking_argm.input, invoking_argm.output, invoking_argm.error);
     if (!positional_parameters) {
-      default_output <<"you're in the extra new code";
-      for (std::vector<std::string>::const_iterator i = parameters.begin();
-           i != parameters.end(); ++i)
-         default_output <<"; " <<*i;
-      default_output <<"\n";}
+      //default_output <<"positional parameters:";
+      std::vector<std::string>::const_iterator i = parameters.begin();
+      Argm::const_iterator j = invoking_argm.begin()+1;
+      for (; i != parameters.end() && j != invoking_argm.end(); ++i, ++j) {
+         //default_output <<" " <<*i <<"=" <<*j;
+         locals_map.local(*i, *j);}
+      //default_output <<";\n";
+      if (i != parameters.end() || j != invoking_argm.end())
+        throw Signal_argm(Argm::Argument_count, invoking_argm.argc()-1,
+                          parameters.size());}
     int ret;
     for (const_iterator i = script.begin(); i != script.end(); ++i) {
       Argm statement_argm = i->interpret(interpreted_argm);
@@ -90,7 +98,7 @@ int Function::operator() (const Argm& invoking_argm) {
     gettimeofday(&end_time, rwsh_clock.no_timezone);
     last_execution_time_v = Clock::timeval_sub(end_time, start_time);
     Clock::timeval_add(total_execution_time_v, last_execution_time_v);
-    if (decrement_nesting(invoking_argm)) ret = dollar_question;
+    if (decrement_nesting(invoking_argm)) ret = Variable_map::dollar_question;
     return ret;}
   catch (Signal_argm error) {
     caught_signal = error.signal;

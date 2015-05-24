@@ -87,15 +87,15 @@ Plumber plumber;
 Rwsh_istream_p default_input(new Default_istream(0), true, true);
 Rwsh_ostream_p default_output(new Default_ostream(1), true, true),
   default_error(new Default_ostream(2), true, true);
-Variable_map root_variable_map(true);
+Variable_map root_variable_map(NULL);
 Variable_map* Variable_map::global_map = &root_variable_map;
 unsigned Variable_map::max_nesting_v = 0;
 int Variable_map::dollar_question = -1;
-int& dollar_question = Variable_map::dollar_question;
 bool Variable_map::exit_requested = false;
 
 // static initializers with cross-component dependancies
-Argm Executable::call_stack(default_input, default_output, default_error);
+Argm Executable::call_stack(Variable_map::global_map,
+                            default_input, default_output, default_error);
 
 namespace {
 void register_signals(void) {
@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
   catch (std::string& error) {default_error <<error;}
   catch (Signal_argm& exception) {executable_map.run(exception);}
   Command_stream command_stream(std::cin, true);
-  Argm init_command(".init", &argv[0], &argv[argc], 0, 
+  Argm init_command(".init", &argv[0], &argv[argc], 0, Variable_map::global_map,
                              default_input, default_output, default_error);
   executable_map.run(init_command);
   register_signals();
@@ -121,7 +121,8 @@ int main(int argc, char *argv[]) {
   Signal_argm prompt(Argm::Prompt);
   while (command_stream) {
     executable_map.run(prompt);
-    Argm command(default_input, default_output, default_error);
+    Argm command(Variable_map::global_map,
+                 default_input, default_output, default_error);
     try {
       if (!(command_stream >> script)) break;
       command = script.interpret(script.argm());}
@@ -131,7 +132,7 @@ int main(int argc, char *argv[]) {
        executable_map.run(command);
     executable_map.run_if_exists("rwsh.after_command", command);}
   Argm shutdown_command(Argm::signal_names[Argm::Shutdown],
-                        &argv[0], &argv[argc], 0, 
+                        &argv[0], &argv[argc], 0, Variable_map::global_map,
                         default_input, default_output, default_error);
   executable_map.run(shutdown_command);
-  return dollar_question;}
+  return Variable_map::dollar_question;}

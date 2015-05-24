@@ -38,6 +38,9 @@ w e
 w () {}
 e text that doesn't have a prompt appended
 m {e again}
+f if_only {.if $* {rwsh.argfunction}; .else {.nop}}
+if_only .return 1 {e not printed}
+if_only .return 0 {e printed without error}
 
 # arg_script tests
 .set A /bin
@@ -233,17 +236,29 @@ g
 
 # .function_all_options
 .function_all_options
-.function_all_options a {e option function}
+.function_all_options a {e zero argument function acceptable}
 a
-.function_all_options a arg ga {e option function}
-a 1 2
-.function_all_options a arg ga fee fie foe fum {e option function}
-a 1 2 3 4 5 6
+.function_all_options test_var_greater
+.function_all_options test_var_greater var value {.test_greater $$var $value}
+.set A $MAX_NESTING
+.set MAX_NESTING 15
+test_var_greater MAX_NESTING
+test_var_greater MAX_NESTING 3 12
+test_var_greater MAX_NESTING 3
+.function_all_options ntimes n {
+  .while test_var_greater n 0 {rwsh.mapped_argfunction {rwsh.argfunction}
+                               .var_subtract n 1}}
+ntimes 3 {e $n remaining $nl}
+ntimes 2 {ntimes 3 {e &&n and $n remaining $nl}}
+.set MAX_NESTING $A 
 
-# .global .unset .var_exists 
+# .global .local .unset .var_exists 
 .global
 .global x y z
 .global x y {excess argfunc}
+.local
+.local x y z
+.local x y {excess argfunc}
 .unset
 .unset x {excess argfunc}
 .unset x y
@@ -265,6 +280,36 @@ a 1 2 3 4 5 6
 .var_exists x
 e $x
 .global x nihilism
+.function a {if_only .var_exists x {e in a x \( $x \) $nl}
+             if_only .var_exists y {e in a y \( $y \) $nl}
+             .local x (first level not global)
+             .local y (level one not global)
+             b
+             if_only .var_exists x {e out a x \( $x \) $nl}
+             if_only .var_exists y {e out a y \( $y \) $nl}}
+.function b {if_only .var_exists x {e in b x \( $x \) $nl}
+             if_only .var_exists y {e in b y \( $y \) $nl}
+             .local x (second level masks first)
+             .set y   (level two overwrites one)
+             c
+             if_only .var_exists x {e out b x \( $x \) $nl}
+             if_only .var_exists y {e out b y \( $y \) $nl}}
+.function c {if_only .var_exists x {e in c x \( $x \) $nl}
+             if_only .var_exists y {e in c y \( $y \) $nl}
+             # can unset a local, but only one at a time
+             .unset x
+             .global y (attempting to create global masked by local)
+             e $? $nl
+             .set x (third level overwrites first)
+             .local x (third level masks first)
+             .set y (level three overwrites one)
+             if_only .var_exists x {e out c x \( $x \) $nl}
+             if_only .var_exists y {e out c y \( $y \) $nl}}
+a
+# demonstrating that final values are not retained
+a
+e $x
+.var_exists y
 .unset x
 .var_exists x
 .return 0
@@ -418,7 +463,7 @@ wrapper 1 2
 .stepwise wrapper 1 2 {d $*}
 .stepwise wrapper 1 2 {e $* $nl}
 .set A $MAX_NESTING
-.set MAX_NESTING 13
+.set MAX_NESTING 15
 .stepwise wrapper 1 2 {d $*}
 .set MAX_NESTING $A 
 

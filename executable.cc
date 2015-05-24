@@ -71,7 +71,8 @@ void Executable::unix_signal_handler(int sig) {
 // that it calls directly will have an initial nesting of 0.
 void Executable::signal_handler(void) {
   Argm call_stack_copy(call_stack);                          //need for a copy:
-  call_stack = Argm(default_input, default_output, default_error);
+  call_stack = Argm(Variable_map::global_map,
+                    default_input, default_output, default_error);
   in_signal_handler = true;
   caught_signal = Argm::No_signal;
   Variable_map::global_map->unset("IF_TEST");
@@ -79,16 +80,17 @@ void Executable::signal_handler(void) {
   if (unwind_stack()) {
     default_output <<"signal handler itself triggered signal\n";
     Argm temp_call_stack(".echo", call_stack.begin(), call_stack.end(),
-                         call_stack.argfunction(),
+                         call_stack.argfunction(), Variable_map::global_map,
                          call_stack.input, call_stack.output, call_stack.error);
-    call_stack = Argm(default_input, default_output, default_error);
+    call_stack = Argm(Variable_map::global_map,
+                      default_input, default_output, default_error);
     b_echo(temp_call_stack);
     default_output <<"\noriginal call stack:\n";
     call_stack_copy[0] = ".echo";
     b_echo(call_stack_copy);
     default_output <<"\n";
     default_output.flush();
-    dollar_question = -1;
+    Variable_map::dollar_question = -1;
     caught_signal = Argm::No_signal;
     Variable_map::global_map->unset("IF_TEST");}
   in_signal_handler = false;}
@@ -103,7 +105,7 @@ Binary::Binary(const std::string& impl) : implementation(impl) {}
 // run the given binary
 int Binary::operator() (const Argm& argm_i) {
   try {
-    if (increment_nesting(argm_i)) return dollar_question;
+    if (increment_nesting(argm_i)) return Variable_map::dollar_question;
     struct timeval start_time;
     gettimeofday(&start_time, rwsh_clock.no_timezone);
     ++execution_count_v;
@@ -123,12 +125,12 @@ int Binary::operator() (const Argm& argm_i) {
       executable_map.run(error_argm);
       exit(ret);}
     else plumber.wait(&ret);
-    dollar_question = last_return = ret;
+    Variable_map::dollar_question = last_return = ret;
     struct timeval end_time;
     gettimeofday(&end_time, rwsh_clock.no_timezone);
     last_execution_time_v = Clock::timeval_sub(end_time, start_time);
     Clock::timeval_add(total_execution_time_v, last_execution_time_v);
-    if (decrement_nesting(argm_i)) ret = dollar_question;
+    if (decrement_nesting(argm_i)) ret = Variable_map::dollar_question;
     return ret;}
   catch (Signal_argm error) {
     caught_signal = error.signal;
@@ -143,16 +145,17 @@ Builtin::Builtin(const std::string& name_i,
 // run the given builtin
 int Builtin::operator() (const Argm& argm) {
   try {
-    if (increment_nesting(argm)) return dollar_question;
+    if (increment_nesting(argm)) return Variable_map::dollar_question;
     struct timeval start_time;
     gettimeofday(&start_time, rwsh_clock.no_timezone);
     ++execution_count_v;
-    int ret = dollar_question = last_return = (*implementation)(argm);
+    int ret = Variable_map::dollar_question = last_return =
+                                                       (*implementation)(argm);
     struct timeval end_time;
     gettimeofday(&end_time, rwsh_clock.no_timezone);
     last_execution_time_v = Clock::timeval_sub(end_time, start_time);
     Clock::timeval_add(total_execution_time_v, last_execution_time_v);
-    if (decrement_nesting(argm)) ret = dollar_question;
+    if (decrement_nesting(argm)) ret = Variable_map::dollar_question;
     return ret;}
   catch (Signal_argm error) {
     caught_signal = error.signal;

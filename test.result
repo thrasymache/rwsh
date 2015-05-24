@@ -151,6 +151,15 @@ text that doesn't have a prompt appended
 $m {e again}
 again
 0
+$f if_only {.if $* {rwsh.argfunction}; .else {.nop}}
+
+0
+$if_only .return 1 {e not printed}
+
+0
+$if_only .return 0 {e printed without error}
+printed without error
+0
 $
 
 0
@@ -786,7 +795,69 @@ there
 $
 
 0
-$# .global .unset .var_exists 
+$# .function_all_options
+
+0
+$.function_all_options
+signal triggered: rwsh.argument_count ( 0 1 .function_all_options ) 
+
+-1
+$.function_all_options a {e zero argument function acceptable}
+
+0
+$a
+zero argument function acceptable
+0
+$.function_all_options test_var_greater
+
+4
+$.function_all_options test_var_greater var value {.test_greater $$var $value}
+
+0
+$.set A $MAX_NESTING
+
+0
+$.set MAX_NESTING 15
+
+0
+$test_var_greater MAX_NESTING
+signal triggered: rwsh.argument_count ( 1 2 test_var_greater ) 
+
+-1
+$test_var_greater MAX_NESTING 3 12
+signal triggered: rwsh.argument_count ( 3 2 test_var_greater ) 
+
+-1
+$test_var_greater MAX_NESTING 3
+
+0
+$.function_all_options ntimes n {
+  .while test_var_greater n 0 {rwsh.mapped_argfunction {rwsh.argfunction}
+                               .var_subtract n 1}}
+
+0
+$ntimes 3 {e $n remaining $nl}
+3 remaining 
+2 remaining 
+1 remaining 
+
+0
+$ntimes 2 {ntimes 3 {e &&n and $n remaining $nl}}
+2 and 3 remaining 
+2 and 2 remaining 
+2 and 1 remaining 
+1 and 3 remaining 
+1 and 2 remaining 
+1 and 1 remaining 
+
+0
+$.set MAX_NESTING $A 
+
+0
+$
+
+0
+$# .global .local .unset .var_exists 
 
 0
 $.global
@@ -799,6 +870,18 @@ signal triggered: rwsh.argument_count ( 3 2 .global )
 -1
 $.global x y {excess argfunc}
 signal triggered: rwsh.excess_argfunction ( .global ) 
+
+-1
+$.local
+signal triggered: rwsh.argument_count ( 0 2 .local ) 
+
+-1
+$.local x y z
+signal triggered: rwsh.argument_count ( 3 2 .local ) 
+
+-1
+$.local x y {excess argfunc}
+signal triggered: rwsh.excess_argfunction ( .local ) 
 
 -1
 $.unset
@@ -868,6 +951,76 @@ $e $x
 nihilism
 0
 $.global x nihilism
+
+1
+$.function a {if_only .var_exists x {e in a x \( $x \) $nl}
+             if_only .var_exists y {e in a y \( $y \) $nl}
+             .local x (first level not global)
+             .local y (level one not global)
+             b
+             if_only .var_exists x {e out a x \( $x \) $nl}
+             if_only .var_exists y {e out a y \( $y \) $nl}}
+
+0
+$.function b {if_only .var_exists x {e in b x \( $x \) $nl}
+             if_only .var_exists y {e in b y \( $y \) $nl}
+             .local x (second level masks first)
+             .set y   (level two overwrites one)
+             c
+             if_only .var_exists x {e out b x \( $x \) $nl}
+             if_only .var_exists y {e out b y \( $y \) $nl}}
+
+0
+$.function c {if_only .var_exists x {e in c x \( $x \) $nl}
+             if_only .var_exists y {e in c y \( $y \) $nl}
+             # can unset a local, but only one at a time
+             .unset x
+             .global y (attempting to create global masked by local)
+             e $? $nl
+             .set x (third level overwrites first)
+             .local x (third level masks first)
+             .set y (level three overwrites one)
+             if_only .var_exists x {e out c x \( $x \) $nl}
+             if_only .var_exists y {e out c y \( $y \) $nl}}
+
+0
+$a
+in a x ( nihilism ) 
+in b x ( first level not global ) 
+in b y ( level one not global ) 
+in c x ( second level masks first ) 
+in c y ( level two overwrites one ) 
+3 
+out c x ( third level masks first ) 
+out c y ( level three overwrites one ) 
+out b x ( third level overwrites first ) 
+out b y ( level three overwrites one ) 
+out a x ( third level overwrites first ) 
+out a y ( level three overwrites one ) 
+
+0
+$# demonstrating that final values are not retained
+
+0
+$a
+in a x ( nihilism ) 
+in b x ( first level not global ) 
+in b y ( level one not global ) 
+in c x ( second level masks first ) 
+in c y ( level two overwrites one ) 
+3 
+out c x ( third level masks first ) 
+out c y ( level three overwrites one ) 
+out b x ( third level overwrites first ) 
+out b y ( level three overwrites one ) 
+out a x ( third level overwrites first ) 
+out a y ( level three overwrites one ) 
+
+0
+$e $x
+nihilism
+0
+$.var_exists y
 
 1
 $.unset x
@@ -1436,7 +1589,7 @@ a 1 2 three
 $.set A $MAX_NESTING
 
 0
-$.set MAX_NESTING 13
+$.set MAX_NESTING 15
 
 0
 $.stepwise wrapper 1 2 {d $*}

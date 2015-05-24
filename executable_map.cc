@@ -46,7 +46,7 @@ Executable* Executable_map::find(const Argm& key) {
 
 bool Executable_map::run_if_exists(const std::string& key, Argm& argm_i) {
   Argm temp_argm(key, argm_i.begin(), argm_i.end(), argm_i.argfunction(),
-            argm_i.input, argm_i.output, argm_i.error);
+                 argm_i.parent_map(), argm_i.input,argm_i.output, argm_i.error);
   Executable* i = find(temp_argm);
   if (i) {
     (*i)(temp_argm);

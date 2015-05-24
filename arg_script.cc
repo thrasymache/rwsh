@@ -176,7 +176,7 @@ Arg_script::~Arg_script(void) {
 
 // naively create an Argm from Arg_script. string constructor for Argm.
 Argm Arg_script::argm(void) const {
-  Argm result(input, output, error);
+  Argm result(Variable_map::global_map, input, output, error);
   if (!argfunction_level) {
     for(std::vector<Arg_spec>::const_iterator i=args.begin();
       i != args.end(); ++i) result.push_back(i->str());
@@ -204,7 +204,8 @@ std::string Arg_script::str(void) const {
 
 // produce a destination Argm from the source Argm according to this script
 Argm Arg_script::interpret(const Argm& src) const {
-  Argm result(!input.is_default()?  input:  src.input.child_stream(),
+  Argm result(src.parent_map(),
+              !input.is_default()?  input:  src.input.child_stream(),
               !output.is_default()? output: src.output.child_stream(),
               !error.is_default()?  error:  src.error.child_stream());
   if (!argfunction_level) {

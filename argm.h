@@ -7,23 +7,25 @@ class Argm : private std::vector<std::string> {
   typedef std::vector<std::string> Base;
   unsigned argc_v;
   Function* argfunction_v;
-  Variable_map* parent_map;
+  Variable_map* parent_map_v;
 
  public:
-  Argm(Rwsh_istream_p input_i, Rwsh_ostream_p output_i, Rwsh_ostream_p error_i);
+  Argm(Variable_map* parent_map_i,
+       Rwsh_istream_p input_i, Rwsh_ostream_p output_i, Rwsh_ostream_p error_i);
   template <class String_it> 
   Argm(String_it first_string, String_it last_string,
-       Function* argfunction_i, 
+       Function* argfunction_i, Variable_map* parent_map_i,
        Rwsh_istream_p input_i, Rwsh_ostream_p output_i, Rwsh_ostream_p error_i);
   template <class String_it> 
   Argm(const std::string& first_string,
        String_it second_string, String_it last_string,
-       Function* argfunction_i, 
+       Function* argfunction_i, Variable_map* parent_map_i,
        Rwsh_istream_p input_i, Rwsh_ostream_p output_i, Rwsh_ostream_p error_i);
   Argm(const Argm& src);
   ~Argm(void);
   Argm& operator=(const Argm& src);
   std::string str(void) const;
+  Variable_map* parent_map(void) const {return parent_map_v;};
   Function* argfunction(void) const {return argfunction_v;};
   void set_argfunction(Function* val);
 
@@ -83,7 +85,8 @@ class Argm : private std::vector<std::string> {
 // variables
   char** export_env(void) const;
   std::string get_var(const std::string& key) const;
-  int global_var(const std::string& key, const std::string& value) const;
+  int global(const std::string& key, const std::string& value) const;
+  int local(const std::string& key, const std::string& value) const;
   unsigned max_nesting(void) const;
   int set_var(const std::string& key, const std::string& value) const;
   template<class Out> 
