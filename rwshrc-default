@@ -16,9 +16,9 @@ sfn cat
 .function cd {
   .selection_set s $1
   .cd @$s
-  .set TEMP1 $?
-  .if .test_number_equal $TEMP1 1 {echo @$s does not exist}
-  .else_if .test_number_equal $TEMP1 2 {echo @$s is not a directory}
+  .local ret $?
+  .if .test_number_equal $ret 1 {echo @$s does not exist}
+  .else_if .test_number_equal $ret 2 {echo @$s is not a directory}
   .else {
     &{whichp pwd}
     .set s (); .set s2 ()}}
@@ -103,13 +103,13 @@ sfn wc
 .function rwsh.run_logic {
    .signal_handler &{.internal_functions}$ {&&* {rwsh.argfunction}}
   # $* {rwsh.argfunction}
-  .set TEMP1 $?
-  if_only_not .test_number_equal $TEMP1 0 {echo &&1 returned $TEMP1}}
+  .local ret $?
+  if_only_not .test_number_equal $ret 0 {echo &&1 returned $ret}}
 .function rwsh.arguments_for_argfunction {
   .echo cannot specify arguments for $1 directly $nl
   .return -1}
 .function rwsh.argument_count {
-  .echo wrong number of arguments: received $1, but wanted $2 for $3* $nl
+  .echo wrong number of arguments: received $1, but needed $2 for $3* $nl
   .return -1}
 .function rwsh.autofunction {
   .function $1 {&&{.which_path &&1 $PATH} $*}
@@ -226,12 +226,12 @@ sfn wc
 .function bless-t {/bin/cp test.result.last test.result}
 .function to {/bin/rwsh -to}
 .function mst {make; st}
-fn test_var_not_equal {.test_string_unequal $$1 $2}
-fn ntimes {
-  .set TEMP1 0
-  .while test_var_not_equal TEMP1 $1 {
-    .var_add TEMP1 1
-    rwsh.mapped_argfunction {rwsh.argfunction}}}
+fon test_var_not_equal var value {.test_string_unequal $$var $value}
+fon test_var_greater var value {.test_greater $$var $value}
+fon ntimes n {
+  .while test_var_greater n 0 {
+    rwsh.mapped_argfunction {rwsh.argfunction}
+    .var_subtract n 1}}
 fn mark {ntimes 4 {.echo ####################}}
 
 # final setup and individual configuration

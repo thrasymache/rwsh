@@ -1,7 +1,6 @@
 .function # {.nop}
 
 # set up environment
-.global TEMP1 ()
 .global nl (
 )
 .importenv_preserve
@@ -19,12 +18,20 @@
 .function exit {.exit}
 .function fn {
   .function $* {rwsh.argfunction}
-  .set TEMP1 $?
-  .if .test_number_equal $TEMP1 1 {echo cannot set paths as functions}
-  .else_if .test_number_equal $TEMP1 2 {echo cannot set builtins as functions}
-  .else_if .test_number_equal $TEMP1 3 {echo cannot set argfunctions in executable map}
-  .else_if .test_number_equal $TEMP1 4 {echo function &&1 did not exist to be erased}
-  .else {.return $TEMP1}}
+  .local ret $?
+  .if .test_number_equal $ret 1 {echo cannot set paths as functions}
+  .else_if .test_number_equal $ret 2 {echo cannot set builtins as functions}
+  .else_if .test_number_equal $ret 3 {echo cannot set argfunctions in executable map}
+  .else_if .test_number_equal $ret 4 {echo function &&1 did not exist to be erased}
+  .else {.return $ret}}
+.function fon {
+  .function_all_options $* {rwsh.argfunction}
+  .local ret $?
+  .if .test_number_equal $ret 1 {echo cannot set paths as functions}
+  .else_if .test_number_equal $ret 2 {echo cannot set builtins as functions}
+  .else_if .test_number_equal $ret 3 {echo cannot set argfunctions in executable map}
+  .else_if .test_number_equal $ret 4 {echo function &&1 did not exist to be erased}
+  .else {.return $ret}}
 .function if {.if $* {rwsh.argfunction}}
 .function if_only {.if $* {rwsh.argfunction}; .else {.nop}}
 .function if_only_not {.if $* {.nop}; .else {rwsh.argfunction}}
@@ -40,16 +47,17 @@
   .else {.global &&1 &&2}}
 .function unset {.unset $1}
 .function user_shell_ratio {
-  .set TEMP1 &&{.waiting_for_user}
-  .var_divide TEMP1 &&{.waiting_for_shell}
-  .echo $TEMP1 $nl}
+  .local time &&{.waiting_for_user}
+  .var_divide time &&{.waiting_for_shell}
+  .combine $time $nl}
 .function wait_bin {.waiting_for_binary; c $nl}
 .function wait_shell {.waiting_for_shell; c $nl}
 .function wait_user {.waiting_for_user; c $nl}
-.function which {
-  .store_output TEMP1 {.which_executable &&1 {rwsh.argfunction}}
-  .if .test_number_equal $? 0 {.echo .function &&1 $TEMP1 $nl}
-  .else {echo no &&1}}
+.function_all_options which command {
+  .local body ()
+  .store_output body {.which_executable $command {rwsh.argfunction}}
+  .if .test_number_equal $? 0 {.echo .function $command $body $nl}
+  .else {echo no $command}}
 .function whichp {
   .which_path $1 $PATH
   .if .test_number_equal $? 0 {.nop}

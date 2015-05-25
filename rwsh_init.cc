@@ -37,7 +37,7 @@ void internal_init(void) {
                                  b_importenv_overwrite));
   executable_map.set(new Builtin(".importenv_preserve", b_importenv_preserve));
   executable_map.set(new Function(".init", 
-      "{.set MAX_NESTING 4\n"
+      "{.set MAX_NESTING 10\n"
           ".function rwsh.file_open_failure {.echo init file $1 does not exist "
           "\\(call stack $*2 \\) (\n)}\n"
           ".function rwsh.raw_command {.nop $*}\n"

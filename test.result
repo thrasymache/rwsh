@@ -1520,7 +1520,7 @@ $# .source is tested by having test_init.sh define #
 
 -1
 $w .init
-{.set MAX_NESTING 4; .function rwsh.file_open_failure {.echo init file $1 does not exist (call stack $*2 ) 
+{.set MAX_NESTING 10; .function rwsh.file_open_failure {.echo init file $1 does not exist (call stack $*2 ) 
 }; .function rwsh.raw_command {.nop $*}; .source /etc/rwshrc $*; .for &{.internal_functions}$ {.if .which_test $1 {.nop}; .else {.echo &&1 not defined 
 }}; .if .which_test rwsh.help {.if .test_not_empty &&{rwsh.help} {.nop}; .else {.echo rwsh.help produces no output 
 }}; .else {.echo rwsh.help not defined 
