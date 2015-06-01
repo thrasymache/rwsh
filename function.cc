@@ -6,6 +6,7 @@
 
 #include <iterator>
 #include <map>
+#include <set>
 #include <string>
 #include <sys/time.h>
 #include <vector>
@@ -36,11 +37,11 @@ void Function::internal_constructor(const std::string& src,
 
 Function::Function(const std::string& name_i, const std::string& src,
                    std::string::size_type& point, unsigned max_soon) :
-    name_v(name_i), parameters(), positional_parameters(true) {
+    name_v(name_i), required(), flag_options(), positional_parameters(true) {
   internal_constructor(src, point, max_soon);}
 
 Function::Function(const std::string& name_i, const std::string& src) :
-    name_v(name_i), parameters(), positional_parameters(true) {
+    name_v(name_i), required(), flag_options(), positional_parameters(true) {
   std::string::size_type point = 0;
   try {
     internal_constructor(src, point, 0);
@@ -53,6 +54,19 @@ Function::Function(const std::string& name_i, const std::string& src) :
   catch (Unclosed_parenthesis error) {
     throw "unclosed parenthesis on construction of function " + name_i + "\n" +
       error.prefix + "\n";}}
+
+// constructor that parses parameters
+Function::Function(const std::string& name_i,
+                   Argm::const_iterator first_parameter,
+                   Argm::const_iterator parameter_end,
+                   bool positional_parameters_i,
+                   const std::vector<Arg_script>& src) :
+    name_v(name_i), required(), flag_options(),
+    positional_parameters(positional_parameters_i), script(src) {
+  for (Argm::const_iterator i = first_parameter; i != parameter_end; ++i)
+    if (i->substr(0, 2) == "[-")
+      flag_options.insert(i->substr(1, i->length()-2));
+    else required.push_back(*i);}
 
 // generate a new function by unescaping argument functions and replacing
 // unescaped_argfunction with the argument function in argm
@@ -78,16 +92,33 @@ int Function::operator() (const Argm& invoking_argm) {
                invoking_argm.argfunction(), &locals_map,
                invoking_argm.input, invoking_argm.output, invoking_argm.error);
     if (!positional_parameters) {
-      //default_output <<"positional parameters:";
-      std::vector<std::string>::const_iterator i = parameters.begin();
-      Argm::const_iterator j = invoking_argm.begin()+1;
-      for (; i != parameters.end() && j != invoking_argm.end(); ++i, ++j) {
-         //default_output <<" " <<*i <<"=" <<*j;
-         locals_map.local(*i, *j);}
-      //default_output <<";\n";
-      if (i != parameters.end() || j != invoking_argm.end())
-        throw Signal_argm(Argm::Argument_count, invoking_argm.argc()-1,
-                          parameters.size());}
+      Argm::const_iterator i = invoking_argm.begin()+1;
+//      if (flag_options.begin() != flag_options.end())
+//        default_output <<"flag options:";
+      for (std::set<std::string>::const_iterator j;
+           i != invoking_argm.end() &&
+           (j = flag_options.find(*i)) != flag_options.end(); ++i) {
+//      default_output <<" " <<*j <<"=?" <<*i;
+        if (!locals_map.exists(*j)) locals_map.local(*j, *i);
+        else locals_map.set(*j, locals_map.get(*j) + " " + *i);}
+//      if (flag_options.begin() != flag_options.end())
+//        default_output <<";\n";
+//      default_output <<"required parameters:";
+      std::vector<std::string>::const_iterator j = required.begin();
+      for (; i != invoking_argm.end() && j != required.end(); ++i, ++j) {
+//         default_output <<" " <<*j <<"=" <<*i;
+         locals_map.local(*j, *i);}
+//      default_output <<";\n";
+      if (j != required.end()) {
+        unsigned required_found = required.size();
+        while (j != required.end()) --required_found, ++j;
+        throw Signal_argm(Argm::Bad_argc, required_found, required.size(),
+                          invoking_argm.argc()-1-required_found);}
+      if (i != invoking_argm.end()) {
+        unsigned non_optional = required.size();
+        while (i != invoking_argm.end()) ++non_optional, ++i;
+        throw Signal_argm(Argm::Bad_argc, non_optional, required.size(),
+                          invoking_argm.argc()-1-non_optional);}}
     int ret;
     for (const_iterator i = script.begin(); i != script.end(); ++i) {
       Argm statement_argm = i->interpret(interpreted_argm);
@@ -108,8 +139,7 @@ int Function::operator() (const Argm& invoking_argm) {
 
 Function* Function::promote_soons(unsigned nesting) const {
   if (!this) return 0;
-  Function* result = new Function(name_v, parameters.begin(), parameters.end(),
-                                  positional_parameters, script);
+  Function* result = new Function(*this);
   for (iterator i = result->script.begin(); i != result->script.end(); ++i) 
     i->promote_soons(nesting);
   return result;}

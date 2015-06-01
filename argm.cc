@@ -4,6 +4,7 @@
 // Copyright (C) 2005-2015 Samuel Newbold
 
 #include <map>
+#include <set>
 #include <sstream>
 #include <vector>
 
@@ -134,15 +135,17 @@ Signal_argm::Signal_argm(Sig_type signal_i, const std::string& x,
   push_back(x);
   push_back(y);}
 
-Signal_argm::Signal_argm(Sig_type signal_i, int x, int y) :
+Signal_argm::Signal_argm(Sig_type signal_i, int x, int y, int z) :
     Argm(Variable_map::global_map, default_input,default_output,default_error),
     signal(signal_i) {
   push_back(signal_names[signal]);
-  std::ostringstream x_str, y_str;
+  std::ostringstream x_str, y_str, z_str;
   x_str <<x;
   push_back(x_str.str());
   y_str <<y;
-  push_back(y_str.str());}
+  push_back(y_str.str());
+  z_str <<z;
+  push_back(z_str.str());}
 
 Signal_argm::Signal_argm(Sig_type signal_i, const Argm& src) :
     Argm(Variable_map::global_map, default_input,default_output,default_error),

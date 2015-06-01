@@ -34,8 +34,8 @@ class Argm : private std::vector<std::string> {
 
   enum Sig_type {
     No_signal,
-    Argument_count,
     Arguments_for_argfunction,
+    Bad_argc,
     Bad_argfunction_style,
     Bad_if_nest, 
     Binary_not_found,
@@ -119,7 +119,7 @@ struct Signal_argm : public Argm {
   Signal_argm(Sig_type signal);
   Signal_argm(Sig_type signal, const std::string& value);
   Signal_argm(Sig_type signal, const std::string& x, const std::string& y);
-  Signal_argm(Sig_type signal, int x, int y);
+  Signal_argm(Sig_type signal, int x, int y, int z);
   Signal_argm(Sig_type signal, const Argm& src);};
 
 class Old_argv {

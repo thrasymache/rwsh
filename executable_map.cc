@@ -6,6 +6,7 @@
 // Copyright (C) 2005-2015 Samuel Newbold
 
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 

@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <list>
 #include <map>
+#include <set>
 #include <sstream>
 #include <string>
 #include <sys/stat.h>

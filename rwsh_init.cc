@@ -2,6 +2,7 @@
 // Copyright Samuel Newbold 2005-2015
 
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 

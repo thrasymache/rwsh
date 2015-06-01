@@ -108,8 +108,8 @@ sfn wc
 .function rwsh.arguments_for_argfunction {
   .echo cannot specify arguments for $1 directly $nl
   .return -1}
-.function rwsh.argument_count {
-  .echo wrong number of arguments: received $1, but needed $2 for $3* $nl
+.function rwsh.bad_argc {
+  .echo unacceptable argument count: received $1 non-optional, but needed $2 (with $3 optional) for $4* $nl
   .return -1}
 .function rwsh.autofunction {
   .function $1 {&&{.which_path &&1 $PATH} $*}

@@ -251,6 +251,45 @@ test_var_greater MAX_NESTING 3
 ntimes 3 {e $n remaining $nl}
 ntimes 2 {ntimes 3 {e &&n and $n remaining $nl}}
 .set MAX_NESTING $A 
+.function_all_options a [-x] [-] [--long-opt] y second {
+  if_only .var_exists -x {.combine -x \( $-x \) \ }
+  if_only .var_exists - {.combine - \( $- \) \ }
+  if_only .var_exists --long-opt {.combine --long-opt \( $--long-opt \) \ }
+  .combine y \( $y \) \  second \( $second \)}
+a -xx over-long flag
+a --long-op short flag
+a no flags
+a deficient
+a flagless excess argument
+a -x with flag
+a -x -x doubled flag
+a unaccepted -x interlaced_flag
+a -x with excess argument
+a - with flag
+a --long-opt with flag
+a -x - some_flags in_order
+a - -x some_flags reversed
+a - --long-opt some_flags in_order
+a --long-opt - some_flags reversed
+a -x --long-opt some_flags in_order
+a --long-opt -x some_flags reversed
+a -x - --long-opt deficient
+a -x - --long-opt all_flags in_order
+a --long-opt - -x all_flags reversed
+a - --long-opt -x all_flags shuffled
+a - --long-opt -x - -x some_flags doubled
+a - -x - -x - one_doubled one_tripled
+a --long-opt - -x -x - --long-opt all_flags doubled
+.function_all_options a [-first] [-to] {
+  if_only .var_exists -first {.combine -first \( $-first \) \ }
+  if_only .var_exists -to {.combine -to \( $-to \) \ }
+  e nothing_required}
+a
+a excess
+a -to
+a -first
+a -first excess
+a -to -first
 
 # .global .local .unset .var_exists 
 .global

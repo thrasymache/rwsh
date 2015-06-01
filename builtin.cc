@@ -10,6 +10,7 @@
 #include <list>
 #include <limits>
 #include <map>
+#include <set>
 #include <stdio.h>
 #include <string>
 #include <sstream>
@@ -43,7 +44,7 @@ extern char** environ;
 // change the current directory to the one given
 // returns the error returned from chdir
 int b_cd(const Argm& argm) {
-  if (argm.argc()!=2) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 1);
+  if (argm.argc() != 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   errno = 0;
   int ret = chdir(argm[1].c_str());
@@ -56,7 +57,7 @@ int b_cd(const Argm& argm) {
 
 // echo arguments to standard output without space separation
 int b_combine(const Argm& argm) {
-  if (argm.argc() < 2) throw Signal_argm(Argm::Argument_count, argm.argc()-1,1);
+  if (argm.argc() < 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   for (Argm::const_iterator i = argm.begin()+1; i != argm.end(); ++i)
     argm.output <<*i;
@@ -65,7 +66,7 @@ int b_combine(const Argm& argm) {
 
 // echo arguments to standard output separated by space
 int b_echo(const Argm& argm) {
-  if (argm.argc() < 2) throw Signal_argm(Argm::Argument_count, argm.argc()-1,1);
+  if (argm.argc() < 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   for (Argm::const_iterator i = argm.begin()+1; i != argm.end()-1; ++i)
     argm.output <<*i <<" ";
@@ -76,7 +77,7 @@ int b_echo(const Argm& argm) {
 #include <iostream>
 // replace the shell with the given binary
 int b_exec(const Argm& argm) {
-  if (argm.argc() < 2) throw Signal_argm(Argm::Argument_count, argm.argc()-1,1);
+  if (argm.argc() < 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   int input = argm.input.fd(),
       output = argm.output.fd(),
@@ -95,7 +96,7 @@ int b_exec(const Argm& argm) {
 
 // exit the shell
 int b_exit(const Argm& argm) {
-  if (argm.argc()!=1) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 0);
+  if (argm.argc() != 1) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   Variable_map::exit_requested = true;
   return 0;}
@@ -103,7 +104,7 @@ int b_exit(const Argm& argm) {
 // run the argfunction for each argument, passing that value as the argument
 // returns the value returned by the argfunction
 int b_for(const Argm& argm) {
-  if (argm.argc() < 2) throw Signal_argm(Argm::Argument_count, argm.argc()-1,1);
+  if (argm.argc() < 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (!argm.argfunction()) throw Signal_argm(Argm::Missing_argfunction);
   int ret = -1;
   Argm body(argm.parent_map(), argm.input, argm.output, argm.error);
@@ -120,7 +121,7 @@ int b_for(const Argm& argm) {
 // run the argfunction for line of input, passing that line as the argm
 // returns the value returned by the argfunction
 int b_for_each_line(const Argm& argm) {
-  if (argm.argc()!=1) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 0);
+  if (argm.argc() != 1) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (!argm.argfunction()) throw Signal_argm(Argm::Missing_argfunction);
   int ret = -1;
   while(!argm.input.fail()) { 
@@ -137,7 +138,7 @@ int b_for_each_line(const Argm& argm) {
 
 #include "plumber.h"
 int b_fork(const Argm& argm) {
-  if (argm.argc() < 2) throw Signal_argm(Argm::Argument_count, argm.argc()-1,1);
+  if (argm.argc() < 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   // argfunction optional
   int ret = 0;
   if (!fork()) {  
@@ -152,7 +153,7 @@ int b_fork(const Argm& argm) {
 
 // add argfunction to executable map with name $1
 int b_function(const Argm& argm) {
-  if (argm.argc()!=2) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 1);
+  if (argm.argc() != 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   else if (is_binary_name(argm[1])) return 1;
   Argm lookup(argm.begin()+1, argm.end(), NULL, argm.parent_map(),
                 default_input, default_output, default_error);
@@ -169,7 +170,7 @@ int b_function(const Argm& argm) {
 // add argfunction to executable map with name $1 and arguments $*2
 // the arguments must include all options that can be passed to this function
 int b_function_all_options(const Argm& argm) {
-  if (argm.argc() < 2) throw Signal_argm(Argm::Argument_count, argm.argc()-1,1);
+  if (argm.argc() < 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   else if (is_binary_name(argm[1])) return 1;
   Argm lookup(argm.begin()+1, argm.begin()+2, NULL, argm.parent_map(),
                 default_input, default_output, default_error);
@@ -187,7 +188,7 @@ int b_function_all_options(const Argm& argm) {
 // add a variable to the variable map that will remain after the enclosing
 // function terminates
 int b_global(const Argm& argm) {
-  if (argm.argc()!=3) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 2);
+  if (argm.argc() != 3) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 2, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   else return argm.global(argm[1], argm[2]);}
 
@@ -215,7 +216,7 @@ int if_core(const Argm& argm, bool logic) {
 // run argfunction if $* returns true
 // returns the value returned by the argfunction
 int b_if(const Argm& argm) {
-  if (argm.argc() < 2) throw Signal_argm(Argm::Argument_count, argm.argc()-1,1);
+  if (argm.argc() < 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   else if (!argm.argfunction()) throw Signal_argm(Argm::Missing_argfunction);
   else if (!argm.var_exists("IF_TEST")) {
     argm.global("IF_TEST", "false"); 
@@ -227,7 +228,7 @@ int b_if(const Argm& argm) {
 // run argfunction if IF_TEST is false and $* returns true
 // returns the value returned by the argfunction
 int b_else_if(const Argm& argm) {
-  if (argm.argc() < 2) throw Signal_argm(Argm::Argument_count, argm.argc()-1,1);
+  if (argm.argc() < 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   else if (!argm.argfunction()) throw Signal_argm(Argm::Missing_argfunction);
   else if (!argm.var_exists("IF_TEST"))
     throw Signal_argm(Argm::Else_without_if);
@@ -239,7 +240,7 @@ int b_else_if(const Argm& argm) {
 // run argfunction if IF_TEST is false and $* returns false
 // returns the value returned by the argfunction
 int b_else_if_not(const Argm& argm) {
-  if (argm.argc() < 2) throw Signal_argm(Argm::Argument_count, argm.argc()-1,1);
+  if (argm.argc() < 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   else if (!argm.argfunction()) throw Signal_argm(Argm::Missing_argfunction);
   else if (!argm.var_exists("IF_TEST"))
     throw Signal_argm(Argm::Else_without_if);
@@ -252,7 +253,7 @@ int b_else_if_not(const Argm& argm) {
 // returns the value returned by the argfunction
 int b_else(const Argm& argm) {
   int ret;
-  if (argm.argc()!=1) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 0);
+  if (argm.argc() != 1) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 0, 0);
   else if (!argm.argfunction()) throw Signal_argm(Argm::Missing_argfunction);
   else if (!argm.var_exists("IF_TEST")) {
     argm.unset_var("IF_TEST");
@@ -280,7 +281,7 @@ int b_else(const Argm& argm) {
 // import the external environment into the variable map, overwriting variables
 // that already exist
 int b_importenv_overwrite(const Argm& argm) {
-  if (argm.argc()!=1) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 0);
+  if (argm.argc() != 1) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   for (char** i=environ; *i; ++i) {
     std::string src(*i);
@@ -294,7 +295,7 @@ int b_importenv_overwrite(const Argm& argm) {
 // import the external environment into the variable map, preserving variables
 // that already exist
 int b_importenv_preserve(const Argm& argm) {
-  if (argm.argc()!=1) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 0);
+  if (argm.argc() != 1) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   for (char** i=environ; *i; ++i) {
     std::string src(*i);
@@ -305,7 +306,7 @@ int b_importenv_preserve(const Argm& argm) {
 
 // prints a list of all internal functions
 int b_internal_functions(const Argm& argm) {
-  if (argm.argc()!=1) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 0);
+  if (argm.argc() != 1) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   argm.output <<Argm::signal_names[1];
   for (int i = 2; i < Argm::Signal_count; ++i)
@@ -314,31 +315,31 @@ int b_internal_functions(const Argm& argm) {
 
 // returns one if the input stream is not the default_stream
 int b_is_default_input(const Argm& argm) {
-  if(argm.argc() != 1) throw Signal_argm(Argm::Argument_count, argm.argc()-1,0);
+  if(argm.argc() != 1) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   return !argm.input.is_default();}
 
 // returns one if the output stream is not the default_stream
 int b_is_default_output(const Argm& argm) {
-  if(argm.argc() != 1) throw Signal_argm(Argm::Argument_count, argm.argc()-1,0);
+  if(argm.argc() != 1) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   return !argm.output.is_default();}
 
 // returns one if the error stream is not the default_stream
 int b_is_default_error(const Argm& argm) {
-  if(argm.argc() != 1) throw Signal_argm(Argm::Argument_count, argm.argc()-1,0);
+  if(argm.argc() != 1) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   return !argm.error.is_default();}
 
 // add a variable to the variable map until the enclosing function terminates
 int b_local(const Argm& argm) {
-  if (argm.argc()!=3) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 2);
+  if (argm.argc() != 3) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 2, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   else return argm.local(argm[1], argm[2]);}
 
 // list the files specified by the arguments if they exist
 int b_ls(const Argm& argm) {
-  if (argm.argc() < 2) throw Signal_argm(Argm::Argument_count, argm.argc()-1,1);
+  if (argm.argc() < 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   struct stat sb;
   int ret = 1;
@@ -354,7 +355,7 @@ int b_nop(const Argm& argm) {return Variable_map::dollar_question;}
 
 // return the value given by the argument
 int b_return(const Argm& argm) {
-  if (argm.argc()!=2) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 1);
+  if (argm.argc() != 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   try {return my_strtoi(argm[1]);}
   catch (E_generic) {throw Signal_argm(Argm::Not_a_number, argm[1]);}
@@ -363,7 +364,7 @@ int b_return(const Argm& argm) {
 
 // modify variable $1 as a selection according to $2
 int b_selection_set(const Argm& argm) {
-  if (argm.argc() < 3) throw Signal_argm(Argm::Argument_count, argm.argc()-1,2);
+  if (argm.argc() < 3) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 2, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   std::list<Entry_pattern> focus;
   str_to_entry_pattern_list(argm.get_var(argm[1]), focus);
@@ -377,7 +378,7 @@ int b_selection_set(const Argm& argm) {
 // set variable $1 to $*2
 // returns 1 if the variable does not exist
 int b_set(const Argm& argm) {
-  if (argm.argc() < 3) throw Signal_argm(Argm::Argument_count, argm.argc()-1,2);
+  if (argm.argc() < 3) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 2, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   if (isargvar(argm[1]) || argm[1] == "IF_TEST") return 2;
   std::string dest("");
@@ -388,7 +389,7 @@ int b_set(const Argm& argm) {
 
 // run the handler for specified signals
 int b_signal_handler(const Argm& argm) {
-  if (argm.argc() < 2) throw Signal_argm(Argm::Argument_count, argm.argc()-1,1);
+  if (argm.argc() < 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (!argm.argfunction()) throw Signal_argm(Argm::Missing_argfunction);
   Argm mapped_argm(argm.parent_map(),
                    argm.input, argm.output.child_stream(), argm.error);
@@ -406,7 +407,7 @@ int b_signal_handler(const Argm& argm) {
 // to that script
 // returns last return value from script, -1 if empty
 int b_source(const Argm& argm) {
-  if (argm.argc() < 2) throw Signal_argm(Argm::Argument_count, argm.argc()-1,1);
+  if (argm.argc() < 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   struct stat sb;
   if (stat(argm[1].c_str(), &sb)) 
@@ -430,7 +431,7 @@ int b_source(const Argm& argm) {
 // run the argument function once with each command in the specified function
 // invocation
 int b_stepwise(const Argm& argm) {
-  if (argm.argc() < 2) throw Signal_argm(Argm::Argument_count, argm.argc()-1,1);
+  if (argm.argc() < 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (!argm.argfunction()) throw Signal_argm(Argm::Missing_argfunction);
   Argm lookup(argm.begin()+1, argm.end(), 0, argm.parent_map(),
                 argm.input, argm.output.child_stream(), argm.error);
@@ -455,7 +456,7 @@ int b_stepwise(const Argm& argm) {
 // run the argfunction and store its output in the variable $1
 // returns the last return from the argfunction
 int b_store_output(const Argm& argm) {
-  if (argm.argc()!=2) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 1);
+  if (argm.argc() != 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (!argm.argfunction()) throw Signal_argm(Argm::Missing_argfunction);
   if (isargvar(argm[1]) || argm[1] == "IF_TEST") return 2;
   Substitution_stream text;
@@ -470,13 +471,13 @@ int b_store_output(const Argm& argm) {
 
 // return true if the two strings are the same
 int b_test_string_equal(const Argm& argm) {
-  if (argm.argc()!=3) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 2);
+  if (argm.argc() != 3) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 2, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   else return argm[1] != argm[2];} // C++ and shell have inverted logic
 
 // return true if two strings convert to a doubles and first is greater
 int b_test_greater(const Argm& argm) {
-  if (argm.argc()!=3) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 2);
+  if (argm.argc() != 3) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 2, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   double lhs, rhs;
   try {lhs = my_strtod(argm[1]);}
@@ -491,7 +492,7 @@ int b_test_greater(const Argm& argm) {
 
 // return true if the string converts to a number
 int b_test_is_number(const Argm& argm) {
-  if (argm.argc()!=2) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 1);
+  if (argm.argc() != 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   try {
     (void) my_strtod(argm[1]);
@@ -502,7 +503,7 @@ int b_test_is_number(const Argm& argm) {
 
 // return true if two strings convert to a doubles and first is less
 int b_test_less(const Argm& argm) {
-  if (argm.argc()!=3) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 2);
+  if (argm.argc() != 3) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 2, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   double lhs, rhs;
   try {lhs = my_strtod(argm[1]);}
@@ -517,19 +518,19 @@ int b_test_less(const Argm& argm) {
 
 // return true if the string is not empty
 int b_test_not_empty(const Argm& argm) {
-  if (argm.argc()!=2) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 1);
+  if (argm.argc() != 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   else return !argm[1].length();} // C++ and shell have inverted logic
 
 // return true if the two strings are different 
 int b_test_string_unequal(const Argm& argm) {
-  if (argm.argc()!=3) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 2);
+  if (argm.argc() != 3) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 2, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   else return argm[1] == argm[2];} // C++ and shell have inverted logic
 
 // returns true if the two strings 
 int b_test_number_equal(const Argm& argm) {
-  if (argm.argc()!=3) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 2);
+  if (argm.argc() != 3) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 2, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   double lhs, rhs;
   try {lhs = my_strtod(argm[1]);}
@@ -547,13 +548,13 @@ int b_test_number_equal(const Argm& argm) {
 // fact is that the requested state (one where this variable isn't set) is
 // already the case, so it's hard to say what you're protecting people from.
 int b_unset(const Argm& argm) {
-  if (argm.argc()!=2) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 1);
+  if (argm.argc() != 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   else return argm.unset_var(argm[1]);}
 
 // sleep for the specified number of microseconds
 int b_usleep(const Argm& argm) {
-  if (argm.argc()!=2) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 1);
+  if (argm.argc() != 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   try {
     int delay = my_strtoi(argm[1], 0, INT_MAX);
@@ -563,7 +564,7 @@ int b_usleep(const Argm& argm) {
   catch (E_range) {throw Signal_argm(Argm::Input_range, argm[1]);}}
   
 int b_var_add(const Argm& argm) {
-  if (argm.argc()!=3) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 2);
+  if (argm.argc() != 3) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 2, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   const std::string& var_str = argm.get_var(argm[1]);
   double var_term;
@@ -586,7 +587,7 @@ int b_var_add(const Argm& argm) {
   return 0;}
 
 int b_var_subtract(const Argm& argm) {
-  if (argm.argc()!=3) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 2);
+  if (argm.argc() != 3) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 2, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   const std::string& var_str = argm.get_var(argm[1]);
   double var_term;
@@ -608,7 +609,7 @@ int b_var_subtract(const Argm& argm) {
   return 0;}
 
 int b_var_divide(const Argm& argm) {
-  if (argm.argc()!=3) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 2);
+  if (argm.argc() != 3) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 2, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   const std::string& var_str = argm.get_var(argm[1]);
   double var_term;
@@ -631,7 +632,7 @@ int b_var_divide(const Argm& argm) {
   return 0;}
 
 int b_var_exists(const Argm& argm) {
-  if (argm.argc()!=2) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 1);
+  if (argm.argc() != 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   else return !argm.var_exists(argm[1]);}
 
@@ -639,7 +640,7 @@ static const std::string version_str("0.3+");
 
 // write to standard output the version of rwsh
 int b_version(const Argm& argm) {
-  if (argm.argc()!=1) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 0);
+  if (argm.argc() != 1) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   argm.output <<version_str;
   return 0;}
@@ -647,14 +648,14 @@ int b_version(const Argm& argm) {
 // return true if the given version string is compatible with the version
 // of this shell
 int b_version_compatible(const Argm& argm) {
-  if (argm.argc()!=2) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 1);
+  if (argm.argc() != 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   else if (argm[1] == version_str) return 0;
   else throw Signal_argm(Argm::Version_incompatible, argm[1]);}
 
 // prints the total amount of time the shell has not been waiting for user input
 int b_waiting_for_binary(const Argm& argm) {
-  if (argm.argc()!=1) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 0);
+  if (argm.argc() != 1) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   argm.output <<rwsh_clock.waiting_for_binary();
   argm.output.flush();
@@ -663,7 +664,7 @@ int b_waiting_for_binary(const Argm& argm) {
 // prints the total amount of time that has passed and the shell has not been
 // waiting for other processes or the user
 int b_waiting_for_shell(const Argm& argm) {
-  if (argm.argc()!=1) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 0);
+  if (argm.argc() != 1) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   argm.output <<rwsh_clock.waiting_for_shell();
   argm.output.flush();
@@ -671,7 +672,7 @@ int b_waiting_for_shell(const Argm& argm) {
 
 // prints the total amount of time the shell has been waiting for user input
 int b_waiting_for_user(const Argm& argm) {
-  if (argm.argc()!=1) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 0);
+  if (argm.argc() != 1) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   argm.output <<rwsh_clock.waiting_for_user();
   argm.output.flush();
@@ -680,7 +681,7 @@ int b_waiting_for_user(const Argm& argm) {
 // print the string corresponding to the executable in the executable map with
 // key $1
 int b_which_executable(const Argm& argm) {
-  if (argm.argc()!=2) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 1);
+  if (argm.argc() != 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   Argm lookup(argm.begin()+1, argm.end(), argm.argfunction(), argm.parent_map(),
                 default_input, default_output, default_error);
   if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
@@ -694,7 +695,7 @@ int b_which_executable(const Argm& argm) {
 // print the number of times that the executable in the executable map with
 // key $1 has been run
 int b_which_execution_count(const Argm& argm) {
-  if (argm.argc()!=2) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 1);
+  if (argm.argc() != 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   Argm lookup(argm.begin()+1, argm.end(), argm.argfunction(), argm.parent_map(),
                 default_input, default_output, default_error);
   if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
@@ -708,7 +709,7 @@ int b_which_execution_count(const Argm& argm) {
 // print the number of times that the executable in the executable map with
 // key $1 has been run
 int b_which_last_execution_time(const Argm& argm) {
-  if (argm.argc()!=2) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 1);
+  if (argm.argc() != 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   Argm lookup(argm.begin()+1, argm.end(), argm.argfunction(), argm.parent_map(),
                 default_input, default_output, default_error);
   if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
@@ -723,7 +724,7 @@ int b_which_last_execution_time(const Argm& argm) {
 // print the number of times that the executable in the executable map with
 // key $1 has been run
 int b_which_total_execution_time(const Argm& argm) {
-  if (argm.argc()!=2) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 1);
+  if (argm.argc() != 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   Argm lookup(argm.begin()+1, argm.end(), argm.argfunction(), argm.parent_map(),
                 default_input, default_output, default_error);
   if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
@@ -737,7 +738,7 @@ int b_which_total_execution_time(const Argm& argm) {
 
 // find the binary in $2 with filename $1
 int b_which_path(const Argm& argm) {
-  if (argm.argc()!=3) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 2);
+  if (argm.argc() != 3) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 2, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   std::vector<std::string> path;
   tokenize_strict(argm[2], std::back_inserter(path), 
@@ -753,7 +754,7 @@ int b_which_path(const Argm& argm) {
 
 // prints the last return value of the executable with named $1
 int b_which_return(const Argm& argm) {
-  if (argm.argc()!=2) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 1);
+  if (argm.argc() != 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   Argm lookup(argm.begin()+1, argm.end(), 0, argm.parent_map(),
                 default_input, default_output, default_error);
   if (lookup[0] == "rwsh.mapped_argfunction" || 
@@ -768,7 +769,7 @@ int b_which_return(const Argm& argm) {
 
 // return true if there is an executable in the executable map with key $1
 int b_which_test(const Argm& argm) {
-  if (argm.argc()!=2) throw Signal_argm(Argm::Argument_count, argm.argc()-1, 1);
+  if (argm.argc() != 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   Argm lookup(argm.begin()+1, argm.end(), argm.argfunction(), argm.parent_map(),
               default_input, default_output, default_error);
   if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
@@ -777,7 +778,7 @@ int b_which_test(const Argm& argm) {
 // for each time that the arguments return true, run the argfunction
 // returns the last return from the argfunction
 int b_while(const Argm& argm) {
-  if (argm.argc() < 2) throw Signal_argm(Argm::Argument_count, argm.argc()-1,1);
+  if (argm.argc() < 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (!argm.argfunction()) throw Signal_argm(Argm::Missing_argfunction);
   int ret = -1;
   Argm lookup(argm.begin()+1, argm.end(), 0, argm.parent_map(),

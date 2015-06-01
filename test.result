@@ -289,12 +289,12 @@ $# rwsh.selection_not_found
 0
 $e @/*is*
 signal triggered: rwsh.selection_not_found ( /*is* /*is* ) 
-signal triggered: rwsh.argument_count ( 0 1 .echo e ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .echo e ) 
 
 -1
 $e @test_main.cc
 signal triggered: rwsh.selection_not_found ( test_main.cc test_main.cc ) 
-signal triggered: rwsh.argument_count ( 0 1 .echo e ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .echo e ) 
 
 -1
 $e @e*c
@@ -305,7 +305,7 @@ test_files/ixxx
 0
 $e @test_files/*x*x*x*x
 signal triggered: rwsh.selection_not_found ( test_files/*x*x*x*x test_files/*x*x*x*x ) 
-signal triggered: rwsh.argument_count ( 0 1 .echo e ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .echo e ) 
 
 -1
 $e @test_files/*xyxy
@@ -501,7 +501,7 @@ line 2 longer
 ending
 0
 $.for_each_line x {}
-signal triggered: rwsh.argument_count ( 1 0 .for_each_line ) 
+signal triggered: rwsh.bad_argc ( 1 0 0 .for_each_line ) 
 
 -1
 $.for_each_line <dummy_file
@@ -588,7 +588,7 @@ $# .cd
 
 0
 $.cd
-signal triggered: rwsh.argument_count ( 0 1 .cd ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .cd ) 
 
 -1
 $.cd /bin {excess argfunc}
@@ -596,7 +596,7 @@ signal triggered: rwsh.excess_argfunction ( .cd )
 
 -1
 $.cd /bin /
-signal triggered: rwsh.argument_count ( 2 1 .cd ) 
+signal triggered: rwsh.bad_argc ( 2 1 0 .cd ) 
 
 -1
 $.cd /bin
@@ -613,7 +613,7 @@ $# .combine
 
 0
 $.combine
-signal triggered: rwsh.argument_count ( 0 1 .combine ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .combine ) 
 
 -1
 $.combine something {excess argfunc}
@@ -630,7 +630,7 @@ $# .echo
 
 0
 $.echo
-signal triggered: rwsh.argument_count ( 0 1 .echo ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .echo ) 
 
 -1
 $.echo something {excess argfunc}
@@ -647,7 +647,7 @@ $# .exec .fork
 
 0
 $.fork
-signal triggered: rwsh.argument_count ( 0 1 .fork ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .fork ) 
 
 -1
 $.fork e text
@@ -657,7 +657,7 @@ $.fork .return 1
 
 256
 $.exec
-signal triggered: rwsh.argument_count ( 0 1 .exec ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .exec ) 
 
 -1
 $.exec something {excess argfunc}
@@ -675,7 +675,7 @@ $# .for
 
 0
 $.for {e no arguments $1}
-signal triggered: rwsh.argument_count ( 0 1 .for ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .for ) 
 
 -1
 $.for no_argfunction
@@ -699,7 +699,7 @@ $# .function
 
 0
 $.function
-signal triggered: rwsh.argument_count ( 0 1 .function ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .function ) 
 
 -1
 $.function /bin/echo {.echo $* $nl}
@@ -799,7 +799,7 @@ $# .function_all_options
 
 0
 $.function_all_options
-signal triggered: rwsh.argument_count ( 0 1 .function_all_options ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .function_all_options ) 
 
 -1
 $.function_all_options a {e zero argument function acceptable}
@@ -821,11 +821,11 @@ $.set MAX_NESTING 15
 
 0
 $test_var_greater MAX_NESTING
-signal triggered: rwsh.argument_count ( 1 2 test_var_greater ) 
+signal triggered: rwsh.bad_argc ( 1 2 0 test_var_greater ) 
 
 -1
 $test_var_greater MAX_NESTING 3 12
-signal triggered: rwsh.argument_count ( 3 2 test_var_greater ) 
+signal triggered: rwsh.bad_argc ( 3 2 0 test_var_greater ) 
 
 -1
 $test_var_greater MAX_NESTING 3
@@ -854,6 +854,118 @@ $ntimes 2 {ntimes 3 {e &&n and $n remaining $nl}}
 $.set MAX_NESTING $A 
 
 0
+$.function_all_options a [-x] [-] [--long-opt] y second {
+  if_only .var_exists -x {.combine -x \( $-x \) \ }
+  if_only .var_exists - {.combine - \( $- \) \ }
+  if_only .var_exists --long-opt {.combine --long-opt \( $--long-opt \) \ }
+  .combine y \( $y \) \  second \( $second \)}
+
+0
+$a -xx over-long flag
+signal triggered: rwsh.bad_argc ( 3 2 0 a ) 
+
+-1
+$a --long-op short flag
+signal triggered: rwsh.bad_argc ( 3 2 0 a ) 
+
+-1
+$a no flags
+y(no) second(flags)
+0
+$a deficient
+signal triggered: rwsh.bad_argc ( 1 2 0 a ) 
+
+-1
+$a flagless excess argument
+signal triggered: rwsh.bad_argc ( 3 2 0 a ) 
+
+-1
+$a -x with flag
+-x(-x) y(with) second(flag)
+0
+$a -x -x doubled flag
+-x(-x -x) y(doubled) second(flag)
+0
+$a unaccepted -x interlaced_flag
+signal triggered: rwsh.bad_argc ( 3 2 0 a ) 
+
+-1
+$a -x with excess argument
+signal triggered: rwsh.bad_argc ( 3 2 1 a ) 
+
+-1
+$a - with flag
+-(-) y(with) second(flag)
+0
+$a --long-opt with flag
+--long-opt(--long-opt) y(with) second(flag)
+0
+$a -x - some_flags in_order
+-x(-x) -(-) y(some_flags) second(in_order)
+0
+$a - -x some_flags reversed
+-x(-x) -(-) y(some_flags) second(reversed)
+0
+$a - --long-opt some_flags in_order
+-(-) --long-opt(--long-opt) y(some_flags) second(in_order)
+0
+$a --long-opt - some_flags reversed
+-(-) --long-opt(--long-opt) y(some_flags) second(reversed)
+0
+$a -x --long-opt some_flags in_order
+-x(-x) --long-opt(--long-opt) y(some_flags) second(in_order)
+0
+$a --long-opt -x some_flags reversed
+-x(-x) --long-opt(--long-opt) y(some_flags) second(reversed)
+0
+$a -x - --long-opt deficient
+signal triggered: rwsh.bad_argc ( 1 2 3 a ) 
+
+-1
+$a -x - --long-opt all_flags in_order
+-x(-x) -(-) --long-opt(--long-opt) y(all_flags) second(in_order)
+0
+$a --long-opt - -x all_flags reversed
+-x(-x) -(-) --long-opt(--long-opt) y(all_flags) second(reversed)
+0
+$a - --long-opt -x all_flags shuffled
+-x(-x) -(-) --long-opt(--long-opt) y(all_flags) second(shuffled)
+0
+$a - --long-opt -x - -x some_flags doubled
+-x(-x -x) -(- -) --long-opt(--long-opt) y(some_flags) second(doubled)
+0
+$a - -x - -x - one_doubled one_tripled
+-x(-x -x) -(- - -) y(one_doubled) second(one_tripled)
+0
+$a --long-opt - -x -x - --long-opt all_flags doubled
+-x(-x -x) -(- -) --long-opt(--long-opt --long-opt) y(all_flags) second(doubled)
+0
+$.function_all_options a [-first] [-to] {
+  if_only .var_exists -first {.combine -first \( $-first \) \ }
+  if_only .var_exists -to {.combine -to \( $-to \) \ }
+  e nothing_required}
+
+0
+$a
+nothing_required
+0
+$a excess
+signal triggered: rwsh.bad_argc ( 1 0 0 a ) 
+
+-1
+$a -to
+-to(-to) nothing_required
+0
+$a -first
+-first(-first) nothing_required
+0
+$a -first excess
+signal triggered: rwsh.bad_argc ( 1 0 1 a ) 
+
+-1
+$a -to -first
+-first(-first) -to(-to) nothing_required
+0
 $
 
 0
@@ -861,11 +973,11 @@ $# .global .local .unset .var_exists
 
 0
 $.global
-signal triggered: rwsh.argument_count ( 0 2 .global ) 
+signal triggered: rwsh.bad_argc ( 0 2 0 .global ) 
 
 -1
 $.global x y z
-signal triggered: rwsh.argument_count ( 3 2 .global ) 
+signal triggered: rwsh.bad_argc ( 3 2 0 .global ) 
 
 -1
 $.global x y {excess argfunc}
@@ -873,11 +985,11 @@ signal triggered: rwsh.excess_argfunction ( .global )
 
 -1
 $.local
-signal triggered: rwsh.argument_count ( 0 2 .local ) 
+signal triggered: rwsh.bad_argc ( 0 2 0 .local ) 
 
 -1
 $.local x y z
-signal triggered: rwsh.argument_count ( 3 2 .local ) 
+signal triggered: rwsh.bad_argc ( 3 2 0 .local ) 
 
 -1
 $.local x y {excess argfunc}
@@ -885,7 +997,7 @@ signal triggered: rwsh.excess_argfunction ( .local )
 
 -1
 $.unset
-signal triggered: rwsh.argument_count ( 0 1 .unset ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .unset ) 
 
 -1
 $.unset x {excess argfunc}
@@ -893,11 +1005,11 @@ signal triggered: rwsh.excess_argfunction ( .unset )
 
 -1
 $.unset x y
-signal triggered: rwsh.argument_count ( 2 1 .unset ) 
+signal triggered: rwsh.bad_argc ( 2 1 0 .unset ) 
 
 -1
 $.var_exists
-signal triggered: rwsh.argument_count ( 0 1 .var_exists ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .var_exists ) 
 
 -1
 $.var_exists x {excess argfunc}
@@ -905,7 +1017,7 @@ signal triggered: rwsh.excess_argfunction ( .var_exists )
 
 -1
 $.var_exists x y
-signal triggered: rwsh.argument_count ( 2 1 .var_exists ) 
+signal triggered: rwsh.bad_argc ( 2 1 0 .var_exists ) 
 
 -1
 $.global 100 nihilism
@@ -1043,7 +1155,7 @@ signal triggered: rwsh.missing_argfunction ( .store_output )
 
 -1
 $.store_output {e some text}
-signal triggered: rwsh.argument_count ( 0 1 .store_output ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .store_output ) 
 
 -1
 $.store_output x {e some text}
@@ -1075,15 +1187,15 @@ $# .if .else_if .else_if_not .else
 
 0
 $.if
-signal triggered: rwsh.argument_count ( 0 1 .if ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .if ) 
 
 -1
 $.else_if
-signal triggered: rwsh.argument_count ( 0 1 .else_if ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .else_if ) 
 
 -1
 $.else_if_not
-signal triggered: rwsh.argument_count ( 0 1 .else_if_not ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .else_if_not ) 
 
 -1
 $.else
@@ -1194,7 +1306,7 @@ $.internal_features 1
 wrong argument count
 -1
 $.internal_functions 1
-signal triggered: rwsh.argument_count ( 1 0 .internal_functions ) 
+signal triggered: rwsh.bad_argc ( 1 0 0 .internal_functions ) 
 
 -1
 $.internal_functions {excess argfunc}
@@ -1208,8 +1320,8 @@ $.internal_features
 rwsh.after_command rwsh.before_command rwsh.run_logic
 0
 $.internal_functions
-rwsh.argument_count
 rwsh.arguments_for_argfunction
+rwsh.bad_argc
 rwsh.bad_argfunction_style
 rwsh.bad_if_nest
 rwsh.binary_not_found
@@ -1262,7 +1374,7 @@ $# .is_default_input .is_default_output .is_default_error
 
 0
 $.is_default_input 1
-signal triggered: rwsh.argument_count ( 1 0 .is_default_input ) 
+signal triggered: rwsh.bad_argc ( 1 0 0 .is_default_input ) 
 
 -1
 $.is_default_input {excess argfunc}
@@ -1276,7 +1388,7 @@ $m {.is_default_input}
 
 0
 $.is_default_output 1
-signal triggered: rwsh.argument_count ( 1 0 .is_default_output ) 
+signal triggered: rwsh.bad_argc ( 1 0 0 .is_default_output ) 
 
 -1
 $.is_default_output {excess argfunc}
@@ -1293,7 +1405,7 @@ $m {.is_default_output}
 
 0
 $.is_default_error 1
-signal triggered: rwsh.argument_count ( 1 0 .is_default_error ) 
+signal triggered: rwsh.bad_argc ( 1 0 0 .is_default_error ) 
 
 -1
 $.is_default_error {excess argfunc}
@@ -1310,7 +1422,7 @@ $# .ls
 
 0
 $.ls
-signal triggered: rwsh.argument_count ( 0 1 .ls ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .ls ) 
 
 -1
 $.ls /bin {excess argfunc}
@@ -1344,11 +1456,11 @@ $# .return
 
 0
 $.return
-signal triggered: rwsh.argument_count ( 0 1 .return ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .return ) 
 
 -1
 $.return 1 1
-signal triggered: rwsh.argument_count ( 2 1 .return ) 
+signal triggered: rwsh.bad_argc ( 2 1 0 .return ) 
 
 -1
 $.return 0 {excess argfunc}
@@ -1391,7 +1503,7 @@ $# .selection_set
 
 -1
 $.selection_set A
-signal triggered: rwsh.argument_count ( 1 2 .selection_set ) 
+signal triggered: rwsh.bad_argc ( 1 2 0 .selection_set ) 
 
 -1
 $.selection_set A /usr {excess argfunc}
@@ -1447,7 +1559,7 @@ $# .set
 
 0
 $.set A
-signal triggered: rwsh.argument_count ( 1 2 .set ) 
+signal triggered: rwsh.bad_argc ( 1 2 0 .set ) 
 
 -1
 $.set B x
@@ -1474,7 +1586,7 @@ $# .signal_handler
 
 0
 $.signal_handler {.return A}
-signal triggered: rwsh.argument_count ( 0 1 .signal_handler ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .signal_handler ) 
 
 -1
 $m {.signal_handler rwsh.not_a_number rwsh.executable_not_found {.return A}}
@@ -1498,7 +1610,7 @@ $# .source
 
 0
 $.source
-signal triggered: rwsh.argument_count ( 0 1 .source ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .source ) 
 
 -1
 $.source /etc/hosts {excess argfunc}
@@ -1542,7 +1654,7 @@ $f d {e $* $nl; .stepwise $* {d $*}}
 
 0
 $.stepwise {e $* $nl}
-signal triggered: rwsh.argument_count ( 0 1 .stepwise ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .stepwise ) 
 
 -1
 $.stepwise wrapper 1 2
@@ -1644,11 +1756,11 @@ $# .test_string_equal .test_string_unequal .test_not_empty
 
 0
 $.test_string_equal x
-signal triggered: rwsh.argument_count ( 1 2 .test_string_equal ) 
+signal triggered: rwsh.bad_argc ( 1 2 0 .test_string_equal ) 
 
 -1
 $.test_string_equal x x x
-signal triggered: rwsh.argument_count ( 3 2 .test_string_equal ) 
+signal triggered: rwsh.bad_argc ( 3 2 0 .test_string_equal ) 
 
 -1
 $.test_string_equal x x {excess argfunc}
@@ -1656,11 +1768,11 @@ signal triggered: rwsh.excess_argfunction ( .test_string_equal )
 
 -1
 $.test_string_unequal x 
-signal triggered: rwsh.argument_count ( 1 2 .test_string_unequal ) 
+signal triggered: rwsh.bad_argc ( 1 2 0 .test_string_unequal ) 
 
 -1
 $.test_string_unequal x x x
-signal triggered: rwsh.argument_count ( 3 2 .test_string_unequal ) 
+signal triggered: rwsh.bad_argc ( 3 2 0 .test_string_unequal ) 
 
 -1
 $.test_string_unequal x x {excess argfunc}
@@ -1668,11 +1780,11 @@ signal triggered: rwsh.excess_argfunction ( .test_string_unequal )
 
 -1
 $.test_not_empty 
-signal triggered: rwsh.argument_count ( 0 1 .test_not_empty ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .test_not_empty ) 
 
 -1
 $.test_not_empty x x
-signal triggered: rwsh.argument_count ( 2 1 .test_not_empty ) 
+signal triggered: rwsh.bad_argc ( 2 1 0 .test_not_empty ) 
 
 -1
 $.test_not_empty x {excess argfunc}
@@ -1704,7 +1816,7 @@ $# .test_is_number .test_number_equal .test_greater .test_less
 
 0
 $.test_is_number
-signal triggered: rwsh.argument_count ( 0 1 .test_is_number ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .test_is_number ) 
 
 -1
 $.test_is_number 42 {excess argfunc}
@@ -1730,7 +1842,7 @@ $.test_is_number 6.022e23
 
 0
 $.test_number_equal 42
-signal triggered: rwsh.argument_count ( 1 2 .test_number_equal ) 
+signal triggered: rwsh.bad_argc ( 1 2 0 .test_number_equal ) 
 
 -1
 $.test_number_equal 42 42 {excess argfunc}
@@ -1776,7 +1888,7 @@ $.test_number_equal 6.022e23 .6022e24
 
 0
 $.test_greater 6.022e23
-signal triggered: rwsh.argument_count ( 1 2 .test_greater ) 
+signal triggered: rwsh.bad_argc ( 1 2 0 .test_greater ) 
 
 -1
 $.test_greater 6.022e23c 6.022e23 {excess argfunc}
@@ -1809,7 +1921,7 @@ $.test_greater 6.022e23 6.022e2
 
 0
 $.test_less 6.022e23
-signal triggered: rwsh.argument_count ( 1 2 .test_less ) 
+signal triggered: rwsh.bad_argc ( 1 2 0 .test_less ) 
 
 -1
 $.test_less 6.022b23 6.022e23 {excess argfunc}
@@ -1848,7 +1960,7 @@ $# .which_executable .which_test .which_return
 
 0
 $.which_test
-signal triggered: rwsh.argument_count ( 0 1 .which_test ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .which_test ) 
 
 -1
 $.which_test j
@@ -1864,7 +1976,7 @@ $.which_test rwsh.mapped_argfunction {rwsh.argfunction}
 
 0
 $.which_executable
-signal triggered: rwsh.argument_count ( 0 1 .which_executable ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .which_executable ) 
 
 -1
 $.which_executable j
@@ -1898,7 +2010,7 @@ $.which_executable rwsh.mapped_argfunction {rwsh.argfunction}
 {rwsh.argfunction}
 0
 $.waiting_for_shell j
-signal triggered: rwsh.argument_count ( 1 0 .waiting_for_shell ) 
+signal triggered: rwsh.bad_argc ( 1 0 0 .waiting_for_shell ) 
 
 -1
 $.waiting_for_shell {excess argfunc}
@@ -1909,7 +2021,7 @@ $# .waiting_for_shell
 
 -1
 $.waiting_for_user j
-signal triggered: rwsh.argument_count ( 1 0 .waiting_for_user ) 
+signal triggered: rwsh.bad_argc ( 1 0 0 .waiting_for_user ) 
 
 -1
 $.waiting_for_user {excess argfunc}
@@ -1920,7 +2032,7 @@ $# .waiting_for_user
 
 -1
 $.waiting_for_binary j
-signal triggered: rwsh.argument_count ( 1 0 .waiting_for_binary ) 
+signal triggered: rwsh.bad_argc ( 1 0 0 .waiting_for_binary ) 
 
 -1
 $.waiting_for_binary {excess argfunc}
@@ -1931,7 +2043,7 @@ $# .waiting_for_binary
 
 -1
 $.which_return
-signal triggered: rwsh.argument_count ( 0 1 .which_return ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .which_return ) 
 
 -1
 $.which_return rwsh.mapped_argfunction
@@ -1959,7 +2071,7 @@ $# .which_total_execution_time
 
 0
 $.usleep
-signal triggered: rwsh.argument_count ( 0 1 .usleep ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .usleep ) 
 
 -1
 $.usleep 8000 {excess argfunc}
@@ -1978,7 +2090,7 @@ $.usleep 8000
 
 0
 $.which_execution_count
-signal triggered: rwsh.argument_count ( 0 1 .which_execution_count ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .which_execution_count ) 
 
 -1
 $.which_execution_count j
@@ -1988,7 +2100,7 @@ $.which_execution_count .usleep
 5
 0
 $.which_last_execution_time
-signal triggered: rwsh.argument_count ( 0 1 .which_last_execution_time ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .which_last_execution_time ) 
 
 -1
 $.which_last_execution_time j
@@ -1998,7 +2110,7 @@ $# .which_last_execution_time .usleep
 
 1
 $.which_total_execution_time
-signal triggered: rwsh.argument_count ( 0 1 .which_total_execution_time ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .which_total_execution_time ) 
 
 -1
 $.which_total_execution_time j
@@ -2014,7 +2126,7 @@ $# .which_path
 
 1
 $.which_path cat
-signal triggered: rwsh.argument_count ( 1 2 .which_path ) 
+signal triggered: rwsh.bad_argc ( 1 2 0 .which_path ) 
 
 -1
 $.which_path cat /bin {excess argfunc}
@@ -2046,7 +2158,7 @@ $.set N 4
 
 0
 $.while {e ARGS}
-signal triggered: rwsh.argument_count ( 0 1 .while ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .while ) 
 
 -1
 $.while tf
@@ -2086,11 +2198,11 @@ $# .var_add
 
 0
 $.var_add
-signal triggered: rwsh.argument_count ( 0 2 .var_add ) 
+signal triggered: rwsh.bad_argc ( 0 2 0 .var_add ) 
 
 -1
 $.var_add A 1 2
-signal triggered: rwsh.argument_count ( 3 2 .var_add ) 
+signal triggered: rwsh.bad_argc ( 3 2 0 .var_add ) 
 
 -1
 $.var_add A 1 {excess argfunc}
@@ -2163,11 +2275,11 @@ $# .var_divide
 
 0
 $.var_divide A
-signal triggered: rwsh.argument_count ( 1 2 .var_divide ) 
+signal triggered: rwsh.bad_argc ( 1 2 0 .var_divide ) 
 
 -1
 $.var_divide A 1 2
-signal triggered: rwsh.argument_count ( 3 2 .var_divide ) 
+signal triggered: rwsh.bad_argc ( 3 2 0 .var_divide ) 
 
 -1
 $.var_divide A 1 {excess argfunc}
@@ -2236,11 +2348,11 @@ $# .var_subtract
 
 0
 $.var_subtract
-signal triggered: rwsh.argument_count ( 0 2 .var_subtract ) 
+signal triggered: rwsh.bad_argc ( 0 2 0 .var_subtract ) 
 
 -1
 $.var_subtract A 1 2
-signal triggered: rwsh.argument_count ( 3 2 .var_subtract ) 
+signal triggered: rwsh.bad_argc ( 3 2 0 .var_subtract ) 
 
 -1
 $.var_subtract A 1 {excess argfunc}
@@ -2319,7 +2431,7 @@ $# .version .version_compatible
 
 0
 $.version 1.0
-signal triggered: rwsh.argument_count ( 1 0 .version ) 
+signal triggered: rwsh.bad_argc ( 1 0 0 .version ) 
 
 -1
 $.version {excess argfunc}
@@ -2327,11 +2439,11 @@ signal triggered: rwsh.excess_argfunction ( .version )
 
 -1
 $.version_compatible
-signal triggered: rwsh.argument_count ( 0 1 .version_compatible ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .version_compatible ) 
 
 -1
 $.version_compatible 1.0 1.0
-signal triggered: rwsh.argument_count ( 2 1 .version_compatible ) 
+signal triggered: rwsh.bad_argc ( 2 1 0 .version_compatible ) 
 
 -1
 $.version_compatible 1.0 {excess argfunc}
@@ -2616,7 +2728,7 @@ $.global SHELL unmodified
 
 0
 $.importenv_preserve x
-signal triggered: rwsh.argument_count ( 1 0 .importenv_preserve ) 
+signal triggered: rwsh.bad_argc ( 1 0 0 .importenv_preserve ) 
 
 -1
 $.importenv_preserve {excess argfunc}
@@ -2636,7 +2748,7 @@ $.unset TESTABILITY
 
 0
 $.importenv_overwrite x
-signal triggered: rwsh.argument_count ( 1 0 .importenv_overwrite ) 
+signal triggered: rwsh.bad_argc ( 1 0 0 .importenv_overwrite ) 
 
 -1
 $.importenv_overwrite {excess argfunc}
@@ -2659,7 +2771,7 @@ $# exiting rwsh.shutdown
 
 0
 $.exit excess_argument
-signal triggered: rwsh.argument_count ( 1 0 .exit ) 
+signal triggered: rwsh.bad_argc ( 1 0 0 .exit ) 
 
 -1
 $.exit {excess argfunction}

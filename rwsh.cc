@@ -5,6 +5,7 @@
 #include <iostream>
 #include <list>
 #include <map>
+#include <set>
 #include <signal.h>
 #include <string>
 #include <sys/time.h>
@@ -35,8 +36,8 @@ Argm::Sig_type Executable::caught_signal(Argm::No_signal);
 bool Executable::in_signal_handler(false);
 std::string Argm::signal_names[Argm::Signal_count] = {
   "no signal",
-  "rwsh.argument_count",
   "rwsh.arguments_for_argfunction",
+  "rwsh.bad_argc",
   "rwsh.bad_argfunction_style",
   "rwsh.bad_if_nest", 
   "rwsh.binary_not_found",
