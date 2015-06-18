@@ -245,25 +245,46 @@ a
 test_var_greater MAX_NESTING
 test_var_greater MAX_NESTING 3 12
 test_var_greater MAX_NESTING 3
+.function_all_options ntimes n n {e can't have two parameters of the same name} 
 .function_all_options ntimes n {
   .while test_var_greater n 0 {rwsh.mapped_argfunction {rwsh.argfunction}
                                .var_subtract n 1}}
-ntimes 3 {e $n remaining $nl}
+w ntimes
+ntimes -- 3 {e $n remaining $nl}
+ntimes 3 -- {e -- must preceed all positional arguments}
 ntimes 2 {ntimes 3 {e &&n and $n remaining $nl}}
 .set MAX_NESTING $A 
-.function_all_options a [-x] [-] [--long-opt] y second {
+.function_all_options a [-x] [-] [--long-opt y second {
+  e illegal missing close bracket}
+.function_all_options a [-x] [-] [--long-opt] [-] y second {
+  e illegal duplicate flag parameter}
+.function_all_options a [-x] [-] [-x] [--long-opt] y second {
+  e another illegal duplicate flag parameter}
+.function_all_options a [-x] [-] [--long-opt] y second y {
+  e illegal duplicate required parameter}
+.function_all_options a [-x] [-] [--long-opt] -x second {
+  e illegal duplication between flags and required parameters}
+.function_all_options a [-x] [-] [--long-opt] -- second {
+  e -- cannot be a required parameter even if only an implicit option}
+.function_all_options a [-x] [-] [--long-opt] -y second {
   if_only .var_exists -x {.combine -x \( $-x \) \ }
   if_only .var_exists - {.combine - \( $- \) \ }
   if_only .var_exists --long-opt {.combine --long-opt \( $--long-opt \) \ }
-  .combine y \( $y \) \  second \( $second \)}
-a -xx over-long flag
+  if_only .var_exists -- {.combine -- \( $-- \) \ }
+  .combine -y \( $-y \) \  second \( $second \)}
+w a 
+a --long-opt -xx over-long flag
+a -xx --long-opt over-long flag
 a --long-op short flag
+a - --long-op short flag
 a no flags
 a deficient
 a flagless excess argument
 a -x with flag
 a -x -x doubled flag
 a unaccepted -x interlaced_flag
+a -x -- - flag_made_fixed_argument
+a -- - flag_again_made_fixed_argument
 a -x with excess argument
 a - with flag
 a --long-opt with flag
@@ -280,15 +301,18 @@ a - --long-opt -x all_flags shuffled
 a - --long-opt -x - -x some_flags doubled
 a - -x - -x - one_doubled one_tripled
 a --long-opt - -x -x - --long-opt all_flags doubled
-.function_all_options a [-first] [-to] {
+.function_all_options a [-first] [-to] [--] {
   if_only .var_exists -first {.combine -first \( $-first \) \ }
   if_only .var_exists -to {.combine -to \( $-to \) \ }
+  if_only .var_exists -- {.combine -- \( $-- \) \ }
   e nothing_required}
+w a 
 a
 a excess
 a -to
-a -first
+a -first --
 a -first excess
+a -to -- -first
 a -to -first
 
 # .global .local .unset .var_exists 

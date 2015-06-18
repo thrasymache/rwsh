@@ -41,6 +41,7 @@ class Argm : private std::vector<std::string> {
     Binary_not_found,
     Divide_by_zero, 
     Double_redirection,
+    Duplicate_parameter,
     Else_without_if,
     Excess_argfunction,
     Excessive_nesting,
@@ -52,6 +53,7 @@ class Argm : private std::vector<std::string> {
     Invalid_word_selection,
     // Line_continuation,
     Mismatched_brace,
+    Mismatched_bracket,
     Mismatched_parenthesis,
     Missing_argfunction,
     Multiple_argfunctions,
@@ -76,6 +78,7 @@ class Argm : private std::vector<std::string> {
     Sigunknown,
     Undefined_variable,
     Unreadable_dir,
+    Unrecognized_flag,
     Vars,
     Version_incompatible,
     Signal_count};

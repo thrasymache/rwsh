@@ -11,6 +11,8 @@
 
 
 
+
+  
   
   
   
@@ -32,6 +34,8 @@
 
 
 
+
+  
   
   
   
@@ -47,6 +51,7 @@
 
 
 <body>
+
 
 
 
@@ -72,7 +77,9 @@ rwsh.executable_not_found is run instead.<br>
 
 
 
+
 <br>
+
 
 
 
@@ -93,7 +100,9 @@ rwsh.executable_not_found is run instead.<br>
 
 
 
+
 <h3>rwsh.after_command</h3>
+
 
 
 
@@ -105,6 +114,7 @@ rwsh.executable_not_found is run instead.<br>
 
 After each command completes, rwsh.after_command is run with the entire command line as its arguments.
 <h3>rwsh.autofunction</h3>
+
 
 
 
@@ -130,6 +140,7 @@ binary that it finds to the executable map as a function.
 
 
 
+
 Before any command is run, the entire command is passed to
 rwsh.before_command (if it exists). The command is run only if
 rwsh.before_command returns 0.<br>
@@ -143,7 +154,9 @@ rwsh.before_command returns 0.<br>
 
 
 
+
 <h3>rwsh.prompt</h3>
+
 
 
 
@@ -166,7 +179,9 @@ arguments.<br>
 
 
 
+
 <h3>rwsh.raw_command</h3>
+
 
 
 
@@ -182,10 +197,12 @@ than the command that will be run.
 
 
 
+
 If it exists, this command is passed the entire command line and takes
 responsibility for actually running the command. If this function fails
 early enough, the command will not be run.
 <h3>rwsh.shutdown</h3>
+
 
 
 
@@ -204,7 +221,9 @@ arguments passed to&nbsp;.init.)<br>
 
 
 
+
 <h3>rwsh.vars</h3>
+
 
 
 
@@ -229,7 +248,9 @@ other functionality.<br>
 
 
 
+
 <h2>error messages</h2>
+
 
 
 
@@ -246,6 +267,7 @@ messages. Note that while ".init" is not an error message it falls into this cat
 
 
 
+
 If a command is requested with the wrong
 number of arguments, then rwsh.argument_count is run instead. Currently
 this is limited to builtins and no diagnostic information is passed to
@@ -255,7 +277,9 @@ number of arguments will produce this error as well.<br>
 
 
 
+
 <h3>rwsh.arguments_for_argfunction</h3>
+
 
 
 
@@ -284,6 +308,7 @@ rwsh.escaped_argfunction).</p>
 
 
 
+
 <p>If you find that you want to pass arguments to an argfunction, this
 is the purpose of rwsh.mapped_argfunction. While the second example
 given above would require two argument functions which is not currently
@@ -299,7 +324,9 @@ supported, the first one could be written as "fn x {fn $1
 
 
 
+
 <h3>rwsh.bad_argfunction_style</h3>
+
 
 
 
@@ -320,7 +347,9 @@ the argument function with the bad style.<br>
 
 
 
+
 <h3>rwsh.bad_if_nest</h3>
+
 
 
 
@@ -336,7 +365,9 @@ argument function returns.</p>
 
 
 
+
 <p>For example, this will generate an error:</p>
+
 
 
 
@@ -344,7 +375,9 @@ argument function returns.</p>
 
 
 
+
 <p>But this will not:</p>
+
 
 
 
@@ -352,7 +385,9 @@ argument function returns.</p>
 
 
 
+
 <h3>rwsh.binary_not_found</h3>
+
 
 
 
@@ -370,20 +405,31 @@ argument.
 
 
 
+
 If the second argument to .var_divide is "0", or a number that converts to 0, then this error will be thrown.
 <h3>rwsh.double_redirection</h3>
+
 
 
 
 If a command line has two output redirections, or two input
 redirections, then this error is thrown. Both of these constructions
 will be supported in a later version.
+<h3>rwsh.duplicate_parameter</h3>
+If a function definition lists two parameters with the same name, then
+this function will be called, with the name of the parameter and a call
+stack. Note that the empty string is a valid variable name, and so
+placing whitespace before a close bracket, or after an open bracket is
+defining an optional argument with the empty string as its name, as
+does "[]".
 <h3>rwsh.else_without_if</h3>
+
 
 
 
 if ".else" is called before ".if", then this error will be thrown.
 <h3>rwsh.excessive_nesting</h3>
+
 
 
 
@@ -413,10 +459,13 @@ not fill several screens.</p>
 
 
 
+
 <h3>rwsh.excess_argfunction</h3>
+
 
 If a builtin that cannot use an argument function is called with an argument function, this error will be thrown. 
 <h3>rwsh.executable_not_found</h3>
+
 
 
 
@@ -432,6 +481,7 @@ executable_map after calling rwsh.autofunction, then
 rwsh.executable_not_found is called with the same command line as was
 going to be passed to the missing executable, meaning that the
 executable's name is in $0.</p>
+
 
 
 
@@ -467,7 +517,9 @@ that will be run.</p>
 
 
 
+
 <h3>rwsh.failed_substitution</h3>
+
 
 
 
@@ -484,7 +536,9 @@ first argument being the substitution that failed.<br>
 
 
 
+
 <h3>rwsh.file_open_failure</h3>
+
 
 
 
@@ -496,8 +550,10 @@ argument.
 
 
 
+
 If two ".if" commands occur, without a ".else" command between them, then this error is thrown.
 <h3>.init</h3>
+
 
 
 
@@ -520,6 +576,7 @@ different arguments. This is why it is named like a built-in rather than like an
 
 
 
+
 If any of the builtins that take a numerical argument are passed a
 number outside of the range of a double-precision floating point
 number, then this error will be thrown.
@@ -527,24 +584,26 @@ number, then this error will be thrown.
 
 
 
+
 If a word selection (i.e. something following a dollar sign following a
 variable name) is not a number, this error will be thrown. Its argument
 will be the text that was the word selection.
 <h3>rwsh.mismatched_brace</h3>
-
-
-
-
-
-
-
-
-
 If the braces in a command do not match properly, (implying a confusion
-as to where an argument function begins and ends), then rwsh.mismatched
-brace is called instead. It's one argument is the command string up to
+as to where an argument function begins and ends), then
+rwsh.mismatched_brace is called instead. It's one argument is the
+command string up to
 and including the first unmatched brace.
+
+<h3>rwsh.mismatched_bracket</h3>
+If the brackets in the definition of a function taking options do not
+match properly, then rwsh.mismatched_bracket is called instead. It's
+first argument is the&nbsp;section of the command string with the
+mismatched brakcet,&nbsp;up to
+and including the first unmatched bracket, and then it also takes a
+call stack.
 <h3>rwsh.mismatched_parenthesis</h3>
+
 If a parenthesis is found for which no mate can be found, this error
 will be thrown with the offending text passed as an argument. Note that
 this will generally be an excess close parenthesis since in the
@@ -562,6 +621,7 @@ more text until a mate is found.
 
 
 
+
 rwsh cannot currently handle more than one argfunction per
 command.&nbsp;This does not limit the ability of argfunctions to be
 nested within other argfunctions, or even several argfunctions to be
@@ -570,6 +630,7 @@ separate command. If a command is requested with multiple argfunctions,
 then rwsh.multiple_argfunctions is called instead. It does not take any
 arguments.
 <h3>rwsh.not_a_number</h3>
+
 If any builtin that expects a number as an argument (such as .var_add,
 .test_less, or .return) gets instead something that is not simply
 numerical (e.g. "many", "three", or "3a"), this error is thrown with
@@ -577,6 +638,7 @@ the text that was where a number should have been passed as an argument.
 
 
 <h3>rwsh.not_executable</h3>
+
 
 
 
@@ -590,6 +652,7 @@ argument.
 
 
 
+
 it is possible to specify a soon variable or a substitution that is
 delayed past the execution of the statement in which it occurs (e.g.
 "echo &amp;&amp;X" or "rwsh.mapped_argfunction {echo
@@ -597,12 +660,14 @@ delayed past the execution of the statement in which it occurs (e.g.
 case, an rwsh.not_soon_enough error is thrown, it's argument is the
 argument specification that is delayed too far.
 <h3>rwsh.result_range</h3>
+
 If the result of an arithmetic operation does not fit in a double
 precision number on the machine, this error is thrown with the two
 components of the arithmetic operation passed as arguments
 
 
 <h3>rwsh.selection_not_found</h3>
+
 
 
 
@@ -627,9 +692,11 @@ selection as its second argument. For example, a command line that read
 
 
 
+
 <h3>rwsh.sighup rwsh.sigint rwsh.sigquit rwsh.sigpipe rwsh.sigterm
 rwsh.sigtstp rwsh.sigcont rwsh.sigchld rwsh.sigusr1 rwsh.sigusr2
 rwsh.sigunknown</h3>
+
 
 
 
@@ -649,11 +716,13 @@ internal function.
 
 
 
+
 If an argument specification reads a variable that is not set, or
 builtins such as .selection_set or .var_add are passed a variable that
 is not set, then
 an rwsh.undefined_variable error is thown. Its argument is the name of
 the variable.<br>
+
 
 
 
@@ -669,11 +738,20 @@ the variable.<br>
 
 
 
+
 If a selection read encounters a directory to which you do not have
 read permissions, then rwsh.unreadable_dir is called with the name of
 that directory as its argument.<br>
 
+
+<h3>rwsh.unrecognized_flag</h3>
+If a flag argument (i.e. one that begins with a dash that does not
+follow "--") is passed to a function that declares all of its flags
+(such as functions defined with .function_all_options), that is not one
+of the declared flags, then rwsh.unrecognized_flag is run with the
+offending flag and a call stack as its arguments.
 <h3>rwsh.version_incompatible</h3>
+
 If .version_compatible is run with the version string different from
 the set of versions that this shell is compatible with, then this error
 will be thrown with the requested version as an argument. At the

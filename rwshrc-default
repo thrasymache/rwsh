@@ -25,7 +25,11 @@ sfn cat
 .function chmod {.selection_set s $2 $*3; &{whichp chmod} $1 @$s}
 .function cp {/bin/cp @$s $1}
 .function create {.selection_set s $1; &{whichp touch} $s}
-.function cvs {.selection_set s $2 $*3; &{whichp cvs} $1 @$s}
+# .function cvs {.selection_set s $2 $*3; &{whichp cvs} $1 @$s}
+fon cvs [-n] command file {
+  .selection_set s $file
+  .if var_exists -n {&{whichp cvs} -n $command @$s}
+  .else {&{whichp cvs} $command @$s}}
 .function cvso {.selection_set s $3 $*4; &{whichp cvs} $1 $2 @$s}
 .function diff {
   .selection_set s $1; .selection_set s2 $2
@@ -109,7 +113,7 @@ sfn wc
   .echo cannot specify arguments for $1 directly $nl
   .return -1}
 .function rwsh.bad_argc {
-  .echo unacceptable argument count: received $1 non-optional, but needed $2 (with $3 optional) for $4* $nl
+  .echo unacceptable argument count: received $1 non-optional, but needed $2 \(with $3 optional\) for $4* $nl
   .return -1}
 .function rwsh.autofunction {
   .function $1 {&&{.which_path &&1 $PATH} $*}
@@ -128,6 +132,10 @@ sfn wc
   .return -1}
 .function rwsh.double_redirection {
   .echo double redirection is not supported at this time: $1 and $2 $nl
+  .return -1}
+.function rwsh.duplicate_parameter {
+  .echo duplicated parameter in function definition: $1 $nl
+  .echo call stack: $*2 $nl
   .return -1}
 .function rwsh.else_without_if {
   .echo else without if with call stack: $* $nl
@@ -156,7 +164,11 @@ sfn wc
   .echo $* is not a valid word selection $nl
   .return -1}
 .function rwsh.mismatched_brace {
-  .echo mismatched brace: $1 $nl
+  .echo mismatched brace: $* $nl
+  .return -1}
+.function rwsh.mismatched_bracket {
+  .echo mismatched bracket: $1 $nl
+  .echo call stack: $*2 $nl
   .return -1}
 .function rwsh.mismatched_parenthesis {
   .echo mismatched parenthesis: $* $nl
@@ -203,6 +215,10 @@ sfn wc
 .function rwsh.undefined_variable {
   .echo $1 was undefined with call stack $*2 $nl}
 .function rwsh.unreadable_dir {.echo cannot read directory $1 $nl}
+.function rwsh.unrecognized_flag {
+  .echo $1 flag is unrecognized for $2 $nl
+  .echo call stack: $*2 $nl
+  .return -1}
 .function rwsh.version_incompatible {
   .echo this shell is not compatible with requested version $1 $nl
   .echo call stack: $*2 $nl

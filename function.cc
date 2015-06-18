@@ -65,8 +65,21 @@ Function::Function(const std::string& name_i,
     positional_parameters(positional_parameters_i), script(src) {
   for (Argm::const_iterator i = first_parameter; i != parameter_end; ++i)
     if (i->substr(0, 2) == "[-")
-      flag_options.insert(i->substr(1, i->length()-2));
-    else required.push_back(*i);}
+      if (i->substr(i->length()-1, 1) != "]")
+        throw Signal_argm(Argm::Mismatched_bracket, *i);
+      else {
+        std::string flag(i->substr(1, i->length()-2));
+        if (flag == "--"); // discard implicit [--]
+        else if (flag_options.find(flag) != flag_options.end())
+          throw Signal_argm(Argm::Duplicate_parameter, flag);
+        else flag_options.insert(flag);}
+    else if (flag_options.find(*i) != flag_options.end() || *i == "--")
+      throw Signal_argm(Argm::Duplicate_parameter, *i);
+    else {
+      for (std::vector<std::string>::const_iterator j = required.begin();
+           j != required.end(); ++j)
+        if (*j == *i) throw Signal_argm(Argm::Duplicate_parameter, *i);
+      required.push_back(*i);}}
 
 // generate a new function by unescaping argument functions and replacing
 // unescaped_argfunction with the argument function in argm
@@ -93,8 +106,8 @@ int Function::operator() (const Argm& invoking_argm) {
                invoking_argm.input, invoking_argm.output, invoking_argm.error);
     if (!positional_parameters) {
       Argm::const_iterator i = invoking_argm.begin()+1;
-//      if (flag_options.begin() != flag_options.end())
-//        default_output <<"flag options:";
+//    if (flag_options.begin() != flag_options.end())
+//      default_output <<"flag options:";
       for (std::set<std::string>::const_iterator j;
            i != invoking_argm.end() &&
            (j = flag_options.find(*i)) != flag_options.end(); ++i) {
@@ -103,12 +116,15 @@ int Function::operator() (const Argm& invoking_argm) {
         else locals_map.set(*j, locals_map.get(*j) + " " + *i);}
 //      if (flag_options.begin() != flag_options.end())
 //        default_output <<";\n";
-//      default_output <<"required parameters:";
+      if (i != invoking_argm.end() && (*i)[0] == '-')
+        if(*i == "--") locals_map.local(*i, *i), ++i;    // discard --
+        else throw Signal_argm(Argm::Unrecognized_flag, *i);
+//    default_output <<"required parameters:";
       std::vector<std::string>::const_iterator j = required.begin();
       for (; i != invoking_argm.end() && j != required.end(); ++i, ++j) {
-//         default_output <<" " <<*j <<"=" <<*i;
-         locals_map.local(*j, *i);}
-//      default_output <<";\n";
+//      default_output <<" " <<*j <<"=" <<*i;
+        locals_map.local(*j, *i);}
+//    default_output <<";\n";
       if (j != required.end()) {
         unsigned required_found = required.size();
         while (j != required.end()) --required_found, ++j;

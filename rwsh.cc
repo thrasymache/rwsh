@@ -43,6 +43,7 @@ std::string Argm::signal_names[Argm::Signal_count] = {
   "rwsh.binary_not_found",
   "rwsh.divide_by_zero",
   "rwsh.double_redirection",
+  "rwsh.duplicate_parameter",
   "rwsh.else_without_if",
   "rwsh.excess_argfunction",
   "rwsh.excessive_nesting",
@@ -54,6 +55,7 @@ std::string Argm::signal_names[Argm::Signal_count] = {
   "rwsh.invalid_word_selection",
   // "rwsh.line_continuation",
   "rwsh.mismatched_brace",
+  "rwsh.mismatched_bracket",
   "rwsh.mismatched_parenthesis",
   "rwsh.missing_argfunction",
   "rwsh.multiple_argfunctions",
@@ -78,6 +80,7 @@ std::string Argm::signal_names[Argm::Signal_count] = {
   "rwsh.sigunknown",
   "rwsh.undefined_variable",
   "rwsh.unreadable_dir",
+  "rwsh.unrecognized_flag",
   "rwsh.vars",
   "rwsh.version_incompatible"};
 
