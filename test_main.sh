@@ -236,6 +236,7 @@ g
 
 # .function_all_options
 .function_all_options
+.function_all_options rwsh.argfunction {e cannot define rwsh.argfunction}
 .function_all_options a {e zero argument function acceptable}
 a
 .function_all_options test_var_greater
@@ -253,7 +254,7 @@ w ntimes
 ntimes -- 3 {e $n remaining $nl}
 ntimes 3 -- {e -- must preceed all positional arguments}
 ntimes 2 {ntimes 3 {e &&n and $n remaining $nl}}
-.set MAX_NESTING $A 
+.set MAX_NESTING $A
 .function_all_options a [-x] [-] [--long-opt y second {
   e illegal missing close bracket}
 .function_all_options a [-x] [-] [--long-opt] [-] y second {
@@ -264,8 +265,18 @@ ntimes 2 {ntimes 3 {e &&n and $n remaining $nl}}
   e illegal duplicate required parameter}
 .function_all_options a [-x] [-] [--long-opt] -x second {
   e illegal duplication between flags and required parameters}
+.function_all_options a [-] [--long-opt] -x second [-x] {
+  e evil duplication between flags and required parameters}
 .function_all_options a [-x] [-] [--long-opt] -- second {
   e -- cannot be a required parameter even if only an implicit option}
+.function_all_options a -y [second] {
+  .combine -y \( $-y \)
+  if_only .var_exists second {.combine \ second \( $second \) }}
+w a
+a
+a 1
+a 1 2
+a 1 2 3
 .function_all_options a [-x] [-] [--long-opt] -y second {
   if_only .var_exists -x {.combine -x \( $-x \) \ }
   if_only .var_exists - {.combine - \( $- \) \ }

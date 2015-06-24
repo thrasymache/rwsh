@@ -2,42 +2,31 @@
 <html>
 <head>
 
-
-
-
-
-  
-  
-  
-  
-  
   <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
-
-
-
-
-
-  
-  
-  
-  
-  
   <title>function prototypes and option handling</title>
+
+
 </head>
 
 
 <body>
-
-Currently, functions defined with .function_all_options are defined
+Function prototypes in rwsh were inspired by the command synopsis
+entries found in UNIX man pages. Most of the syntax that I have seen
+used in man pages is unambiguous enough for a program to parse, and
+they quickly make clear what arguments are acceptable or not to a
+command. Currently, functions defined with .function_all_options are
+defined
 with a function prototype, functions defined by .function are not. When
 the prototypes become flexible enough to handle all cases currently in
 use, .function and non-prototyped functions will go away. There will be
 one or more other builtins to define functions, at least
 .function_some_options which will accept flag options not declared and
-store them in a separate local variable. There will be support for
+store them in $-* along with the declared options. There will be
+support for
 multiple single-character flag options grouped behind a single dash.
 There may be support for other common option-handling paradigms (e.g.
-that long-options can occur after<span style="font-weight: bold;"> </span>some
+that long-options can occur after<span style="font-weight: bold;">
+</span>some
 positional arguments, or that arguments to flag options can be given
 with an equals-sign). There will not be support for tar-style or
 similar paradigms, which include rules like all characters following an
@@ -47,30 +36,57 @@ to be more restrictive in the syntax that they will accept, or at least
 more restrictive in the syntax which they can add functionality to.
 <h3>required arguments</h3>
 
-...<br>
+Arguments to .function_all_options that follow the function name, are
+not enclosed in brackets and are not "..." are treated as required
+arguments. Given the following definition of a "grep" function,<br>
 
+<pre>.function_all_options grep regex file {<br>    .selection_set s $file; &amp;{whichp grep} $regex @$s}</pre>
+running grep with only zero, one, or three or more arguments will
+produce an error that the wrong number of arguments was passed. If this
+grep is run with exactly two arguments, then the named parameters are
+filled in as local variables, and can be accessed for the duration of
+the function in the same way that global variables are. (Additional
+local variables can be defined with the .local builtin.)
 
+<h3>flag options and $-*</h3>
 
+Arguments in the prototype that are surrounded by brackets and begin
+with a dash are treated as flag options.  Given the following definition of a "grep" function,<br>
 
-
-<h3>flag options</h3>
-
-
-
-arguments in the prototype that are surrounded by <br>
-
-...<br>
-
+<pre>.function_all_options [-i] grep regex file {<br>    .selection_set s $file; &amp;{whichp grep} $-i$ $regex @$s}</pre>
+running grep will be the same as the two required argument version,
+except that additional arguments are accepted, if and only if these
+arguments are "-i" and they preceed the two required arguments. The $-i
+variable will also be defined for the execution of the function, and it
+will contain the text of all the matching flags. It will be the empty
+string if the flag is not passed. It will be "-i" if the flag is passed
+once, and it will be "-i -i" if the flag is passed twice, etc. The flag
+variable is referenced as "$-i$" above because it will avoid passing an
+empty string argument to the grep binary if -i was not passed to the
+function, and separates the flags if multiple were passed. Multiple
+different flags can be handled as well, and are made more convenient by
+$-*. The following two function definitions are roughly equivalent:<br>
+<pre>.function_all_options [-i] [-c] [-n] grep regex file {<br>    .selection_set s $file; &amp;{whichp grep} $-i$ $-c$ $-n$ $regex @$s}<br>.function_all_options [-i] grep regex file {<br>    .selection_set s $file; &amp;{whichp grep} $-*$ $regex @$s}</pre>
+The difference between them is that the first will call the grep binary
+with the -i options first, the -c options second and the -n options
+third, while the second will call the grep binary with the options in
+the order in which they were passed. The $-* local variable is defined
+for all functions that take flag options, and is filled in with all of
+the flag options that were passed.<br>
+<br>
+Note that there is no support for a "required flag", i.e. a function
+that is defined so that rwsh will throw an exception rather than
+running it if it does not have some specific flag passed to it. As a
+result parameters that begin with a dash, but are not surrounded by
+brackets are treated as ordinary required arguments, and will be filled
+in with whatever argument appears at that point in the command line.
 Currently all flag options must precede all positional arguments. Also
 currently, a bare dash is treated as a flag, as this involves the least
 special-casing, if the uses for dash all end up being as a placeholder
 indicating stdin, then this may change.<br>
 
-
-
-
-
 <h3>[--]</h3>
+
 "--" can be used to end the search for flag options so that subsequent
 arguments that begin with a dash are treated as positional arguments.
 This will happen regardless of whether "[--]" is included in the
@@ -81,17 +97,20 @@ command line. Note that if "--" occurs more than once in the command
 line that the first occurrence will be recognized as terminating the
 flag arguments and any subsequent occurrences will be treated as
 positional arguments. Also note that because "[--]" is implicitly in
-every function prototype, "--" cannot be a required parameter.<br>
-
-
-
-
-<h3>non-flag options</h3>
-
+every function prototype, "--" cannot be a required parameter.
+<h3>optional positional arguments (non-flag options)</h3>
 Arguments in the prototype that are surrounded by brackets that do not
 begin with a dash are treated as optional positional arguments, and
 arguments given to the function in the corresponding positions will
-be&nbsp; It is most common for non-flag optional arguments to be
+be. Note that local variables corresponding to non-flag optional
+arguments will not be defined if the optional argument is not present.
+The empty string can be passed as an argument, either literally as
+"()", or as the value of a variable which itself contains the empty
+string. If and only if the empty string is passed as an argument that
+is used for a non-flag option, then the variable will be defined but
+empty.<br>
+<br>
+It is most common for non-flag optional arguments to be
 individual arguments and follow the required arguments, but neither of
 these is necessary. non-flag optional arguments will be filled in in
 the order in which they are encountered, while reserving enough
@@ -153,7 +172,23 @@ foo x x x x x x -&gt; error 1 0 5<br>
 note that because optional arguments that begin with a dash are
 interpreted as flag options, it is not possible to name an optional
 positional argument beginning with a dash.<br>
-
-
+<h3>...</h3>
+"..." occurring in the definition of a function is used to
+indicate additional arguments are possible. It does not fill in a
+corresponding $... local variable, but rather appends them to the
+previous argument, as this is the usage that I find in man pages. This
+argument may or may not be enclosed in brackets, depending upon whether
+it is required or optional. To continue with the variants on grep
+example:<br>
+<pre>.function_all_options grep regex file ... {<br>    .selection_set s $file$; &amp;{whichp grep} $regex @$s}<br>.function_all_options grep regex [file ...] {<br>    .if .var_exists file {.selection_set s $file$}; &amp;{whichp grep} $regex @$s}</pre>
+The first version takes two or more arguments, with at least one path
+name being required, but more than one being accepted, all are stored
+in the local variable $file. The second version makes specifying files
+optional, and so it takes one or more arguments. If these functions are
+passed two or more arguments then they behave identically. If they are
+passed one argument, then the first version fails to run with a bad
+argument count exception being thrown, but the second version runs with
+an unmodified selection. Note that a space is currently required before
+the "...", though I have seen man pages that do not do this.
 </body>
 </html>

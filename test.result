@@ -802,6 +802,9 @@ $.function_all_options
 signal triggered: rwsh.bad_argc ( 0 1 0 .function_all_options ) 
 
 -1
+$.function_all_options rwsh.argfunction {e cannot define rwsh.argfunction}
+
+3
 $.function_all_options a {e zero argument function acceptable}
 
 0
@@ -862,7 +865,7 @@ $ntimes 2 {ntimes 3 {e &&n and $n remaining $nl}}
 1 and 1 remaining 
 
 0
-$.set MAX_NESTING $A 
+$.set MAX_NESTING $A
 
 0
 $.function_all_options a [-x] [-] [--long-opt y second {
@@ -890,9 +893,36 @@ $.function_all_options a [-x] [-] [--long-opt] -x second {
 signal triggered: rwsh.duplicate_parameter ( -x .function_all_options ) 
 
 -1
+$.function_all_options a [-] [--long-opt] -x second [-x] {
+  e evil duplication between flags and required parameters}
+signal triggered: rwsh.duplicate_parameter ( -x .function_all_options ) 
+
+-1
 $.function_all_options a [-x] [-] [--long-opt] -- second {
   e -- cannot be a required parameter even if only an implicit option}
 signal triggered: rwsh.duplicate_parameter ( -- .function_all_options ) 
+
+-1
+$.function_all_options a -y [second] {
+  .combine -y \( $-y \)
+  if_only .var_exists second {.combine \ second \( $second \) }}
+
+0
+$w a
+{; .combine -y ( $-y ); if_only .var_exists second {.combine \ second ( $second )}}
+0
+$a
+signal triggered: rwsh.bad_argc ( 0 1 0 a ) 
+
+-1
+$a 1
+-y(1)
+0
+$a 1 2
+-y(1) second(2)
+0
+$a 1 2 3
+signal triggered: rwsh.bad_argc ( 2 1 1 a ) 
 
 -1
 $.function_all_options a [-x] [-] [--long-opt] -y second {
