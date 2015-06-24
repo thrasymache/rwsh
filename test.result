@@ -151,7 +151,8 @@ text that doesn't have a prompt appended
 $m {e again}
 again
 0
-$f if_only {.if $* {rwsh.argfunction}; .else {.nop}}
+$.function_all_options if_only first_argument second_argument {
+  .if $first_argument $second_argument {rwsh.argfunction}; .else {.nop}}
 
 0
 $if_only .return 1 {e not printed}
@@ -905,11 +906,12 @@ signal triggered: rwsh.duplicate_parameter ( -- .function_all_options )
 -1
 $.function_all_options a -y [second] {
   .combine -y \( $-y \)
+  if_only .var_exists -* {.combine -* \( $-* \) \ }
   if_only .var_exists second {.combine \ second \( $second \) }}
 
 0
 $w a
-{; .combine -y ( $-y ); if_only .var_exists second {.combine \ second ( $second )}}
+{; .combine -y ( $-y ); if_only .var_exists -* {.combine -* ( $-* ) \ }; if_only .var_exists second {.combine \ second ( $second )}}
 0
 $a
 signal triggered: rwsh.bad_argc ( 0 1 0 a ) 
@@ -929,12 +931,13 @@ $.function_all_options a [-x] [-] [--long-opt] -y second {
   if_only .var_exists -x {.combine -x \( $-x \) \ }
   if_only .var_exists - {.combine - \( $- \) \ }
   if_only .var_exists --long-opt {.combine --long-opt \( $--long-opt \) \ }
+  if_only .var_exists -* {.combine -* \( $-* \) \ }
   if_only .var_exists -- {.combine -- \( $-- \) \ }
   .combine -y \( $-y \) \  second \( $second \)}
 
 0
 $w a 
-{; if_only .var_exists -x {.combine -x ( $-x ) \ }; if_only .var_exists - {.combine - ( $- ) \ }; if_only .var_exists --long-opt {.combine --long-opt ( $--long-opt ) \ }; if_only .var_exists -- {.combine -- ( $-- ) \ }; .combine -y ( $-y ) \  second ( $second )}
+{; if_only .var_exists -x {.combine -x ( $-x ) \ }; if_only .var_exists - {.combine - ( $- ) \ }; if_only .var_exists --long-opt {.combine --long-opt ( $--long-opt ) \ }; if_only .var_exists -* {.combine -* ( $-* ) \ }; if_only .var_exists -- {.combine -- ( $-- ) \ }; .combine -y ( $-y ) \  second ( $second )}
 0
 $a --long-opt -xx over-long flag
 signal triggered: rwsh.unrecognized_flag ( -xx a ) 
@@ -953,7 +956,7 @@ signal triggered: rwsh.unrecognized_flag ( --long-op a )
 
 -1
 $a no flags
--y(no) second(flags)
+-*() -y(no) second(flags)
 0
 $a deficient
 signal triggered: rwsh.bad_argc ( 1 2 0 a ) 
@@ -964,93 +967,94 @@ signal triggered: rwsh.bad_argc ( 3 2 0 a )
 
 -1
 $a -x with flag
--x(-x) -y(with) second(flag)
+-x(-x) -*(-x) -y(with) second(flag)
 0
 $a -x -x doubled flag
--x(-x -x) -y(doubled) second(flag)
+-x(-x -x) -*(-x -x) -y(doubled) second(flag)
 0
 $a unaccepted -x interlaced_flag
 signal triggered: rwsh.bad_argc ( 3 2 0 a ) 
 
 -1
 $a -x -- - flag_made_fixed_argument
--x(-x) --(--) -y(-) second(flag_made_fixed_argument)
+-x(-x) -*(-x --) --(--) -y(-) second(flag_made_fixed_argument)
 0
 $a -- - flag_again_made_fixed_argument
---(--) -y(-) second(flag_again_made_fixed_argument)
+-*(--) --(--) -y(-) second(flag_again_made_fixed_argument)
 0
 $a -x with excess argument
 signal triggered: rwsh.bad_argc ( 3 2 1 a ) 
 
 -1
 $a - with flag
--(-) -y(with) second(flag)
+-(-) -*(-) -y(with) second(flag)
 0
 $a --long-opt with flag
---long-opt(--long-opt) -y(with) second(flag)
+--long-opt(--long-opt) -*(--long-opt) -y(with) second(flag)
 0
 $a -x - some_flags in_order
--x(-x) -(-) -y(some_flags) second(in_order)
+-x(-x) -(-) -*(-x -) -y(some_flags) second(in_order)
 0
 $a - -x some_flags reversed
--x(-x) -(-) -y(some_flags) second(reversed)
+-x(-x) -(-) -*(- -x) -y(some_flags) second(reversed)
 0
 $a - --long-opt some_flags in_order
--(-) --long-opt(--long-opt) -y(some_flags) second(in_order)
+-(-) --long-opt(--long-opt) -*(- --long-opt) -y(some_flags) second(in_order)
 0
 $a --long-opt - some_flags reversed
--(-) --long-opt(--long-opt) -y(some_flags) second(reversed)
+-(-) --long-opt(--long-opt) -*(--long-opt -) -y(some_flags) second(reversed)
 0
 $a -x --long-opt some_flags in_order
--x(-x) --long-opt(--long-opt) -y(some_flags) second(in_order)
+-x(-x) --long-opt(--long-opt) -*(-x --long-opt) -y(some_flags) second(in_order)
 0
 $a --long-opt -x some_flags reversed
--x(-x) --long-opt(--long-opt) -y(some_flags) second(reversed)
+-x(-x) --long-opt(--long-opt) -*(--long-opt -x) -y(some_flags) second(reversed)
 0
 $a -x - --long-opt deficient
 signal triggered: rwsh.bad_argc ( 1 2 3 a ) 
 
 -1
 $a -x - --long-opt all_flags in_order
--x(-x) -(-) --long-opt(--long-opt) -y(all_flags) second(in_order)
+-x(-x) -(-) --long-opt(--long-opt) -*(-x - --long-opt) -y(all_flags) second(in_order)
 0
 $a --long-opt - -x all_flags reversed
--x(-x) -(-) --long-opt(--long-opt) -y(all_flags) second(reversed)
+-x(-x) -(-) --long-opt(--long-opt) -*(--long-opt - -x) -y(all_flags) second(reversed)
 0
 $a - --long-opt -x all_flags shuffled
--x(-x) -(-) --long-opt(--long-opt) -y(all_flags) second(shuffled)
+-x(-x) -(-) --long-opt(--long-opt) -*(- --long-opt -x) -y(all_flags) second(shuffled)
 0
 $a - --long-opt -x - -x some_flags doubled
--x(-x -x) -(- -) --long-opt(--long-opt) -y(some_flags) second(doubled)
+-x(-x -x) -(- -) --long-opt(--long-opt) -*(- --long-opt -x - -x) -y(some_flags) second(doubled)
 0
 $a - -x - -x - one_doubled one_tripled
--x(-x -x) -(- - -) -y(one_doubled) second(one_tripled)
+-x(-x -x) -(- - -) -*(- -x - -x -) -y(one_doubled) second(one_tripled)
 0
 $a --long-opt - -x -x - --long-opt all_flags doubled
--x(-x -x) -(- -) --long-opt(--long-opt --long-opt) -y(all_flags) second(doubled)
+-x(-x -x) -(- -) --long-opt(--long-opt --long-opt) -*(--long-opt - -x -x - --long-opt) -y(all_flags) second(doubled)
 0
 $.function_all_options a [-first] [-to] [--] {
   if_only .var_exists -first {.combine -first \( $-first \) \ }
   if_only .var_exists -to {.combine -to \( $-to \) \ }
+  if_only .var_exists -* {.combine -* \( $-* \) \ }
   if_only .var_exists -- {.combine -- \( $-- \) \ }
   e nothing_required}
 
 0
 $w a 
-{; if_only .var_exists -first {.combine -first ( $-first ) \ }; if_only .var_exists -to {.combine -to ( $-to ) \ }; if_only .var_exists -- {.combine -- ( $-- ) \ }; e nothing_required}
+{; if_only .var_exists -first {.combine -first ( $-first ) \ }; if_only .var_exists -to {.combine -to ( $-to ) \ }; if_only .var_exists -* {.combine -* ( $-* ) \ }; if_only .var_exists -- {.combine -- ( $-- ) \ }; e nothing_required}
 0
 $a
-nothing_required
+-*() nothing_required
 0
 $a excess
 signal triggered: rwsh.bad_argc ( 1 0 0 a ) 
 
 -1
 $a -to
--to(-to) nothing_required
+-to(-to) -*(-to) nothing_required
 0
 $a -first --
--first(-first) --(--) nothing_required
+-first(-first) -*(-first --) --(--) nothing_required
 0
 $a -first excess
 signal triggered: rwsh.bad_argc ( 1 0 1 a ) 
@@ -1061,7 +1065,7 @@ signal triggered: rwsh.bad_argc ( 1 0 2 a )
 
 -1
 $a -to -first
--first(-first) -to(-to) nothing_required
+-first(-first) -to(-to) -*(-to -first) nothing_required
 0
 $
 

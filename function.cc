@@ -108,15 +108,27 @@ int Function::operator() (const Argm& invoking_argm) {
                invoking_argm.argfunction(), &locals_map,
                invoking_argm.input, invoking_argm.output, invoking_argm.error);
     if (!positional_parameters) {
+      if (flag_options.begin() != flag_options.end())
+        locals_map.local("-*", "");
       unsigned available = invoking_argm.argc()-1;
       Argm::const_iterator i = invoking_argm.begin()+1;
       for (std::set<std::string>::const_iterator j;
            i != invoking_argm.end() &&
-           (j = flag_options.find(*i)) != flag_options.end(); ++i, --available)
+               (j = flag_options.find(*i)) != flag_options.end();
+           ++i, --available) {
+        std::string current_options = locals_map.get("-*");
+        if (current_options == "") locals_map.set("-*", *i);
+        else locals_map.set("-*", current_options + " " + *i);
         if (!locals_map.exists(*j)) locals_map.local(*j, *i);
-        else locals_map.set(*j, locals_map.get(*j) + " " + *i);
+        else locals_map.set(*j, locals_map.get(*j) + " " + *i);}
       if (i != invoking_argm.end() && (*i)[0] == '-')
-        if(*i == "--") locals_map.local(*i, *i), ++i;    // discard --
+        if(*i == "--") {                                       // "discard" --
+          locals_map.local(*i, *i);
+          if (locals_map.exists("-*")) {
+            std::string current_options = locals_map.get("-*");
+            if (current_options == "") locals_map.set("-*", *i);
+            else locals_map.set("-*", current_options + " " + *i);}
+          ++i;}
         else throw Signal_argm(Argm::Unrecognized_flag, *i);
       unsigned required_remaining = required_argc;
       std::vector<Parameter>::const_iterator j = positional.begin();

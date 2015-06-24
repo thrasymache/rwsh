@@ -2,14 +2,22 @@
 <html>
 <head>
 
+
+
+  
+  
   <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
+
+
+  
+  
   <title>function prototypes and option handling</title>
-
-
 </head>
 
 
 <body>
+
+
 Function prototypes in rwsh were inspired by the command synopsis
 entries found in UNIX man pages. Most of the syntax that I have seen
 used in man pages is unambiguous enough for a program to parse, and
@@ -36,11 +44,17 @@ to be more restrictive in the syntax that they will accept, or at least
 more restrictive in the syntax which they can add functionality to.
 <h3>required arguments</h3>
 
+
+
 Arguments to .function_all_options that follow the function name, are
 not enclosed in brackets and are not "..." are treated as required
 arguments. Given the following definition of a "grep" function,<br>
 
+
+
 <pre>.function_all_options grep regex file {<br>    .selection_set s $file; &amp;{whichp grep} $regex @$s}</pre>
+
+
 running grep with only zero, one, or three or more arguments will
 produce an error that the wrong number of arguments was passed. If this
 grep is run with exactly two arguments, then the named parameters are
@@ -50,10 +64,16 @@ local variables can be defined with the .local builtin.)
 
 <h3>flag options and $-*</h3>
 
+
+
 Arguments in the prototype that are surrounded by brackets and begin
 with a dash are treated as flag options.  Given the following definition of a "grep" function,<br>
 
+
+
 <pre>.function_all_options [-i] grep regex file {<br>    .selection_set s $file; &amp;{whichp grep} $-i$ $regex @$s}</pre>
+
+
 running grep will be the same as the two required argument version,
 except that additional arguments are accepted, if and only if these
 arguments are "-i" and they preceed the two required arguments. The $-i
@@ -66,14 +86,23 @@ empty string argument to the grep binary if -i was not passed to the
 function, and separates the flags if multiple were passed. Multiple
 different flags can be handled as well, and are made more convenient by
 $-*. The following two function definitions are roughly equivalent:<br>
+
+
 <pre>.function_all_options [-i] [-c] [-n] grep regex file {<br>    .selection_set s $file; &amp;{whichp grep} $-i$ $-c$ $-n$ $regex @$s}<br>.function_all_options [-i] grep regex file {<br>    .selection_set s $file; &amp;{whichp grep} $-*$ $regex @$s}</pre>
 The difference between them is that the first will call the grep binary
 with the -i options first, the -c options second and the -n options
 third, while the second will call the grep binary with the options in
 the order in which they were passed. The $-* local variable is defined
 for all functions that take flag options, and is filled in with all of
-the flag options that were passed.<br>
+the flag options that were passed. The fact that the $-* variable is
+not defined for all functions that take zero flag options permits these
+functions to make use of the $-* from the calling function (e.g. in the
+argfunction of user-defined control flow).<br>
+
+
 <br>
+
+
 Note that there is no support for a "required flag", i.e. a function
 that is defined so that rwsh will throw an exception rather than
 running it if it does not have some specific flag passed to it. As a
@@ -85,20 +114,29 @@ currently, a bare dash is treated as a flag, as this involves the least
 special-casing, if the uses for dash all end up being as a placeholder
 indicating stdin, then this may change.<br>
 
-<h3>[--]</h3>
 
+
+<h3>[--]</h3>
 "--" can be used to end the search for flag options so that subsequent
 arguments that begin with a dash are treated as positional arguments.
 This will happen regardless of whether "[--]" is included in the
 function prototype. If an inappropriate number of positional arguments
 are encountered, "--" is counted amongst the optional arguments found.
-The variable "--" will be set to the value "--" if it occurs in a
-command line. Note that if "--" occurs more than once in the command
+The $-- variable will be set to the value "--" if it occurs in a
+command line. If the function has declared flag options, then the "--"
+will also be included at the end of the $-*
+variable, whether or not any flag options have been passed on this
+command line. If the function has not declared flag options, then only
+the $-- variable will be set. Note that if "--" occurs more than once
+in the command
 line that the first occurrence will be recognized as terminating the
 flag arguments and any subsequent occurrences will be treated as
 positional arguments. Also note that because "[--]" is implicitly in
 every function prototype, "--" cannot be a required parameter.
+
 <h3>optional positional arguments (non-flag options)</h3>
+
+
 Arguments in the prototype that are surrounded by brackets that do not
 begin with a dash are treated as optional positional arguments, and
 arguments given to the function in the corresponding positions will
@@ -109,7 +147,11 @@ The empty string can be passed as an argument, either literally as
 string. If and only if the empty string is passed as an argument that
 is used for a non-flag option, then the variable will be defined but
 empty.<br>
+
+
 <br>
+
+
 It is most common for non-flag optional arguments to be
 individual arguments and follow the required arguments, but neither of
 these is necessary. non-flag optional arguments will be filled in in
@@ -117,62 +159,116 @@ the order in which they are encountered, while reserving enough
 arguments to fill in the required arguments. given the following
 definition:<br>
 
+
+
 <br>
 
+
+
 ** do a function definition that won't cause variable undefined errors<br>
+
+
 
 **** echo_vars_that_exist * do it with a for loop and .local comma ,*
 add this to the startup script, and make a variant of this that prints
 the name of the variable in test_main.sh<br>
 
+
+
 <pre>.function_all_options foo [a] [b] c [d] {.echo $a , $b , $c , $d $nl}</pre>
 
+
+
 ***<br>
+
+
 
 foo -&gt; error 0 1 0<br>
 
+
+
 foo x -&gt; , , x ,<br>
+
+
 
 foo x x -&gt; x , , x ,<br>
 
+
+
 foo x x x -&gt; x , x , x ,<br>
+
+
 
 foo x x x x -&gt; x , x , x , x<br>
 
+
+
 foo x x x x x -&gt; error 2 1 3<br>
 
+
+
 ***<br>
+
+
 
 Multiple non-flag optional arguments that are grouped together within a
 single set of brackets are filled or not filled as a group. given the
 following definition:<br>
 
+
+
 <pre>.function_all_options foo [a b c] [d e] {.echo $a , $b , $c , $d, $e $nl}</pre>
+
+
 
 ** do a function definition that won't cause variable undefined errors<br>
 
+
+
 <br>
+
+
 
 foo -&gt; , , , ,<br>
 
+
+
 foo x -&gt; error 1 0 0<br>
+
+
 
 foo x x -&gt; , ,&nbsp;, x , x<br>
 
+
+
 foo x x x -&gt; x , x , x , ,<br>
+
+
 
 foo x x x x -&gt; error 1 0 3<br>
 
+
+
 foo x x x x x -&gt;&nbsp;x , x , x , x , x<br>
+
+
 
 foo x x x x x x -&gt; error 1 0 5<br>
 
+
+
 <br>
+
+
 
 note that because optional arguments that begin with a dash are
 interpreted as flag options, it is not possible to name an optional
 positional argument beginning with a dash.<br>
+
+
 <h3>...</h3>
+
+
 "..." occurring in the definition of a function is used to
 indicate additional arguments are possible. It does not fill in a
 corresponding $... local variable, but rather appends them to the
@@ -180,7 +276,11 @@ previous argument, as this is the usage that I find in man pages. This
 argument may or may not be enclosed in brackets, depending upon whether
 it is required or optional. To continue with the variants on grep
 example:<br>
+
+
 <pre>.function_all_options grep regex file ... {<br>    .selection_set s $file$; &amp;{whichp grep} $regex @$s}<br>.function_all_options grep regex [file ...] {<br>    .if .var_exists file {.selection_set s $file$}; &amp;{whichp grep} $regex @$s}</pre>
+
+
 The first version takes two or more arguments, with at least one path
 name being required, but more than one being accepted, all are stored
 in the local variable $file. The second version makes specifying files

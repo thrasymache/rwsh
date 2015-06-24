@@ -38,7 +38,8 @@ w e
 w () {}
 e text that doesn't have a prompt appended
 m {e again}
-f if_only {.if $* {rwsh.argfunction}; .else {.nop}}
+.function_all_options if_only first_argument second_argument {
+  .if $first_argument $second_argument {rwsh.argfunction}; .else {.nop}}
 if_only .return 1 {e not printed}
 if_only .return 0 {e printed without error}
 
@@ -271,6 +272,7 @@ ntimes 2 {ntimes 3 {e &&n and $n remaining $nl}}
   e -- cannot be a required parameter even if only an implicit option}
 .function_all_options a -y [second] {
   .combine -y \( $-y \)
+  if_only .var_exists -* {.combine -* \( $-* \) \ }
   if_only .var_exists second {.combine \ second \( $second \) }}
 w a
 a
@@ -281,6 +283,7 @@ a 1 2 3
   if_only .var_exists -x {.combine -x \( $-x \) \ }
   if_only .var_exists - {.combine - \( $- \) \ }
   if_only .var_exists --long-opt {.combine --long-opt \( $--long-opt \) \ }
+  if_only .var_exists -* {.combine -* \( $-* \) \ }
   if_only .var_exists -- {.combine -- \( $-- \) \ }
   .combine -y \( $-y \) \  second \( $second \)}
 w a 
@@ -315,6 +318,7 @@ a --long-opt - -x -x - --long-opt all_flags doubled
 .function_all_options a [-first] [-to] [--] {
   if_only .var_exists -first {.combine -first \( $-first \) \ }
   if_only .var_exists -to {.combine -to \( $-to \) \ }
+  if_only .var_exists -* {.combine -* \( $-* \) \ }
   if_only .var_exists -- {.combine -- \( $-- \) \ }
   e nothing_required}
 w a 
