@@ -38,12 +38,12 @@ void Function::internal_constructor(const std::string& src,
 Function::Function(const std::string& name_i, const std::string& src,
                    std::string::size_type& point, unsigned max_soon) :
     name_v(name_i), positional(), required_argc(0), flag_options(),
-    parameter_names(), positional_parameters(true) {
+    parameter_names(), positional_parameters(true), all_flags(true) {
   internal_constructor(src, point, max_soon);}
 
 Function::Function(const std::string& name_i, const std::string& src) :
     name_v(name_i), positional(), required_argc(0), flag_options(),
-    parameter_names(), positional_parameters(true) {
+    parameter_names(), positional_parameters(true), all_flags(true) {
   std::string::size_type point = 0;
   try {
     internal_constructor(src, point, 0);
@@ -62,10 +62,11 @@ Function::Function(const std::string& name_i,
                    Argm::const_iterator first_parameter,
                    Argm::const_iterator parameter_end,
                    bool positional_parameters_i,
+                   bool all_flags_i,
                    const std::vector<Arg_script>& src) :
     name_v(name_i), positional(), required_argc(), flag_options(),
     parameter_names(), positional_parameters(positional_parameters_i),
-    script(src) {
+    all_flags(all_flags_i), script(src) {
   for (Argm::const_iterator i = first_parameter; i != parameter_end; ++i)
     if ((*i)[0] == '[') {
       if ((*i)[i->length()-1] != ']')
@@ -108,28 +109,24 @@ int Function::operator() (const Argm& invoking_argm) {
                invoking_argm.argfunction(), &locals_map,
                invoking_argm.input, invoking_argm.output, invoking_argm.error);
     if (!positional_parameters) {
-      if (flag_options.begin() != flag_options.end())
+      if (!all_flags || flag_options.begin() != flag_options.end())
         locals_map.local("-*", "");
       unsigned available = invoking_argm.argc()-1;
       Argm::const_iterator i = invoking_argm.begin()+1;
-      for (std::set<std::string>::const_iterator j;
-           i != invoking_argm.end() &&
-               (j = flag_options.find(*i)) != flag_options.end();
-           ++i, --available) {
-        std::string current_options = locals_map.get("-*");
-        if (current_options == "") locals_map.set("-*", *i);
-        else locals_map.set("-*", current_options + " " + *i);
-        if (!locals_map.exists(*j)) locals_map.local(*j, *i);
-        else locals_map.set(*j, locals_map.get(*j) + " " + *i);}
-      if (i != invoking_argm.end() && (*i)[0] == '-')
-        if(*i == "--") {                                       // "discard" --
-          locals_map.local(*i, *i);
-          if (locals_map.exists("-*")) {
-            std::string current_options = locals_map.get("-*");
-            if (current_options == "") locals_map.set("-*", *i);
-            else locals_map.set("-*", current_options + " " + *i);}
-          ++i;}
-        else throw Signal_argm(Argm::Unrecognized_flag, *i);
+      for (; i != invoking_argm.end() && (*i)[0] == '-'; ++i, --available) {
+        if (locals_map.exists("-*")) {
+          std::string current_options = locals_map.get("-*");
+          if (current_options == "") locals_map.set("-*", *i);
+          else locals_map.set("-*", current_options + " " + *i);}
+        std::set<std::string>::const_iterator j = flag_options.find(*i);
+        if (j != flag_options.end())
+          if (!locals_map.exists(*j)) locals_map.local(*j, *i);
+          else locals_map.set(*j, locals_map.get(*j) + " " + *i);
+        else
+          if(*i == "--") {                                      // "discard" --
+            locals_map.local(*i, *i);
+            ++i; break;}
+          else if (all_flags) throw Signal_argm(Argm::Unrecognized_flag, *i);}
       unsigned required_remaining = required_argc;
       std::vector<Parameter>::const_iterator j = positional.begin();
       if (available < required_remaining) {

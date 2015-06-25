@@ -329,6 +329,26 @@ a -first --
 a -first excess
 a -to -- -first
 a -to -first
+.function_some_flags a [-first] {
+  if_only .var_exists -first {.combine -first \( $-first \) \ }
+  if_only .var_exists -to {.combine -to \( $-to \) \ }
+  if_only .var_exists -* {.combine -* \( $-* \) \ }
+  if_only .var_exists -- {.combine -- \( $-- \) \ }
+  e nothing_required}
+w a 
+a
+a excess
+a -to
+a -first --
+a -first excess
+a -to -- -first
+a -to -first
+.function_some_flags a {
+  if_only .var_exists -* {.combine -* \( $-* \) \ }
+  if_only .var_exists -- {.combine -- \( $-- \) \ }
+  e nothing_required}
+w a 
+a
 
 # .global .local .unset .var_exists 
 .global

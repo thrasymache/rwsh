@@ -164,12 +164,11 @@ int b_function(const Argm& argm) {
     return 4 * !executable_map.erase(*(argm.begin()+1));}
   else {
     executable_map.set(new Function(argm[1], argm.end(), argm.end(), true,
-                                    argm.argfunction()->script));
+                                    true, argm.argfunction()->script));
     return 0;}}
 
-// add argfunction to executable map with name $1 and arguments $*2
-// the arguments must include all options that can be passed to this function
-int b_function_all_options(const Argm& argm) {
+namespace {
+int function_core(const Argm& argm, bool all_flags) {
   if (argm.argc() < 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   else if (is_binary_name(argm[1])) return 1;
   Argm lookup(argm.begin()+1, argm.begin()+2, NULL, argm.parent_map(),
@@ -181,9 +180,21 @@ int b_function_all_options(const Argm& argm) {
     return 4 * !executable_map.erase(*(argm.begin()+1));}
   else {
     Function *focus = new Function(argm[1], argm.begin()+2, argm.end(), false,
-                                   argm.argfunction()->script);
+                                   all_flags, argm.argfunction()->script);
     executable_map.set(focus);
     return 0;}}
+}
+
+// add argfunction to executable map with name $1 and arguments $*2
+// the arguments must include all flags that can be passed to this function
+int b_function_all_options(const Argm& argm) {
+  return function_core(argm, true);}
+
+// add argfunction to executable map with name $1 and arguments $*2
+// the arguments need not all flags that can be passed to this function
+// variables for declared flags will be set, all flags will be available in $-*
+int b_function_some_flags(const Argm& argm) {
+  return function_core(argm, false);}
 
 // add a variable to the variable map that will remain after the enclosing
 // function terminates

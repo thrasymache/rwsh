@@ -1067,6 +1067,53 @@ signal triggered: rwsh.bad_argc ( 1 0 2 a )
 $a -to -first
 -first(-first) -to(-to) -*(-to -first) nothing_required
 0
+$.function_some_flags a [-first] {
+  if_only .var_exists -first {.combine -first \( $-first \) \ }
+  if_only .var_exists -to {.combine -to \( $-to \) \ }
+  if_only .var_exists -* {.combine -* \( $-* \) \ }
+  if_only .var_exists -- {.combine -- \( $-- \) \ }
+  e nothing_required}
+
+0
+$w a 
+{; if_only .var_exists -first {.combine -first ( $-first ) \ }; if_only .var_exists -to {.combine -to ( $-to ) \ }; if_only .var_exists -* {.combine -* ( $-* ) \ }; if_only .var_exists -- {.combine -- ( $-- ) \ }; e nothing_required}
+0
+$a
+-*() nothing_required
+0
+$a excess
+signal triggered: rwsh.bad_argc ( 1 0 0 a ) 
+
+-1
+$a -to
+-*(-to) nothing_required
+0
+$a -first --
+-first(-first) -*(-first --) --(--) nothing_required
+0
+$a -first excess
+signal triggered: rwsh.bad_argc ( 1 0 1 a ) 
+
+-1
+$a -to -- -first
+signal triggered: rwsh.bad_argc ( 1 0 2 a ) 
+
+-1
+$a -to -first
+-first(-first) -*(-to -first) nothing_required
+0
+$.function_some_flags a {
+  if_only .var_exists -* {.combine -* \( $-* \) \ }
+  if_only .var_exists -- {.combine -- \( $-- \) \ }
+  e nothing_required}
+
+0
+$w a 
+{; if_only .var_exists -* {.combine -* ( $-* ) \ }; if_only .var_exists -- {.combine -- ( $-- ) \ }; e nothing_required}
+0
+$a
+-*() nothing_required
+0
 $
 
 0

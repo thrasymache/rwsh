@@ -13,10 +13,12 @@ class Function : public Executable {
   std::set<std::string> flag_options;
   std::set<std::string> parameter_names;
   bool positional_parameters;
+  bool all_flags;
 
   Function(const std::string& name_i) :
       name_v(name_i), positional(), required_argc(0), flag_options(),
-      parameter_names(), positional_parameters(true), script() {};
+      parameter_names(), positional_parameters(true), all_flags(true),
+      script() {};
   void internal_constructor(const std::string& src,
                             std::string::size_type& point, unsigned max_soon);
  public:
@@ -29,10 +31,11 @@ class Function : public Executable {
     name_v(src.name_v), positional(src.positional),
     required_argc(src.required_argc), flag_options(src.flag_options),
     parameter_names(src.parameter_names),
-    positional_parameters(src.positional_parameters), script(src.script) {};
+    positional_parameters(src.positional_parameters), all_flags(src.all_flags),
+    script(src.script) {};
   Function(const std::string& name_i, Argm::const_iterator first_parameter,
            Argm::const_iterator parameter_end, bool positional_parameters_i,
-           const std::vector<Arg_script>& src);
+           bool all_flags_i, const std::vector<Arg_script>& src);
   Function* copy_pointer(void) const {
     if (!this) return 0;
     else return new Function(*this);};
