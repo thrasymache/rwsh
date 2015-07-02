@@ -874,6 +874,38 @@ $.function_all_options a [-x] [-] [--long-opt y second {
 signal triggered: rwsh.mismatched_bracket ( [--long-opt .function_all_options ) 
 
 -1
+$.function_all_options a [-x] [--long-opt y] second {
+  if_only .var_exists -x {.combine -x \( $-x \) \ }
+  if_only .var_exists --long-opt {.combine --long-opt \( $--long-opt \) \ }
+  if_only .var_exists y {.combine y \( $y \) \ }
+  if_only .var_exists -* {.combine -* \( $-* \) \ }
+  if_only .var_exists -- {.combine -- \( $-- \) \ }
+  .combine \  second \( $second \)}
+
+0
+$w a
+{; if_only .var_exists -x {.combine -x ( $-x ) \ }; if_only .var_exists --long-opt {.combine --long-opt ( $--long-opt ) \ }; if_only .var_exists y {.combine y ( $y ) \ }; if_only .var_exists -* {.combine -* ( $-* ) \ }; if_only .var_exists -- {.combine -- ( $-- ) \ }; .combine \  second ( $second )}
+0
+$a
+signal triggered: rwsh.bad_argc ( 0 1 0 a ) 
+
+-1
+$a single
+-*()  second(single)
+0
+$a -x single
+-x(-x) -*(-x)  second(single)
+0
+$a --long-opt arg single
+--long-opt(--long-opt arg) y(arg) -*(--long-opt arg)  second(single)
+0
+$a --long-opt single
+signal triggered: rwsh.bad_argc ( 0 1 2 a ) 
+
+-1
+$a --long-opt first -x --long-opt second single
+-x(-x) --long-opt(--long-opt first --long-opt second) y(first second) -*(--long-opt first -x --long-opt second)  second(single)
+0
 $.function_all_options a [-x] [-] [--long-opt] [-] y second {
   e illegal duplicate flag parameter}
 signal triggered: rwsh.duplicate_parameter ( - .function_all_options ) 

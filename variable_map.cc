@@ -10,10 +10,10 @@
 #include <vector>
 
 #include "rwsh_stream.h"
+#include "variable_map.h"
 
 #include "argm.h"
 #include "executable.h"
-#include "variable_map.h"
 
 char** env;
 
@@ -23,16 +23,18 @@ Variable_map::Variable_map(Variable_map* parent_i) : parent(parent_i) {
     local("FIGNORE", "");
     local("MAX_NESTING", "0");}}
 
-int Variable_map::global(const std::string& key, const std::string& value) {
-  if (parent)
-    if (find(key) != end()) return 3;
-    else return parent->global(key, value);
-  else return local(key, value);}
+void Variable_map::set_or_append_word(const std::string& key,
+                                      const std::string& value) {
+  std::map<std::string, std::string>::iterator i = find(key);
+  if (i == end()) throw Signal_argm(Argm::Undefined_variable, key);
+  else if (i->second == "") i->second = value;
+  else i->second += " " + value;}
 
-int Variable_map::local(const std::string& key, const std::string& value) {
-  std::pair<std::string, std::string> entry(key, value);
-  std::pair<iterator, bool> ret = insert(entry);
-  return !ret.second;}
+void Variable_map::local_or_append_word(const std::string& key,
+                                        const std::string& value) {
+  std::map<std::string, std::string>::iterator i = find(key);
+  if (i == end()) local(key, value);
+  else i->second += " " + value;}
 
 bool Variable_map::exists(const std::string& key) const {
   std::map<std::string, std::string>::const_iterator i = find(key);
@@ -50,16 +52,26 @@ const std::string& Variable_map::get(const std::string& key) {
   else if (parent) return parent->get(key);
   else throw Signal_argm(Argm::Undefined_variable, key);}
 
-int Variable_map::set(const std::string& key, const std::string& value) {
+int Variable_map::global(const std::string& key, const std::string& value) {
+  if (parent)
+    if (find(key) != end()) return 3;
+    else return parent->global(key, value);
+  else return local(key, value);}
+
+int Variable_map::local(const std::string& key, const std::string& value) {
+  std::pair<std::string, std::string> entry(key, value);
+  std::pair<iterator, bool> ret = insert(entry);
+  return !ret.second;}
+
+void Variable_map::set(const std::string& key, const std::string& value) {
   std::map<std::string, std::string>::iterator i = find(key);
   if (i != end()) {
     i->second = value;
     if (key == "MAX_NESTING") {
       int temp = atoi(i->second.c_str());
       if (temp < 0) this->max_nesting_v = 0;
-      else this->max_nesting_v = temp;}
-    return 0;}
-  else if (parent) return parent->set(key, value);
+      else this->max_nesting_v = temp;}}
+  else if (parent) parent->set(key, value);
   else throw Signal_argm(Argm::Undefined_variable, key);}
 
 int Variable_map::unset(const std::string& key) {

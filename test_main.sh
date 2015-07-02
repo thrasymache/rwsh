@@ -258,6 +258,25 @@ ntimes 2 {ntimes 3 {e &&n and $n remaining $nl}}
 .set MAX_NESTING $A
 .function_all_options a [-x] [-] [--long-opt y second {
   e illegal missing close bracket}
+.function_all_options a [-x] [--long-opt y] second {
+  .local locals ()
+  .store_output locals {.list_locals}
+  e $locals
+  .list_locals
+  # .for &&{# .list_locals} {echo and a $1}
+  if_only .var_exists -x {.combine -x \( $-x \) \ }
+  if_only .var_exists --long-opt {.combine --long-opt \( $--long-opt \) \ }
+  if_only .var_exists y {.combine y \( $y \) \ }
+  if_only .var_exists -* {.combine -* \( $-* \) \ }
+  if_only .var_exists -- {.combine -- \( $-- \) \ }
+  .combine \  second \( $second \)}
+w a
+a
+a single
+a -x single
+a --long-opt arg single
+a --long-opt single
+a --long-opt first -x --long-opt second single
 .function_all_options a [-x] [-] [--long-opt] [-] y second {
   e illegal duplicate flag parameter}
 .function_all_options a [-x] [-] [-x] [--long-opt] y second {

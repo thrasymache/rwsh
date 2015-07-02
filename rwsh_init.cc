@@ -8,6 +8,7 @@
 
 #include "arg_spec.h"
 #include "rwsh_stream.h"
+#include "variable_map.h"
 
 #include "arg_script.h"
 #include "argm.h"
@@ -64,6 +65,7 @@ void internal_init(void) {
   executable_map.set(new Builtin(".is_default_input", b_is_default_input));
   executable_map.set(new Builtin(".is_default_output", b_is_default_output));
   executable_map.set(new Builtin(".is_default_error", b_is_default_error));
+  executable_map.set(new Builtin(".list_locals", b_list_locals));
   executable_map.set(new Builtin(".local", b_local));
   executable_map.set(new Builtin(".ls", b_ls));
   executable_map.set(new Builtin(".nop", b_nop));

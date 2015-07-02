@@ -8,6 +8,7 @@
 #include <functional>
 #include <iterator>
 #include <list>
+#include <map>
 #include <stdio.h>
 #include <string>
 #include <sys/stat.h>
@@ -15,6 +16,7 @@
 #include <vector>
 
 #include "rwsh_stream.h"
+#include "variable_map.h"
 
 #include "argm.h"
 #include "selection.h"

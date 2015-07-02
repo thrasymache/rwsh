@@ -1,16 +1,17 @@
 // Copyright (C) 2005-2015 Samuel Newbold
 
-struct Parameter {
+struct Parameter_group {
   bool required;
-  std::string name;
-  Parameter(bool required_i, const std::string& name_i) :
-      required(required_i), name(name_i) {}; };
+  std::vector<std::string> names;
+  Parameter_group() : required(true), names() {};
+  Parameter_group(bool required_i, const std::string& first_name) :
+      required(required_i), names(1, first_name) {}; };
 
 class Function : public Executable {
   std::string name_v;
-  std::vector<Parameter> positional;
+  std::vector<Parameter_group> positional;
   unsigned required_argc;
-  std::set<std::string> flag_options;
+  std::map<std::string, Parameter_group> flag_options;
   std::set<std::string> parameter_names;
   bool positional_parameters;
   bool all_flags;

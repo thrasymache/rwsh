@@ -15,6 +15,7 @@
 
 #include "arg_spec.h"
 #include "rwsh_stream.h"
+#include "variable_map.h"
 
 #include "argm.h"
 #include "arg_script.h"
@@ -26,7 +27,6 @@
 #include "selection.h"
 #include "substitution_stream.h"
 #include "tokenize.cc"
-#include "variable_map.h"
 
 #include "argm_star_var.cc"
 #include "selection_read.cc"

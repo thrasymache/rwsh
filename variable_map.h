@@ -7,6 +7,8 @@ class Variable_map : private std::map<std::string, std::string> {
   static unsigned max_nesting_v;
 public:
 
+  typedef Base::iterator iterator;
+  typedef Base::const_iterator const_iterator;
   static Variable_map *global_map;
 
   Variable_map(Variable_map* parent);
@@ -14,14 +16,20 @@ public:
   static bool exit_requested;
   unsigned max_nesting(void) {return max_nesting_v;};
 
-  int global(const std::string& key, const std::string& value);
-  int local(const std::string& key, const std::string& value);
+  const_iterator begin(void) const {return Base::begin();};
+  const_iterator end(void) const {return Base::end();};
+  iterator begin(void) {return Base::begin();};
+  iterator end(void) {return Base::end();};
+  void set_or_append_word(const std::string& key, const std::string& value);
+  void local_or_append_word(const std::string& key, const std::string& value);
   bool exists(const std::string& key) const;
   const std::string& get(const std::string& key);
-  int set(const std::string& key, const std::string& value);
+  int global(const std::string& key, const std::string& value);
+  int local(const std::string& key, const std::string& value);
+  void set(const std::string& key, const std::string& value);
   int unset(const std::string& key);
   template <class In>
-  char** copy_to_char_star_star(In first, In last, char** res);
+      char** copy_to_char_star_star(In first, In last, char** res);
   char** export_env(void);};
 
 inline bool isargvar(const std::string& focus) {

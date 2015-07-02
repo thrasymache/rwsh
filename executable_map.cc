@@ -12,12 +12,13 @@
 
 #include "arg_spec.h"
 #include "rwsh_stream.h"
+#include "variable_map.h"
 
 #include "argm.h"
 #include "arg_script.h"
 #include "executable.h"
-#include "executable_map.h"
 #include "function.h"
+#include "executable_map.h"
 
 Executable_map::Executable_map(void) : in_autofunction(false) {}
 

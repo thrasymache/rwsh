@@ -15,13 +15,13 @@
 
 #include "arg_spec.h"
 #include "rwsh_stream.h"
+#include "variable_map.h"
 
 #include "argm.h"
 #include "arg_script.h"
 #include "executable.h"
 #include "file_stream.h"
 #include "function.h"
-#include "variable_map.h"
 
 namespace {
 std::string::size_type add_quote(const std::string& src,

@@ -14,6 +14,7 @@
 
 #include "arg_spec.h"
 #include "rwsh_stream.h"
+#include "variable_map.h"
 
 #include "argm.h"
 #include "arg_script.h"
@@ -22,7 +23,6 @@
 #include "executable.h"
 #include "executable_map.h"
 #include "function.h"
-#include "variable_map.h"
 
 Command_stream::Command_stream(std::istream& s, bool subprompt_i) :
     src(s), subprompt(subprompt_i) {}

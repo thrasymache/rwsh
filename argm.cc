@@ -10,12 +10,12 @@
 
 #include "arg_spec.h"
 #include "rwsh_stream.h"
+#include "variable_map.h"
 
 #include "argm.h"
 #include "arg_script.h"
 #include "executable.h"
 #include "function.h"
-#include "variable_map.h"
 
 Argm::Argm(Variable_map* parent_map_i, Rwsh_istream_p input_i,
            Rwsh_ostream_p output_i, Rwsh_ostream_p error_i) :
@@ -75,7 +75,8 @@ int Argm::set_var(const std::string& key, const std::string& value) const {
   switch (key[0]) {
     case '#': case '1': case '2': case '3': case '4': case '5': case '6': 
               case '7': case '8': case '9': case '0': return 2;
-    default: return parent_map()->set(key, value);}}
+    default: parent_map()->set(key, value);
+    return 0;}}
 
 bool Argm::var_exists(const std::string& key) const {
   switch (key[0]) {
@@ -97,6 +98,12 @@ int Argm::local(const std::string& key, const std::string& value) const {
     case '#': case '*': case '1': case '2': case '3': case '4': case '5': 
               case '6': case '7': case '8': case '9': case '0': return 2;
     default: return parent_map()->local(key, value);}}
+
+Variable_map::iterator Argm::local_begin(void) const {
+  return parent_map()->begin();}
+
+Variable_map::iterator Argm::local_end(void) const {
+  return parent_map()->end();}
 
 int Argm::unset_var(const std::string& key) const {
   switch (key[0]) {

@@ -4,12 +4,14 @@
 #include <errno.h>
 #include <functional>
 #include <iostream>
+#include <map>
 #include <sys/time.h>
 #include <sys/wait.h>
 #include <string>
 #include <vector>
 
 #include "rwsh_stream.h"
+#include "variable_map.h"
 
 #include "argm.h"
 #include "clock.h"

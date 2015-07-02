@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "rwsh_stream.h"
+#include "variable_map.h"
 
 #include "argm.h"
 #include "builtin.h"
@@ -18,7 +19,6 @@
 #include "executable.h"
 #include "executable_map.h"
 #include "plumber.h"
-#include "variable_map.h"
 
 namespace {
 Argm::Sig_type unix2rwsh(int sig) {

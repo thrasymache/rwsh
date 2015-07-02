@@ -23,6 +23,7 @@ extern char** environ;
 
 #include "arg_spec.h"
 #include "rwsh_stream.h"
+#include "variable_map.h"
 
 #include "argm.h"
 #include "arg_script.h"
@@ -37,7 +38,6 @@ extern char** environ;
 #include "selection.h"
 #include "substitution_stream.h"
 #include "tokenize.cc"
-#include "variable_map.h"
 
 #include "argm_star_var.cc"
 
@@ -341,6 +341,15 @@ int b_is_default_error(const Argm& argm) {
   if(argm.argc() != 1) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   return !argm.error.is_default();}
+
+// prints all variables in the local variable map
+int b_list_locals(const Argm& argm) {
+  if (argm.argc() != 1) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 0, 0);
+  if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
+  for (Variable_map::iterator i = argm.local_begin(); i != argm.local_end();
+       ++i)
+    argm.output <<i->first <<"\n";
+  return argm.local_begin() == argm.local_end();}
 
 // add a variable to the variable map until the enclosing function terminates
 int b_local(const Argm& argm) {

@@ -1,7 +1,6 @@
 // Copyright (C) 2005-2015 Samuel Newbold
 
 class Function;
-class Variable_map;
 
 class Argm : private std::vector<std::string> {
   typedef std::vector<std::string> Base;
@@ -90,6 +89,8 @@ class Argm : private std::vector<std::string> {
   std::string get_var(const std::string& key) const;
   int global(const std::string& key, const std::string& value) const;
   int local(const std::string& key, const std::string& value) const;
+  Variable_map::iterator local_begin(void) const;
+  Variable_map::iterator local_end(void) const;
   unsigned max_nesting(void) const;
   int set_var(const std::string& key, const std::string& value) const;
   template<class Out> 
