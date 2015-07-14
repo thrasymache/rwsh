@@ -20,6 +20,7 @@ public:
   const_iterator end(void) const {return Base::end();};
   iterator begin(void) {return Base::begin();};
   iterator end(void) {return Base::end();};
+  unsigned size(void) const {return Base::size();};
   void set_or_append_word(const std::string& key, const std::string& value);
   void local_or_append_word(const std::string& key, const std::string& value);
   bool exists(const std::string& key) const;

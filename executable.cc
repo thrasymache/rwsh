@@ -35,7 +35,7 @@ Argm::Sig_type unix2rwsh(int sig) {
     case SIGUSR2: return Argm::Sigusr2;
     default: return Argm::Sigunknown;}}}
 
-bool Executable::increment_nesting(const Argm& argm) {
+bool Base_executable::increment_nesting(const Argm& argm) {
   if (global_nesting > argm.max_nesting()+1) {
     //throw Signal_argm(Argm::Excessive_nesting);}
     caught_signal = Argm::Excessive_nesting;
@@ -46,7 +46,7 @@ bool Executable::increment_nesting(const Argm& argm) {
     ++global_nesting;
     return false;}}
 
-bool Executable::decrement_nesting(const Argm& argm) {
+bool Base_executable::decrement_nesting(const Argm& argm) {
   --global_nesting;
   if (unwind_stack()) {
     call_stack.push_back(argm[0]);
@@ -55,21 +55,21 @@ bool Executable::decrement_nesting(const Argm& argm) {
   if (del_on_term && !executable_nesting) delete this;
   return unwind_stack();}
 
-void Executable::unix_signal_handler(int sig) {
+void Base_executable::unix_signal_handler(int sig) {
   caught_signal = unix2rwsh(sig);
   call_stack.push_back(Argm::signal_names[caught_signal]);}
 
 // code to call rwsh.excessive_nesting, separated out of operator() for clarity.
 // The requirements for stack unwinding to work properly are as 
-// follows: All things derived from Executable must call increment_nesting
+// follows: All things derived from Base_executable must call increment_nesting
 // on start and decrement_nesting before terminating.  If they run more 
 // than one other executable, then they must call unwind_stack() in 
-// between each executable, which must be of a Executable rather than a 
+// between each executable, which must be of an Executable rather than a
 // direct call to the function that implements a builtin (the code below to 
 // handle recursively excessive nesting is the only exception to this rule).
 // main does not need to do this handling, because anything 
 // that it calls directly will have an initial nesting of 0.
-void Executable::signal_handler(void) {
+void Base_executable::signal_handler(void) {
   Argm call_stack_copy(call_stack);                          //need for a copy:
   call_stack = Argm(Variable_map::global_map,
                     default_input, default_output, default_error);

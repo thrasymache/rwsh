@@ -42,6 +42,10 @@ m {e again}
   .if $first_argument $second_argument {rwsh.argfunction}; .else {.nop}}
 if_only .return 1 {e not printed}
 if_only .return 0 {e printed without error}
+.function for {
+  .if .var_exists $1 {.for &&*1$ {rwsh.argfunction}}; .else {.nop}}
+for {e skipped without error}
+for 1 2 3 {e loop $* $nl}
 
 # arg_script tests
 .set A /bin
@@ -259,17 +263,7 @@ ntimes 2 {ntimes 3 {e &&n and $n remaining $nl}}
 .function_all_options a [-x] [-] [--long-opt y second {
   e illegal missing close bracket}
 .function_all_options a [-x] [--long-opt y] second {
-  .local locals ()
-  .store_output locals {.list_locals}
-  e $locals
-  .list_locals
-  # .for &&{# .list_locals} {echo and a $1}
-  if_only .var_exists -x {.combine -x \( $-x \) \ }
-  if_only .var_exists --long-opt {.combine --long-opt \( $--long-opt \) \ }
-  if_only .var_exists y {.combine y \( $y \) \ }
-  if_only .var_exists -* {.combine -* \( $-* \) \ }
-  if_only .var_exists -- {.combine -- \( $-- \) \ }
-  .combine \  second \( $second \)}
+  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a
 a single
@@ -277,6 +271,17 @@ a -x single
 a --long-opt arg single
 a --long-opt single
 a --long-opt first -x --long-opt second single
+.function_all_options a [-q option1 option2] [-x o1 o2 o3 o4] required {
+  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+w a
+a
+a single
+a -q one two
+a -q opt and req
+a -x opt and req
+a -x first second third fourth req
+a -q one two -q three four five
+a -x one two three four -q five six seven
 .function_all_options a [-x] [-] [--long-opt] [-] y second {
   e illegal duplicate flag parameter}
 .function_all_options a [-x] [-] [-x] [--long-opt] y second {
@@ -290,21 +295,14 @@ a --long-opt first -x --long-opt second single
 .function_all_options a [-x] [-] [--long-opt] -- second {
   e -- cannot be a required parameter even if only an implicit option}
 .function_all_options a -y [second] {
-  .combine -y \( $-y \)
-  if_only .var_exists -* {.combine -* \( $-* \) \ }
-  if_only .var_exists second {.combine \ second \( $second \) }}
+  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a
 a 1
 a 1 2
 a 1 2 3
 .function_all_options a [-x] [-] [--long-opt] -y second {
-  if_only .var_exists -x {.combine -x \( $-x \) \ }
-  if_only .var_exists - {.combine - \( $- \) \ }
-  if_only .var_exists --long-opt {.combine --long-opt \( $--long-opt \) \ }
-  if_only .var_exists -* {.combine -* \( $-* \) \ }
-  if_only .var_exists -- {.combine -- \( $-- \) \ }
-  .combine -y \( $-y \) \  second \( $second \)}
+  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a 
 a --long-opt -xx over-long flag
 a -xx --long-opt over-long flag
@@ -335,10 +333,7 @@ a - --long-opt -x - -x some_flags doubled
 a - -x - -x - one_doubled one_tripled
 a --long-opt - -x -x - --long-opt all_flags doubled
 .function_all_options a [-first] [-to] [--] {
-  if_only .var_exists -first {.combine -first \( $-first \) \ }
-  if_only .var_exists -to {.combine -to \( $-to \) \ }
-  if_only .var_exists -* {.combine -* \( $-* \) \ }
-  if_only .var_exists -- {.combine -- \( $-- \) \ }
+  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
   e nothing_required}
 w a 
 a
@@ -349,10 +344,7 @@ a -first excess
 a -to -- -first
 a -to -first
 .function_some_flags a [-first] {
-  if_only .var_exists -first {.combine -first \( $-first \) \ }
-  if_only .var_exists -to {.combine -to \( $-to \) \ }
-  if_only .var_exists -* {.combine -* \( $-* \) \ }
-  if_only .var_exists -- {.combine -- \( $-- \) \ }
+  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
   e nothing_required}
 w a 
 a
@@ -363,8 +355,7 @@ a -first excess
 a -to -- -first
 a -to -first
 .function_some_flags a {
-  if_only .var_exists -* {.combine -* \( $-* \) \ }
-  if_only .var_exists -- {.combine -- \( $-- \) \ }
+  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
   e nothing_required}
 w a 
 a

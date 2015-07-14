@@ -31,9 +31,9 @@
 
 // static initializers of basic types
 struct timezone Clock::no_timezone_v = {0, 0};
-int Executable::global_nesting(0);
-Argm::Sig_type Executable::caught_signal(Argm::No_signal);
-bool Executable::in_signal_handler(false);
+int Base_executable::global_nesting(0);
+Argm::Sig_type Base_executable::caught_signal(Argm::No_signal);
+bool Base_executable::in_signal_handler(false);
 std::string Argm::signal_names[Argm::Signal_count] = {
   "no signal",
   "rwsh.arguments_for_argfunction",
@@ -98,19 +98,20 @@ int Variable_map::dollar_question = -1;
 bool Variable_map::exit_requested = false;
 
 // static initializers with cross-component dependancies
-Argm Executable::call_stack(Variable_map::global_map,
+Argm Base_executable::call_stack(Variable_map::global_map,
                             default_input, default_output, default_error);
 
 namespace {
 void register_signals(void) {
-  signal(SIGHUP, Executable::unix_signal_handler);
-  signal(SIGINT, Executable::unix_signal_handler);
-  signal(SIGQUIT, Executable::unix_signal_handler);
-  signal(SIGPIPE, Executable::unix_signal_handler);
-  signal(SIGTERM, Executable::unix_signal_handler);
-  signal(SIGTSTP, Executable::unix_signal_handler);
-  signal(SIGUSR1, Executable::unix_signal_handler);
-  signal(SIGUSR2, Executable::unix_signal_handler);} } // end unnamed namespace
+  signal(SIGHUP, Named_executable::unix_signal_handler);
+  signal(SIGINT, Named_executable::unix_signal_handler);
+  signal(SIGQUIT, Named_executable::unix_signal_handler);
+  signal(SIGPIPE, Named_executable::unix_signal_handler);
+  signal(SIGTERM, Named_executable::unix_signal_handler);
+  signal(SIGTSTP, Named_executable::unix_signal_handler);
+  signal(SIGUSR1, Named_executable::unix_signal_handler);
+  signal(SIGUSR2, Named_executable::unix_signal_handler);}
+} // end unnamed namespace
 
 int main(int argc, char *argv[]) {
   try {internal_init();}

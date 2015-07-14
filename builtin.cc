@@ -114,7 +114,7 @@ int b_for(const Argm& argm) {
     if (argm.argfunction()) {
       body[1] = *i;
       ret  = (*argm.argfunction())(body);
-      if (Executable::unwind_stack()) return -1;}
+      if (Named_executable::unwind_stack()) return -1;}
     else ret = 0;}
   return ret;}
 
@@ -157,14 +157,14 @@ int b_function(const Argm& argm) {
   else if (is_binary_name(argm[1])) return 1;
   Argm lookup(argm.begin()+1, argm.end(), NULL, argm.parent_map(),
                 default_input, default_output, default_error);
-  Executable *e = executable_map.find(lookup);
+  Named_executable *e = executable_map.find(lookup);
   if (e && dynamic_cast<Builtin*>(e)) return 2;
   else if (is_argfunction_name(argm[1])) return 3;
   else if (!argm.argfunction()) {
     return 4 * !executable_map.erase(*(argm.begin()+1));}
   else {
     executable_map.set(new Function(argm[1], argm.end(), argm.end(), true,
-                                    true, argm.argfunction()->script));
+                                    true, argm.argfunction()->body));
     return 0;}}
 
 namespace {
@@ -173,14 +173,14 @@ int function_core(const Argm& argm, bool all_flags) {
   else if (is_binary_name(argm[1])) return 1;
   Argm lookup(argm.begin()+1, argm.begin()+2, NULL, argm.parent_map(),
                 default_input, default_output, default_error);
-  Executable *e = executable_map.find(lookup);
+  Named_executable *e = executable_map.find(lookup);
   if (e && dynamic_cast<Builtin*>(e)) return 2;
   else if (is_argfunction_name(argm[1])) return 3;
   else if (!argm.argfunction()) {
     return 4 * !executable_map.erase(*(argm.begin()+1));}
   else {
     Function *focus = new Function(argm[1], argm.begin()+2, argm.end(), false,
-                                   all_flags, argm.argfunction()->script);
+                                   all_flags, argm.argfunction()->body);
     executable_map.set(focus);
     return 0;}}
 }
@@ -208,7 +208,7 @@ int if_core(const Argm& argm, bool logic) {
   Argm lookup(argm.begin()+1, argm.end(), 0, argm.parent_map(), 
                 argm.input, argm.output.child_stream(), argm.error);
   if (logic == !executable_map.run(lookup)) {
-    if (Executable::unwind_stack()) return -1;
+    if (Named_executable::unwind_stack()) return -1;
     argm.unset_var("IF_TEST");
     int ret;
     if (argm.argfunction()) {
@@ -415,11 +415,11 @@ int b_signal_handler(const Argm& argm) {
                    argm.input, argm.output.child_stream(), argm.error);
   mapped_argm.push_back("rwsh.mapped_argfunction");
   int ret = (*argm.argfunction())(mapped_argm);
-  if (Executable::unwind_stack()) {
+  if (Named_executable::unwind_stack()) {
     for (Argm::const_iterator i = argm.begin() +1; i != argm.end(); ++i) 
-      if (*i == Argm::signal_names[Executable::unwind_stack()]) {
-        Executable::call_stack.pop_back(); // get rid of rwsh.mapped_argfunction
-        Executable::signal_handler();}
+      if (*i == Argm::signal_names[Named_executable::unwind_stack()]) {
+        Base_executable::call_stack.pop_back(); // drop rwsh.mapped_argfunction
+        Base_executable::signal_handler();}
     return -1;}
   return ret;}
 
@@ -439,7 +439,7 @@ int b_source(const Argm& argm) {
   Command_stream command_stream(src, false);
   Arg_script script("", 0);
   int ret = -1;
-  while (command_stream && !Executable::unwind_stack()) {
+  while (command_stream && !Named_executable::unwind_stack()) {
     try {
       if (!(command_stream >> script)) break;
       Argm command(script.interpret(script_arg));
@@ -455,19 +455,19 @@ int b_stepwise(const Argm& argm) {
   if (!argm.argfunction()) throw Signal_argm(Argm::Missing_argfunction);
   Argm lookup(argm.begin()+1, argm.end(), 0, argm.parent_map(),
                 argm.input, argm.output.child_stream(), argm.error);
-  Executable* e = executable_map.find(lookup);
+  Named_executable* e = executable_map.find(lookup);
   if (!e) return 1;  // executable not found
   Function* f = dynamic_cast<Function*>(e);
   if (!f) return 2; // the named executable is not a function
   if (f->increment_nesting(lookup)) return Variable_map::dollar_question;
   int ret = -1;
-  for (Function::const_iterator i = f->script.begin(); 
-       i != f->script.end(); ++i) {
+  for (Command_block::const_iterator i = f->body.begin();
+       i != f->body.end(); ++i) {
     Argm body_i(i->interpret(lookup));
     Argm body("rwsh.mapped_argfunction", body_i.begin(), body_i.end(), 0,
               argm.parent_map(), body_i.input, body_i.output, body_i.error);
     ret  = (*argm.argfunction())(body);
-    if (Executable::unwind_stack()) {
+    if (Named_executable::unwind_stack()) {
       ret = -1;
       break;}}
   if (f->decrement_nesting(lookup)) ret = Variable_map::dollar_question;
@@ -484,7 +484,7 @@ int b_store_output(const Argm& argm) {
                    argm.input, text.child_stream(), argm.error);
   mapped_argm.push_back("rwsh.mapped_argfunction");
   int ret = (*argm.argfunction())(mapped_argm);
-  if (Executable::unwind_stack()) return -1;
+  if (Named_executable::unwind_stack()) return -1;
   if (ret) return ret;
   argm.set_var(argm[1], text.value());
   return 0;}
@@ -705,7 +705,7 @@ int b_which_executable(const Argm& argm) {
   Argm lookup(argm.begin()+1, argm.end(), argm.argfunction(), argm.parent_map(),
                 default_input, default_output, default_error);
   if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
-  Executable* focus = executable_map.find(lookup);
+  Named_executable* focus = executable_map.find(lookup);
   if (focus) {
     argm.output <<focus->str();
     argm.output.flush();
@@ -719,7 +719,7 @@ int b_which_execution_count(const Argm& argm) {
   Argm lookup(argm.begin()+1, argm.end(), argm.argfunction(), argm.parent_map(),
                 default_input, default_output, default_error);
   if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
-  Executable* focus = executable_map.find(lookup);
+  Named_executable* focus = executable_map.find(lookup);
   if (focus) {
     argm.output <<focus->execution_count();
     argm.output.flush();
@@ -733,7 +733,7 @@ int b_which_last_execution_time(const Argm& argm) {
   Argm lookup(argm.begin()+1, argm.end(), argm.argfunction(), argm.parent_map(),
                 default_input, default_output, default_error);
   if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
-  Executable* focus = executable_map.find(lookup);
+  Named_executable* focus = executable_map.find(lookup);
   if (focus) {
     struct timeval val = focus->last_execution_time();
     argm.output <<val;
@@ -748,7 +748,7 @@ int b_which_total_execution_time(const Argm& argm) {
   Argm lookup(argm.begin()+1, argm.end(), argm.argfunction(), argm.parent_map(),
                 default_input, default_output, default_error);
   if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
-  Executable* focus = executable_map.find(lookup);
+  Named_executable* focus = executable_map.find(lookup);
   if (focus) {
     struct timeval val = focus->total_execution_time();
     argm.output <<val;
@@ -780,7 +780,7 @@ int b_which_return(const Argm& argm) {
   if (lookup[0] == "rwsh.mapped_argfunction" || 
             lookup[0] == "rwsh.argfunction") 
     return 2; // return values not stored for argfunctions
-  Executable* focus = executable_map.find(lookup);
+  Named_executable* focus = executable_map.find(lookup);
   if (focus) {
     argm.output <<focus->last_ret();
     argm.output.flush();
@@ -804,10 +804,10 @@ int b_while(const Argm& argm) {
   Argm lookup(argm.begin()+1, argm.end(), 0, argm.parent_map(),
                 argm.input, argm.output.child_stream(), argm.error);
   while (!executable_map.run(lookup)) {
-    if (Executable::unwind_stack()) return -1;
+    if (Named_executable::unwind_stack()) return -1;
     Argm mapped_argm(argm.parent_map(), argm.input, argm.output.child_stream(), argm.error);
     mapped_argm.push_back("rwsh.mapped_argfunction");
     ret = (*argm.argfunction())(mapped_argm);
-    if (Executable::unwind_stack()) return -1;}
+    if (Named_executable::unwind_stack()) return -1;}
   return ret;}
 

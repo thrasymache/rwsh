@@ -53,7 +53,7 @@ Command_stream& Command_stream::operator>> (Arg_script& dest) {
       throw;}}
   Signal_argm raw_command(Argm::Raw_command, cmd);
   executable_map.run(raw_command);
-  if (Executable::unwind_stack()) return *this;
+  if (Named_executable::unwind_stack()) return *this;
   return *this;}
 
 // returns non-zero if the last command was read successfully

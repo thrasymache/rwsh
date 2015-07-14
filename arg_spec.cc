@@ -109,7 +109,7 @@ Arg_spec::Arg_spec(const std::string& src,
       word_selection(-1), substitution(0), text() {
   std::string::size_type tpoint = style_start+1;
   while (tpoint != point && src[tpoint] == '&') ++soon_level, ++tpoint;
-  substitution = new Function("rwsh.argfunction", src, tpoint, soon_level);
+  substitution = new Command_block(src, tpoint, soon_level);
   if (soon_level+1 != point-style_start || src[style_start] != '&') {
     delete substitution;
     throw Signal_argm(Argm::Bad_argfunction_style,
@@ -141,7 +141,7 @@ Arg_spec::Arg_spec(const std::string& src,
 
 Arg_spec::Arg_spec(Arg_type type_i, unsigned soon_level_i,
                        unsigned ref_level_i, unsigned expand_i,
-                       int word_selection_i, Function* substitution_i,
+                       int word_selection_i, Command_block* substitution_i,
                        std::string text_i) :
     type(type_i), soon_level(soon_level_i), ref_level(ref_level_i),
     expand(expand_i), word_selection(word_selection_i),
@@ -174,7 +174,7 @@ void Arg_spec::apply(const Argm& src, unsigned nesting,
       else res = src.star_var(text, ref_level, res);
       break;
     case SUBSTITUTION: {
-      Function* new_substitution = substitution->apply(src, nesting+1);
+      Command_block* new_substitution = substitution->apply(src, nesting+1);
       if (soon_level) *res++ = Arg_spec(type, soon_level-1, ref_level,
                                           expand, word_selection,
                                           new_substitution, text);
@@ -269,7 +269,6 @@ void Arg_spec::promote_soons(unsigned nesting) {
     case SOON: case STAR_SOON: soon_level += nesting; break;
     case SUBSTITUTION:
       soon_level += nesting;
-      Function* temp = substitution->promote_soons(nesting);
-      delete substitution;
-      substitution = temp; break;}}
+      substitution->promote_soons(nesting);
+      break;}}
 

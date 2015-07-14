@@ -244,10 +244,7 @@ void Arg_script::apply(const Argm& src, unsigned nesting,
 void Arg_script::promote_soons(unsigned nesting) {
   for (std::vector<Arg_spec>::iterator i = args.begin(); i != args.end();
        ++i) i->promote_soons(nesting);
-  if (argfunction) {
-    Function* temp = argfunction->promote_soons(nesting);
-    delete argfunction;
-    argfunction = temp;}}
+  argfunction->promote_soons(nesting);}
 
 // test whether an executable name corresponds to one of those used for
 // argument functions.

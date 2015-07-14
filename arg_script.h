@@ -1,5 +1,7 @@
 // Copyright (C) 2006-2015 Samuel Newbold
 
+class Function;
+
 class Arg_script {
   std::vector<Arg_spec> args;
   Function* argfunction;
