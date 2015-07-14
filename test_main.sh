@@ -38,7 +38,7 @@ w e
 w () {}
 e text that doesn't have a prompt appended
 m {e again}
-.function_all_options if_only first_argument second_argument {
+.function_all_flags if_only first_argument second_argument {
   .if $first_argument $second_argument {rwsh.argfunction}; .else {.nop}}
 if_only .return 1 {e not printed}
 if_only .return 0 {e printed without error}
@@ -239,20 +239,20 @@ b
 f g {e hi $nl; f g {e there $nl}; f h {e nothing here}; g}
 g
 
-# .function_all_options
-.function_all_options
-.function_all_options rwsh.argfunction {e cannot define rwsh.argfunction}
-.function_all_options a {e zero argument function acceptable}
+# .function_all_flags
+.function_all_flags
+.function_all_flags rwsh.argfunction {e cannot define rwsh.argfunction}
+.function_all_flags a {e zero argument function acceptable}
 a
-.function_all_options test_var_greater
-.function_all_options test_var_greater var value {.test_greater $$var $value}
+.function_all_flags test_var_greater
+.function_all_flags test_var_greater var value {.test_greater $$var $value}
 .set A $MAX_NESTING
 .set MAX_NESTING 15
 test_var_greater MAX_NESTING
 test_var_greater MAX_NESTING 3 12
 test_var_greater MAX_NESTING 3
-.function_all_options ntimes n n {e can't have two parameters of the same name} 
-.function_all_options ntimes n {
+.function_all_flags ntimes n n {e can't have two parameters of the same name} 
+.function_all_flags ntimes n {
   .while test_var_greater n 0 {rwsh.mapped_argfunction {rwsh.argfunction}
                                .var_subtract n 1}}
 w ntimes
@@ -260,9 +260,9 @@ ntimes -- 3 {e $n remaining $nl}
 ntimes 3 -- {e -- must preceed all positional arguments}
 ntimes 2 {ntimes 3 {e &&n and $n remaining $nl}}
 .set MAX_NESTING $A
-.function_all_options a [-x] [-] [--long-opt y second {
+.function_all_flags a [-x] [-] [--long-opt y second {
   e illegal missing close bracket}
-.function_all_options a [-x] [--long-opt y] second {
+.function_all_flags a [-x] [--long-opt y] second {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a
@@ -271,7 +271,7 @@ a -x single
 a --long-opt arg single
 a --long-opt single
 a --long-opt first -x --long-opt second single
-.function_all_options a [-q option1 option2] [-x o1 o2 o3 o4] required {
+.function_all_flags a [-q option1 option2] [-x o1 o2 o3 o4] required {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a
@@ -282,26 +282,26 @@ a -x opt and req
 a -x first second third fourth req
 a -q one two -q three four five
 a -x one two three four -q five six seven
-.function_all_options a [-x] [-] [--long-opt] [-] y second {
+.function_all_flags a [-x] [-] [--long-opt] [-] y second {
   e illegal duplicate flag parameter}
-.function_all_options a [-x] [-] [-x] [--long-opt] y second {
+.function_all_flags a [-x] [-] [-x] [--long-opt] y second {
   e another illegal duplicate flag parameter}
-.function_all_options a [-x] [-] [--long-opt] y second y {
+.function_all_flags a [-x] [-] [--long-opt] y second y {
   e illegal duplicate required parameter}
-.function_all_options a [-x] [-] [--long-opt] -x second {
+.function_all_flags a [-x] [-] [--long-opt] -x second {
   e illegal duplication between flags and required parameters}
-.function_all_options a [-] [--long-opt] -x second [-x] {
+.function_all_flags a [-] [--long-opt] -x second [-x] {
   e evil duplication between flags and required parameters}
-.function_all_options a [-x] [-] [--long-opt] -- second {
+.function_all_flags a [-x] [-] [--long-opt] -- second {
   e -- cannot be a required parameter even if only an implicit option}
-.function_all_options a -y [second] {
+.function_all_flags a -y [second] {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a
 a 1
 a 1 2
 a 1 2 3
-.function_all_options a [-x] [-] [--long-opt] -y second {
+.function_all_flags a [-x] [-] [--long-opt] -y second {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a 
 a --long-opt -xx over-long flag
@@ -332,7 +332,7 @@ a - --long-opt -x all_flags shuffled
 a - --long-opt -x - -x some_flags doubled
 a - -x - -x - one_doubled one_tripled
 a --long-opt - -x -x - --long-opt all_flags doubled
-.function_all_options a [-first] [-to] [--] {
+.function_all_flags a [-first] [-to] [--] {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
   e nothing_required}
 w a 

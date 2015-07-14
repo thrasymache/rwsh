@@ -25,7 +25,7 @@
   .else_if .test_number_equal $ret 4 {echo function &&1 did not exist to be erased}
   .else {.return $ret}}
 .function fon {
-  .function_all_options $* {rwsh.argfunction}
+  .function_all_flags $* {rwsh.argfunction}
   .local ret $?
   .if .test_number_equal $ret 1 {echo cannot set paths as functions}
   .else_if .test_number_equal $ret 2 {echo cannot set builtins as functions}
@@ -53,7 +53,7 @@
 .function wait_bin {.waiting_for_binary; c $nl}
 .function wait_shell {.waiting_for_shell; c $nl}
 .function wait_user {.waiting_for_user; c $nl}
-.function_all_options which command {
+.function_all_flags which command {
   .local body ()
   .store_output body {.which_executable $command {rwsh.argfunction}}
   .if .test_number_equal $? 0 {.echo .function $command $body $nl}

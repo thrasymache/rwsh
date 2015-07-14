@@ -151,7 +151,7 @@ text that doesn't have a prompt appended
 $m {e again}
 again
 0
-$.function_all_options if_only first_argument second_argument {
+$.function_all_flags if_only first_argument second_argument {
   .if $first_argument $second_argument {rwsh.argfunction}; .else {.nop}}
 
 0
@@ -809,26 +809,26 @@ there
 $
 
 0
-$# .function_all_options
+$# .function_all_flags
 
 0
-$.function_all_options
-signal triggered: rwsh.bad_argc ( 0 1 0 .function_all_options ) 
+$.function_all_flags
+signal triggered: rwsh.bad_argc ( 0 1 0 .function_all_flags ) 
 
 -1
-$.function_all_options rwsh.argfunction {e cannot define rwsh.argfunction}
+$.function_all_flags rwsh.argfunction {e cannot define rwsh.argfunction}
 
 3
-$.function_all_options a {e zero argument function acceptable}
+$.function_all_flags a {e zero argument function acceptable}
 
 0
 $a
 zero argument function acceptable
 0
-$.function_all_options test_var_greater
+$.function_all_flags test_var_greater
 
 4
-$.function_all_options test_var_greater var value {.test_greater $$var $value}
+$.function_all_flags test_var_greater var value {.test_greater $$var $value}
 
 0
 $.set A $MAX_NESTING
@@ -848,11 +848,11 @@ signal triggered: rwsh.bad_argc ( 3 2 0 test_var_greater )
 $test_var_greater MAX_NESTING 3
 
 0
-$.function_all_options ntimes n n {e can't have two parameters of the same name} 
-signal triggered: rwsh.duplicate_parameter ( n .function_all_options ) 
+$.function_all_flags ntimes n n {e can't have two parameters of the same name} 
+signal triggered: rwsh.duplicate_parameter ( n .function_all_flags ) 
 
 -1
-$.function_all_options ntimes n {
+$.function_all_flags ntimes n {
   .while test_var_greater n 0 {rwsh.mapped_argfunction {rwsh.argfunction}
                                .var_subtract n 1}}
 
@@ -882,12 +882,12 @@ $ntimes 2 {ntimes 3 {e &&n and $n remaining $nl}}
 $.set MAX_NESTING $A
 
 0
-$.function_all_options a [-x] [-] [--long-opt y second {
+$.function_all_flags a [-x] [-] [--long-opt y second {
   e illegal missing close bracket}
-signal triggered: rwsh.mismatched_bracket ( [--long-opt .function_all_options ) 
+signal triggered: rwsh.mismatched_bracket ( [--long-opt .function_all_flags ) 
 
 -1
-$.function_all_options a [-x] [--long-opt y] second {
+$.function_all_flags a [-x] [--long-opt y] second {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
@@ -914,7 +914,7 @@ signal triggered: rwsh.bad_argc ( 0 1 2 a )
 $a --long-opt first -x --long-opt second single
 -*(--long-opt first -x --long-opt second) --long-opt(--long-opt first --long-opt second) -x(-x) second(single) y(first second) 
 0
-$.function_all_options a [-q option1 option2] [-x o1 o2 o3 o4] required {
+$.function_all_flags a [-q option1 option2] [-x o1 o2 o3 o4] required {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
@@ -948,37 +948,37 @@ $a -q one two -q three four five
 $a -x one two three four -q five six seven
 -*(-x one two three four -q five six) -q(-q five six) -x(-x one two three four) o1(one) o2(two) o3(three) o4(four) option1(five) option2(six) required(seven) 
 0
-$.function_all_options a [-x] [-] [--long-opt] [-] y second {
+$.function_all_flags a [-x] [-] [--long-opt] [-] y second {
   e illegal duplicate flag parameter}
-signal triggered: rwsh.duplicate_parameter ( - .function_all_options ) 
+signal triggered: rwsh.duplicate_parameter ( - .function_all_flags ) 
 
 -1
-$.function_all_options a [-x] [-] [-x] [--long-opt] y second {
+$.function_all_flags a [-x] [-] [-x] [--long-opt] y second {
   e another illegal duplicate flag parameter}
-signal triggered: rwsh.duplicate_parameter ( -x .function_all_options ) 
+signal triggered: rwsh.duplicate_parameter ( -x .function_all_flags ) 
 
 -1
-$.function_all_options a [-x] [-] [--long-opt] y second y {
+$.function_all_flags a [-x] [-] [--long-opt] y second y {
   e illegal duplicate required parameter}
-signal triggered: rwsh.duplicate_parameter ( y .function_all_options ) 
+signal triggered: rwsh.duplicate_parameter ( y .function_all_flags ) 
 
 -1
-$.function_all_options a [-x] [-] [--long-opt] -x second {
+$.function_all_flags a [-x] [-] [--long-opt] -x second {
   e illegal duplication between flags and required parameters}
-signal triggered: rwsh.duplicate_parameter ( -x .function_all_options ) 
+signal triggered: rwsh.duplicate_parameter ( -x .function_all_flags ) 
 
 -1
-$.function_all_options a [-] [--long-opt] -x second [-x] {
+$.function_all_flags a [-] [--long-opt] -x second [-x] {
   e evil duplication between flags and required parameters}
-signal triggered: rwsh.duplicate_parameter ( -x .function_all_options ) 
+signal triggered: rwsh.duplicate_parameter ( -x .function_all_flags ) 
 
 -1
-$.function_all_options a [-x] [-] [--long-opt] -- second {
+$.function_all_flags a [-x] [-] [--long-opt] -- second {
   e -- cannot be a required parameter even if only an implicit option}
-signal triggered: rwsh.duplicate_parameter ( -- .function_all_options ) 
+signal triggered: rwsh.duplicate_parameter ( -- .function_all_flags ) 
 
 -1
-$.function_all_options a -y [second] {
+$.function_all_flags a -y [second] {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
@@ -999,7 +999,7 @@ $a 1 2 3
 signal triggered: rwsh.bad_argc ( 2 1 1 a ) 
 
 -1
-$.function_all_options a [-x] [-] [--long-opt] -y second {
+$.function_all_flags a [-x] [-] [--long-opt] -y second {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
@@ -1099,7 +1099,7 @@ $a - -x - -x - one_doubled one_tripled
 $a --long-opt - -x -x - --long-opt all_flags doubled
 -(- -) -*(--long-opt - -x -x - --long-opt) --long-opt(--long-opt --long-opt) -x(-x -x) -y(all_flags) second(doubled) 
 0
-$.function_all_options a [-first] [-to] [--] {
+$.function_all_flags a [-first] [-to] [--] {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
   e nothing_required}
 

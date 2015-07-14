@@ -84,12 +84,12 @@ Command_block::Command_block(const std::string& src,
 Function::Function(const std::string& name_i, const std::string& src,
                    std::string::size_type& point, unsigned max_soon) :
     name_v(name_i), positional(), required_argc(0), flag_options(),
-    parameter_names(), positional_parameters(true), all_flags(true),
+    parameter_names(), non_prototype(true), all_flags(true),
     body(src, point, max_soon) {}
 
 Function::Function(const std::string& name_i, const std::string& src) :
     name_v(name_i), positional(), required_argc(0), flag_options(),
-    parameter_names(), positional_parameters(true), all_flags(true) {
+    parameter_names(), non_prototype(true), all_flags(true) {
   std::string::size_type point = 0;
   try {
     body = Command_block(src, point, 0);
@@ -107,11 +107,11 @@ Function::Function(const std::string& name_i, const std::string& src) :
 Function::Function(const std::string& name_i,
                    Argm::const_iterator first_parameter,
                    Argm::const_iterator parameter_end,
-                   bool positional_parameters_i,
+                   bool non_prototype_i,
                    bool all_flags_i,
                    const Command_block& src) :
     name_v(name_i), positional(), required_argc(), flag_options(),
-    parameter_names(), positional_parameters(positional_parameters_i),
+    parameter_names(), non_prototype(non_prototype_i),
     all_flags(all_flags_i), body(src) {
   for (Argm::const_iterator i = first_parameter; i != parameter_end; ++i)
     if ((*i)[0] == '[')
@@ -167,7 +167,7 @@ int Function::operator() (const Argm& invoking_argm) {
     Argm interpreted_argm(invoking_argm.begin(), invoking_argm.end(),
                invoking_argm.argfunction(), &locals_map,
                invoking_argm.input, invoking_argm.output, invoking_argm.error);
-    if (!positional_parameters) {
+    if (!non_prototype) {
       if (!all_flags || flag_options.begin() != flag_options.end())
         locals_map.local("-*", "");
       unsigned available = invoking_argm.argc()-1;

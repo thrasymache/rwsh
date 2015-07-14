@@ -187,7 +187,7 @@ int function_core(const Argm& argm, bool all_flags) {
 
 // add argfunction to executable map with name $1 and arguments $*2
 // the arguments must include all flags that can be passed to this function
-int b_function_all_options(const Argm& argm) {
+int b_function_all_flags(const Argm& argm) {
   return function_core(argm, true);}
 
 // add argfunction to executable map with name $1 and arguments $*2
