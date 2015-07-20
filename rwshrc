@@ -1,0 +1,15 @@
+.set MAX_NESTING 20
+.function () {.nop}
+.echo $*0 >/tmp/lcl (
+)
+.if .test_number_equal $# 2 {.source /etc/rwshrc-default}
+.else_if .test_string_equal $2 -to {.importenv_preserve;
+  .exec ./rwsh test_init.sh
+  .exit}
+.else_if .test_number_equal $# 3 {.source &2}
+.else_if .test_string_equal $2 -c {
+  rwsh.mapped_argfunction &3 {.source /etc/rwshrc-basic; $1$; .exit}}
+.else {
+  .echo unexpected command line: &* (
+)
+  .source /etc/rwshrc-default}

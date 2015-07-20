@@ -1,0 +1,54 @@
+rwsh v0.3 - command substitution
+  * builtins added: append_to_errno, combine, error_unit, exec, for, 
+      for_each_line, fork, if_errno, if_errno_is, importenv_overwrite, 
+      importenv_preserve, is_default_input, is_default_output, is_default_error,      stepwise, test_greater, test_is_number, test_less, test_not_equal, 
+      test_number_equal, waiting_for_shell, waiting_for_user,
+      which_executable, which_execution_count, which_last_execution_time, 
+      which_test, which_total_execution_time, which_path, which_return, while, 
+      var_add version_available, version_compatible
+  * builtins removed: append_to_errno, autofunction, error_unit, false, 
+      if_errno, if_errno_is, importenv, newline, printenv, true
+  * internal_functions: rwsh.bad_argfunction_style, rwsh.double_redirection, 
+      rwsh.file_open_failure, rwsh.not_soon_enough, rwsh.failed_substitution, 
+      rwsh.undefined_variable
+  * file redirection
+  * command substitution z &{x y} - executes x y and makes its output an
+      argument to z 
+  * evaluate soon: &x is the value of x at the start of the function,
+      &&x is the value of x at the start of the containing argfunction
+  * &*, $VAR$, $VAR$WORD, &{f}$, and &{f}$WORD
+  * reference variables - $$X prints the value of the variable named by X
+  * source no longer runs internal functions other than rwsh.raw_command
+  * /etc/rwshrc does all command-processing
+  * /etc/rwshrc supports -c flag
+  * newlines supported within argfunctions
+  * selection read and write support relative paths
+  * ERRNO prevents execution of control flow builtins, then all conditions that 
+      would have caused ERRNO to be set are replaced with signals
+  * fixed rwsh.mapped_argfunction {$*} crash
+  * Then a list of changes too long for it to be worth enumerating them,...
+      though it is worth mentioning that all builtins now begin with a "."
+      rather than a "%" character
+
+rwsh v0.2 - scripts
+  * can source scripts
+  * signal handling
+  * builtins: cd, if, else_if, else_not_if, else, internal_features, 
+      internal_errors, internal_vars, nop, return, source, test_equal, 
+      test_not_empty, etc.
+  * rwsh.init produces a usable environment
+  * $0 is always the name of the current executable
+
+rwsh v0.1 - proof of concept
+  * can run binaries, builtins and functions (but not scripts).
+  * variable map
+  * builtins: autofunction, echo, exit, false, function, importenv, ls, newline,
+      printenv, set, selection_set, true, which, version
+  * selection read
+  * internal functions: rwsh.init, rwsh.shutdown, rwsh.prompt, 
+      rwsh.before_command, rwsh.after_command, rwsh.autofunction,
+      rwsh.arguments_for_argfunction, rwsh.binary_not_found,
+      rwsh.executable_not_found, rwsh.excessive_nesting, rwsh.mismatched_brace,
+      rwsh.multiple_argfunctions, rwsh.selection_not_found
+  * one possibly nested argfunction allowed per command. (argfunction levels of
+      mapped through escaped.)

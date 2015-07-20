@@ -1,0 +1,53 @@
+rwsh is a shell for Unix-like systems.  
+
+Documentation can be found in the docs directory.  As it is still very much of 
+a proof-of-concept, there is no install or configure script.  
+
+It is not intended to be compatible with existing shells, or even to keep their
+basic semantics.  So please read at least the "introduction and 
+philosophy" document before assuming that you know what a command will do. For
+example, rm without arguments may delete files (personally, I use rm without
+arguments more often than with them).
+
+Several changes are coming shortly, which may easily break scripts designed for
+this version of the shell, including the following.
+     *  Any statement returning a non-zero value that isn't handled by a control
+	flow statement (e.g. .if or .while) will cause the current nesting level
+	to terminate, returning that value. In other words, a non-zero return
+	will become an error on the level of an undefine variable, or having a
+	.else statement without a preceeding .if
+     *  A ? character at the end of an argument specification will cause the
+	statement to be skipped if the variable is undefined. A ? in the middle
+	of an argument specification will return the text after the question
+	mark to be returned if the variable is undefined. For example
+	"echo $foo?", will print the contents of foo if it exists, and not
+	produce an error if it does not exist. "echo $foo?(foo does not exist)",
+	will print "foo does not exist" if foo is undefined, and the contents of
+	foo if it is defined.
+     *  Functions will have to use every argument that they are passed, making
+	it equally an error to pass too many arguments to a function as to pass
+	too few.
+     *  When handling a set of arguments as a whole, rather than as a set of
+	words, any excess space that was included when specifying them will be
+	included.
+     *  a "/" will be used to define a heirarchy amongst executables and
+	variables. $foo/bar cannot be defined without defining $foo, and it
+	will return the portion of $foo that immediately follows "bar=".
+	Running "foo bar" will run the function that was named "foo/bar".
+     *  Redirections will be handled by internal functions, so that the effect
+	of >foo, or <bar<baz will be something that can change depending upon
+	the configuration.
+     *  There will be "default redirections", so that interactive commands will
+	not necessarily have either their input or output connected to the
+	terminal. The builtin .is_default_input should be used to determine
+	whether a command is receiving its input effectively from the user, and
+	.is_default_output should be used to determine whether output is
+	intended to be printed on the terminal.
+Other large changes are likely. To illustrate, before version 0.3, ERRNO was a
+special variable, that would prevent the execution of control flow statements
+such as .if and .while. Experience working with this setup convinced me that
+the problem I was aiming at was worth taking on, but that my first solution was
+actually an enormous pain most of the times it came up. I could very easily
+come to the same conclusion about some other feature that I have already
+implemented or will soon implement.
+

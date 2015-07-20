@@ -1,0 +1,75 @@
+THIS IS PRE-ALPHA SOFTWARE. This means that major functionality is missing,
+such as pipes, job control, and command completion. This also means that
+scripts written for this version are unlikely to work on version 1.0 when it is
+released. (As an example, control flow will change in one of the next few
+versions so that the first command to return non-zero will cause functions and
+scripts to terminate, unless used in some control flow contexts, such as .if).
+.version_compatible will eventually permit you to protect scripts from
+incompatibilities, but the shell has not matured to a point where the current
+semantics for .version_compatible may be depended upon.
+
+If a requested function does not exist, and rwsh.autofunction exceeds 
+MAX_NESTING, then you will get both the excessive_nesting and 
+executable_not_found errors.  You could make an argument that this is what 
+should be done, after all, both errors occurred.  But then this should be the 
+behavior when a function calls an executable, which causes rwsh.autofunction to exceed MAX_NESTING, but in this case, only the excessive_nesting error occurs.
+
+.return must set errno to 0, because other function calls are causing errors
+
+If the shell receives a signal while waiting for input, it does not handle it 
+until after the line is input
+
+There is no error handling for a write to stdout failing. (as file redirection
+is not yet supported, these are the only writes possible)
+
+If rwsh is run from rwsh, and then that shell receives a signal, the signal is 
+passed on to its parent shell, even if the child shell handled it appropriately. 
+There is no way to have the root directory be the result of a selection read
+
+A script cannot be run as if it was a compiled binary, it must be passed to the
+source builtin.  Furthermore, the source builtin will run scripts if and only 
+if the owner of the script has the execute permission for that file, regardless
+of the permissions of the user actually requesting to run the script.
+
+If .cd is passed a relative path, the chdir system call will handle this 
+appropriately, but CWD will be set to just that relative path, rather than the 
+result of applying that relative path to the previous working directory.
+
+Catching a signal can result in a spurious BAD_IF_NEST error
+
+.ls fails to mention soft links that refer to files that do not exist
+
+.stepwise refuses to step through all builtins, including control flow builtins,
+like .while and .source that clearly have separable parts.
+
+many simple tasks (such as setf) require the use of global variable, which, besides being clumsy, prevents you from setf'ing that variable
+
+You cannot use binary executables within a command substitution.
+
+Referencing positional parameters that do not exist does not result in an error
+
+.which_path will return files which are not executable
+
+undefined variables in a command name give a blank call stack, there should be something like "<interpretation>" at the beginning, or much better documentation
+
+if an executable needs to be added using rwsh.autofunction, output of rwsh.autofunction is redirected into whatever file the executable's output was redirected to.
+
+there is a small amount of time at startup that is not included in .waiting_for_shell
+
+.waiting_for_shell does not update until the shell is waiting either for a
+binary or for the user, but without any adverse impact on normal operation, a
+query to this value could include the increment since the timer started.
+
+.waiting_for_binary does not include time that the shell is waiting to do input
+and output to processes. This time is included in .waiting_for_shell, though
+only the processing time in the shell should be included.
+
+there is an issue with argfunction handling that prevents rwsh.run_logic from
+appropriately substituting argfunctions when the substitution is itself nested
+in an argfunction. If that description isn't sufficiently clear, there are two
+examples commented out in the definition of rwsh.run_logic in test_init.sh
+Note that the definition is itelf commented out. If rwsh.run_logic is itself
+uncommented, the behavior is essentially the the same as it is now, but using
+either of the other implementations of rwsh.run_logic will produce broken
+behavior.
+

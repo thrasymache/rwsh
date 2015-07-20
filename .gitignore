@@ -1,0 +1,7 @@
+_darcs
+*.o
+*.a
+.*
+rwsh
+test.result.last
+argfunction.result.last

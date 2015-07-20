@@ -1,0 +1,278 @@
+.source /etc/rwshrc-basic
+
+# set up environment
+setf PATH &{c $HOME /bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/git/bin}
+.global BUILT_EXECUTABLE /bin/rwsh
+.global REGEX ()
+.global grep-sel ()
+.global s ()
+.global s2 ()
+.set FIGNORE .*
+
+# selection commands
+fn sfn command {
+  .function_some_flags $command [file] {
+    if_only .var_exists file {.selection_set s $file}
+    &&{.which_path $command $PATH} $-*$ @$s}}
+fn sfn-subcommand system command {
+  .function_some_flags &&{c $system - $command} [file] {
+    if_only .var_exists file {.selection_set s $file}
+    &&{whichp $system} &&command $-*$ @$s}}
+sfn cat 
+fn cd [path] {
+  .selection_set s $path
+  .cd @$s
+  .local ret $?
+  .if .test_number_equal $ret 1 {echo @$s does not exist}
+  .else_if .test_number_equal $ret 2 {echo @$s is not a directory}
+  .else {
+    &{whichp pwd}
+    .set s (); .set s2 ()}}
+fns chmod mode [file] {
+  if_only .var_exists file {.selection_set s $file}
+  &{whichp chmod} $-*$ $mode @$s}
+fns cp dest {&{whichp cp} $-*$ @$s $dest}
+fn create file {.selection_set s $file; &{whichp touch} $s}
+fns cvs command [file] {
+  if_only .var_exists file {.selection_set s $file}
+  .if .test_not_empty $s {&{whichp cvs} $-*$ $command @$s}
+  .else {&{whichp cvs} $-*$ $command}}
+fns darcs command [file] {
+  if_only .var_exists file {.selection_set s $file}
+  .if .test_not_empty $s {&{whichp darcs} $-*$ $command @$s}
+  .else {&{whichp darcs} $-*$ $command}}
+fns diff [lhs] [rhs] {
+  if_only .var_exists lhs {.selection_set s $lhs}
+  if_only .var_exists rhs {.selection_set s2 $rhs}
+  &{whichp diff} $-*$ @$s @$s2}
+sfn du
+fns ed [-p prompt] [file] {
+  if_only .var_exists file {.selection_set s $file}
+  &&{whichp ed} $-*$ @$s}
+fns gdb-bash [binary] {
+  if_only .var_exists binary {.set BUILT_EXECUTABLE $binary}
+  echo debugging $BUILT_EXECUTABLE
+  .local old_shell $SHELL
+  .set SHELL /bin/bash
+  &{whichp gdb} $-*$ $BUILT_EXECUTABLE
+  .set SHELL $old_shell}
+fns gdb [binary] {
+  if_only .var_exists binary {.set BUILT_EXECUTABLE $binary}
+  echo debugging $BUILT_EXECUTABLE
+  &{whichp gdb} $-*$ $BUILT_EXECUTABLE}
+fns git command [file] {
+  if_only .var_exists file {.selection_set s $file}
+  .if .test_not_empty $s {&{whichp git} $-*$ $command @$s}
+  .else {&{whichp git} $-*$ $command}}
+sfn-subcommand git add
+sfn-subcommand git diff
+sfn-subcommand git rm
+sfn-subcommand git status
+fns grep [-l] [regex] [file] {
+  if_only .var_exists regex {.set REGEX $regex}
+  if_only .var_exists file {.selection_set s $file}
+  .if .var_exists -l {
+    .set grep-sel $s
+    .local result ()
+    .store_output result {&{whichp grep} $-*$ $REGEX @$s}
+    .echo $result
+    .selection_set grep-sel $result$}
+  .else {&{whichp grep} $-*$ $REGEX @$s}}
+fn grep-sel {.set s $grep-sel}
+fn gs       {.set s $grep-sel}
+sfn gzip
+sfn gunzip
+fn home {cd $HOME}
+fns head [-n lines] [-c bytes] [file] {
+  if_only .var_exists file {.selection_set s $file}
+  &&{whichp head} $-*$ @$s}
+.function ignore {.set FIGNORE $*}
+fns ll [file] {
+  if_only .var_exists file {.selection_set s $file}
+  &&{whichp ls} -ld $-*$ @$s}
+fns ls [file] {
+  if_only .var_exists file {.selection_set s $file}
+  .if .test_not_empty $-* {&&{whichp ls} $-*$ @$s}
+  .else {.ls @$s}}
+sfn less 
+sfn md5sum
+fns mv dest {
+  &{whichp mv} $-*$ @$s $dest
+  .set s $dest}
+fns regrep [file] {
+  # wrap grep function to keep REGEX but change file
+  .if .var_exists file {grep $-*$ $REGEX $file}
+  .else {grep $-*$}}
+sfn rm 
+sfn sum
+fns tail [-b blocks] [-c bytes] [-n lines] [file] {
+  if_only .var_exists file {.selection_set s $file}
+  &&{whichp tail} $-*$ @$s}
+fn tar bundled-flags [file] {
+  if_only .var_exists file {.selection_set s $file}
+  &{whichp tar} $bundled-flags @$s}
+sfn touch
+sfn vi 
+sfn view
+fns vim [file] {
+  if_only .var_exists file {.selection_set s $file}
+  .local old_shell $SHELL
+  .set SHELL /bin/bash
+  &{whichp vim} $-*$ @$s
+  .set SHELL $old_shell}
+sfn wc 
+fn unselect {.set s ()}
+
+# internal functions
+.function rwsh.run_logic {
+   .signal_handler &{.internal_functions}$ {&&* {rwsh.argfunction}}
+  # $* {rwsh.argfunction}
+  .local ret $?
+  if_only_not .test_number_equal $ret 0 {echo &&1 returned $ret}}
+.function rwsh.arguments_for_argfunction {
+  .echo cannot specify arguments for $1 directly $nl
+  .return -1}
+.function rwsh.bad_argc {
+  .echo unacceptable argument count: received $1 non-optional, but needed $2 \(with $3 optional\) for $4* $nl
+  .return -1}
+.function rwsh.autofunction {
+  .function $1 {&&{.which_path &&1 $PATH} $*}
+  # if_only .return 0 {.echo added &&1 to executable map $nl}}
+.function rwsh.bad_argfunction_style {
+  .echo $1 is neither an argfunction nor a substitution $nl
+  .return -1}
+.function rwsh.bad_if_nest {
+  .echo nested .if without .else with call stack: $* $nl
+  .return -1}
+.function rwsh.binary_not_found {
+  .echo $1 : could not run binary $nl
+  .return -1}
+.function rwsh.dash_dash_argument {
+  .echo optional -- parameter cannot take arguments \( $1 \) with call stack: $*2 $nl
+  .return -1}
+.function rwsh.divide_by_zero {
+  .echo attempt to divide $1 by 0 with call stack: $*2 $nl
+  .return -1}
+.function rwsh.double_redirection {
+  .echo double redirection is not supported at this time: $1 and $2 $nl
+  .return -1}
+.function rwsh.duplicate_parameter {
+  .echo duplicated parameter in function definition: $1 $nl
+  .echo call stack: $*2 $nl
+  .return -1}
+.function rwsh.else_without_if {
+  .echo else without if with call stack: $* $nl
+  .return -1}
+.function rwsh.excessive_nesting {
+  .echo $nl function exceeded MAX_NESTING \( $MAX_NESTING \). call stack: $* $nl
+  .return -1}
+.function rwsh.excess_argfunction {
+  .echo $1 does not accept an argfunction with call stack: $* $nl
+  .return -1}
+.function rwsh.executable_not_found {
+  .echo $1 : command not found \( $* \) $nl
+  .return -1}
+.function rwsh.failed_substitution {
+  echo substitution $1 failed
+  echo call stack $*2}
+.function rwsh.help {
+  .echo this is the default configuration for rwsh \(or something copied from it\), documentation should be available at rwsh.sf.net $nl}
+.function rwsh.if_before_else {
+  .echo two .if commands without a .else between them with call stack : $* $nl
+  .return -1}
+.function rwsh.input_range {
+  .echo value $1 is out of usable numeric range $nl
+  .return -1}
+.function rwsh.invalid_word_selection {
+  .echo $* is not a valid word selection $nl
+  .return -1}
+.function rwsh.mismatched_brace {
+  .echo mismatched brace: $* $nl
+  .return -1}
+.function rwsh.mismatched_bracket {
+  .echo mismatched bracket: $1 $nl
+  .echo call stack: $*2 $nl
+  .return -1}
+.function rwsh.mismatched_parenthesis {
+  .echo mismatched parenthesis: $* $nl
+  .return -1}
+.function rwsh.missing_argfunction {
+  .echo $* requires an argfunction $nl
+  .return -1}
+.function rwsh.multiple_argfunctions {
+  .echo multiple argfunctions not supported at this time $nl
+  .return -1}
+.function rwsh.not_a_number {
+  .echo $1 is not a number $nl
+  .echo call stack: $*2 $nl
+  .return -1}
+.function rwsh.not_executable {
+  .echo $1 is not executable $nl
+  .echo call stack: $*2
+  .return -1}
+.function rwsh.not_soon_enough {
+  .echo $1 attempts to substitute after the command has been run $nl
+  .return -1}
+.function rwsh.prompt {.echo $s; .echo \$}
+.function rwsh.result_range {
+  .echo result of $3 with arguments $1 and $2 is out of range $nl
+  .echo call stack: $*3 $nl
+  .return -1}
+.function rwsh.selection_not_found {
+  .echo no file matching pattern $1
+  .if .test_string_unequal $1 $2 {.echo () for selection &&2 $nl}
+  .else {.echo $nl}}
+.function rwsh.shutdown {.echo $nl}
+.function rwsh.sigcont {.echo $nl received SIGCONT: $* $nl}
+.function rwsh.sigchld {.echo $nl received SIGCHLD: $* $nl}
+.function rwsh.sighup {.echo $nl received SIGHUP: $* $nl}
+.function rwsh.sigint {.echo $nl received SIGINT: $* $nl}
+.function rwsh.sigquit {.echo $nl received SIGQUIT: $* $nl}
+.function rwsh.sigpipe {.echo $nl received SIGPIPE: $* $nl}
+.function rwsh.sigterm {.echo $nl received SIGTERM: $* $nl}
+.function rwsh.sigtstp {.echo $nl received SIGTSTP: $* $nl}
+.function rwsh.siginfo {.echo $nl received SIGINFO: $* $nl}
+.function rwsh.sigusr1 {.echo $nl received SIGUSR1: $* $nl}
+.function rwsh.sigusr2 {.echo $nl received SIGUSR2: $* $nl}
+.function rwsh.sigunknown {.echo $nl received unknown unix signal: $* $nl}
+.function rwsh.undefined_variable {
+  .echo $1 was undefined with call stack $*2 $nl}
+.function rwsh.unreadable_dir {.echo cannot read directory $1 $nl}
+.function rwsh.unrecognized_flag {
+  .echo $1 flag is unrecognized for $2 $nl
+  .echo call stack: $*2 $nl
+  .return -1}
+.function rwsh.version_incompatible {
+  .echo this shell is not compatible with requested version $1 $nl
+  .echo call stack: $*2 $nl
+  .return -1}
+.function rwsh.vars {
+  .internal_vars
+  echo $nl HOME $HOME
+  echo REGEX $REGEX
+  echo s $s}
+
+# misc
+.function ! {if $* {.return 1}; else {.return 0}}
+.function m {rwsh.argfunction}
+.function and {
+  .if .return 1 {.nop}; .stepwise $* {.else_if_not $* {.nop}}; .else {.nop}}
+.function or {
+  .if .return 1 {.nop}; .stepwise $* {.else_if $* {.nop}}; .else {.nop}}
+.global TESTABILITY (an external variable)
+fn st {/bin/rwsh -to <test_main.sh >test.result.last
+  &{whichp diff} -c test.result test.result.last}
+fn bless-t {/bin/cp test.result.last test.result}
+fn to {/bin/rwsh -to}
+fn mst {make; st}
+fn test_var_not_equal var value {.test_string_unequal $$var $value}
+fn test_var_greater var value {.test_greater $$var $value}
+fn ntimes n {
+  .while test_var_greater n 0 {
+    rwsh.mapped_argfunction {rwsh.argfunction}
+    .var_subtract n 1}}
+fn mark {ntimes 4 {.echo ####################}}
+
+# final setup and individual configuration
+.source &{c $HOME /.rwshrc}
+.combine rwsh\ v &{.version} $nl

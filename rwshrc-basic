@@ -1,0 +1,69 @@
+.function # {.nop}
+
+# set up environment
+.global nl (
+)
+.importenv_preserve
+
+# builtin wrappers
+.function . {.source $*}
+.function af {rwsh.argfunction}
+.function c {.combine $*}
+.function e {.echo $*}
+.function echo {.echo $* $nl}
+.function elif {.else_if $* {rwsh.argfunction}}
+.function else {.else {rwsh.argfunction}}
+.function ex_count {.which_execution_count $*; c $nl}
+.function exec {.exec $*}
+.function exit {.exit}
+.function fn {
+  .function_all_flags $* {rwsh.argfunction}
+  .local ret $?
+  .if .test_number_equal $ret 1 {echo cannot set paths as functions}
+  .else_if .test_number_equal $ret 2 {echo cannot set builtins as functions}
+  .else_if .test_number_equal $ret 3 {echo cannot set argfunctions in executable map}
+  .else_if .test_number_equal $ret 4 {echo function &&1 did not exist to be erased}
+  .else {.return $ret}}
+.function fns {
+  .function_some_flags $* {rwsh.argfunction}
+  .local ret $?
+  .if .test_number_equal $ret 1 {echo cannot set paths as functions}
+  .else_if .test_number_equal $ret 2 {echo cannot set builtins as functions}
+  .else_if .test_number_equal $ret 3 {echo cannot set argfunctions in executable map}
+  .else_if .test_number_equal $ret 4 {echo function &&1 did not exist to be erased}
+  .else {.return $ret}}
+.function if {.if $* {rwsh.argfunction}}
+.function if_only {.if $* {rwsh.argfunction}; .else {.nop}}
+.function if_only_not {.if $* {.nop}; .else {rwsh.argfunction}}
+.function timings {
+  .echo last time (); .which_last_execution_time $*; c $nl
+  .echo total time (); .which_total_execution_time $*; c $nl
+  .echo execution count (); .which_execution_count $*; c $nl}
+.function last_time {.which_last_execution_time $*; c $nl}
+.function total_time {.which_total_execution_time $*; c $nl}
+.function set {.set $1 $2 $*3}
+.function setf {
+  .if .var_exists $1 {.set &&1 &&2}
+  .else {.global &&1 &&2}}
+.function unset {.unset $1}
+.function user_shell_ratio {
+  .local time &&{.waiting_for_user}
+  .var_divide time &&{.waiting_for_shell}
+  .combine $time $nl}
+.function wait_bin {.waiting_for_binary; c $nl}
+.function wait_shell {.waiting_for_shell; c $nl}
+.function wait_user {.waiting_for_user; c $nl}
+fn which command {
+  .local body ()
+  .store_output body {.which_executable $command {rwsh.argfunction}}
+  .if .test_number_equal $? 0 {.echo .function $command $body $nl}
+  .else {echo no $command}}
+fn whichp binary {
+  .which_path $binary $PATH
+  .if .test_number_equal $? 0 {.nop}
+  .else {echo &&binary not found in $PATH; .return 1}}
+.function while {.while $* {rwsh.argfunction}}
+fn var_exists var {.var_exists $var}
+
+.function rwsh.autofunction {
+  .function $1 {&&{.which_path &&1 $PATH} $*}}

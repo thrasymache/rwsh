@@ -1,0 +1,1 @@
+/bin/rwsh /usr/share/rwsh/test_init.sh </usr/share/rwsh/test_main.sh 
