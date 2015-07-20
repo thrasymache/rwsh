@@ -38,6 +38,7 @@ class Argm : private std::vector<std::string> {
     Bad_argfunction_style,
     Bad_if_nest, 
     Binary_not_found,
+    Dash_dash_argument, 
     Divide_by_zero, 
     Double_redirection,
     Duplicate_parameter,

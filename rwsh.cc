@@ -41,6 +41,7 @@ std::string Argm::signal_names[Argm::Signal_count] = {
   "rwsh.bad_argfunction_style",
   "rwsh.bad_if_nest", 
   "rwsh.binary_not_found",
+  "rwsh.dash_dash_argument",
   "rwsh.divide_by_zero",
   "rwsh.double_redirection",
   "rwsh.duplicate_parameter",

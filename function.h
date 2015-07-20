@@ -34,6 +34,7 @@ class Function : public Named_executable {
       name_v(name_i), positional(), required_argc(0), flag_options(),
       parameter_names(), non_prototype(true), all_flags(true),
       body() {};
+  void check_for_duplicates(const std::string& name);
  public:
   Command_block body;
 

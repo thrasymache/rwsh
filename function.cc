@@ -114,31 +114,31 @@ Function::Function(const std::string& name_i,
     parameter_names(), non_prototype(non_prototype_i),
     all_flags(all_flags_i), body(src) {
   for (Argm::const_iterator i = first_parameter; i != parameter_end; ++i)
-    if ((*i)[0] == '[')
-      if ((*i)[i->length()-1] == ']') {
-        std::string param_name(i->substr(1, i->length()-2));
-        if (parameter_names.find(param_name) != parameter_names.end())
-          throw Signal_argm(Argm::Duplicate_parameter, param_name);
-        parameter_names.insert(param_name);
-        if (param_name[0] != '-')
-          positional.push_back(Parameter_group(false, param_name));
-        else if (param_name == "--"); // discard implicit [--]
-        else flag_options[param_name] = Parameter_group(false, param_name);}
-      else {
-        std::string param_name(i->substr(1, i->length()-1));
-        Parameter_group group(false, param_name);
-        for (++i; i != parameter_end && (*i)[i->length()-1] != ']'; ++i)
-          group.names.push_back(*i);
-        if (i != parameter_end)
-          group.names.push_back(i->substr(0, i->length()-1));
-        else throw Signal_argm(Argm::Mismatched_bracket, "[" + param_name);
-        flag_options[param_name] = group;}
-    else if (parameter_names.find(*i) != parameter_names.end() || *i == "--")
-      throw Signal_argm(Argm::Duplicate_parameter, *i);
-    else {
-      parameter_names.insert(*i);
+    if ((*i)[0] != '[') {
+      check_for_duplicates(*i);
+      if (*i == "--") throw Signal_argm(Argm::Duplicate_parameter, *i);
       positional.push_back(Parameter_group(true, *i));
-      ++required_argc;}}
+      ++required_argc;}
+    else {
+      bool single((*i)[i->length()-1] == ']');
+      std::string param_name(i->substr(1, i->length() - 1 - single));
+      check_for_duplicates(param_name);
+      Parameter_group group(false, param_name);
+      if (!single) {
+        for (++i; i != parameter_end && (*i)[i->length()-1] != ']'; ++i) {
+          check_for_duplicates(*i);
+          group.names.push_back(*i);}
+        if (i == parameter_end)
+          throw Signal_argm(Argm::Mismatched_bracket, "[" + param_name);
+        else {
+          std::string last_name(i->substr(0, i->length()-1));
+          if (param_name == "--")
+            throw Signal_argm(Argm::Dash_dash_argument, last_name);
+          check_for_duplicates(last_name);
+          group.names.push_back(last_name);}}
+      if (param_name[0] != '-') positional.push_back(group);
+      else if (param_name == "--"); // discard implicit [--]
+      else flag_options[param_name] = group;}}
 
 // generate a new function by unescaping argument functions and replacing
 // unescaped_argfunction with the argument function in argm
@@ -156,6 +156,11 @@ Function* Function::apply(const Argm& argm, unsigned nesting) const {
       i->apply(argm, nesting, ins);}
     return result;}}
   
+void Function::check_for_duplicates(const std::string& name) {
+  if (parameter_names.find(name) != parameter_names.end())
+    throw Signal_argm(Argm::Duplicate_parameter, name);
+  parameter_names.insert(name);}
+
 // run the given function
 int Function::operator() (const Argm& invoking_argm) { 
   try {
@@ -182,11 +187,10 @@ int Function::operator() (const Argm& invoking_argm) {
                i != invoking_argm.end() && k != j->second.names.end();
                ++k, ++i, --available) {
             locals_map.local_or_append_word(flag, *i);
-            if (locals_map.exists("-*"))
-              locals_map.set_or_append_word("-*", *i);
+            locals_map.append_word_if_exists("-*", *i);
             if (*k != flag) locals_map.local_or_append_word(*k, *i);}}
         else {
-          if (locals_map.exists("-*")) locals_map.set_or_append_word("-*", *i);
+          locals_map.append_word_if_exists("-*", *i);
           if(*i == "--") {                                      // "discard" --
             locals_map.local(*i, *i);
             ++i, --available; break;}

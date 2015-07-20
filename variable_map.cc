@@ -23,10 +23,10 @@ Variable_map::Variable_map(Variable_map* parent_i) : parent(parent_i) {
     local("FIGNORE", "");
     local("MAX_NESTING", "0");}}
 
-void Variable_map::set_or_append_word(const std::string& key,
-                                      const std::string& value) {
+void Variable_map::append_word_if_exists(const std::string& key,
+                                         const std::string& value) {
   std::map<std::string, std::string>::iterator i = find(key);
-  if (i == end()) throw Signal_argm(Argm::Undefined_variable, key);
+  if (i == end()) return;
   else if (i->second == "") i->second = value;
   else i->second += " " + value;}
 

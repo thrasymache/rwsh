@@ -171,11 +171,11 @@ namespace {
 int function_core(const Argm& argm, bool all_flags) {
   if (argm.argc() < 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   else if (is_binary_name(argm[1])) return 1;
+  else if (is_argfunction_name(argm[1])) return 3;
   Argm lookup(argm.begin()+1, argm.begin()+2, NULL, argm.parent_map(),
                 default_input, default_output, default_error);
   Named_executable *e = executable_map.find(lookup);
-  if (e && dynamic_cast<Builtin*>(e)) return 2;
-  else if (is_argfunction_name(argm[1])) return 3;
+  if (dynamic_cast<Builtin*>(e)) return 2;
   else if (!argm.argfunction()) {
     return 4 * !executable_map.erase(*(argm.begin()+1));}
   else {

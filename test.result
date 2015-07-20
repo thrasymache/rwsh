@@ -303,12 +303,10 @@ $# rwsh.selection_not_found
 0
 $e @/*is*
 signal triggered: rwsh.selection_not_found ( /*is* /*is* ) 
-signal triggered: rwsh.bad_argc ( 0 1 0 .echo e ) 
 
 -1
 $e @test_main.cc
 signal triggered: rwsh.selection_not_found ( test_main.cc test_main.cc ) 
-signal triggered: rwsh.bad_argc ( 0 1 0 .echo e ) 
 
 -1
 $e @e*c
@@ -319,7 +317,6 @@ test_files/ixxx
 0
 $e @test_files/*x*x*x*x
 signal triggered: rwsh.selection_not_found ( test_files/*x*x*x*x test_files/*x*x*x*x ) 
-signal triggered: rwsh.bad_argc ( 0 1 0 .echo e ) 
 
 -1
 $e @test_files/*xyxy
@@ -809,22 +806,57 @@ there
 $
 
 0
-$# .function_all_flags
+$# .function_all_flags .function_some_flags
 
 0
 $.function_all_flags
 signal triggered: rwsh.bad_argc ( 0 1 0 .function_all_flags ) 
 
 -1
+$.function_all_flags /bin/echo {e cannot define a path to be a function}
+
+1
+$.function_all_flags .exit {e cannot redefine a builtin as a function}
+
+2
+$.function_all_flags .a {can define a function for non-existant builtin}
+
+0
 $.function_all_flags rwsh.argfunction {e cannot define rwsh.argfunction}
 
 3
-$.function_all_flags a {e zero argument function acceptable}
+$.function_all_flags a y y {e illegal duplicate required parameter}
+signal triggered: rwsh.duplicate_parameter ( y .function_all_flags ) 
 
-0
-$a
-zero argument function acceptable
-0
+-1
+$.function_all_flags a [-x] [-x] {e illegal duplicate flag parameter}
+signal triggered: rwsh.duplicate_parameter ( -x .function_all_flags ) 
+
+-1
+$.function_all_flags a [x x] {e illegal duplicate optional parameter}
+signal triggered: rwsh.duplicate_parameter ( x .function_all_flags ) 
+
+-1
+$.function_all_flags a [-x arg bar] [-y arg] {e illegal duplicate flag argument}
+signal triggered: rwsh.duplicate_parameter ( arg .function_all_flags ) 
+
+-1
+$.function_all_flags a -x [-x] {e evil duplication between flags positional}
+signal triggered: rwsh.duplicate_parameter ( -x .function_all_flags ) 
+
+-1
+$.function_all_flags a -- {e -- cannot be a required parameter}
+signal triggered: rwsh.duplicate_parameter ( -- .function_all_flags ) 
+
+-1
+$.function_all_flags a [--] [--] {e even -- cannot be a duplicate flag parameter}
+signal triggered: rwsh.duplicate_parameter ( -- .function_all_flags ) 
+
+-1
+$.function_all_flags a [-- arg] {e -- cannot take arguments}
+signal triggered: rwsh.dash_dash_argument ( arg .function_all_flags ) 
+
+-1
 $.function_all_flags test_var_greater
 
 4
@@ -848,10 +880,6 @@ signal triggered: rwsh.bad_argc ( 3 2 0 test_var_greater )
 $test_var_greater MAX_NESTING 3
 
 0
-$.function_all_flags ntimes n n {e can't have two parameters of the same name} 
-signal triggered: rwsh.duplicate_parameter ( n .function_all_flags ) 
-
--1
 $.function_all_flags ntimes n {
   .while test_var_greater n 0 {rwsh.mapped_argfunction {rwsh.argfunction}
                                .var_subtract n 1}}
@@ -883,8 +911,18 @@ $.set MAX_NESTING $A
 
 0
 $.function_all_flags a [-x] [-] [--long-opt y second {
-  e illegal missing close bracket}
+  e mismatched bracket (i.e. missing close brakcet)}
 signal triggered: rwsh.mismatched_bracket ( [--long-opt .function_all_flags ) 
+
+-1
+$.function_all_flags a [-x] {
+  e unrecognized_flag, not undefined_variable $nl
+  test_var_greater -x 1}
+
+0
+$a
+unrecognized_flag, not undefined_variable 
+signal triggered: rwsh.unrecognized_flag ( -x test_var_greater a ) 
 
 -1
 $.function_all_flags a [-x] [--long-opt y] second {
@@ -948,34 +986,30 @@ $a -q one two -q three four five
 $a -x one two three four -q five six seven
 -*(-x one two three four -q five six) -q(-q five six) -x(-x one two three four) o1(one) o2(two) o3(three) o4(four) option1(five) option2(six) required(seven) 
 0
-$.function_all_flags a [-x] [-] [--long-opt] [-] y second {
-  e illegal duplicate flag parameter}
-signal triggered: rwsh.duplicate_parameter ( - .function_all_flags ) 
+$.function_all_flags a [optional0] [optional1 optional2 optional3] required {
+  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+
+0
+$w a
+{; for &{.list_locals}$ {.combine $1 ( $$1 ) \ }}
+0
+$a
+signal triggered: rwsh.bad_argc ( 0 1 0 a ) 
 
 -1
-$.function_all_flags a [-x] [-] [-x] [--long-opt] y second {
-  e another illegal duplicate flag parameter}
-signal triggered: rwsh.duplicate_parameter ( -x .function_all_flags ) 
+$a single
+signal triggered: rwsh.bad_argc ( 1 1 0 a ) 
 
 -1
-$.function_all_flags a [-x] [-] [--long-opt] y second y {
-  e illegal duplicate required parameter}
-signal triggered: rwsh.duplicate_parameter ( y .function_all_flags ) 
+$a one two
+signal triggered: rwsh.bad_argc ( 1 1 1 a ) 
 
 -1
-$.function_all_flags a [-x] [-] [--long-opt] -x second {
-  e illegal duplication between flags and required parameters}
-signal triggered: rwsh.duplicate_parameter ( -x .function_all_flags ) 
-
--1
-$.function_all_flags a [-] [--long-opt] -x second [-x] {
-  e evil duplication between flags and required parameters}
-signal triggered: rwsh.duplicate_parameter ( -x .function_all_flags ) 
-
--1
-$.function_all_flags a [-x] [-] [--long-opt] -- second {
-  e -- cannot be a required parameter even if only an implicit option}
-signal triggered: rwsh.duplicate_parameter ( -- .function_all_flags ) 
+$a one two three
+optional0(one) optional1(two) required(three) 
+0
+$a one two three four
+signal triggered: rwsh.bad_argc ( 2 1 2 a ) 
 
 -1
 $.function_all_flags a -y [second] {
@@ -1124,7 +1158,7 @@ $a -first excess
 signal triggered: rwsh.bad_argc ( 1 0 1 a ) 
 
 -1
-$a -to -- -first
+$a -to -- -first -- stops flag parsing rather than being a flag
 signal triggered: rwsh.bad_argc ( 1 0 2 a ) 
 
 -1
@@ -1533,6 +1567,7 @@ rwsh.bad_argc
 rwsh.bad_argfunction_style
 rwsh.bad_if_nest
 rwsh.binary_not_found
+rwsh.dash_dash_argument
 rwsh.divide_by_zero
 rwsh.double_redirection
 rwsh.duplicate_parameter

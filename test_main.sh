@@ -239,11 +239,20 @@ b
 f g {e hi $nl; f g {e there $nl}; f h {e nothing here}; g}
 g
 
-# .function_all_flags
+# .function_all_flags .function_some_flags
 .function_all_flags
+.function_all_flags /bin/echo {e cannot define a path to be a function}
+.function_all_flags .exit {e cannot redefine a builtin as a function}
+.function_all_flags .a {can define a function for non-existant builtin}
 .function_all_flags rwsh.argfunction {e cannot define rwsh.argfunction}
-.function_all_flags a {e zero argument function acceptable}
-a
+.function_all_flags a y y {e illegal duplicate required parameter}
+.function_all_flags a [-x] [-x] {e illegal duplicate flag parameter}
+.function_all_flags a [x x] {e illegal duplicate optional parameter}
+.function_all_flags a [-x arg bar] [-y arg] {e illegal duplicate flag argument}
+.function_all_flags a -x [-x] {e evil duplication between flags positional}
+.function_all_flags a -- {e -- cannot be a required parameter}
+.function_all_flags a [--] [--] {e even -- cannot be a duplicate flag parameter}
+.function_all_flags a [-- arg] {e -- cannot take arguments}
 .function_all_flags test_var_greater
 .function_all_flags test_var_greater var value {.test_greater $$var $value}
 .set A $MAX_NESTING
@@ -251,7 +260,6 @@ a
 test_var_greater MAX_NESTING
 test_var_greater MAX_NESTING 3 12
 test_var_greater MAX_NESTING 3
-.function_all_flags ntimes n n {e can't have two parameters of the same name} 
 .function_all_flags ntimes n {
   .while test_var_greater n 0 {rwsh.mapped_argfunction {rwsh.argfunction}
                                .var_subtract n 1}}
@@ -261,7 +269,11 @@ ntimes 3 -- {e -- must preceed all positional arguments}
 ntimes 2 {ntimes 3 {e &&n and $n remaining $nl}}
 .set MAX_NESTING $A
 .function_all_flags a [-x] [-] [--long-opt y second {
-  e illegal missing close bracket}
+  e mismatched bracket (i.e. missing close brakcet)}
+.function_all_flags a [-x] {
+  e unrecognized_flag, not undefined_variable $nl
+  test_var_greater -x 1}
+a
 .function_all_flags a [-x] [--long-opt y] second {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
@@ -282,18 +294,14 @@ a -x opt and req
 a -x first second third fourth req
 a -q one two -q three four five
 a -x one two three four -q five six seven
-.function_all_flags a [-x] [-] [--long-opt] [-] y second {
-  e illegal duplicate flag parameter}
-.function_all_flags a [-x] [-] [-x] [--long-opt] y second {
-  e another illegal duplicate flag parameter}
-.function_all_flags a [-x] [-] [--long-opt] y second y {
-  e illegal duplicate required parameter}
-.function_all_flags a [-x] [-] [--long-opt] -x second {
-  e illegal duplication between flags and required parameters}
-.function_all_flags a [-] [--long-opt] -x second [-x] {
-  e evil duplication between flags and required parameters}
-.function_all_flags a [-x] [-] [--long-opt] -- second {
-  e -- cannot be a required parameter even if only an implicit option}
+.function_all_flags a [optional0] [optional1 optional2 optional3] required {
+  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+w a
+a
+a single
+a one two
+a one two three
+a one two three four
 .function_all_flags a -y [second] {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
@@ -341,7 +349,7 @@ a excess
 a -to
 a -first --
 a -first excess
-a -to -- -first
+a -to -- -first -- stops flag parsing rather than being a flag
 a -to -first
 .function_some_flags a [-first] {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }

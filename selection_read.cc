@@ -40,10 +40,8 @@ void selection_read(const std::string& src, Out res) {
         struct stat sb;
         if (stat(j->c_str(), &sb)) {j = partial.erase(j); --j;}}
     else partial_match_children(partial, *i, ignore, more);
-    if (!partial.size()) {
-      std::list<Entry_pattern>::const_iterator j = i;
-      Signal_argm argm(Argm::Selection_not_found,
-                       entry_pattern_list_to_str(focus.begin(), ++j), src);
-      executable_map.run(argm);}}
+    if (!partial.size())
+      throw Signal_argm(Argm::Selection_not_found,
+                        entry_pattern_list_to_str(focus.begin(), ++i), src);}
   copy(partial.begin(), partial.end(), res);}
 
