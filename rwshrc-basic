@@ -17,15 +17,15 @@
 .function exec {.exec $*}
 .function exit {.exit}
 .function fn {
-  .function $* {rwsh.argfunction}
+  .function_all_flags $* {rwsh.argfunction}
   .local ret $?
   .if .test_number_equal $ret 1 {echo cannot set paths as functions}
   .else_if .test_number_equal $ret 2 {echo cannot set builtins as functions}
   .else_if .test_number_equal $ret 3 {echo cannot set argfunctions in executable map}
   .else_if .test_number_equal $ret 4 {echo function &&1 did not exist to be erased}
   .else {.return $ret}}
-.function fon {
-  .function_all_flags $* {rwsh.argfunction}
+.function fns {
+  .function_some_flags $* {rwsh.argfunction}
   .local ret $?
   .if .test_number_equal $ret 1 {echo cannot set paths as functions}
   .else_if .test_number_equal $ret 2 {echo cannot set builtins as functions}
@@ -53,17 +53,17 @@
 .function wait_bin {.waiting_for_binary; c $nl}
 .function wait_shell {.waiting_for_shell; c $nl}
 .function wait_user {.waiting_for_user; c $nl}
-.function_all_flags which command {
+fn which command {
   .local body ()
   .store_output body {.which_executable $command {rwsh.argfunction}}
   .if .test_number_equal $? 0 {.echo .function $command $body $nl}
   .else {echo no $command}}
-.function whichp {
-  .which_path $1 $PATH
+fn whichp binary {
+  .which_path $binary $PATH
   .if .test_number_equal $? 0 {.nop}
-  .else {echo &&1 not found in $PATH; .return 1}}
+  .else {echo &&binary not found in $PATH; .return 1}}
 .function while {.while $* {rwsh.argfunction}}
-.function var_exists {.var_exists $1}
+fn var_exists var {.var_exists $var}
 
 .function rwsh.autofunction {
   .function $1 {&&{.which_path &&1 $PATH} $*}}

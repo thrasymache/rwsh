@@ -10,11 +10,17 @@ setf PATH &{c $HOME /bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local
 .set FIGNORE .*
 
 # selection commands
-.function sfn {
-  .function $* {.selection_set s $1 $*2; &&{.which_path &&1 $PATH} @$s}}
+fn sfn command {
+  .function_some_flags $command [file] {
+    if_only .var_exists file {.selection_set s $file}
+    &&{.which_path $command $PATH} $-*$ @$s}}
+fn sfn-subcommand system command {
+  .function_some_flags &&{c $system - $command} [file] {
+    if_only .var_exists file {.selection_set s $file}
+    &&{whichp $system} &&command $-*$ @$s}}
 sfn cat 
-.function cd {
-  .selection_set s $1
+fn cd path {
+  .selection_set s $path
   .cd @$s
   .local ret $?
   .if .test_number_equal $ret 1 {echo @$s does not exist}
@@ -22,86 +28,100 @@ sfn cat
   .else {
     &{whichp pwd}
     .set s (); .set s2 ()}}
-.function chmod {.selection_set s $2 $*3; &{whichp chmod} $1 @$s}
-.function cp {/bin/cp @$s $1}
-.function create {.selection_set s $1; &{whichp touch} $s}
-# .function cvs {.selection_set s $2 $*3; &{whichp cvs} $1 @$s}
-fon cvs [-n] command file {
-  .selection_set s $file
-  .if var_exists -n {&{whichp cvs} -n $command @$s}
-  .else {&{whichp cvs} $command @$s}}
-.function cvso {.selection_set s $3 $*4; &{whichp cvs} $1 $2 @$s}
-.function diff {
-  .selection_set s $1; .selection_set s2 $2
-  &{whichp diff} @$s @$s2}
-.function du {.selection_set s $1 $*2; &{whichp du} -hsc @$s}
-sfn ed
-.function gdb {
-  if_only .test_number_equal $# 2 {.set BUILT_EXECUTABLE &&*}
+fns chmod mode [file] {
+  if_only .var_exists file {.selection_set s $file}
+  &{whichp chmod} $-*$ $mode @$s}
+fns cp dest {&{whichp cp} $-*$ @$s $dest}
+fn create file {.selection_set s $file; &{whichp touch} $s}
+fns cvs command [file] {
+  if_only .var_exists file {.selection_set s $file}
+  .if .test_not_empty $s {&{whichp cvs} $-*$ $command @$s}
+  .else {&{whichp cvs} $-*$ $command}}
+fns darcs command [file] {
+  if_only .var_exists file {.selection_set s $file}
+  .if .test_not_empty $s {&{whichp darcs} $-*$ $command @$s}
+  .else {&{whichp darcs} $-*$ $command}}
+fns diff [lhs] [rhs] {
+  if_only .var_exists lhs {.selection_set s $lhs}
+  if_only .var_exists rhs {.selection_set s2 $rhs}
+  &{whichp diff} $-*$ @$s @$s2}
+sfn du
+fns ed [-p prompt] [file] {
+  if_only .var_exists file {.selection_set s $file}
+  &&{whichp ed} $-*$ @$s}
+fns gdb-bash [binary] {
+  if_only .var_exists binary {.set BUILT_EXECUTABLE $binary}
   echo debugging $BUILT_EXECUTABLE
-  &{whichp gdb} $BUILT_EXECUTABLE}
-.function gdb-bash {
-  if_only .test_number_equal $# 2 {.set BUILT_EXECUTABLE &&*}
-  echo debugging $BUILT_EXECUTABLE
+  .local old_shell $SHELL
   .set SHELL /bin/bash
-  &{whichp gdb} $BUILT_EXECUTABLE
-  .set SHELL /bin/rwsh}
-.function grep {
-  .set REGEX $1
-  .selection_set s $2 $*3
-  &{whichp grep} $REGEX @$s}
-.function grep-sel {.set s $grep-sel}
-.function gs {.set s $grep-sel}
-.function_some_flags grepo regex file {
-  .set REGEX $regex
-  .selection_set s $file
-  &{whichp grep} $-*$ $REGEX @$s}
-.function grepl {
-  .set REGEX $1
-  .selection_set s $2 $*3
-  .set grep-sel $s
-  .selection_set grep-sel &&{&{whichp grep} -l $REGEX @$s}$
-  echo $grep-sel}
+  &{whichp gdb} $-*$ $BUILT_EXECUTABLE
+  .set SHELL $old_shell}
+fns gdb [binary] {
+  if_only .var_exists binary {.set BUILT_EXECUTABLE $binary}
+  echo debugging $BUILT_EXECUTABLE
+  &{whichp gdb} $-*$ $BUILT_EXECUTABLE}
+fns git command [file] {
+  if_only .var_exists file {.selection_set s $file}
+  .if .test_not_empty $s {&{whichp git} $-*$ $command @$s}
+  .else {&{whichp git} $-*$ $command}}
+sfn-subcommand git add
+sfn-subcommand git diff
+sfn-subcommand git rm
+sfn-subcommand git status
+fns grep [-l] [regex] [file] {
+  if_only .var_exists regex {.set REGEX $regex}
+  if_only .var_exists file {.selection_set s $file}
+  .if .var_exists -l {
+    .set grep-sel $s
+    .local result ()
+    .store_output result {&{whichp grep} $-*$ $REGEX @$s}
+    .echo $result
+    .selection_set grep-sel $result$}
+  .else {&{whichp grep} $-*$ $REGEX @$s}}
+fn grep-sel {.set s $grep-sel}
+fn gs       {.set s $grep-sel}
 sfn gzip
 sfn gunzip
-.function home {cd $HOME}
-sfn head 
+fn home {cd $HOME}
+fns head [-n lines] [-c bytes] [file] {
+  if_only .var_exists file {.selection_set s $file}
+  &&{whichp head} $-*$ @$s}
 .function ignore {.set FIGNORE $*}
-.function ll {.selection_set s $1 $*2; &{whichp ls} -ld @$s}
-.function ls {.selection_set s $1 $*2; .ls @$s}
+fns ll [file] {
+  if_only .var_exists file {.selection_set s $file}
+  &&{whichp ls} -ld $-*$ @$s}
+fns ls [file] {
+  if_only .var_exists file {.selection_set s $file}
+  .if .test_not_empty $-* {&&{whichp ls} $-*$ @$s}
+  .else {.ls @$s}}
 sfn less 
-.function mv {
-  .if .test_string_unequal $# 2 {echo this mv takes only one argument; .return 1}
-  .else {&{whichp mv} @$s &&1; .set s &&1}}
 sfn md5sum
-.function regrep {
-  .selection_set s $1 $*2
-  &{whichp grep} $REGEX @$s}
-.function regrepo {
-  .selection_set s $2 $*3
-  &{whichp grep} &&{c - &&1} $REGEX @$s}
+fns mv dest {
+  &{whichp mv} $-*$ @$s $dest
+  .set s $dest}
+fns regrep [file] {
+  # wrap grep function to keep REGEX but change file
+  .if .var_exists file {grep $-*$ $REGEX $file}
+  .else {grep $-*$}}
 sfn rm 
-.function rm-r {
-  .selection_set s $1 $*2
-  &{whichp rm} -r @$s}
-.function regrepl {
-  .selection_set s $1 $*2
-  .set grep-sel $s
-  .selection_set grep-sel &&{&{whichp grep} -l $REGEX @$s}$
-  echo $grep-sel}
 sfn sum
-sfn tail
-.function tail-f {.selection_set s $1 $*2; &{whichp tail} -f @$s}
+fns tail [-b blocks] [-c bytes] [-n lines] [file] {
+  if_only .var_exists file {.selection_set s $file}
+  &&{whichp tail} $-*$ @$s}
+fn tar bundled-flags [file] {
+  if_only .var_exists file {.selection_set s $file}
+  &{whichp tar} $bundled-flags @$s}
 sfn touch
 sfn vi 
 sfn view
-.function vim {
+fns vim [file] {
+  if_only .var_exists file {.selection_set s $file}
+  .local old_shell $SHELL
   .set SHELL /bin/bash
-  .selection_set s $1 $*2
-  /usr/bin/vim @$s
-  .set SHELL /bin/rwsh}
+  &{whichp vim} $-*$ @$s
+  .set SHELL $old_shell}
 sfn wc 
-.function unselect {.set s ()}
+fn unselect {.set s ()}
 
 # internal functions
 .function rwsh.run_logic {
@@ -126,6 +146,9 @@ sfn wc
   .return -1}
 .function rwsh.binary_not_found {
   .echo $1 : could not run binary $nl
+  .return -1}
+.function rwsh.dash_dash_argument {
+  .echo optional -- parameter cannot take arguments \( $1 \) with call stack: $*2 $nl
   .return -1}
 .function rwsh.divide_by_zero {
   .echo attempt to divide $1 by 0 with call stack: $*2 $nl
@@ -237,14 +260,14 @@ sfn wc
 .function or {
   .if .return 1 {.nop}; .stepwise $* {.else_if $* {.nop}}; .else {.nop}}
 .global TESTABILITY (an external variable)
-.function st {/bin/rwsh -to <test_main.sh >test.result.last
+fn st {/bin/rwsh -to <test_main.sh >test.result.last
   &{whichp diff} -c test.result test.result.last}
-.function bless-t {/bin/cp test.result.last test.result}
-.function to {/bin/rwsh -to}
-.function mst {make; st}
-fon test_var_not_equal var value {.test_string_unequal $$var $value}
-fon test_var_greater var value {.test_greater $$var $value}
-fon ntimes n {
+fn bless-t {/bin/cp test.result.last test.result}
+fn to {/bin/rwsh -to}
+fn mst {make; st}
+fn test_var_not_equal var value {.test_string_unequal $$var $value}
+fn test_var_greater var value {.test_greater $$var $value}
+fn ntimes n {
   .while test_var_greater n 0 {
     rwsh.mapped_argfunction {rwsh.argfunction}
     .var_subtract n 1}}
