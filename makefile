@@ -59,4 +59,14 @@ dist:
 		rwsh-0.3
 	tar -czf rwsh-0.3.tar.gz rwsh-0.3
 	rm -r rwsh-0.3
+install: rwsh
+	install rwshrc-basic /etc/
+	install rwshrc-default /etc/
+	install rwshrc /etc/
+	install rwsh /bin
+cowboy-install: rwsh
+	ln -sf $(CURDIR)/rwshrc-basic /etc/
+	ln -sf $(CURDIR)/rwshrc-default /etc/
+	ln -sf $(CURDIR)/rwshrc /etc/
+	ln -sf $(CURDIR)/rwsh /bin
 
