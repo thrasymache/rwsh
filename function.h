@@ -1,13 +1,24 @@
 // Copyright (C) 2005-2015 Samuel Newbold
 
 class Command_block : public Base_executable, public std::vector<Arg_script> {
+  typedef std::vector<Arg_script> Base;
  public:
+  std::string trailing;
+
   Command_block() {};
+  Command_block(const Command_block& src) : Base(src), trailing(src.trailing) {
+    };
+  Command_block& operator=(const Command_block& src) {
+    Base::clear();
+    std::copy(src.begin(), src.end(), std::back_inserter(*this));
+    trailing = src.trailing;};
   Command_block(const std::string& src, std::string::size_type& point,
                 unsigned max_soon);
   Command_block* copy_pointer(void) const {
     if (!this) return 0;
-    else return new Command_block(*this);};
+    else {
+      Command_block* result = new Command_block(*this);
+      return result;}};
   Command_block* apply(const Argm& argm, unsigned nesting) const;
   int internal_execute(const Argm& src_argm);
   int operator() (const Argm& src_argm);
@@ -29,6 +40,7 @@ class Function : public Named_executable {
   std::set<std::string> parameter_names;
   bool non_prototype;
   bool all_flags;
+  bool explicit_dash_dash;
 
   Function(const std::string& name_i) :
       name_v(name_i), positional(), required_argc(0), flag_options(),
@@ -46,7 +58,7 @@ class Function : public Named_executable {
     required_argc(src.required_argc), flag_options(src.flag_options),
     parameter_names(src.parameter_names),
     non_prototype(src.non_prototype), all_flags(src.all_flags),
-    body(src.body) {};
+    explicit_dash_dash(src.explicit_dash_dash), body(src.body) {};
   Function(const std::string& name_i, Argm::const_iterator first_parameter,
            Argm::const_iterator parameter_end, bool non_prototype_i,
            bool all_flags_i, const Command_block& src);

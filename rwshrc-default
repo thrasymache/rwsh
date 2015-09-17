@@ -17,10 +17,11 @@ fn sfn command {
 fn sfn-subcommand system command {
   .function_some_flags &&{c $system - $command} [file] {
     if_only .var_exists file {.selection_set s $file}
-    &&{whichp $system} &&command $-*$ @$s}}
+    .if .test_not_empty $s {&&{whichp $system} &&command $-*$ @$s}
+    .else {&&{whichp $system} &&command $-*$}}}
 sfn cat 
-fn cd path {
-  .selection_set s $path
+fn cd [path] {
+  if_only .var_exists path {.selection_set s $path}
   .cd @$s
   .local ret $?
   .if .test_number_equal $ret 1 {echo @$s does not exist}
@@ -68,6 +69,7 @@ fns git command [file] {
   .if .test_not_empty $s {&{whichp git} $-*$ $command @$s}
   .else {&{whichp git} $-*$ $command}}
 sfn-subcommand git add
+sfn-subcommand git commit
 sfn-subcommand git diff
 sfn-subcommand git rm
 sfn-subcommand git status

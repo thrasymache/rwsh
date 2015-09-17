@@ -8,10 +8,15 @@ class Arg_script {
   unsigned argfunction_level;
   Rwsh_istream_p input;
   Rwsh_ostream_p output, error;
+  std::string indent;
+  char terminator;
 
   Arg_script(const Rwsh_istream_p& input, const Rwsh_ostream_p& output,
-               const Rwsh_ostream_p& error);
+             const Rwsh_ostream_p& error, const std::string& indent,
+             char terminator);
  public:
+  static const char* TOKEN_SEPARATORS;
+
   Arg_script(const std::string& src, unsigned max_soon);
   Arg_script(const std::string& src, std::string::size_type& point,
                unsigned max_soon);

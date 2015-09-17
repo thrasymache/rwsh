@@ -36,6 +36,7 @@ Command_block* Command_block::apply(const Argm& argm, unsigned nesting) const {
     std::back_insert_iterator<std::vector<Arg_script> > ins(*result);
     for (Command_block::const_iterator i = begin(); i != end(); ++i) {
       i->apply(argm, nesting, ins);}
+    result->trailing = trailing;
     return result;}}
   
 int Command_block::operator() (const Argm& src_argm) {
@@ -64,8 +65,8 @@ void Command_block::promote_soons(unsigned nesting) {
 
 std::string Command_block::str() const {
   std::string body;
-  for (const_iterator i = begin(); i != end()-1; ++i) body += i->str() + "; ";
-  return "{" + body + back().str() + "}";}
+  for (const_iterator i = begin(); i != end()-1; ++i) body += i->str() + "";
+  return "{" + body + back().str() + "}";}  //+ trailing + ",";}
 
 Command_block::Command_block(const std::string& src,
                                   std::string::size_type& point,
@@ -85,11 +86,12 @@ Function::Function(const std::string& name_i, const std::string& src,
                    std::string::size_type& point, unsigned max_soon) :
     name_v(name_i), positional(), required_argc(0), flag_options(),
     parameter_names(), non_prototype(true), all_flags(true),
-    body(src, point, max_soon) {}
+    explicit_dash_dash(false), body(src, point, max_soon) {}
 
 Function::Function(const std::string& name_i, const std::string& src) :
     name_v(name_i), positional(), required_argc(0), flag_options(),
-    parameter_names(), non_prototype(true), all_flags(true) {
+    parameter_names(), non_prototype(true), all_flags(true),
+    explicit_dash_dash(false) {
   std::string::size_type point = 0;
   try {
     body = Command_block(src, point, 0);
@@ -112,7 +114,7 @@ Function::Function(const std::string& name_i,
                    const Command_block& src) :
     name_v(name_i), positional(), required_argc(), flag_options(),
     parameter_names(), non_prototype(non_prototype_i),
-    all_flags(all_flags_i), body(src) {
+    all_flags(all_flags_i), explicit_dash_dash(false), body(src) {
   for (Argm::const_iterator i = first_parameter; i != parameter_end; ++i)
     if ((*i)[0] != '[') {
       check_for_duplicates(*i);
@@ -137,7 +139,7 @@ Function::Function(const std::string& name_i,
           check_for_duplicates(last_name);
           group.names.push_back(last_name);}}
       if (param_name[0] != '-') positional.push_back(group);
-      else if (param_name == "--"); // discard implicit [--]
+      else if (param_name == "--") explicit_dash_dash = true;
       else flag_options[param_name] = group;}}
 
 // generate a new function by unescaping argument functions and replacing
@@ -236,7 +238,36 @@ void Function::promote_soons(unsigned nesting) {
   if (!this) return;
   else body.promote_soons(nesting);}
 
+std::string escape(const std::string& src) {
+  if (!src.length()) return "()";
+  else return src;}
+
 // convert the function to a string. except for the handling of the name this
 // is the inverse of the string constructor.
 std::string Function::str() const {
-  return body.str();}
+  std::string prototype;
+  if (non_prototype) {
+    if (!is_argfunction_name(name()))
+      prototype = ".function " + escape(name()) + " ";}
+  else {
+    if (all_flags) prototype = ".function_all_flags " + escape(name()) + " ";
+    else  prototype = ".function_some_flags " + escape(name()) + " ";
+    for (std::map<std::string, Parameter_group>::const_iterator i =
+             flag_options.begin(); i != flag_options.end(); ++i)
+      if (i->second.required) prototype.append(i->second.names[0] + " ");
+      else {
+        prototype.append("[" + i->second.names[0]);
+        for (std::vector<std::string>::const_iterator j =
+             i->second.names.begin()+1; j != i->second.names.end(); ++j)
+           prototype.append(" " + *j);
+        prototype.append("] ");}
+    if (explicit_dash_dash) prototype.append("[--] ");
+    for (std::vector<Parameter_group>::const_iterator i = positional.begin();
+         i != positional.end(); ++i)
+      if (i->required) prototype.append(i->names[0] + " ");
+      else {
+        prototype.append("[" + i->names[0]);
+        for (std::vector<std::string>::const_iterator j = i->names.begin()+1;
+             j != i->names.end(); ++j) prototype.append(" " + *j);
+        prototype.append("] ");}}
+  return prototype + body.str();}

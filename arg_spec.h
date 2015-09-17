@@ -14,6 +14,7 @@ class Arg_spec {
   int word_selection;
   Command_block* substitution;
   std::string text;
+  std::string trailing;
 
   void add_function_spec(const std::string& src);
  public:
@@ -22,7 +23,8 @@ class Arg_spec {
            std::string::size_type& point, unsigned max_soon);
   Arg_spec(Arg_type type, unsigned soon_level, unsigned ref_level,
            unsigned expand_count, int word_selection,
-           Command_block* substitution, std::string text);
+           Command_block* substitution, const std::string& text,
+           const std::string& trailing);
   Arg_spec(const Arg_spec& src);
   ~Arg_spec();
   void apply(const Argm& src, unsigned nesting,

@@ -2,4 +2,5 @@
 *.a
 rwsh
 last.test.result
+last.test_quick.result
 test_files/tmp

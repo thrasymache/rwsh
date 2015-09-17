@@ -56,7 +56,7 @@
 fn which command {
   .local body ()
   .store_output body {.which_executable $command {rwsh.argfunction}}
-  .if .test_number_equal $? 0 {.echo .function $command $body $nl}
+  .if .test_number_equal $? 0 {.echo $body $nl}
   .else {echo no $command}}
 fn whichp binary {
   .which_path $binary $PATH

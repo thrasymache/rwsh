@@ -52,6 +52,6 @@ inline Argm::star_var(const std::string& key, unsigned reference_level,
   for (const_iterator i = begin()+n; i != end(); ++i) {
     std::string next = *i;
     for (unsigned i = 0; i < reference_level; ++i) next = get_var(next);
-    *res++ = Arg_spec(FIXED, 0, 0, 0, -1, 0, next);}
+    *res++ = Arg_spec(FIXED, 0, 0, 0, -1, 0, next, " ");}
   return res;}
 

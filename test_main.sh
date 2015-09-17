@@ -24,6 +24,8 @@ line continuation
 .which_executable rwsh.argfunction {rwsh.argfunction with text args}
 .which_executable rwsh.argfunction {rwsh.argfunction {with a function arg}}
 .which_executable rwsh.argfunction {{{{{{{{{{{}}}}}}}}}}}
+.which_executable rwsh.argfunction {
+  .function  x  { &&{ .which_path  echo  $PATH }  something } }
 
 # ability of functions to immitate built-ins
 .function f {.function $1 {rwsh.argfunction}}
@@ -261,6 +263,7 @@ g
 .function_all_flags a [-- arg] {e -- cannot take arguments}
 .function_all_flags test_var_greater
 .function_all_flags test_var_greater var value {.test_greater $$var $value}
+w test_var_greater
 .set A $MAX_NESTING
 .set MAX_NESTING 15
 test_var_greater MAX_NESTING

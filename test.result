@@ -85,7 +85,8 @@ $.which_executable rwsh.mapped_argfunction {.nop}
 0
 $.which_executable rwsh.argfunction {
   multiple line argfunction }
-{; multiple line argfunction}
+{
+  multiple line argfunction}
 0
 $.nop rwsh.argfunction rwsh.mismatched_brace } 
 signal triggered: rwsh.mismatched_brace ( .nop rwsh.argfunction rwsh.mismatched_brace } ) 
@@ -109,6 +110,11 @@ signal triggered: rwsh.arguments_for_argfunction ( rwsh.argfunction )
 $.which_executable rwsh.argfunction {{{{{{{{{{{}}}}}}}}}}}
 {{{{{{{{{{{}}}}}}}}}}}
 0
+$.which_executable rwsh.argfunction {
+  .function  x  { &&{ .which_path  echo  $PATH }  something } }
+{
+  .function x { &{ .which_path echo $PATH} something}}
+0
 $
 
 0
@@ -128,22 +134,22 @@ $f m {rwsh.argfunction}
 
 0
 $.which_executable f
-{.function $1 {rwsh.argfunction}}
+.function f {.function $1 {rwsh.argfunction}}
 0
 $.which_executable w
-{.which_executable $1 {rwsh.argfunction}}
+.function w {.which_executable $1 {rwsh.argfunction}}
 0
 $.which_executable e
-{.echo $*}
+.function e {.echo $*}
 0
 $.which_executable m
-{rwsh.argfunction}
+.function m {rwsh.argfunction}
 0
 $w e
-{.echo $*}
+.function e {.echo $*}
 0
 $w () {}
-{.nop}
+.function () {.nop}
 0
 $e text that doesn't have a prompt appended
 text that doesn't have a prompt appended
@@ -756,7 +762,7 @@ $.function a {.nop}
 
 0
 $.which_executable a
-{.nop}
+.function a {.nop}
 0
 $a 1 2 3
 
@@ -777,7 +783,7 @@ $.function a {e 9 $A $1 @/usr}
 
 0
 $.which_executable a
-{e 9 $A $1 @/usr}
+.function a {e 9 $A $1 @/usr}
 0
 $a \
 9   /usr
@@ -810,7 +816,7 @@ $g a {e 3 2 1 $nl}
 
 0
 $w a
-{.function $1 {e 3 2 1 $nl}}
+.function a {.function $1 {e 3 2 1 $nl}}
 0
 $a b
 
@@ -890,6 +896,9 @@ $.function_all_flags test_var_greater
 $.function_all_flags test_var_greater var value {.test_greater $$var $value}
 
 0
+$w test_var_greater
+.function_all_flags test_var_greater var value {.test_greater $$var $value}
+0
 $.set A $MAX_NESTING
 
 0
@@ -913,7 +922,9 @@ $.function_all_flags ntimes n {
 
 0
 $w ntimes
-{; .while test_var_greater n 0 {rwsh.mapped_argfunction {rwsh.argfunction}; .var_subtract n 1}}
+.function_all_flags ntimes n {
+  .while test_var_greater n 0 {rwsh.mapped_argfunction {rwsh.argfunction}
+                               .var_subtract n 1}}
 0
 $ntimes -- 3 {e $n remaining $nl}
 3 remaining 
@@ -957,7 +968,8 @@ $.function_all_flags a [-x] [--long-opt y] second {
 
 0
 $w a
-{; for &{.list_locals}$ {.combine $1 ( $$1 ) \ }}
+.function_all_flags a [--long-opt y] [-x] second {
+  for &{.list_locals}$ {.combine $1 ( $$1 ) \ }}
 0
 $a
 signal triggered: rwsh.bad_argc ( 0 1 0 a ) 
@@ -984,7 +996,8 @@ $.function_all_flags a [-q option1 option2] [-x o1 o2 o3 o4] required {
 
 0
 $w a
-{; for &{.list_locals}$ {.combine $1 ( $$1 ) \ }}
+.function_all_flags a [-q option1 option2] [-x o1 o2 o3 o4] required {
+  for &{.list_locals}$ {.combine $1 ( $$1 ) \ }}
 0
 $a
 signal triggered: rwsh.bad_argc ( 0 1 0 a ) 
@@ -1018,7 +1031,8 @@ $.function_all_flags a [optional0] [optional1 optional2 optional3] required {
 
 0
 $w a
-{; for &{.list_locals}$ {.combine $1 ( $$1 ) \ }}
+.function_all_flags a [optional0] [optional1 optional2 optional3] required {
+  for &{.list_locals}$ {.combine $1 ( $$1 ) \ }}
 0
 $a
 signal triggered: rwsh.bad_argc ( 0 1 0 a ) 
@@ -1044,7 +1058,8 @@ $.function_all_flags a -y [second] {
 
 0
 $w a
-{; for &{.list_locals}$ {.combine $1 ( $$1 ) \ }}
+.function_all_flags a -y [second] {
+  for &{.list_locals}$ {.combine $1 ( $$1 ) \ }}
 0
 $a
 signal triggered: rwsh.bad_argc ( 0 1 0 a ) 
@@ -1065,7 +1080,8 @@ $.function_all_flags a [-x] [-] [--long-opt] -y second {
 
 0
 $w a 
-{; for &{.list_locals}$ {.combine $1 ( $$1 ) \ }}
+.function_all_flags a [-] [--long-opt] [-x] -y second {
+  for &{.list_locals}$ {.combine $1 ( $$1 ) \ }}
 0
 $a --long-opt -xx over-long flag
 signal triggered: rwsh.unrecognized_flag ( -xx a ) 
@@ -1166,7 +1182,9 @@ $.function_all_flags a [-first] [-to] [--] {
 
 0
 $w a 
-{; for &{.list_locals}$ {.combine $1 ( $$1 ) \ }; e nothing_required}
+.function_all_flags a [-first] [-to] [--] {
+  for &{.list_locals}$ {.combine $1 ( $$1 ) \ }
+  e nothing_required}
 0
 $a
 -*() nothing_required
@@ -1198,7 +1216,9 @@ $.function_some_flags a [-first] {
 
 0
 $w a 
-{; for &{.list_locals}$ {.combine $1 ( $$1 ) \ }; e nothing_required}
+.function_some_flags a [-first] {
+  for &{.list_locals}$ {.combine $1 ( $$1 ) \ }
+  e nothing_required}
 0
 $a
 -*() nothing_required
@@ -1230,7 +1250,9 @@ $.function_some_flags a {
 
 0
 $w a 
-{; for &{.list_locals}$ {.combine $1 ( $$1 ) \ }; e nothing_required}
+.function_some_flags a {
+  for &{.list_locals}$ {.combine $1 ( $$1 ) \ }
+  e nothing_required}
 0
 $a
 -*() nothing_required
@@ -1905,10 +1927,18 @@ $# .source is tested by having test_init.sh define #
 
 -1
 $w .init
-{.set MAX_NESTING 10; .function rwsh.file_open_failure {.echo init file $1 does not exist (call stack $*2 ) 
-}; .function rwsh.raw_command {.nop $*}; .source /etc/rwshrc $*; .for &{.internal_functions}$ {.if .which_test $1 {.nop}; .else {.echo &&1 not defined 
-}}; .if .which_test rwsh.help {.if .test_not_empty &&{rwsh.help} {.nop}; .else {.echo rwsh.help produces no output 
-}}; .else {.echo rwsh.help not defined 
+.function .init {.set MAX_NESTING 10
+.function rwsh.file_open_failure {.echo init file $1 does not exist (call stack $*2 ) 
+}
+.function rwsh.raw_command {.nop $*}
+.source /etc/rwshrc $*
+.for &{.internal_functions}$ {.if .which_test $1 {.nop}
+.else {.echo &&1 not defined 
+}}
+.if .which_test rwsh.help {.if .test_not_empty &&{rwsh.help} {.nop}
+.else {.echo rwsh.help produces no output 
+}}
+.else {.echo rwsh.help not defined 
 }}
 0
 $
@@ -2256,7 +2286,7 @@ $.which_executable j
 
 1
 $.which_executable #
-{.nop}
+.function # {.nop}
 0
 $w rwsh.mapped_argfunction {.nop 1 () \ \\ \$ \@}
 {.nop 1 () \ \ \$ \@}
@@ -2773,13 +2803,15 @@ $# following tests will fail.
 
 0
 $w rwsh.after_command
-{; .set last_command_return $?; .echo $nl; .echo $last_command_return; .echo $nl}
+.function rwsh.after_command {
+  .set last_command_return $?
+  .echo $nl; .echo $last_command_return; .echo $nl}
 0
 $w rwsh.prompt
-{.echo \$}
+.function rwsh.prompt {.echo \$}
 0
 $w rwsh.raw_command
-{.echo $1; .echo $nl}
+.function rwsh.raw_command {.echo $1; .echo $nl}
 0
 $
 
@@ -2842,7 +2874,7 @@ $z 1 2 3
 
 0
 $w z
-{e $* $nl}
+.function z {e $* $nl}
 0
 $f rwsh.autofunction
 
@@ -2886,8 +2918,9 @@ x : command not found ( x )
 
 -1
 $w rwsh.executable_not_found
-{.echo $1 : command not found ( $* ) 
-; .return -1}
+.function rwsh.executable_not_found {.echo $1 : command not found ( $* ) 
+
+.return -1}
 0
 $
 
@@ -2911,7 +2944,9 @@ $f g {w rwsh.argfunction {rwsh.unescaped_argfunction}
 
 0
 $g {}
-{w rwsh.argfunction {}; w rwsh.argfunction {rwsh.argfunction}; w rwsh.argfunction {rwsh.escaped_argfunction}}{}{rwsh.argfunction}
+{w rwsh.argfunction {}
+     w rwsh.argfunction {rwsh.argfunction}
+     w rwsh.argfunction {rwsh.escaped_argfunction}}{}{rwsh.argfunction}
 0
 $
 
