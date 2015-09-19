@@ -3,6 +3,7 @@
 //
 // Copyright (C) 2006-2015 Samuel Newbold
 
+#include <cstdlib>
 #include <dirent.h>
 #include <fcntl.h>
 #include <list>
@@ -217,7 +218,7 @@ std::string Arg_spec::str(void) const {
     case SELECT_VAR: return "@$" + text;
     case SELECT_STAR_VAR: return "@$*" + text;
     case SUBSTITUTION: return "&" + base + substitution->str() + tail;
-    default: abort();}}
+    default: std::abort();}}
 
 // produce one or more strings for destination Argm from Arg_spec and source
 // Argm
@@ -226,7 +227,7 @@ void Arg_spec::interpret(const Argm& src,
   switch(type) {
     case FIXED:      *res++ = text; break;
     case REFERENCE: case SOON: {
-      if (soon_level) abort(); // constructor guarantees SOONs are already done
+      if (soon_level) std::abort(); // constructor guarantees SOONs already done
       std::string next = src.get_var(text);
       for (unsigned i = 0; i < ref_level; ++i) next = src.get_var(next);
       if (word_selection != -1) {
@@ -239,14 +240,14 @@ void Arg_spec::interpret(const Argm& src,
       else tokenize_words(next, res);
       break;}
     case STAR_REF: case STAR_SOON:
-      if (soon_level) abort(); // constructor guarantees SOONs are already done
+      if (soon_level) std::abort(); // constructor guarantees SOONs already done
       res = src.star_var(text, ref_level, res); break;
     case SELECTION:  selection_read(text, res); break;
     case SELECT_VAR: selection_read(src.get_var(text), res); break;
     case SELECT_STAR_VAR: 
       default_output <<"@$* not implemented yet\n"; break;
     case SUBSTITUTION: {
-      if (soon_level) abort(); // constructor guarantees SOONs are already done
+      if (soon_level) std::abort(); // constructor guarantees SOONs already done
       Substitution_stream override_stream;
       Argm temp_argm(src);
       temp_argm.output = override_stream.child_stream();
@@ -262,7 +263,7 @@ void Arg_spec::interpret(const Argm& src,
       else if (expand) tokenize_words (override_stream.value(), res);
       else *res++ = override_stream.value();
       break;}
-    default: abort();}}
+    default: std::abort();}}
 
 void Arg_spec::promote_soons(unsigned nesting) {
   switch(type) {

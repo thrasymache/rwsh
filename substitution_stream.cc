@@ -1,5 +1,6 @@
 // Copyright (C) 2007-2015 Samuel Newbold
 
+#include <cstdlib>
 #include <errno.h>
 #include <iostream>
 #include <iomanip>
@@ -14,7 +15,7 @@
 #include "substitution_stream.h"
 
 Rwsh_ostream* Substitution_stream::copy_pointer(void) {
-  abort();} // substitution streams are not used in this way
+  std::abort();} // substitution streams are not used in this way
 
 Rwsh_ostream& Substitution_stream::operator<<(const std::string& r) {
   buffer <<r; 

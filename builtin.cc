@@ -2,6 +2,9 @@
 //
 // Copyright (C) 2006-2015 Samuel Newbold
 
+#include <climits>
+#include <cfloat>
+#include <cstdlib>
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -147,7 +150,7 @@ int b_fork(const Argm& argm) {
                 argm.parent_map(),
                 argm.input, argm.output.child_stream(), argm.error);
     ret = executable_map.run(lookup);
-    exit(ret);}
+    std::exit(ret);}
   else plumber.wait(&ret);
   return ret;}
 
@@ -621,7 +624,7 @@ int b_var_subtract(const Argm& argm) {
   catch (E_nan) {throw Signal_argm(Argm::Not_a_number, argm[2]);}
   catch (E_range) {throw Signal_argm(Argm::Input_range, argm[2]);}
   double difference = var_term - const_term;
-  if (difference == 1e309 || difference == -1e309)
+  if (difference >= DBL_MAX || difference <= -DBL_MAX)
     throw Signal_argm(Argm::Result_range, var_str, argm[2]);
   std::ostringstream tmp; 
   tmp <<difference;

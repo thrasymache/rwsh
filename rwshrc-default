@@ -32,7 +32,9 @@ fns chmod mode [file] {
   if_only .var_exists file {.selection_set s $file}
   &{whichp chmod} $-*$ $mode @$s}
 fns cp dest {&{whichp cp} $-*$ @$s $dest}
-fn create file {.selection_set s $file; &{whichp touch} $s}
+fn create [file] {
+  if_only .var_exists file {.selection_set s $file}
+  &{whichp touch} $s}
 fns cvs command [file] {
   if_only .var_exists file {.selection_set s $file}
   .if .test_not_empty $s {&{whichp cvs} $-*$ $command @$s}
@@ -60,6 +62,7 @@ fns gdb [binary] {
   if_only .var_exists binary {.set BUILT_EXECUTABLE $binary}
   echo debugging $BUILT_EXECUTABLE
   &{whichp gdb} $-*$ $BUILT_EXECUTABLE}
+.function git-git {&{whichp git} $*}
 fns git command [file] {
   if_only .var_exists file {.selection_set s $file}
   .if .test_not_empty $s {&{whichp git} $-*$ $command @$s}
@@ -260,9 +263,9 @@ fn unselect {.set s ()}
 .function or {
   .if .return 1 {.nop}; .stepwise $* {.else_if $* {.nop}}; .else {.nop}}
 .global TESTABILITY (an external variable)
-fn st {/bin/rwsh -to <test_main.sh >test.result.last
-  &{whichp diff} -c test.result test.result.last}
-fn bless-t {/bin/cp test.result.last test.result}
+fn st {/bin/rwsh -to <test_main.sh >last.test.result
+  &{whichp diff} -c test.result last.test.result}
+fn bless-t {/bin/cp last.test.resulttest.result}
 fn to {/bin/rwsh -to}
 fn mst {make; st}
 fn test_var_not_equal var value {.test_string_unequal $$var $value}

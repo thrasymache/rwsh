@@ -5,6 +5,7 @@
 //
 // Copyright (C) 2006-2015 Samuel Newbold
 
+#include <cstdlib>
 #include <exception>
 #include <fstream>
 #include <iterator>
@@ -41,7 +42,7 @@ std::string::size_type add_quote(const std::string& src,
       point = split;
       split += 2;
       break;
-    default: abort();}
+    default: std::abort();}
   if (split == std::string::npos)
     throw Unclosed_parenthesis(src.substr(0, point+1));
   else {
@@ -99,7 +100,7 @@ Arg_script::Arg_script(const std::string& src, unsigned max_soon) :
   if (point < src.length())
     if (src[point] == '}' || src[point] == ';')
       throw Signal_argm(Argm::Mismatched_brace, src.substr(0, point+1));
-    else abort();}
+    else std::abort();}
 
 Arg_script::Arg_script(const std::string& src,
                            std::string::size_type& point, unsigned max_soon) :
@@ -125,7 +126,7 @@ std::string::size_type Arg_script::constructor(const std::string& src,
     else if (args.front().str() == "rwsh.argfunction") argfunction_level = 2;
     else if (args.front().str() == "rwsh.escaped_argfunction")
       argfunction_level = 3;
-    else abort();                            // unhandled argfunction level
+    else std::abort();                           // unhandled argfunction level
   return point;}
 
 void Arg_script::add_token(const std::string& src, unsigned max_soon) {

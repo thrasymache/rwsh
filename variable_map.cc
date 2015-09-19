@@ -3,6 +3,7 @@
 //
 // Copyright (C) 2006-2015 Samuel Newbold
 
+#include <cstring>
 #include <map>
 #include <stdlib.h>
 #include <sstream>
@@ -87,9 +88,9 @@ char** Variable_map::copy_to_char_star_star(In first, In last, char** res) {
     std::string key = first->first;
     std::string value = get(key);
     *res = new char[key.length() + value.length() + 2];
-    strcpy(*res, key.c_str());
+    std::strcpy(*res, key.c_str());
     (*res)[key.length()] = '=';
-    strcpy(*res + key.length() + 1, value.c_str());}
+    std::strcpy(*res + key.length() + 1, value.c_str());}
   *res = 0;
   return res;}
 

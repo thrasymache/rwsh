@@ -3,6 +3,8 @@
 //
 // Copyright (C) 2005-2015 Samuel Newbold
 
+#include <cstring>
+#include <cstdlib>
 #include <map>
 #include <set>
 #include <sstream>

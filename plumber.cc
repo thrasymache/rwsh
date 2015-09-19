@@ -8,6 +8,7 @@
 #include <sys/time.h>
 #include <sys/wait.h>
 #include <string>
+#include <unistd.h>
 #include <vector>
 
 #include "rwsh_stream.h"
@@ -29,7 +30,7 @@ class fd_handler :
   bool operator()(const std::pair<int, Rwsh_ostream*>& focus) {
     int n = read(focus.first, buffer, buffer_size);
     if (n <= 0 || Named_executable::unwind_stack()) {
-      int ret = ::close(focus.first);
+      int ret = close(focus.first);
       if (ret) std::cerr <<"failing close " <<focus.first <<"returned " <<ret 
                          <<std::endl;
       return true;}
@@ -40,7 +41,7 @@ class fd_handler :
 void Plumber::after_fork() {
   for (std::vector<int>::const_iterator i = fds_to_close_on_fork.begin();
        i != fds_to_close_on_fork.end(); ++i) {
-    int ret = ::close(*i);
+    int ret = close(*i);
     if (ret) std::cerr <<"failing close " <<*i <<"returned " <<ret <<std::endl;}
   fds_to_close_on_fork.clear();}
 
@@ -51,7 +52,7 @@ void Plumber::proxy_output(int fd, Rwsh_ostream* destination) {
 void Plumber::wait(int *ret) {
   for (std::vector<int>::const_iterator i = fds_to_close_on_wait.begin();
        i != fds_to_close_on_wait.end(); ++i) {
-    int ret = ::close(*i);
+    int ret = close(*i);
     if (ret) std::cerr <<"failing close " <<*i <<"returned " <<ret <<std::endl;}
   fds_to_close_on_wait.clear();
   fds_to_close_on_fork.clear();

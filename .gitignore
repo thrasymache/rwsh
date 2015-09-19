@@ -1,3 +1,5 @@
 *.o
 *.a
 rwsh
+last.test.result
+test_files/tmp

@@ -4,10 +4,12 @@
 //
 // Copyright (C) 2005-2015 Samuel Newbold
 
+#include <cstdlib>
 #include <map>
 #include <string>
 #include <signal.h>
 #include <sys/time.h>
+#include <unistd.h>
 #include <vector>
 
 #include "rwsh_stream.h"

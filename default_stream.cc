@@ -1,5 +1,6 @@
 // Copyright (C) 2008-2015 Samuel Newbold
 
+#include <cstdlib>
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -12,9 +13,9 @@
 Default_istream::Default_istream(int fd_i) : fd_v(fd_i) {
   switch (fd_v) {
     case 0: implementation = &std::cin; break;
-    default: abort();}}
+    default: std::abort();}}
 
-Rwsh_istream* Default_istream::copy_pointer(void) {abort();}; // not needed
+Rwsh_istream* Default_istream::copy_pointer(void) {std::abort();}; // not needed
 
 bool Default_istream::fail(void) {return implementation->fail();}
 
@@ -30,9 +31,9 @@ Default_ostream::Default_ostream(int fd_i) : fd_v(fd_i) {
   switch (fd_v) {
     case 1: implementation = &std::cout; break;
     case 2: implementation = &std::cerr; break;
-    default: abort();}}
+    default: std::abort();}}
 
-Rwsh_ostream* Default_ostream::copy_pointer(void) {abort();}; // not needed
+Rwsh_ostream* Default_ostream::copy_pointer(void) {std::abort();}; // not needed
 
 Rwsh_ostream& Default_ostream::operator<<(const std::string& r) {
   *implementation <<r; 

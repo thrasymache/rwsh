@@ -1,5 +1,7 @@
 // Copyright (C) 2005-2008 Samuel Newbold
 
+#include <climits>
+#include <cstdlib>
 #include <limits>
 #include <string>
 #include <sys/errno.h>

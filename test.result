@@ -183,6 +183,12 @@ $# arg_script tests
 $.set A /bin
 
 0
+$.global LC_ALL C
+
+0
+$f sort {&{.which_path sort /bin:/usr/bin} $*}
+
+0
 $e 5 4 3 2 1
 5 4 3 2 1
 0
@@ -309,8 +315,13 @@ $e @test_main.cc
 signal triggered: rwsh.selection_not_found ( test_main.cc test_main.cc ) 
 
 -1
-$e @e*c
-executable.cc executable_map.cc
+$m {m {.for @e*c {e $1 $nl}} >test_files/tmp}
+
+0
+$sort test_files/tmp
+executable.cc 
+executable_map.cc 
+
 0
 $e @test_files/*xx
 test_files/ixxx
@@ -325,11 +336,22 @@ test_files/ixyxyxy
 $e @/bin
 /bin
 0
-$e @/usr/*bin
-/usr/bin /usr/sbin
+$m {m {.for @/usr/*bin {e $1 $nl}} >test_files/tmp}
+
 0
-$e @/etc/rwsh*
-/etc/rwshrc /etc/rwshrc-basic /etc/rwshrc-default
+$sort test_files/tmp
+/usr/bin 
+/usr/sbin 
+
+0
+$m {m {.for @/etc/rwsh* {e $1 $nl}} >test_files/tmp}
+
+0
+$sort test_files/tmp
+/etc/rwshrc 
+/etc/rwshrc-basic 
+/etc/rwshrc-default 
+
 0
 $e @/etc/rw*ic
 /etc/rwshrc-basic
@@ -343,14 +365,19 @@ $.set FIGNORE *de*
 $e @/etc/rwsh*a*
 /etc/rwshrc-basic
 0
-$e @/usr/*l*i*b*x*e*
-/usr/libexec
+$e @*r*w*s*r*c*b*a*
+rwshrc-basic
 0
 $e @test_main.sh
 test_main.sh
 0
-$e @*hrc*
-rwshrc rwshrc-basic
+$m {m {.for @*hrc* {e $1 $nl}} >test_files/tmp}
+
+0
+$sort test_files/tmp
+rwshrc 
+rwshrc-basic 
+
 0
 $.set A r*h.cc sel*.h
 
@@ -2632,6 +2659,16 @@ signal triggered: rwsh.result_range ( 1e308 -1e308 .var_subtract )
 $e $A
 1e308
 0
+$.set A -1e308
+
+0
+$.var_subtract A 1e308
+signal triggered: rwsh.result_range ( -1e308 1e308 .var_subtract ) 
+
+-1
+$e $A
+-1e308
+0
 $.set A -2147483648
 
 0
@@ -2957,6 +2994,7 @@ $/usr/bin/printenv
 ?=0
 A=-7.29496e+09
 FIGNORE=*de*
+LC_ALL=C
 MAX_NESTING=7
 N=4
 last_command_return=0

@@ -49,6 +49,8 @@ for 1 2 3 {e loop $* $nl}
 
 # arg_script tests
 .set A /bin
+.global LC_ALL C
+f sort {&{.which_path sort /bin:/usr/bin} $*}
 e 5 4 3 2 1
 e $A $0 @$A
 e 1 2 $* 3 4
@@ -87,20 +89,24 @@ e @/etc
 # rwsh.selection_not_found
 e @/*is*
 e @test_main.cc
-e @e*c
+m {m {.for @e*c {e $1 $nl}} >test_files/tmp}
+sort test_files/tmp
 e @test_files/*xx
 e @test_files/*x*x*x*x
 e @test_files/*xyxy
 e @/bin
-e @/usr/*bin
-e @/etc/rwsh*
+m {m {.for @/usr/*bin {e $1 $nl}} >test_files/tmp}
+sort test_files/tmp
+m {m {.for @/etc/rwsh* {e $1 $nl}} >test_files/tmp}
+sort test_files/tmp
 e @/etc/rw*ic
 e @/etc/rwsh*a*
 .set FIGNORE *de*
 e @/etc/rwsh*a*
-e @/usr/*l*i*b*x*e*
+e @*r*w*s*r*c*b*a*
 e @test_main.sh
-e @*hrc*
+m {m {.for @*hrc* {e $1 $nl}} >test_files/tmp}
+sort test_files/tmp
 .set A r*h.cc sel*.h
 e @$A
 .return &{.return 0}
@@ -767,6 +773,9 @@ e $A
 .var_subtract A 2 
 .set A 1e308
 .var_subtract A -1e308
+e $A
+.set A -1e308
+.var_subtract A 1e308
 e $A
 .set A -2147483648
 .var_subtract A A

@@ -2,6 +2,7 @@
 //
 // Copyright (C) 2005-2015 Samuel Newbold
 
+#include <cstdlib>
 #include <iostream>
 #include <list>
 #include <map>
