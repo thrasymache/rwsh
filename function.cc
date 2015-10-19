@@ -119,17 +119,20 @@ Function::Function(const std::string& name_i,
     if ((*i)[0] != '[') {
       check_for_duplicates(*i);
       if (*i == "--") throw Signal_argm(Argm::Duplicate_parameter, *i);
-      positional.push_back(Parameter_group(true, *i));
-      ++required_argc;}
+      else if (*i == "...") positional.back().elipsis = true;
+      else {
+        positional.push_back(Parameter_group(true, false, *i));
+        ++required_argc;}}
     else {
       bool single((*i)[i->length()-1] == ']');
       std::string param_name(i->substr(1, i->length() - 1 - single));
       check_for_duplicates(param_name);
-      Parameter_group group(false, param_name);
+      Parameter_group group(false, false, param_name);
       if (!single) {
         for (++i; i != parameter_end && (*i)[i->length()-1] != ']'; ++i) {
           check_for_duplicates(*i);
-          group.names.push_back(*i);}
+          if (*i == "...") group.elipsis = true;
+          else group.names.push_back(*i);}
         if (i == parameter_end)
           throw Signal_argm(Argm::Mismatched_bracket, "[" + param_name);
         else {
@@ -137,7 +140,8 @@ Function::Function(const std::string& name_i,
           if (param_name == "--")
             throw Signal_argm(Argm::Dash_dash_argument, last_name);
           check_for_duplicates(last_name);
-          group.names.push_back(last_name);}}
+          if (last_name == "...") group.elipsis = true;
+          else group.names.push_back(last_name);}}
       if (param_name[0] != '-') positional.push_back(group);
       else if (param_name == "--") explicit_dash_dash = true;
       else flag_options[param_name] = group;}}
@@ -204,17 +208,14 @@ int Function::operator() (const Argm& invoking_argm) {
         unsigned non_optional = available + required_argc - required_remaining;
         throw Signal_argm(Argm::Bad_argc, non_optional, required_argc,
                           invoking_argm.argc()-1-non_optional);}
-      for (; i != invoking_argm.end() && j != positional.end(); ++i, ++j) {
-        if (j->required) {
-          --required_remaining;
-          locals_map.local(j->names[0], *i);}
-        else if (available > required_remaining)
-          locals_map.local(j->names[0], *i);
-        else {
-          unsigned non_optional = available +required_argc -required_remaining;
-          throw Signal_argm(Argm::Bad_argc, non_optional, required_argc,
-                            invoking_argm.argc()-1-non_optional);}
-        --available;}
+      for (; i != invoking_argm.end() && j != positional.end(); ++j)
+        if (j->required || available > required_remaining) {
+          locals_map.local(j->names[0], *i++);
+          --available;
+          if (j->required) --required_remaining;
+          if (j->elipsis) while (available > required_remaining) {
+            --available;
+            locals_map.local_or_append_word(j->names[0], *i++);}}
       if (i != invoking_argm.end()) {
         unsigned non_optional = required_argc;
         while (i != invoking_argm.end()) ++non_optional, ++i;
@@ -264,10 +265,12 @@ std::string Function::str() const {
     if (explicit_dash_dash) prototype.append("[--] ");
     for (std::vector<Parameter_group>::const_iterator i = positional.begin();
          i != positional.end(); ++i)
-      if (i->required) prototype.append(i->names[0] + " ");
-      else {
+      if (i->required) prototype.append(i->names[0] +
+                                        (i->elipsis? " ... ": " "));
+      else  {
         prototype.append("[" + i->names[0]);
         for (std::vector<std::string>::const_iterator j = i->names.begin()+1;
-             j != i->names.end(); ++j) prototype.append(" " + *j);
-        prototype.append("] ");}}
+             j != i->names.end(); ++j) prototype.append(" " + *j );
+        if (i->elipsis) prototype.append(" ...] ");
+        else prototype.append("] ");}}
   return prototype + body.str();}

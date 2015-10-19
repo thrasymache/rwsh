@@ -320,7 +320,7 @@ a 1 2
 a 1 2 3
 .function_all_flags a [-x] [-] [--long-opt] -y second {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
-w a 
+w a
 a --long-opt -xx over-long flag
 a -xx --long-opt over-long flag
 a --long-op short flag
@@ -352,7 +352,7 @@ a --long-opt - -x -x - --long-opt all_flags doubled
 .function_all_flags a [-first] [-to] [--] {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
   e nothing_required}
-w a 
+w a
 a
 a excess
 a -to
@@ -363,7 +363,7 @@ a -to -first
 .function_some_flags a [-first] {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
   e nothing_required}
-w a 
+w a
 a
 a excess
 a -to
@@ -374,8 +374,27 @@ a -to -first
 .function_some_flags a {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
   e nothing_required}
-w a 
+w a
 a
+.function_some_flags a x ... y ... {}
+.function_some_flags a x ... y {
+  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+w a
+a first
+a first second
+a first second third
+a first second third fourth fifth
+.function_some_flags a x [y ...] {
+  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+w a
+a
+a first
+a first second
+a first second third
+a first second third fourth fifth
+.function_some_flags a a [b ... c] d {
+  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+w a
 
 # .global .local .unset .var_exists 
 .global

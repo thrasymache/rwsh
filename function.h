@@ -27,10 +27,12 @@ class Command_block : public Base_executable, public std::vector<Arg_script> {
 
 struct Parameter_group {
   bool required;
+  bool elipsis;
   std::vector<std::string> names;
-  Parameter_group() : required(true), names() {};
-  Parameter_group(bool required_i, const std::string& first_name) :
-      required(required_i), names(1, first_name) {}; };
+  Parameter_group() : required(true), elipsis(false), names() {};
+  Parameter_group(bool required_i, bool elipsis_i,
+                  const std::string& first_name) :
+      required(required_i), elipsis(elipsis_i), names(1, first_name) {}; };
 
 class Function : public Named_executable {
   std::string name_v;

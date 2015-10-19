@@ -1039,20 +1039,18 @@ signal triggered: rwsh.bad_argc ( 0 1 0 a )
 
 -1
 $a single
-signal triggered: rwsh.bad_argc ( 1 1 0 a ) 
-
--1
-$a one two
-signal triggered: rwsh.bad_argc ( 1 1 1 a ) 
-
--1
-$a one two three
-optional0(one) optional1(two) required(three) 
+required(single) 
 0
-$a one two three four
-signal triggered: rwsh.bad_argc ( 2 1 2 a ) 
+$a one two
+optional0(one) required(two) 
+0
+$a one two three
+signal triggered: rwsh.bad_argc ( 1 1 2 a ) 
 
 -1
+$a one two three four five
+optional0(one) optional1(two) optional2(three) optional3(four) required(five) 
+0
 $.function_all_flags a -y [second] {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
@@ -1256,6 +1254,63 @@ $w a
 0
 $a
 -*() nothing_required
+0
+$.function_some_flags a x ... y ... {}
+signal triggered: rwsh.duplicate_parameter ( ... .function_some_flags ) 
+
+-1
+$.function_some_flags a x ... y {
+  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+
+0
+$w a 
+.function_some_flags a x ... y {
+  for &{.list_locals}$ {.combine $1 ( $$1 ) \ }}
+0
+$a first
+signal triggered: rwsh.bad_argc ( 1 2 0 a ) 
+
+-1
+$a first second
+-*() x(first) y(second) 
+0
+$a first second third
+-*() x(first second) y(third) 
+0
+$a first second third fourth fifth
+-*() x(first second third fourth) y(fifth) 
+0
+$.function_some_flags a x [y ...] {
+  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+
+0
+$w a 
+.function_some_flags a x [y ...] {
+  for &{.list_locals}$ {.combine $1 ( $$1 ) \ }}
+0
+$a
+signal triggered: rwsh.bad_argc ( 0 1 0 a ) 
+
+-1
+$a first
+-*() x(first) 
+0
+$a first second
+-*() x(first) y(second) 
+0
+$a first second third
+-*() x(first) y(second third) 
+0
+$a first second third fourth fifth
+-*() x(first) y(second third fourth fifth) 
+0
+$.function_some_flags a a [b ... c] d {
+  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+
+0
+$w a 
+.function_some_flags a a [b ... c] d {
+  for &{.list_locals}$ {.combine $1 ( $$1 ) \ }}
 0
 $
 

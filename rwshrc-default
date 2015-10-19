@@ -11,11 +11,11 @@ setf PATH &{c $HOME /bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local
 
 # selection commands
 fn sfn command {
-  .function_some_flags $command [file] {
+  .function_some_flags $command [file ...] {
     if_only .var_exists file {.selection_set s $file}
     &&{.which_path $command $PATH} $-*$ @$s}}
 fn sfn-subcommand system command {
-  .function_some_flags &&{c $system - $command} [file] {
+  .function_some_flags &&{c $system - $command} [file ...] {
     if_only .var_exists file {.selection_set s $file}
     .if .test_not_empty $s {&&{whichp $system} &&command $-*$ @$s}
     .else {&&{whichp $system} &&command $-*$}}}
@@ -29,18 +29,18 @@ fn cd [path] {
   .else {
     &{whichp pwd}
     .set s (); .set s2 ()}}
-fns chmod mode [file] {
+fns chmod mode [file ...] {
   if_only .var_exists file {.selection_set s $file}
   &{whichp chmod} $-*$ $mode @$s}
 fns cp dest {&{whichp cp} $-*$ @$s $dest}
-fn create [file] {
+fn create [file ...] {
   if_only .var_exists file {.selection_set s $file}
-  &{whichp touch} $s}
-fns cvs command [file] {
+  &{whichp touch} $s$}
+fns cvs command [file ...] {
   if_only .var_exists file {.selection_set s $file}
   .if .test_not_empty $s {&{whichp cvs} $-*$ $command @$s}
   .else {&{whichp cvs} $-*$ $command}}
-fns darcs command [file] {
+fns darcs command [file ...] {
   if_only .var_exists file {.selection_set s $file}
   .if .test_not_empty $s {&{whichp darcs} $-*$ $command @$s}
   .else {&{whichp darcs} $-*$ $command}}
@@ -64,7 +64,7 @@ fns gdb [binary] {
   echo debugging $BUILT_EXECUTABLE
   &{whichp gdb} $-*$ $BUILT_EXECUTABLE}
 .function git-git {&{whichp git} $*}
-fns git command [file] {
+fns git command [file ...] {
   if_only .var_exists file {.selection_set s $file}
   .if .test_not_empty $s {&{whichp git} $-*$ $command @$s}
   .else {&{whichp git} $-*$ $command}}
@@ -73,7 +73,7 @@ sfn-subcommand git commit
 sfn-subcommand git diff
 sfn-subcommand git rm
 sfn-subcommand git status
-fns grep [-l] [regex] [file] {
+fns grep [-l] [regex] [file ...] {
   if_only .var_exists regex {.set REGEX $regex}
   if_only .var_exists file {.selection_set s $file}
   .if .var_exists -l {
@@ -88,14 +88,14 @@ fn gs       {.set s $grep-sel}
 sfn gzip
 sfn gunzip
 fn home {cd $HOME}
-fns head [-n lines] [-c bytes] [file] {
+fns head [-n lines] [-c bytes] [file ...] {
   if_only .var_exists file {.selection_set s $file}
   &&{whichp head} $-*$ @$s}
 .function ignore {.set FIGNORE $*}
-fns ll [file] {
+fns ll [file ...] {
   if_only .var_exists file {.selection_set s $file}
   &&{whichp ls} -ld $-*$ @$s}
-fns ls [file] {
+fns ls [file ...] {
   if_only .var_exists file {.selection_set s $file}
   .if .test_not_empty $-* {&&{whichp ls} $-*$ @$s}
   .else {.ls @$s}}
@@ -104,22 +104,22 @@ sfn md5sum
 fns mv dest {
   &{whichp mv} $-*$ @$s $dest
   .set s $dest}
-fns regrep [file] {
+fns regrep [file ...] {
   # wrap grep function to keep REGEX but change file
   .if .var_exists file {grep $-*$ $REGEX $file}
   .else {grep $-*$}}
 sfn rm 
 sfn sum
-fns tail [-b blocks] [-c bytes] [-n lines] [file] {
+fns tail [-b blocks] [-c bytes] [-n lines] [file ...] {
   if_only .var_exists file {.selection_set s $file}
   &&{whichp tail} $-*$ @$s}
-fn tar bundled-flags [file] {
+fn tar bundled-flags [file ...] {
   if_only .var_exists file {.selection_set s $file}
   &{whichp tar} $bundled-flags @$s}
 sfn touch
 sfn vi 
 sfn view
-fns vim [file] {
+fns vim [file ...] {
   if_only .var_exists file {.selection_set s $file}
   .local old_shell $SHELL
   .set SHELL /bin/bash
@@ -267,7 +267,7 @@ fn unselect {.set s ()}
 .global TESTABILITY (an external variable)
 fn st {/bin/rwsh -to <test_main.sh >last.test.result
   &{whichp diff} -c test.result last.test.result}
-fn bless-t {/bin/cp last.test.resulttest.result}
+fn bless-t {/bin/cp last.test.result test.result}
 fn to {/bin/rwsh -to}
 fn mst {make; st}
 fn test_var_not_equal var value {.test_string_unequal $$var $value}
