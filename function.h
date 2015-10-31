@@ -27,12 +27,13 @@ class Command_block : public Base_executable, public std::vector<Arg_script> {
 
 struct Parameter_group {
   bool required;
-  bool elipsis;
+  std::vector<std::string>::difference_type elipsis;
   std::vector<std::string> names;
-  Parameter_group() : required(true), elipsis(false), names() {};
-  Parameter_group(bool required_i, bool elipsis_i,
-                  const std::string& first_name) :
-      required(required_i), elipsis(elipsis_i), names(1, first_name) {}; };
+  Parameter_group() : required(true), elipsis(-2), names() {};
+  Parameter_group(bool required_i): required(required_i),elipsis(-2),names() {};
+  std::string str() const; };
+
+enum Flag_type {ALL, SOME, IGNORANT};
 
 class Function : public Named_executable {
   std::string name_v;
@@ -41,12 +42,12 @@ class Function : public Named_executable {
   std::map<std::string, Parameter_group> flag_options;
   std::set<std::string> parameter_names;
   bool non_prototype;
-  bool all_flags;
+  Flag_type flags;
   bool explicit_dash_dash;
 
   Function(const std::string& name_i) :
       name_v(name_i), positional(), required_argc(0), flag_options(),
-      parameter_names(), non_prototype(true), all_flags(true),
+      parameter_names(), non_prototype(true), flags(ALL),
       body() {};
   void check_for_duplicates(const std::string& name);
  public:
@@ -59,11 +60,11 @@ class Function : public Named_executable {
     name_v(src.name_v), positional(src.positional),
     required_argc(src.required_argc), flag_options(src.flag_options),
     parameter_names(src.parameter_names),
-    non_prototype(src.non_prototype), all_flags(src.all_flags),
+    non_prototype(src.non_prototype), flags(src.flags),
     explicit_dash_dash(src.explicit_dash_dash), body(src.body) {};
   Function(const std::string& name_i, Argm::const_iterator first_parameter,
            Argm::const_iterator parameter_end, bool non_prototype_i,
-           bool all_flags_i, const Command_block& src);
+           Flag_type flags_i, const Command_block& src);
   Function* copy_pointer(void) const {
     if (!this) return 0;
     else return new Function(*this);};

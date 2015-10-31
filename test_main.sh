@@ -261,6 +261,7 @@ g
 .function_all_flags a -- {e -- cannot be a required parameter}
 .function_all_flags a [--] [--] {e even -- cannot be a duplicate flag parameter}
 .function_all_flags a [-- arg] {e -- cannot take arguments}
+.function_all_flags a [arg -- foo] {e -- cannot take arguments}
 .function_all_flags test_var_greater
 .function_all_flags test_var_greater var value {.test_greater $$var $value}
 w test_var_greater
@@ -310,7 +311,8 @@ a
 a single
 a one two
 a one two three
-a one two three four
+a one two three four five
+a one two three four five six seven eight nine
 .function_all_flags a -y [second] {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
@@ -376,13 +378,30 @@ a -to -first
   e nothing_required}
 w a
 a
+.function_some_flags a ... y {}
+.function_some_flags a [-x] [--file file] ... y {}
+.function_some_flags a [...] x {}
+.function_some_flags a [... y] x {}
+.function_some_flags a x ... [y z] {}
 .function_some_flags a x ... y ... {}
+.function_some_flags a [x ...] [y z] {}
+.function_some_flags a [x ...] y ... {}
+.function_some_flags a [x ... a] [y] {}
+.function_some_flags a [x ... a] y ... {}
+.function_some_flags a [x ... a ...] {}
+.function_some_flags a [x ... a ... b] {}
+.function_some_flags a [-x ...] b [c] {}
 .function_some_flags a x ... y {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a first
 a first second
 a first second third
+a first second third fourth fifth
+.function_some_flags a x [...] {
+  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+w a
+a
 a first second third fourth fifth
 .function_some_flags a x [y ...] {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
@@ -395,6 +414,71 @@ a first second third fourth fifth
 .function_some_flags a a [b ... c] d {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
+a first
+a first second
+a first second third
+a first second third fourth
+a first second third fourth fifth
+a first second third fourth fifth sixth
+.function_some_flags a [-x ...] b c {
+  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+w a
+a first second
+a -x first
+a -x first second
+a -x first second third
+a -x first second third fourth
+.function_some_flags a [-x b ...] c {
+  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+w a
+a first
+a -x first
+a -x first second
+a -x first second third
+a -x first second third fourth
+.function_some_flags a [-x ... b] c {
+  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+w a
+a first
+a -x first
+a -x first second
+a -x first second third
+a -x first second third fourth
+.function_some_flags a x [... y z] {
+  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+w a
+a
+a first
+a first second
+a first second third
+a first second third fourth
+a first second third fourth fifth
+.function_some_flags a [x] [... y] {
+  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+w a
+a
+a first
+a first second
+a first second third
+a first second third fourth
+a first second third fourth fifth
+.function_some_flags a [x y] [... z] {
+  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+w a
+a
+a first
+a first second
+a first second third
+a first second third fourth
+a first second third fourth fifth
+.function_flag_ignorant a [-x] y z {}
+.function_flag_ignorant a [x y] z {
+  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+w a
+a
+a --file
+a first second third
+a -x second -
 
 # .global .local .unset .var_exists 
 .global

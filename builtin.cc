@@ -167,11 +167,11 @@ int b_function(const Argm& argm) {
     return 4 * !executable_map.erase(*(argm.begin()+1));}
   else {
     executable_map.set(new Function(argm[1], argm.end(), argm.end(), true,
-                                    true, argm.argfunction()->body));
+                                    IGNORANT, argm.argfunction()->body));
     return 0;}}
 
 namespace {
-int function_core(const Argm& argm, bool all_flags) {
+int function_core(const Argm& argm, Flag_type all_flags) {
   if (argm.argc() < 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   else if (is_binary_name(argm[1])) return 1;
   else if (is_argfunction_name(argm[1])) return 3;
@@ -191,13 +191,19 @@ int function_core(const Argm& argm, bool all_flags) {
 // add argfunction to executable map with name $1 and arguments $*2
 // the arguments must include all flags that can be passed to this function
 int b_function_all_flags(const Argm& argm) {
-  return function_core(argm, true);}
+  return function_core(argm, ALL);}
+
+// add argfunction to executable map with name $1 and arguments $*2
+// all arguments will be treated as positional arguments whether they begin
+// with a dash or not.
+int b_function_flag_ignorant(const Argm& argm) {
+  return function_core(argm, IGNORANT);}
 
 // add argfunction to executable map with name $1 and arguments $*2
 // the arguments need not all flags that can be passed to this function
 // variables for declared flags will be set, all flags will be available in $-*
 int b_function_some_flags(const Argm& argm) {
-  return function_core(argm, false);}
+  return function_core(argm, SOME);}
 
 // add a variable to the variable map that will remain after the enclosing
 // function terminates

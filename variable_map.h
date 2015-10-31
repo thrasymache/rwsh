@@ -21,6 +21,7 @@ public:
   iterator begin(void) {return Base::begin();};
   iterator end(void) {return Base::end();};
   unsigned size(void) const {return Base::size();};
+  void append_word_locally(const std::string& key, const std::string& value);
   void append_word_if_exists(const std::string& key, const std::string& value);
   void local_or_append_word(const std::string& key, const std::string& value);
   bool exists(const std::string& key) const;

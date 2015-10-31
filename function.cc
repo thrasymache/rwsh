@@ -68,6 +68,15 @@ std::string Command_block::str() const {
   for (const_iterator i = begin(); i != end()-1; ++i) body += i->str() + "";
   return "{" + body + back().str() + "}";}  //+ trailing + ",";}
 
+std::string Parameter_group::str() const {
+  if (required) return names[0] + (elipsis? "": " ...");
+  else {
+    std::string result("[");
+    if (elipsis == -1) result.append("... ");
+    for (std::vector<std::string>::size_type j = 0; j < names.size(); ++j)
+       result.append((j? " ": "") + names[j] + (elipsis == j? " ...": ""));
+    return result + "]";}}
+
 Command_block::Command_block(const std::string& src,
                                   std::string::size_type& point,
                                   unsigned max_soon) {
@@ -85,12 +94,12 @@ Command_block::Command_block(const std::string& src,
 Function::Function(const std::string& name_i, const std::string& src,
                    std::string::size_type& point, unsigned max_soon) :
     name_v(name_i), positional(), required_argc(0), flag_options(),
-    parameter_names(), non_prototype(true), all_flags(true),
+    parameter_names(), non_prototype(true), flags(ALL),
     explicit_dash_dash(false), body(src, point, max_soon) {}
 
 Function::Function(const std::string& name_i, const std::string& src) :
     name_v(name_i), positional(), required_argc(0), flag_options(),
-    parameter_names(), non_prototype(true), all_flags(true),
+    parameter_names(), non_prototype(true), flags(ALL),
     explicit_dash_dash(false) {
   std::string::size_type point = 0;
   try {
@@ -105,46 +114,59 @@ Function::Function(const std::string& name_i, const std::string& src) :
     throw "unclosed parenthesis on construction of function " + name_i + "\n" +
       error.prefix + "\n";}}
 
-// constructor that parses parameters
+// constructor that parses prototypes
 Function::Function(const std::string& name_i,
                    Argm::const_iterator first_parameter,
                    Argm::const_iterator parameter_end,
                    bool non_prototype_i,
-                   bool all_flags_i,
+                   Flag_type flags_i,
                    const Command_block& src) :
     name_v(name_i), positional(), required_argc(), flag_options(),
     parameter_names(), non_prototype(non_prototype_i),
-    all_flags(all_flags_i), explicit_dash_dash(false), body(src) {
+    flags(flags_i), explicit_dash_dash(false), body(src) {
+  bool has_elipsis = false;
   for (Argm::const_iterator i = first_parameter; i != parameter_end; ++i)
-    if ((*i)[0] != '[') {
-      check_for_duplicates(*i);
+    if (*i == "..." || *i == "[...]")
+      if (!positional.size()) throw Signal_argm(Argm::Elipsis_first_arg, *i);
+      else if (has_elipsis) throw Signal_argm(Argm::Post_elipsis_option, *i);
+      else positional.back().elipsis = 0, has_elipsis = true;
+    else if ((*i)[0] != '[')
       if (*i == "--") throw Signal_argm(Argm::Duplicate_parameter, *i);
-      else if (*i == "...") positional.back().elipsis = true;
       else {
-        positional.push_back(Parameter_group(true, false, *i));
-        ++required_argc;}}
+        check_for_duplicates(*i);
+        positional.push_back(Parameter_group(true));
+        positional.back().names.push_back(*i);
+        ++required_argc;}
     else {
-      bool single((*i)[i->length()-1] == ']');
-      std::string param_name(i->substr(1, i->length() - 1 - single));
-      check_for_duplicates(param_name);
-      Parameter_group group(false, false, param_name);
-      if (!single) {
-        for (++i; i != parameter_end && (*i)[i->length()-1] != ']'; ++i) {
-          check_for_duplicates(*i);
-          if (*i == "...") group.elipsis = true;
-          else group.names.push_back(*i);}
-        if (i == parameter_end)
-          throw Signal_argm(Argm::Mismatched_bracket, "[" + param_name);
-        else {
-          std::string last_name(i->substr(0, i->length()-1));
-          if (param_name == "--")
-            throw Signal_argm(Argm::Dash_dash_argument, last_name);
-          check_for_duplicates(last_name);
-          if (last_name == "...") group.elipsis = true;
-          else group.names.push_back(last_name);}}
-      if (param_name[0] != '-') positional.push_back(group);
-      else if (param_name == "--") explicit_dash_dash = true;
-      else flag_options[param_name] = group;}}
+      if (has_elipsis) throw Signal_argm(Argm::Post_elipsis_option, *i);
+      bool group_end((*i)[i->length()-1] == ']');
+      std::string first_name(i->substr(1, i->length() - 1 - group_end));
+      Parameter_group group(false);
+      if (first_name == "...") group.elipsis = -1, has_elipsis = true;
+      else group.names.push_back(first_name);
+      while (!group_end && ++i != parameter_end) {
+        group_end = (*i)[i->length()-1] == ']';
+        std::string name(i->substr(0, i->length() - group_end));
+        if (name == "...")
+          if (has_elipsis) throw Signal_argm(Argm::Post_elipsis_option, name);
+          else group.elipsis = group.names.size()-1, has_elipsis = true;
+        else group.names.push_back(name);}
+      if (!group_end) {
+        std::string group_str(group.str());
+        throw Signal_argm(Argm::Mismatched_bracket,
+                          group_str.substr(0, group_str.length()-1));}
+      if (group.elipsis == -1 && !positional.size())
+        throw Signal_argm(Argm::Elipsis_first_arg, group.str());
+      for (std::vector<std::string>::const_iterator i = group.names.begin();
+           i != group.names.end(); ++i) {
+        check_for_duplicates(*i);
+        if (*i == "--" && group.names.size() > 1)
+          throw Signal_argm(Argm::Dash_dash_argument, group.str());}
+      if (first_name[0] != '-') positional.push_back(group);
+      else if (first_name == "--") explicit_dash_dash = true;
+      else if (flags_i == IGNORANT)
+        throw Signal_argm(Argm::Ignored_flag, group.str());
+      else flag_options[first_name] = group;}}
 
 // generate a new function by unescaping argument functions and replacing
 // unescaped_argfunction with the argument function in argm
@@ -179,43 +201,53 @@ int Function::operator() (const Argm& invoking_argm) {
                invoking_argm.argfunction(), &locals_map,
                invoking_argm.input, invoking_argm.output, invoking_argm.error);
     if (!non_prototype) {
-      if (!all_flags || flag_options.begin() != flag_options.end())
+      if (flags == SOME || flag_options.begin() != flag_options.end())
         locals_map.local("-*", "");
-      unsigned available = invoking_argm.argc()-1;
+      int available = invoking_argm.argc()-1;
+      int needed = required_argc;
       Argm::const_iterator i = invoking_argm.begin()+1;
-      while (i != invoking_argm.end() && (*i)[0] == '-') {
+      if (flags != IGNORANT) while (i != invoking_argm.end() && (*i)[0] == '-'){
         std::map<std::string, Parameter_group>::const_iterator j =
                                                          flag_options.find(*i);
         if (j != flag_options.end()) {
           std::string flag = j->second.names[0];
-          for (std::vector<std::string>::const_iterator k =
-                                                       j->second.names.begin();
-               i != invoking_argm.end() && k != j->second.names.end();
-               ++k, ++i, --available) {
+          available -= j->second.names.size();
+          for (std::vector<std::string>::size_type k = 0;
+               i != invoking_argm.end() && k < j->second.names.size(); ++k) {
             locals_map.local_or_append_word(flag, *i);
-            locals_map.append_word_if_exists("-*", *i);
-            if (*k != flag) locals_map.local_or_append_word(*k, *i);}}
+            if (k) locals_map.local_or_append_word(j->second.names[k], *i);
+            locals_map.append_word_if_exists("-*", *i++);
+            if (j->second.elipsis == k) for (;available > needed; --available) {
+              locals_map.append_word_locally(flag, *i);
+              if (k) locals_map.append_word_locally(j->second.names[k], *i);
+              locals_map.append_word_if_exists("-*", *i++);}}}
         else {
           locals_map.append_word_if_exists("-*", *i);
           if(*i == "--") {                                      // "discard" --
             locals_map.local(*i, *i);
             ++i, --available; break;}
-          else if (all_flags) throw Signal_argm(Argm::Unrecognized_flag, *i);
+          else if (flags == ALL) throw Signal_argm(Argm::Unrecognized_flag, *i);
           else ++i, --available;}}
-      unsigned required_remaining = required_argc;
       std::vector<Parameter_group>::const_iterator j = positional.begin();
-      if (available < required_remaining) {
-        unsigned non_optional = available + required_argc - required_remaining;
+      if (available < needed) {
+        unsigned non_optional = available + required_argc - needed;
         throw Signal_argm(Argm::Bad_argc, non_optional, required_argc,
                           invoking_argm.argc()-1-non_optional);}
       for (; i != invoking_argm.end() && j != positional.end(); ++j)
-        if (j->required || available > required_remaining) {
-          locals_map.local(j->names[0], *i++);
-          --available;
-          if (j->required) --required_remaining;
-          if (j->elipsis) while (available > required_remaining) {
-            --available;
-            locals_map.local_or_append_word(j->names[0], *i++);}}
+        if (j->required || available > needed) {
+          if (j->required) --needed;
+          else if (available < needed + j->names.size()) {
+            unsigned non_optional = available + required_argc - needed;
+            throw Signal_argm(Argm::Bad_argc, non_optional, required_argc,
+                              invoking_argm.argc()-1-non_optional);}
+          available -= j->names.size();
+          if (j->elipsis == -1) for (;available > needed; --available)
+            locals_map.append_word_locally((j-1)->names.back(), *i++);
+          for (std::vector<std::string>::size_type k = 0; k < j->names.size();
+               k++){
+            locals_map.local(j->names[k], *i++);
+            if (j->elipsis == k) for (;available > needed; --available)
+              locals_map.append_word_locally(j->names[k], *i++);}}
       if (i != invoking_argm.end()) {
         unsigned non_optional = required_argc;
         while (i != invoking_argm.end()) ++non_optional, ++i;
@@ -251,26 +283,17 @@ std::string Function::str() const {
     if (!is_argfunction_name(name()))
       prototype = ".function " + escape(name()) + " ";}
   else {
-    if (all_flags) prototype = ".function_all_flags " + escape(name()) + " ";
-    else  prototype = ".function_some_flags " + escape(name()) + " ";
+    switch (flags) {
+      case ALL: prototype = ".function_all_flags " + escape(name()) + " ";break;
+      case SOME:
+        prototype = ".function_some_flags " + escape(name()) + " "; break;
+      case IGNORANT:
+        prototype = ".function_flags_ignorant " + escape(name()) + " "; break;}
     for (std::map<std::string, Parameter_group>::const_iterator i =
              flag_options.begin(); i != flag_options.end(); ++i)
-      if (i->second.required) prototype.append(i->second.names[0] + " ");
-      else {
-        prototype.append("[" + i->second.names[0]);
-        for (std::vector<std::string>::const_iterator j =
-             i->second.names.begin()+1; j != i->second.names.end(); ++j)
-           prototype.append(" " + *j);
-        prototype.append("] ");}
+      prototype.append(i->second.str() + " ");
     if (explicit_dash_dash) prototype.append("[--] ");
     for (std::vector<Parameter_group>::const_iterator i = positional.begin();
          i != positional.end(); ++i)
-      if (i->required) prototype.append(i->names[0] +
-                                        (i->elipsis? " ... ": " "));
-      else  {
-        prototype.append("[" + i->names[0]);
-        for (std::vector<std::string>::const_iterator j = i->names.begin()+1;
-             j != i->names.end(); ++j) prototype.append(" " + *j );
-        if (i->elipsis) prototype.append(" ...] ");
-        else prototype.append("] ");}}
+      prototype.append(i->str() + " ");}
   return prototype + body.str();}
