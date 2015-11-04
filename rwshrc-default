@@ -1,3 +1,4 @@
+.importenv_preserve
 .source /etc/rwshrc-basic
 
 # set up environment
@@ -270,8 +271,20 @@ fn unselect {.set s ()}
   echo s $s}
 
 # misc
+.function_flag_ignorant . command ... {.source $command$}
 .function ! {if $* {.return 1}; else {.return 0}}
-.function m {rwsh.argfunction}
+.function_flag_ignorant ex_count cmd {.which_execution_count $cmd; c $nl}
+.function_flag_ignorant exec command ... {.exec $command$ }
+.function_flag_ignorant exit {.exit}
+.function last_time {.which_last_execution_time $*; c $nl}
+.function total_time {.which_total_execution_time $*; c $nl}
+.function user_shell_ratio {
+  .local time &&{.waiting_for_user}
+  .var_divide time &&{.waiting_for_shell}
+  .combine $time $nl}
+.function wait_bin {.waiting_for_binary; c $nl}
+.function wait_shell {.waiting_for_shell; c $nl}
+.function wait_user {.waiting_for_user; c $nl}
 .function and {
   .if .return 1 {.nop}; .stepwise $* {.else_if_not $* {.nop}}; .else {.nop}}
 .function or {
@@ -282,13 +295,6 @@ fn st {/bin/rwsh -to <test_main.sh >last.test.result
 fn bless-t {/bin/cp last.test.result test.result}
 fn to {/bin/rwsh -to}
 fn mst {make; st}
-fn test_var_not_equal var value {.test_string_unequal $$var $value}
-fn test_var_greater var value {.test_greater $$var $value}
-fn ntimes n {
-  .while test_var_greater n 0 {
-    rwsh.mapped_argfunction {rwsh.argfunction}
-    .var_subtract n 1}}
-fn mark {ntimes 4 {.echo ####################}}
 
 # final setup and individual configuration
 .source &{c $HOME /.rwshrc}

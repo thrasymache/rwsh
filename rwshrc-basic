@@ -1,31 +1,38 @@
-.function # {.nop}
+.function_flag_ignorant # [ignored ...] {
+  .local ret $?
+  .if .var_exists argv {.nop $ignored}
+  .else {.nop}
+  .return $ret}
 
 # set up environment
 .global nl (
 )
-.importenv_preserve
 
-# builtin wrappers
-.function . {.source $*}
-.function af {rwsh.argfunction}
-.function c {.combine $*}
-.function e {.echo $*}
-.function echo {.echo $* $nl}
-.function elif {.else_if $* {rwsh.argfunction}}
-.function else {.else {rwsh.argfunction}}
-.function ex_count {.which_execution_count $*; c $nl}
-.function exec {.exec $*}
-.function exit {.exit}
-.function fn {
-  .function_all_flags $* {rwsh.argfunction}
+# ability of functions to act as builtin wrappers
+.function_flag_ignorant af [argv ...] {rwsh.argfunction}
+.function_flag_ignorant c text ... {.combine $text$}
+.function_flag_ignorant e text ... {.echo $text}
+.function_flag_ignorant echo text ... {.echo $text $nl}
+.function_flag_ignorant elif command ... {.else_if $command$ {rwsh.argfunction}}
+.function_flag_ignorant else {.else {rwsh.argfunction}}
+.function_flag_ignorant fn prototype ... {
+  .function_all_flags $prototype$ {rwsh.argfunction}
   .local ret $?
   .if .test_number_equal $ret 1 {echo cannot set paths as functions}
   .else_if .test_number_equal $ret 2 {echo cannot set builtins as functions}
   .else_if .test_number_equal $ret 3 {echo cannot set argfunctions in executable map}
   .else_if .test_number_equal $ret 4 {echo function &&1 did not exist to be erased}
   .else {.return $ret}}
-.function fns {
-  .function_some_flags $* {rwsh.argfunction}
+.function_flag_ignorant fni prototype ... {
+  .function_flag_ignorant $prototype$ {rwsh.argfunction}
+  .local ret $?
+  .if .test_number_equal $ret 1 {echo cannot set paths as functions}
+  .else_if .test_number_equal $ret 2 {echo cannot set builtins as functions}
+  .else_if .test_number_equal $ret 3 {echo cannot set argfunctions in executable map}
+  .else_if .test_number_equal $ret 4 {echo function &&1 did not exist to be erased}
+  .else {.return $ret}}
+.function_flag_ignorant fns prototype ... {
+  .function_some_flags $prototype$ {rwsh.argfunction}
   .local ret $?
   .if .test_number_equal $ret 1 {echo cannot set paths as functions}
   .else_if .test_number_equal $ret 2 {echo cannot set builtins as functions}
@@ -39,20 +46,18 @@
   .echo last time (); .which_last_execution_time $*; c $nl
   .echo total time (); .which_total_execution_time $*; c $nl
   .echo execution count (); .which_execution_count $*; c $nl}
-.function last_time {.which_last_execution_time $*; c $nl}
-.function total_time {.which_total_execution_time $*; c $nl}
 .function set {.set $1 $2 $*3}
 .function setf {
   .if .var_exists $1 {.set &&1 &&2}
   .else {.global &&1 &&2}}
+fn test_var_not_equal var value {.test_string_unequal $$var $value}
+fn test_var_greater var value {.test_greater $$var $value}
+fn ntimes n {
+  .while test_var_greater n 0 {
+    rwsh.mapped_argfunction {rwsh.argfunction}
+    .var_subtract n 1}}
+fn mark {ntimes 4 {.echo ####################}}
 .function unset {.unset $1}
-.function user_shell_ratio {
-  .local time &&{.waiting_for_user}
-  .var_divide time &&{.waiting_for_shell}
-  .combine $time $nl}
-.function wait_bin {.waiting_for_binary; c $nl}
-.function wait_shell {.waiting_for_shell; c $nl}
-.function wait_user {.waiting_for_user; c $nl}
 fn which command {
   .local body ()
   .store_output body {.which_executable $command {rwsh.argfunction}}
@@ -65,5 +70,3 @@ fn whichp binary {
 .function while {.while $* {rwsh.argfunction}}
 fn var_exists var {.var_exists $var}
 
-.function rwsh.autofunction {
-  .function $1 {&&{.which_path &&1 $PATH} $*}}

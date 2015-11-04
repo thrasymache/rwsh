@@ -288,7 +288,7 @@ std::string Function::str() const {
       case SOME:
         prototype = ".function_some_flags " + escape(name()) + " "; break;
       case IGNORANT:
-        prototype = ".function_flags_ignorant " + escape(name()) + " "; break;}
+        prototype = ".function_flag_ignorant " + escape(name()) + " "; break;}
     for (std::map<std::string, Parameter_group>::const_iterator i =
              flag_options.begin(); i != flag_options.end(); ++i)
       prototype.append(i->second.str() + " ");

@@ -357,7 +357,7 @@ int b_list_locals(const Argm& argm) {
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
   for (Variable_map::iterator i = argm.local_begin(); i != argm.local_end();
        ++i)
-    argm.output <<i->first <<"\n";
+    argm.output <<(i == argm.local_begin()? "": " ") <<i->first;
   return argm.local_begin() == argm.local_end();}
 
 // add a variable to the variable map until the enclosing function terminates

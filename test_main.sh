@@ -1,5 +1,6 @@
-.return 0
-# .init is tested by having test_init.sh define #
+/bin/cat /tmp/lcl
+.nop .init is tested by having test_init.sh define rwsh.before_command etc.
+.source /etc/rwshrc-basic
 
 # argv tests
 .nop
@@ -29,7 +30,7 @@ line continuation
 
 # ability of functions to immitate built-ins
 .function f {.function $1 {rwsh.argfunction}}
-f w {.which_executable $1 {rwsh.argfunction}}
+fni w command {.which_executable $command {rwsh.argfunction}}
 f e {.echo $*}
 f m {rwsh.argfunction}
 .which_executable f
@@ -129,6 +130,13 @@ m &{e ((zero zero) (one one) two three)}$1 {e $# $*}
 m &{e ((zero zero) (one one) two three)}$10 {e $# $*}
 m &{e (zero zero) \)one one two three}$1 {e $# $*}
 m &{e (zero zero) \)one one two three} {e $# $*}
+.combine x &{.echo (y y)}$ x
+.combine x &{.echo ( y y )}$ x
+.combine x &{.echo (    )}$ x
+.combine x &{.echo (
+y
+y
+)}$ x
 e a (tight string created by parentheses $#) $#
 e a ( spaced string created by parentheses $# ) $#
 e some escaped \) \(parentheses $#
@@ -262,17 +270,13 @@ g
 .function_all_flags a [--] [--] {e even -- cannot be a duplicate flag parameter}
 .function_all_flags a [-- arg] {e -- cannot take arguments}
 .function_all_flags a [arg -- foo] {e -- cannot take arguments}
-.function_all_flags test_var_greater
-.function_all_flags test_var_greater var value {.test_greater $$var $value}
+.function_all_flags nonsense
 w test_var_greater
 .set A $MAX_NESTING
 .set MAX_NESTING 15
 test_var_greater MAX_NESTING
 test_var_greater MAX_NESTING 3 12
 test_var_greater MAX_NESTING 3
-.function_all_flags ntimes n {
-  .while test_var_greater n 0 {rwsh.mapped_argfunction {rwsh.argfunction}
-                               .var_subtract n 1}}
 w ntimes
 ntimes -- 3 {e $n remaining $nl}
 ntimes 3 -- {e -- must preceed all positional arguments}
@@ -671,8 +675,7 @@ m .echo hi {.signal_handler &{.internal_functions}$ {&&*}}
 # .source
 .source
 .source /etc/hosts {excess argfunc}
-.source /*fu*bar*
-# if you actually have that file, something is seriously wrong
+.source test_files/*fu*bar*
 .source /etc/hosts
 # .source is tested by having test_init.sh define #
 w .init

@@ -36,17 +36,17 @@ namespace {
 template<class Out>
 Out tokenize_words(const std::string& in, Out res) {
   unsigned token_start=0, i=0, nesting=0;
+  while (i<in.length() && isspace(in[i])) ++i;           // keep leading space
   for (; i<in.length(); ++i)
-    if (in[i] == '(') {
-      if (i == token_start) ++token_start;
-      ++nesting;}
-    else if (in[i] == ')')
-      if (nesting) --nesting;
-      else throw Signal_argm(Argm::Mismatched_parenthesis, in.substr(0, i+1));
+    if (in[i] == '(') {if (!nesting++) ++token_start;}
+    else if (in[i] == ')') {if (!nesting--)
+      throw Signal_argm(Argm::Mismatched_parenthesis, in.substr(0, i+1));}
     else if (!nesting && isspace(in[i])) {
-      if (in[i-1] == ')') *res++ = in.substr(token_start, i-token_start-1);
-      else *res++ = in.substr(token_start, i-token_start);
+      unsigned end = i;
       while (i<in.length() && isspace(in[i])) ++i;
+      if (i == in.length()) end = i;                     // keep trailing space
+      if (in[end-1] == ')') *res++ = in.substr(token_start, end-token_start-1);
+      else *res++ = in.substr(token_start, end-token_start);
       token_start = i--;}
   if (nesting) throw Signal_argm(Argm::Mismatched_parenthesis, in);
   if (token_start != i) *res = in.substr(token_start, i-token_start);
