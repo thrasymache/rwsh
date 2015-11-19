@@ -49,7 +49,9 @@ Out tokenize_words(const std::string& in, Out res) {
       else *res++ = in.substr(token_start, end-token_start);
       token_start = i--;}
   if (nesting) throw Signal_argm(Argm::Mismatched_parenthesis, in);
-  if (token_start != i) *res = in.substr(token_start, i-token_start);
+  if (token_start != i)
+    if (in[i-1] == ')') *res = in.substr(token_start, i-token_start-1);
+    else *res = in.substr(token_start, i-token_start);
   return res;}
 
 } // end unnamed namespace
@@ -203,10 +205,14 @@ std::string Arg_spec::str(void) const {
     tail += tmp.str();}
   switch(type) {
     case FIXED: 
-      if (!text.length()) return "()";
-      switch(text[0]) {
-        case '$': case '@': case '\\': case ' ': return "\\" + text + tail;
-        default: return text + tail;}
+      if (!text.length()) return "()" + tail;
+      switch (text[0]) { 
+        case '$': case '@': case '\\': case '(': case ')':
+          return "\\" + text + tail;
+        default:
+          if (text.find_first_of(" \t\n") == std::string::npos)
+            return text + tail;
+          else return "(" + text + ")" + tail;}
     case SOON: return "&" + base + text + tail;
     case REFERENCE: return "$" + base + text + tail;
     case STAR_REF: 

@@ -25,23 +25,29 @@ Variable_map::Variable_map(Variable_map* parent_i) : parent(parent_i) {
     local("MAX_NESTING", "0");}}
 
 void Variable_map::append_word_locally(const std::string& key,
-                                        const std::string& value) {
+                                       const std::string& value) {
+  std::string word(value.find_first_of(" \t\n") == std::string::npos?
+                                                     value: "(" + value + ")");
   std::map<std::string, std::string>::iterator i = find(key);
   if (i == end()) throw Signal_argm(Argm::Undefined_variable, key);
-  else i->second += " " + value;}
+  else i->second += " " + word;}
 
 void Variable_map::append_word_if_exists(const std::string& key,
                                          const std::string& value) {
+  std::string word(value.find_first_of(" \t\n") == std::string::npos?
+                                                     value: "(" + value + ")");
   std::map<std::string, std::string>::iterator i = find(key);
   if (i == end()) return;
-  else if (i->second == "") i->second = value;
-  else i->second += " " + value;}
+  else if (i->second == "") i->second = word;
+  else i->second += " " + word;}
 
 void Variable_map::local_or_append_word(const std::string& key,
                                         const std::string& value) {
+  std::string word(value.find_first_of(" \t\n") == std::string::npos?
+                                                     value: "(" + value + ")");
   std::map<std::string, std::string>::iterator i = find(key);
-  if (i == end()) local(key, value);
-  else i->second += " " + value;}
+  if (i == end()) local(key, word);
+  else i->second += " " + word;}
 
 bool Variable_map::exists(const std::string& key) const {
   std::map<std::string, std::string>::const_iterator i = find(key);

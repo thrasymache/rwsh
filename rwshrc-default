@@ -2,13 +2,13 @@
 .source /etc/rwshrc-basic
 
 # set up environment
-setf PATH &{c $HOME /bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/git/bin}
-.global BUILT_EXECUTABLE /bin/rwsh
-.global REGEX ()
-.global grep-sel ()
-.global s ()
-.global s2 ()
-.set FIGNORE .*
+set_if_undefined PATH &{c $HOME /bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/git/bin}
+set_if_undefined BUILT_EXECUTABLE /bin/rwsh
+set_if_undefined REGEX ()
+set_if_undefined grep-sel ()
+set_if_undefined s ()
+set_if_undefined s2 ()
+set_if_undefined FIGNORE .*
 
 # selection commands
 fn sfn command {
@@ -45,10 +45,11 @@ fns darcs command [file ...] {
   if_only .var_exists file {.selection_set s $file}
   .if .test_not_empty $s {&{whichp darcs} $-*$ $command @$s}
   .else {&{whichp darcs} $-*$ $command}}
-fns diff [lhs] [rhs] {
-  if_only .var_exists lhs {.selection_set s $lhs}
-  if_only .var_exists rhs {.selection_set s2 $rhs}
-  &{whichp diff} $-*$ @$s @$s2}
+fns diff [one] [two] {
+  # primary selection is _second_ operand, secondary selection is first
+  if_only .var_exists two {.selection_set s $two}
+  if_only .var_exists one {.selection_set s2 $one}
+  &{whichp diff} $-*$ @$s2 @$s}
 sfn du
 fns ed [-p prompt] [file] {
   if_only .var_exists file {.selection_set s $file}
@@ -298,4 +299,7 @@ fn mst {make; st}
 
 # final setup and individual configuration
 .source &{c $HOME /.rwshrc}
-.combine rwsh\ v &{.version} $nl
+.if .var_exists already-initialized {.nop}
+.else {
+  .combine rwsh\ v &{.version} $nl
+  .global already-initialized true}

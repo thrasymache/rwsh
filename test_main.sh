@@ -130,10 +130,10 @@ m &{e ((zero zero) (one one) two three)}$1 {e $# $*}
 m &{e ((zero zero) (one one) two three)}$10 {e $# $*}
 m &{e (zero zero) \)one one two three}$1 {e $# $*}
 m &{e (zero zero) \)one one two three} {e $# $*}
-.combine x &{.echo (y y)}$ x
-.combine x &{.echo ( y y )}$ x
-.combine x &{.echo (    )}$ x
-.combine x &{.echo (
+c x &{.echo (y y)}$ x
+c x &{.echo ( y y )}$ x
+c x &{.echo (    )}$ x
+c x &{.echo (
 y
 y
 )}$ x
@@ -147,7 +147,7 @@ e a (multi-line parenthesis
 e a )mismatched parenthesis
 e a (multi-line parenthesis
   mismatch))
-e (internal \)parenthesis \\ escape ) $#
+e (internal \)parenthesis \\ escape ( \))) $#
 .unset A
 
 # file redirection (but don't overwrite files that exist)
@@ -399,9 +399,9 @@ a
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a first
-a first second
-a first second third
-a first second third fourth fifth
+a first (se cond)
+a first (se cond) third
+a first (se cond) third fourth (fi fth)
 .function_some_flags a x [...] {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
@@ -437,44 +437,56 @@ a -x first second third fourth
 w a
 a first
 a -x first
-a -x first second
-a -x first second third
-a -x first second third fourth
+a -x (fi rst) second
+a -x first (sec ond) third
+a -x (fi rst) (sec ond) third fourth
 .function_some_flags a [-x ... b] c {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
+  .combine $nl
+  if_only .test_not_empty $-* {c (-*: ) $-*$ $nl}
+  if_only .var_exists -x {c (-x: ) $-x$ $nl}
+  if_only .var_exists b {c (b: ) $b$ $nl}
+  if_only .var_exists c {c (c: ) $c$ $nl}
+}
 w a
 a first
 a -x first
-a -x first second
-a -x first second third
-a -x first second third fourth
+a -x (fi rst) second
+a -x first (sec ond) third
+a -x (fi rst) (sec ond) third fourth
 .function_some_flags a x [... y z] {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
+  .combine $nl
+  if_only .var_exists x {c (x: ) $x$ $nl}}
 w a
 a
-a first
-a first second
-a first second third
-a first second third fourth
-a first second third fourth fifth
+a (fi rst)
+a (fi rst) second
+a first (sec ond) third
+a (fi rst) (sec ond) third fourth
+a (fi rst) (sec ond) (thi rd) (fou rth) (fi fth)
 .function_some_flags a [x] [... y] {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a
-a first
-a first second
-a first second third
-a first second third fourth
-a first second third fourth fifth
+a (fi rst)
+a (fi rst) second
+a first (sec ond) third
+a (fi rst) (sec ond) third fourth
+a (fi rst) (sec ond) (thi rd) (fou rth) (fi fth)
 .function_some_flags a [x y] [... z] {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
+  .combine $nl
+  if_only .var_exists x {c (x: ) $x $nl}
+  if_only .var_exists y {c (y: ) $y$ $nl}
+  if_only .var_exists z {c (z: ) $z$ $nl}}
 w a
 a
-a first
-a first second
-a first second third
-a first second third fourth
-a first second third fourth fifth
+a (fi rst)
+a (fi rst) second
+a (fi rst) (sec ond) (thi rd)
+a (fi rst) (sec ond) third (fou rth)
+a (fi rst) (sec ond) (thi rd) (fou rth) (fi fth)
 .function_flag_ignorant a [-x] y z {}
 .function_flag_ignorant a [x y] z {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
@@ -765,8 +777,8 @@ wrapper 1 2
 .which_executable
 .which_executable j
 .which_executable #
-w rwsh.mapped_argfunction {.nop 1 () \ \\ \$ \@}
-w rwsh.mapped_argfunction {.nop 1 () \  \\ \$ \@}
+w rwsh.mapped_argfunction {.nop 1 () \ \\ \$ \@ \) \(}
+w rwsh.mapped_argfunction {.nop 1 () \  \\ \$ \@ \) \(}
 w rwsh.mapped_argfunction {$A $$A $0 $$$1 $# $* $*2 $A$ $$*$ $$$*12$}
 w rwsh.mapped_argfunction {&&A &&0 &&* &&*3 &&$A$ &&*$ &&*6$}
 w rwsh.mapped_argfunction {@a @$a @$1 @$* @$*2}

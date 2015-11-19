@@ -50,6 +50,10 @@
 .function setf {
   .if .var_exists $1 {.set &&1 &&2}
   .else {.global &&1 &&2}}
+.function_flag_ignorant set_if_undefined var [value] {
+  .if .var_exists $var {.nop}
+  .else_if .var_exists value {.global $var $value}
+  .else {.global $var ()}}
 fn test_var_not_equal var value {.test_string_unequal $$var $value}
 fn test_var_greater var value {.test_greater $$var $value}
 fn ntimes n {

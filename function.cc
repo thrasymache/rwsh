@@ -244,10 +244,14 @@ int Function::operator() (const Argm& invoking_argm) {
           if (j->elipsis == -1) for (;available > needed; --available)
             locals_map.append_word_locally((j-1)->names.back(), *i++);
           for (std::vector<std::string>::size_type k = 0; k < j->names.size();
-               k++){
-            locals_map.local(j->names[k], *i++);
-            if (j->elipsis == k) for (;available > needed; --available)
-              locals_map.append_word_locally(j->names[k], *i++);}}
+               k++)
+            if (j->elipsis == k)
+              for (++available; available > needed; --available)
+                locals_map.local_or_append_word(j->names[k], *i++);
+            else if (j+1 != positional.end() && (j+1)->elipsis == -1 &&
+                     k+1 == j->names.size())
+              locals_map.local_or_append_word(j->names[k], *i++);
+            else locals_map.local(j->names[k], *i++);}
       if (i != invoking_argm.end()) {
         unsigned non_optional = required_argc;
         while (i != invoking_argm.end()) ++non_optional, ++i;

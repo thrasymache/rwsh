@@ -32,17 +32,17 @@ std::string::size_type add_quote(const std::string& src,
                                  unsigned max_soon,
                                  Arg_script* dest) {
   std::string literal;
-  const char* separators = "()"; //"\\()";
+  const char* separators = "\\()";
   std::string::size_type split = src.find_first_of(separators, point+1); 
   for (unsigned nesting = 0;
-       split != std::string::npos && (nesting || src[split] == '(');
+       split != std::string::npos && (nesting || src[split] != ')');
        split = src.find_first_of(separators, split+1)) switch(src[split]) {
     case '(': ++nesting; break;
     case ')': --nesting; break;
     case '\\':
       literal += src.substr(point+1, split-point-1);
       point = split;
-      split += 2;
+      split += 1;
       break;
     default: std::abort();}
   if (split == std::string::npos)
