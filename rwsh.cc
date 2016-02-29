@@ -90,7 +90,7 @@ std::string Argm::signal_names[Argm::Signal_count] = {
   "rwsh.version_incompatible"};
 
 // static initializers without dependancies
-const char* Arg_script::TOKEN_SEPARATORS = " \t";
+const char* WSPACE = " \t";
 Clock rwsh_clock;
 Executable_map executable_map;
 Plumber plumber;

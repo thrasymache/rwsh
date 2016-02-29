@@ -1,19 +1,18 @@
 signal triggered: rwsh.raw_command ( .function rwsh.raw_command {.echo $1; .echo $nl} ) 
-.function # {.nop}
 .global last_command_return -10
 .global A \
 .global N \
 
-# tests multi-line commands within a sourced script
-# .function rwsh.run_logic {
-  # .return $last_command_return
-  # .signal_handler &{.internal_functions}$ {&&* {rwsh.argfunction}}
-  # rwsh.mapped_argfunction {&&* {rwsh.argfunction}}
+.nop tests multi-line commands within a sourced script
+.nop .function rwsh.run_logic {
+  .return $last_command_return
+  .signal_handler &{.internal_functions}$ {&&* {rwsh.argfunction}}
+  rwsh.mapped_argfunction {&&* {rwsh.argfunction}}
   &&* {rwsh.argfunction}
-  # .set last_command_return $?
-  # .echo $nl
-  # .echo $last_command_return
-  # .echo $nl}
+  .set last_command_return $?
+  .echo $nl
+  .echo $last_command_return
+  .echo $nl}
 .function rwsh.before_command {.return $last_command_return}
 .function rwsh.after_command {
   .set last_command_return $?
@@ -28,21 +27,81 @@ signal triggered: rwsh.raw_command ( .function rwsh.raw_command {.echo $1; .echo
 )
   .source /etc/rwshrc-default}
 rwsh.help not defined 
-$.which_executable rwsh.argfunction {
-  .function  x  { &&{ .which_path  echo  $PATH }  something } }
-{
-  .function x { &{ .which_path echo $PATH} something}}
+$.function_flag_ignorant # args ... {.nop $args}
+
 0
-$.which_executable rwsh.argfunction {{{{{{{{{{{}  }} }}}}}}}}
-{{{{{{{{{{{}}}}}}}}}}}
+$.function if_only {.if $* {rwsh.argfunction}; .else {.nop}}
+
 0
-$.function w { .which_executable  $1  {rwsh.argfunction} }
+$.function_flag_ignorant c args ... {.combine $args$}
+
 0
-$.which_executable w
-.function w { .which_executable $1 {rwsh.argfunction}}
+$.function_some_flags a [-x b ...] c {
+  .for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+
 0
-$w w
-.function w { .which_executable $1 {rwsh.argfunction}}
+$.which_executable a
+.function_some_flags a [-x b ...] c {
+  .for &{.list_locals}$ {.combine $1 ( $$1 ) \ }}
+0
+$a first
+-*() c(first) 
+0
+$a -x first
+signal triggered: rwsh.bad_argc ( 0 1 2 a ) 
+
+-1
+$a -x (fi rst) second
+-*(-x (fi rst)) -x(-x (fi rst)) b((fi rst)) c(second) 
+0
+$a -x first (sec ond) third
+-*(-x first (sec ond)) -x(-x first sec ond) b(first sec ond) c(third) 
+0
+$a -x (fi rst) (sec ond) third fourth
+-*(-x (fi rst) (sec ond) third) -x(-x (fi rst) sec ond third) b((fi rst) sec ond third) c(fourth) 
+0
+$.function_some_flags a [-x ... b] c {
+  .for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
+  .combine $nl
+  # if_only .test_not_empty $-* {c (-*: ) $-*$ $nl}
+  # if_only .var_exists -x {c (-x: ) $-x$ $nl}
+  # if_only .var_exists b {c (b: ) $b$ $nl}
+  # if_only .var_exists c {c (c: ) $c$ $nl}
+}
+
+0
+$.which_executable a
+.function_some_flags a [-x ... b] c {
+  .for &{.list_locals}$ {.combine $1 ( $$1 ) \ }
+  .combine $nl
+  # if_only .test_not_empty $-* {c -*:  $-*$ $nl}
+  # if_only .var_exists -x {c -x:  $-x$ $nl}
+  # if_only .var_exists b {c b:  $b$ $nl}
+  # if_only .var_exists c {c c:  $c$ $nl}
+}
+0
+$a first
+-*() c(first) 
+
+0
+$a -x first
+signal triggered: rwsh.bad_argc ( 0 1 2 a ) 
+
+-1
+$a -x (fi rst) second
+-*(-x (fi rst)) -x(-x (fi rst)) b((fi rst)) c(second) 
+
+0
+$a -x first (sec ond) third
+-*(-x first (sec ond)) -x(-x first (sec ond)) b((sec ond)) c(third) 
+
+0
+$a -x (fi rst) (sec ond) third fourth
+-*(-x (fi rst) (sec ond) third) -x(-x fi rst sec ond third) b(third) c(fourth) 
+
+0
+$.which_executable if_only
+.function if_only {.if $* {rwsh.argfunction}; .else {.nop}}
 0
 $
 now terminating normally

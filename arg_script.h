@@ -15,7 +15,6 @@ class Arg_script {
              const Rwsh_ostream_p& error, const std::string& indent,
              char terminator);
  public:
-  static const char* TOKEN_SEPARATORS;
 
   Arg_script(const std::string& src, unsigned max_soon);
   Arg_script(const std::string& src, std::string::size_type& point,

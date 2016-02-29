@@ -49,8 +49,9 @@ std::string::size_type add_quote(const std::string& src,
     throw Unclosed_parenthesis(src.substr(0, point+1));
   else {
     literal += src.substr(point+1, split-point-1);
-    point = src.find_first_not_of(Arg_script::TOKEN_SEPARATORS, split+1);
-    dest->add_token(literal, max_soon);
+    point = src.find_first_not_of(WSPACE, split+1);
+    if (literal[0] != '\\') dest->add_token(literal, max_soon);
+    else dest->add_token("\\" + literal, max_soon);
     return point;}}
 
 std::string::size_type parse_token(const std::string& src,
@@ -82,9 +83,9 @@ std::string::size_type parse_token(const std::string& src,
     return point;}
   else if (src[split] == '{') {
     token_start = dest->add_function(src, token_start, split, max_soon);
-    return src.find_first_not_of(Arg_script::TOKEN_SEPARATORS, token_start);}
+    return src.find_first_not_of(WSPACE, token_start);}
   else {
-    point = src.find_first_not_of(Arg_script::TOKEN_SEPARATORS, split);
+    point = src.find_first_not_of(WSPACE, split);
     dest->add_token(token, max_soon);
     return point;}}
 } // close unnamed namespace
@@ -98,7 +99,7 @@ Arg_script::Arg_script(const Rwsh_istream_p& input_i,
 Arg_script::Arg_script(const std::string& src, unsigned max_soon) :
   argfunction(0), argfunction_level(0), input(default_input),
   output(default_output), error(default_error), terminator('!') {
-  std::string::size_type point = src.find_first_not_of(TOKEN_SEPARATORS, 0); 
+  std::string::size_type point = src.find_first_not_of(WSPACE, 0);
   indent = src.substr(0, point);
   point = constructor(src, point, max_soon);
   if (point < src.length())

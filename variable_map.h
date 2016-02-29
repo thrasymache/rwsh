@@ -1,5 +1,7 @@
 // Copyright (C) 2006-2015 Samuel Newbold
 
+extern const char* WSPACE;
+
 class Variable_map : private std::map<std::string, std::string> {
   typedef std::map<std::string, std::string> Base;
   Variable_map* parent;

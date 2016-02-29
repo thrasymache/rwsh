@@ -769,6 +769,8 @@ wrapper 1 2
 .test_less 6.022e2 6.022e23
 
 # .which_executable .which_test .which_return
+# Arg_script::str() but only an unknown fraction of the lines
+# Arg_spec::str() (except trailing whitespace) only through SOON case
 .which_test
 .which_test j
 .which_test #
@@ -783,6 +785,30 @@ w rwsh.mapped_argfunction {$A $$A $0 $$$1 $# $* $*2 $A$ $$*$ $$$*12$}
 w rwsh.mapped_argfunction {&&A &&0 &&* &&*3 &&$A$ &&*$ &&*6$}
 w rwsh.mapped_argfunction {@a @$a @$1 @$* @$*2}
 w rwsh.mapped_argfunction {>dummy_file}
+# new tests here
+w rwsh.mapped_argfunction {{&&{&&x &&{e}} {&&&x &&&{e} {&&&&x &&&&{e}}}}}
+w rwsh.mapped_argfunction {$A $$A $0 $$$1 $# $* $*2 $A$ $A$10 $$*$ $$$*12$}
+w rwsh.mapped_argfunction {&&A &&0 &&* &&*3 &&$A$ &&$A$10 &&*$ &&*6$ {&&&A$ &&&A$10}}
+.function_all_flags wm [args ...] {
+   w rwsh.mapped_argfunction {rwsh.argfunction}
+   .echo $nl
+   m $args$ {rwsh.argfunction}}
+wm (aa ab ac) bb cc {e x &&1 &2 $3 y &&1$1 z &&1$2; m &&1$ {e () w $* $#}}
+m (aa ab ac) bb cc {m &1$ {echo $* $#};m &&1$ {echo $* $#};m $1$ {echo $* $#}}
+wm () {.echo \\\ \ \\\ \\\\ \ \\|\\\ \  \  \\ \( \) \\\)}
+wm () {.echo (\\  \\ \\\\) ( \\|\\  ) ( ) (\\) (\() (\)) (\\\))}
+wm () {.echo a\\bc\\d\\\\e fg\\|\\hij klm \\ \) \( \\\(}
+wm () {
+.echo \( \) \\( \\) \\\( \\\) \\\\( \\\\) \\\\\( \\\\\)}
+wm () {
+.echo \) \( \\) \\( \\\) \\\( \\\\) \\\\( \\\\\) \\\\\(}
+wm () {.echo () xx(yy \$ \@ \$$ \@@ }
+wm () {.echo (  ) (	) (
+)}
+w rwsh.mapped_argfunction {.nop 1}
+w rwsh.mapped_argfunction {@a @$a @$1 @$* @$*2}
+w rwsh.mapped_argfunction {>dummy_file}
+
 .which_executable rwsh.mapped_argfunction
 .which_executable rwsh.mapped_argfunction {rwsh.argfunction}
 .waiting_for_shell j
@@ -983,7 +1009,7 @@ g
 
 # rwsh.run_logic
 f rwsh.run_logic {.if .return $1 {.nop}; .else_if $*2 {.nop}; .else {.nop}}
-0 e don't print
+0 e don't print nuthin'
 1 e do print
 1 f rwsh.run_logic
 1 e executable not found

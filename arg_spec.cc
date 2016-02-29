@@ -63,7 +63,7 @@ Arg_spec::Arg_spec(const std::string& script, unsigned max_soon) :
   while (i < script.length() && script[i] == '&') ++soon_level, ++i;
   while (i < script.length() && script[i] == '$') ++ref_level, ++i;
   std::string::size_type key_end; 
-  if (script[0] != '$') key_end = std::string::npos;
+  if (script[0] != '$' && script[0] != '&') key_end = std::string::npos;
   else if (i < script.length()) key_end = script.find('$', i);
   else key_end = i;
   if (key_end < script.length()) {
@@ -194,9 +194,12 @@ void Arg_spec::apply(const Argm& src, unsigned nesting,
 
 // create a string from Arg_spec. inverse of constructor.
 std::string Arg_spec::str(void) const {
-  std::string base;
+  std::string base, result(text);
   for (unsigned i=0; i < soon_level; ++i) base += '&';
   for (unsigned i=0; i < ref_level; ++i) base += '$';
+  for (std::string::size_type pos = result.find_first_of("\\");
+       pos != std::string::npos; pos = result.find_first_of("\\", pos+2))
+    result.replace(pos, 1, "\\\\");
   std::string tail;
   if (expand) tail += '$';
   if (word_selection != -1) {
@@ -206,24 +209,21 @@ std::string Arg_spec::str(void) const {
   switch(type) {
     case FIXED: 
       if (!text.length()) return "()" + tail;
-      switch (text[0]) { 
-        case '$': case '@': case '\\': case '(': case ')':
-          return "\\" + text + tail;
-        default:
-          if (text.find_first_of(" \t\n") == std::string::npos)
-            return text + tail;
-          else return "(" + text + ")" + tail;}
-    case SOON: return "&" + base + text + tail;
-    case REFERENCE: return "$" + base + text + tail;
+      else if (text.find_first_of(" \t\n") != std::string::npos)
+        return "(" + result + ")" + tail;
+      else if (text.find_last_of("$@()", 1) == 0) return "\\" + result + tail;
+      else return result + tail;
+    case SOON: return "&" + base + result + tail;
+    case REFERENCE: return "$" + base + result + tail;
     case STAR_REF: 
       if (text == "1") return base + "$*" + tail;
-      else return base + "$*" + text + tail;
+      else return base + "$*" + result + tail;
     case STAR_SOON: 
       if (text == "1") return base + "&*" + tail;
-      else return base + "&*" + text + tail;
-    case SELECTION: return "@" + text + tail;
-    case SELECT_VAR: return "@$" + text + tail;
-    case SELECT_STAR_VAR: return "@$*" + text + tail;
+      else return base + "&*" + result + tail;
+    case SELECTION: return "@" + result + tail;
+    case SELECT_VAR: return "@$" + result + tail;
+    case SELECT_STAR_VAR: return "@$*" + result + tail;
     case SUBSTITUTION: return "&" + base + substitution->str() + tail;
     default: std::abort();}}
 

@@ -524,7 +524,7 @@ $m &{e ((zero zero) (one one) two three)}$1 {e $# $*}
 2 one one
 0
 $m &{e ((zero zero) (one one) two three)}$10 {e $# $*}
-signal triggered: rwsh.undefined_variable ( &{e \(zero zero) (one one) two three}$10 ) 
+signal triggered: rwsh.undefined_variable ( &{e ((zero zero) (one one) two three)}$10 ) 
 
 -1
 $m &{e (zero zero) \)one one two three}$1 {e $# $*}
@@ -2739,6 +2739,12 @@ $
 $# .which_executable .which_test .which_return
 
 0
+$# Arg_script::str() but only an unknown fraction of the lines
+
+0
+$# Arg_spec::str() (except trailing whitespace) only through SOON case
+
+0
 $.which_test
 signal triggered: rwsh.bad_argc ( 0 1 0 .which_test ) 
 
@@ -2770,7 +2776,7 @@ $.which_executable #
   .return $ret}
 0
 $w rwsh.mapped_argfunction {.nop 1 () \ \\ \$ \@ \) \(}
-{.nop 1 () ( \) \$ \@ \) \(}
+{.nop 1 () ( \\) \$ \@ \) \(}
 0
 $w rwsh.mapped_argfunction {.nop 1 () \  \\ \$ \@ \) \(}
 {.nop 1 () ( ) \\ \$ \@ \) \(}
@@ -2786,6 +2792,81 @@ $w rwsh.mapped_argfunction {@a @$a @$1 @$* @$*2}
 0
 $w rwsh.mapped_argfunction {>dummy_file}
 {>dummy_file}
+0
+$# jkl jkl
+
+0
+$w rwsh.mapped_argfunction {{&&{&&x &&{e}} {&&&x &&&{e} {&&&&x &&&&{e}}}}}
+{{&{&x &{e}} {&&x &&{e} {&&&x &&&{e}}}}}
+0
+$w rwsh.mapped_argfunction {$A $$A $0 $$$1 $# $* $*2 $A$ $A$10 $$*$ $$$*12$}
+{$A $$A $0 $$$1 $# $* $*2 $A$ $A$10 $$*$ $$$*12$}
+0
+$w rwsh.mapped_argfunction {&&A &&0 &&* &&*3 &&$A$ &&$A$10 &&*$ &&*6$ {&&&A$ &&&A$10}}
+{&A &0 &* &*3 &$A$ &$A$10 &*$ &*6$ {&&A$ &&A$10}}
+0
+$.function_all_flags wm [args ...] {
+   w rwsh.mapped_argfunction {rwsh.argfunction}
+   .echo $nl
+   m $args$ {rwsh.argfunction}}
+
+0
+$wm (aa ab ac) bb cc {e x &&1 &2 $3 y &&1$1 z &&1$2; m &&1$ {e () w $* $#}}
+{e x &1 bb $3 y &1$1 z &1$2; m &1$ {e () w $* $#}}
+x aa ab ac bb cc y ab z ac w aa ab ac 4
+0
+$m (aa ab ac) bb cc {m &1$ {echo $* $#};m &&1$ {echo $* $#};m $1$ {echo $* $#}}
+((aa ab ac)) 2 
+aa ab ac 4 
+aa ab ac 4 
+
+0
+$wm () {.echo \\\ \ \\\ \\\\ \ \\|\\\ \  \  \\ \( \) \\\)}
+{.echo (\\  \\ \\\\) ( \\|\\  ) ( ) \\ \( \) \\)}
+\  \ \\  \|\     \ ( ) \)
+0
+$wm () {.echo (\\  \\ \\\\) ( \\|\\  ) ( ) (\\) (\() (\)) (\\\))}
+{.echo (\\  \\ \\\\) ( \\|\\  ) ( ) \\ \( \) \\)}
+\  \ \\  \|\     \ ( ) \)
+0
+$wm () {.echo a\\bc\\d\\\\e fg\\|\\hij klm \\ \) \( \\\(}
+{.echo a\\bc\\d\\\\e fg\\|\\hij klm \\ \) \( \\(}
+a\bc\d\\e fg\|\hij klm \ ) ( \(
+0
+$wm () {
+.echo \( \) \\( \\) \\\( \\\) \\\\( \\\\) \\\\\( \\\\\)}
+{
+.echo \( \) \\( \\) \\( \\) \\\\( \\\\) \\\\( \\\\)}
+( ) \( \) \( \) \\( \\) \\( \\)
+0
+$wm () {
+.echo \) \( \\) \\( \\\) \\\( \\\\) \\\\( \\\\\) \\\\\(}
+{
+.echo \) \( \\) \\( \\) \\( \\\\) \\\\( \\\\) \\\\(}
+) ( \) \( \) \( \\) \\( \\) \\(
+0
+$wm () {.echo () xx(yy \$ \@ \$$ \@@ }
+{.echo () xx(yy \$ \@ $$ @@}
+ xx(yy $ @ $$ @@
+0
+$wm () {.echo (  ) (	) (
+)}
+{.echo (  ) (	) (
+)}
+   	 
+
+0
+$w rwsh.mapped_argfunction {.nop 1}
+{.nop 1}
+0
+$w rwsh.mapped_argfunction {@a @$a @$1 @$* @$*2}
+{@a @$a @$1 @$*1 @$*2}
+0
+$w rwsh.mapped_argfunction {>dummy_file}
+{>dummy_file}
+0
+$
+
 0
 $.which_executable rwsh.mapped_argfunction
 
@@ -3464,7 +3545,7 @@ $# rwsh.run_logic
 $f rwsh.run_logic {.if .return $1 {.nop}; .else_if $*2 {.nop}; .else {.nop}}
 
 0
-$0 e don't print
+$0 e don't print nuthin'
 
 0
 $1 e do print
