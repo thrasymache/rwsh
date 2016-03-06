@@ -452,6 +452,7 @@ w a
 a first
 a -x first
 a -x (fi rst) second
+a -x () (fi rst) second
 a -x first (sec ond) third
 a -x (fi rst) (sec ond) third fourth
 .function_some_flags a x [... y z] {
@@ -464,6 +465,7 @@ a (fi rst)
 a (fi rst) second
 a first (sec ond) third
 a (fi rst) (sec ond) third fourth
+a () (sec ond) third fourth
 a (fi rst) (sec ond) (thi rd) (fou rth) (fi fth)
 .function_some_flags a [x] [... y] {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}

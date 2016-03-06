@@ -52,8 +52,3 @@ recurse a b c d e f g h i j k l m n o p q r s t u v w x y z
 # recurse ((((((((a b))) (c d)) (e f)) (g h)) (i j)) k l) m n (o (p (q (r (s (t (u (v (w (x (y z)))))))))))
 recurse (a b) ((c d e) ((f g h) ((i j k) ((l m n) ((o p q) ((r s t) ((u v w) ((x y z)))))))))
 
-.function_flag_ignorant echo text ... {.echo $text $nl}
-.function e {.echo $*}
-.echo ( ) () x
-echo ( ) () x
-e ( ) () x

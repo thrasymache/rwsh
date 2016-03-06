@@ -1576,6 +1576,14 @@ b: fi rst
 c: second
 
 0
+$a -x () (fi rst) second
+-*(-x () (fi rst)) -x(-x () (fi rst)) b((fi rst)) c(second) 
+-*: -xfi rst
+-x: -xfi rst
+b: fi rst
+c: second
+
+0
 $a -x first (sec ond) third
 -*(-x first (sec ond)) -x(-x first (sec ond)) b((sec ond)) c(third) 
 -*: -xfirstsec ond
@@ -1625,6 +1633,11 @@ x: first
 $a (fi rst) (sec ond) third fourth
 -*() x((fi rst) (sec ond)) y(third) z(fourth) 
 x: fi rstsec ond
+
+0
+$a () (sec ond) third fourth
+-*() x(() (sec ond)) y(third) z(fourth) 
+x: sec ond
 
 0
 $a (fi rst) (sec ond) (thi rd) (fou rth) (fi fth)
@@ -2793,7 +2806,7 @@ $w rwsh.mapped_argfunction {@a @$a @$1 @$* @$*2}
 $w rwsh.mapped_argfunction {>dummy_file}
 {>dummy_file}
 0
-$# jkl jkl
+$# new tests here
 
 0
 $w rwsh.mapped_argfunction {{&&{&&x &&{e}} {&&&x &&&{e} {&&&&x &&&&{e}}}}}
