@@ -161,14 +161,14 @@ int b_function(const Argm& argm) {
   else if (is_binary_name(argm[1])) return 1;
   Argm lookup(argm.begin()+1, argm.end(), NULL, argm.parent_map(),
                 default_input, default_output, default_error);
-  Named_executable *e = executable_map.find(lookup);
+  Base_executable *e = executable_map.find(lookup);
   if (e && dynamic_cast<Builtin*>(e)) return 2;
   else if (is_argfunction_name(argm[1])) return 3;
   else if (!argm.argfunction()) {
     return 4 * !executable_map.erase(*(argm.begin()+1));}
   else {
     executable_map.set(new Function(argm[1], argm.end(), argm.end(), true,
-                                    IGNORANT, argm.argfunction()->body));
+                                    IGNORANT, *argm.argfunction()));
     return 0;}}
 
 namespace {
@@ -178,13 +178,13 @@ int function_core(const Argm& argm, Flag_type all_flags) {
   else if (is_argfunction_name(argm[1])) return 3;
   Argm lookup(argm.begin()+1, argm.begin()+2, NULL, argm.parent_map(),
                 default_input, default_output, default_error);
-  Named_executable *e = executable_map.find(lookup);
+  Base_executable *e = executable_map.find(lookup);
   if (dynamic_cast<Builtin*>(e)) return 2;
   else if (!argm.argfunction()) {
     return 4 * !executable_map.erase(*(argm.begin()+1));}
   else {
     Function *focus = new Function(argm[1], argm.begin()+2, argm.end(), false,
-                                   all_flags, argm.argfunction()->body);
+                                   all_flags, *argm.argfunction());
     executable_map.set(focus);
     return 0;}}
 }
@@ -482,7 +482,7 @@ int b_stepwise(const Argm& argm) {
   if (!argm.argfunction()) throw Signal_argm(Argm::Missing_argfunction);
   Argm lookup(argm.begin()+1, argm.end(), 0, argm.parent_map(),
                 argm.input, argm.output.child_stream(), argm.error);
-  Named_executable* e = executable_map.find(lookup);
+  Base_executable* e = executable_map.find(lookup);
   if (!e) return 1;  // executable not found
   Function* f = dynamic_cast<Function*>(e);
   if (!f) return 2; // the named executable is not a function
@@ -732,7 +732,7 @@ int b_which_executable(const Argm& argm) {
   Argm lookup(argm.begin()+1, argm.end(), argm.argfunction(), argm.parent_map(),
                 default_input, default_output, default_error);
   if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
-  Named_executable* focus = executable_map.find(lookup);
+  Base_executable* focus = executable_map.find(lookup);
   if (focus) {
     argm.output <<focus->str();
     argm.output.flush();
@@ -745,13 +745,14 @@ int b_which_execution_count(const Argm& argm) {
   if (argm.argc() != 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   Argm lookup(argm.begin()+1, argm.end(), argm.argfunction(), argm.parent_map(),
                 default_input, default_output, default_error);
-  if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
-  Named_executable* focus = executable_map.find(lookup);
+  Base_executable* blur = executable_map.find(lookup);
+  Named_executable* focus = dynamic_cast<Named_executable*>(blur);
   if (focus) {
     argm.output <<focus->execution_count();
     argm.output.flush();
     return 0;}
-  else return 1;} // executable does not exist
+  else if (blur) return 2; // value not stored for argfunctions
+  else return 1;}          // executable does not exist
 
 // print the number of times that the executable in the executable map with
 // key $1 has been run
@@ -759,14 +760,15 @@ int b_which_last_execution_time(const Argm& argm) {
   if (argm.argc() != 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   Argm lookup(argm.begin()+1, argm.end(), argm.argfunction(), argm.parent_map(),
                 default_input, default_output, default_error);
-  if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
-  Named_executable* focus = executable_map.find(lookup);
+  Base_executable* blur = executable_map.find(lookup);
+  Named_executable* focus = dynamic_cast<Named_executable*>(blur);
   if (focus) {
     struct timeval val = focus->last_execution_time();
     argm.output <<val;
     argm.output.flush();
     return 0;}
-  else return 1;} // executable does not exist
+  else if (blur) return 2; // value not stored for argfunctions
+  else return 1;}          // executable does not exist
 
 // print the number of times that the executable in the executable map with
 // key $1 has been run
@@ -774,14 +776,15 @@ int b_which_total_execution_time(const Argm& argm) {
   if (argm.argc() != 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
   Argm lookup(argm.begin()+1, argm.end(), argm.argfunction(), argm.parent_map(),
                 default_input, default_output, default_error);
-  if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
-  Named_executable* focus = executable_map.find(lookup);
+  Base_executable* blur = executable_map.find(lookup);
+  Named_executable* focus = dynamic_cast<Named_executable*>(blur);
   if (focus) {
     struct timeval val = focus->total_execution_time();
     argm.output <<val;
     argm.output.flush();
     return 0;}
-  else return 1;} // executable does not exist
+  else if (blur) return 2; // value not stored for argfunctions
+  else return 1;}          // executable does not exist
 
 // find the binary in $2 with filename $1
 int b_which_path(const Argm& argm) {
@@ -802,16 +805,15 @@ int b_which_path(const Argm& argm) {
 // prints the last return value of the executable with named $1
 int b_which_return(const Argm& argm) {
   if (argm.argc() != 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 1, 0);
-  Argm lookup(argm.begin()+1, argm.end(), 0, argm.parent_map(),
+  Argm lookup(argm.begin()+1, argm.end(), argm.argfunction(), argm.parent_map(),
                 default_input, default_output, default_error);
-  if (lookup[0] == "rwsh.mapped_argfunction" || 
-            lookup[0] == "rwsh.argfunction") 
-    return 2; // return values not stored for argfunctions
-  Named_executable* focus = executable_map.find(lookup);
+  Base_executable* blur = executable_map.find(lookup);
+  Named_executable* focus = dynamic_cast<Named_executable*>(blur);
   if (focus) {
     argm.output <<focus->last_ret();
     argm.output.flush();
     return 0;}
+  else if (blur) return 2; // value not stored for argfunctions
   else return 1;} // executable does not exist
 
 // return true if there is an executable in the executable map with key $1

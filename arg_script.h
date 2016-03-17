@@ -1,10 +1,10 @@
-// Copyright (C) 2006-2015 Samuel Newbold
+// Copyright (C) 2006-2016 Samuel Newbold
 
-class Function;
+class Command_block;
 
 class Arg_script {
   std::vector<Arg_spec> args;
-  Function* argfunction;
+  Command_block* argfunction;
   unsigned argfunction_level;
   Rwsh_istream_p input;
   Rwsh_ostream_p output, error;

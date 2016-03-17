@@ -1,7 +1,7 @@
 // Functions to implement a variable map, and permit it to be exported as the
 // environment for child processes.
 //
-// Copyright (C) 2006-2015 Samuel Newbold
+// Copyright (C) 2006-2016 Samuel Newbold
 
 #include <cstring>
 #include <map>

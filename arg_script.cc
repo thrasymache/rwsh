@@ -164,7 +164,7 @@ std::string::size_type Arg_script::add_function(const std::string& src,
     args.push_back(Arg_spec(src, style_start, point, max_soon));
   else
     if (argfunction) throw Signal_argm(Argm::Multiple_argfunctions);
-    else argfunction = new Function("rwsh.argfunction", src, point, max_soon+1);
+    else argfunction = new Command_block(src, point, max_soon+1);
   return point;}
 
 Arg_script::Arg_script(const Arg_script& src) : 

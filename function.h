@@ -47,7 +47,6 @@ class Function : public Named_executable {
     if (!this) return 0;
     else return new Function(*this);};
   int operator() (const Argm& src_argm);
-  Function* apply(const Argm& argm, unsigned nesting) const;
   const std::string& name(void) const {return name_v;};
   void promote_soons(unsigned nesting);
   std::string str() const;};

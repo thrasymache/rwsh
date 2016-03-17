@@ -1,11 +1,11 @@
-// Copyright (C) 2005-2015 Samuel Newbold
+// Copyright (C) 2005-2016 Samuel Newbold
 
-class Function;
+class Command_block;
 
 class Argm : private std::vector<std::string> {
   typedef std::vector<std::string> Base;
   unsigned argc_v;
-  Function* argfunction_v;
+  Command_block* argfunction_v;
   Variable_map* parent_map_v;
 
  public:
@@ -13,20 +13,20 @@ class Argm : private std::vector<std::string> {
        Rwsh_istream_p input_i, Rwsh_ostream_p output_i, Rwsh_ostream_p error_i);
   template <class String_it> 
   Argm(String_it first_string, String_it last_string,
-       Function* argfunction_i, Variable_map* parent_map_i,
+       Command_block* argfunction_i, Variable_map* parent_map_i,
        Rwsh_istream_p input_i, Rwsh_ostream_p output_i, Rwsh_ostream_p error_i);
   template <class String_it> 
   Argm(const std::string& first_string,
        String_it second_string, String_it last_string,
-       Function* argfunction_i, Variable_map* parent_map_i,
+       Command_block* argfunction_i, Variable_map* parent_map_i,
        Rwsh_istream_p input_i, Rwsh_ostream_p output_i, Rwsh_ostream_p error_i);
   Argm(const Argm& src);
   ~Argm(void);
   Argm& operator=(const Argm& src);
   std::string str(void) const;
   Variable_map* parent_map(void) const {return parent_map_v;};
-  Function* argfunction(void) const {return argfunction_v;};
-  void set_argfunction(Function* val);
+  Command_block* argfunction(void) const {return argfunction_v;};
+  void set_argfunction(Command_block* val);
 
   mutable Rwsh_istream_p input;
   mutable Rwsh_ostream_p output, error;

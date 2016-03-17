@@ -843,7 +843,7 @@ w rwsh.mapped_argfunction {>dummy_file}
 # .waiting_for_binary
 .which_return
 .which_return rwsh.mapped_argfunction
-.which_return rwsh.mapped_argfunction {rwsh.argfunction}
+.which_return rwsh.mapped_argfunction {echo not tracked}
 .which_return .which_return
 .which_return j
 .which_return .waiting_for_binary
@@ -857,11 +857,14 @@ w rwsh.mapped_argfunction {>dummy_file}
 .usleep 8000
 .which_execution_count
 .which_execution_count j
+.which_execution_count rwsh.mapped_argfunction {echo not tracked}
 .which_execution_count .usleep
 .which_last_execution_time
 .which_last_execution_time j
+.which_last_execution_time rwsh.mapped_argfunction {echo not tracked}
 # .which_last_execution_time .usleep
 .which_total_execution_time
+.which_total_execution_time rwsh.mapped_argfunction {echo not tracked}
 .which_total_execution_time j
 # .which_total_execution_time .usleep
 

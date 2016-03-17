@@ -2348,8 +2348,8 @@ $.scope foo bar baz bax (args ...) {e aa $args$2 bb $args$1 cc}
 aa baz bb bar cc
 0
 $.scope single ([-x] [--long-opt y] second) {.list_locals}
-
-1
+-* second
+0
 $.return 0
 
 0
@@ -2995,8 +2995,8 @@ signal triggered: rwsh.bad_argc ( 0 1 0 .which_return )
 -1
 $.which_return rwsh.mapped_argfunction
 
-2
-$.which_return rwsh.mapped_argfunction {rwsh.argfunction}
+1
+$.which_return rwsh.mapped_argfunction {echo not tracked}
 
 2
 $.which_return .which_return
@@ -3043,6 +3043,9 @@ signal triggered: rwsh.bad_argc ( 0 1 0 .which_execution_count )
 $.which_execution_count j
 
 1
+$.which_execution_count rwsh.mapped_argfunction {echo not tracked}
+
+2
 $.which_execution_count .usleep
 5
 0
@@ -3053,13 +3056,19 @@ signal triggered: rwsh.bad_argc ( 0 1 0 .which_last_execution_time )
 $.which_last_execution_time j
 
 1
+$.which_last_execution_time rwsh.mapped_argfunction {echo not tracked}
+
+2
 $# .which_last_execution_time .usleep
 
-1
+2
 $.which_total_execution_time
 signal triggered: rwsh.bad_argc ( 0 1 0 .which_total_execution_time ) 
 
 -1
+$.which_total_execution_time rwsh.mapped_argfunction {echo not tracked}
+
+2
 $.which_total_execution_time j
 
 1

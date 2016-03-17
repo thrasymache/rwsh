@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2015 Samuel Newbold
+// Copyright (C) 2006-2016 Samuel Newbold
 
 extern const char* WSPACE;
 

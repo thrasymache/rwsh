@@ -29,7 +29,7 @@
 Command_block* Command_block::apply(const Argm& argm, unsigned nesting) const {
   if ((*this)[0].is_argfunction())
     if (argm.argfunction()) {
-      Command_block* result = new Command_block(argm.argfunction()->body);
+      Command_block* result = new Command_block(*argm.argfunction());
       result->promote_soons(nesting);
       return result;}
     else return 0;
@@ -121,22 +121,6 @@ Function::Function(const std::string& name_i,
                    const Command_block& src) :
     prototype(first_parameter, parameter_end, non_prototype_i, flags_i),
     name_v(name_i), body(src) {}
-
-// generate a new function by unescaping argument functions and replacing
-// unescaped_argfunction with the argument function in argm
-Function* Function::apply(const Argm& argm, unsigned nesting) const {
-  if (body[0].is_argfunction())
-    if (argm.argfunction()) {
-      Function* result = new Function(*argm.argfunction());
-      result->promote_soons(nesting);
-      return result;}
-    else return 0;
-  else {
-    Function* result = new Function(name());
-    std::back_insert_iterator<std::vector<Arg_script> > ins(result->body);
-    for (Command_block::const_iterator i = body.begin(); i != body.end(); ++i) {
-      i->apply(argm, nesting, ins);}
-    return result;}}
   
 // run the given function
 int Function::operator() (const Argm& invoking_argm) { 

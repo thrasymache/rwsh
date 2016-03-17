@@ -57,7 +57,7 @@ std::string Argm::str(void) const {
   if (argfunction()) result += " " + argfunction()->str();
   return result;}
 
-void Argm::set_argfunction(Function* val) {argfunction_v = val;};
+void Argm::set_argfunction(Command_block* val) {argfunction_v = val;};
 
 // returns variables that are defined in the current argument map other than $*
 // (e.g. positional parameters and $#)
