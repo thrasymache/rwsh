@@ -2,7 +2,7 @@
 // won't export templates, so it must be included directly in each file where
 // it is used.
 //
-// Copyright (C) 2006-2015 Samuel Newbold
+// Copyright (C) 2006-2016 Samuel Newbold
 
 // constructor of Argm from a pair of iterators
 template <class String_it> 
@@ -55,3 +55,23 @@ inline Argm::star_var(const std::string& key, unsigned reference_level,
     *res++ = Arg_spec(FIXED, 0, 0, 0, -1, 0, next, " ");}
   return res;}
 
+template<class Out>
+Out tokenize_words(const std::string& in, Out res) {
+  unsigned token_start=0, i=0, nesting=0;
+  while (i<in.length() && isspace(in[i])) ++i;           // keep leading space
+  for (; i<in.length(); ++i)
+    if (in[i] == '(') {if (!nesting++) ++token_start;}
+    else if (in[i] == ')') {if (!nesting--)
+      throw Signal_argm(Argm::Mismatched_parenthesis, in.substr(0, i+1));}
+    else if (!nesting && isspace(in[i])) {
+      unsigned end = i;
+      while (i<in.length() && isspace(in[i])) ++i;
+      if (i == in.length()) end = i;                     // keep trailing space
+      if (in[end-1] == ')') *res++ = in.substr(token_start, end-token_start-1);
+      else *res++ = in.substr(token_start, end-token_start);
+      token_start = i--;}
+  if (nesting) throw Signal_argm(Argm::Mismatched_parenthesis, in);
+  if (token_start != i)
+    if (in[i-1] == ')') *res = in.substr(token_start, i-token_start-1);
+    else *res = in.substr(token_start, i-token_start);
+  return res;}

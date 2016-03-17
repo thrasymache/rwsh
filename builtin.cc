@@ -1,6 +1,6 @@
 // The functions that implement each of the builtin executables
 //
-// Copyright (C) 2006-2015 Samuel Newbold
+// Copyright (C) 2006-2016 Samuel Newbold
 
 #include <climits>
 #include <cfloat>
@@ -35,13 +35,14 @@ extern char** environ;
 #include "command_stream.h"
 #include "executable.h"
 #include "executable_map.h"
-#include "function.h"
+#include "prototype.h"
 #include "read_dir.cc"
 #include "rwshlib.h"
 #include "selection.h"
 #include "substitution_stream.h"
 #include "tokenize.cc"
 
+#include "function.h"
 #include "argm_star_var.cc"
 
 // change the current directory to the one given
@@ -355,8 +356,7 @@ int b_is_default_error(const Argm& argm) {
 int b_list_locals(const Argm& argm) {
   if (argm.argc() != 1) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
-  for (Variable_map::iterator i = argm.local_begin(); i != argm.local_end();
-       ++i)
+  for (Variable_map::iterator i=argm.local_begin(); i != argm.local_end(); ++i)
     argm.output <<(i == argm.local_begin()? "": " ") <<i->first;
   return argm.local_begin() == argm.local_end();}
 
@@ -390,6 +390,24 @@ int b_return(const Argm& argm) {
   catch (E_generic) {throw Signal_argm(Argm::Not_a_number, argm[1]);}
   catch (E_nan) {throw Signal_argm(Argm::Not_a_number, argm[1]);}
   catch (E_range) {throw Signal_argm(Argm::Input_range, argm[1]);}}
+
+// run the argfunction having set local variables according to the given
+// prototype
+int b_scope(const Argm& argm) {
+  if (argm.argc() < 2) throw Signal_argm(Argm::Bad_argc, argm.argc()-1, 2, 0);
+  else if (!argm.argfunction()) throw Signal_argm(Argm::Missing_argfunction);
+  Argm prototype_argm(argm.parent_map(),
+                      default_input, default_output, default_error);
+  tokenize_words(argm[argm.argc()-1], std::back_inserter(prototype_argm));
+  Prototype prototype(prototype_argm.begin(), prototype_argm.end(), false, ALL);
+  Argm invoking_argm(argm.begin(), argm.end()-1, NULL, argm.parent_map(),
+                     default_input, default_output, default_error);
+  Variable_map locals(prototype.arg_to_param(invoking_argm));
+  Argm result(&locals, default_input, default_output, default_error);
+  result.push_back("rwsh.mapped_argfunction");
+  int ret = (*argm.argfunction())(result);
+  if (Named_executable::unwind_stack()) return -1;
+  else return ret;}
 
 // modify variable $1 as a selection according to $2
 int b_selection_set(const Argm& argm) {

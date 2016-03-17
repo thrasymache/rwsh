@@ -1,7 +1,7 @@
 // The definition of the Argm class, which contains the arguments that may
 // be passed to an executable.
 //
-// Copyright (C) 2005-2015 Samuel Newbold
+// Copyright (C) 2005-2016 Samuel Newbold
 
 #include <cstring>
 #include <cstdlib>
@@ -17,6 +17,8 @@
 #include "argm.h"
 #include "arg_script.h"
 #include "executable.h"
+#include "prototype.h"
+
 #include "function.h"
 
 Argm::Argm(Variable_map* parent_map_i, Rwsh_istream_p input_i,

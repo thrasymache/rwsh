@@ -3,7 +3,7 @@
 // between the Argm that was passed to the function and the Argm that will 
 // be used to run a given executable.
 //
-// Copyright (C) 2006-2015 Samuel Newbold
+// Copyright (C) 2006-2016 Samuel Newbold
 
 #include <cstdlib>
 #include <exception>
@@ -22,6 +22,8 @@
 #include "arg_script.h"
 #include "executable.h"
 #include "file_stream.h"
+#include "prototype.h"
+
 #include "function.h"
 
 namespace {

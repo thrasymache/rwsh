@@ -1,5 +1,5 @@
 // the registering of builtins
-// Copyright Samuel Newbold 2005-2015
+// Copyright Samuel Newbold 2005-2016
 
 #include <map>
 #include <set>
@@ -16,6 +16,8 @@
 #include "builtin.h"
 #include "executable.h"
 #include "executable_map.h"
+#include "prototype.h"
+
 #include "function.h"
 
 void internal_init(void) {
@@ -72,6 +74,7 @@ void internal_init(void) {
   executable_map.set(new Builtin(".ls", b_ls));
   executable_map.set(new Builtin(".nop", b_nop));
   executable_map.set(new Builtin(".return", b_return));
+  executable_map.set(new Builtin(".scope", b_scope));
   executable_map.set(new Builtin(".set", b_set));
   executable_map.set(new Builtin(".selection_set", b_selection_set));
   executable_map.set(new Builtin(".signal_handler", b_signal_handler));

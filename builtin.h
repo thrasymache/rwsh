@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2015 Samuel Newbold
+// Copyright (C) 2006-2016 Samuel Newbold
 
 int b_cd(const Argm& argm);
 int b_combine(const Argm& argm);
@@ -28,6 +28,7 @@ int b_local(const Argm& argm);
 int b_ls(const Argm& argm);
 int b_nop(const Argm& argm);
 int b_return(const Argm& argm);
+int b_scope(const Argm& argm);
 int b_set(const Argm& argm);
 int b_selection_set(const Argm& argm);
 int b_signal_handler(const Argm& argm);

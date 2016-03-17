@@ -1,6 +1,6 @@
 // The main function for rwsh
 //
-// Copyright (C) 2005-2015 Samuel Newbold
+// Copyright (C) 2005-2016 Samuel Newbold
 
 #include <cstdlib>
 #include <iostream>
@@ -23,11 +23,12 @@
 #include "default_stream.h"
 #include "executable.h"
 #include "executable_map.h"
-#include "function.h"
 #include "plumber.h"
+#include "prototype.h"
 #include "rwsh_init.h"
 #include "selection.h"
 
+#include "function.h"
 #include "argm_star_var.cc"
 
 // static initializers of basic types

@@ -1,7 +1,7 @@
 // The definition of the Arg_spec class which contains a single argument
 // specifier (e.g. a fixed string, a variable read, a selection read or $*).
 //
-// Copyright (C) 2006-2015 Samuel Newbold
+// Copyright (C) 2006-2016 Samuel Newbold
 
 #include <cstdlib>
 #include <dirent.h>
@@ -22,39 +22,16 @@
 #include "arg_script.h"
 #include "executable.h"
 #include "executable_map.h"
-#include "function.h"
+#include "prototype.h"
 #include "read_dir.cc"
 #include "rwshlib.h"
 #include "selection.h"
 #include "substitution_stream.h"
 #include "tokenize.cc"
 
+#include "function.h"
 #include "argm_star_var.cc"
 #include "selection_read.cc"
-
-namespace {
-template<class Out>
-Out tokenize_words(const std::string& in, Out res) {
-  unsigned token_start=0, i=0, nesting=0;
-  while (i<in.length() && isspace(in[i])) ++i;           // keep leading space
-  for (; i<in.length(); ++i)
-    if (in[i] == '(') {if (!nesting++) ++token_start;}
-    else if (in[i] == ')') {if (!nesting--)
-      throw Signal_argm(Argm::Mismatched_parenthesis, in.substr(0, i+1));}
-    else if (!nesting && isspace(in[i])) {
-      unsigned end = i;
-      while (i<in.length() && isspace(in[i])) ++i;
-      if (i == in.length()) end = i;                     // keep trailing space
-      if (in[end-1] == ')') *res++ = in.substr(token_start, end-token_start-1);
-      else *res++ = in.substr(token_start, end-token_start);
-      token_start = i--;}
-  if (nesting) throw Signal_argm(Argm::Mismatched_parenthesis, in);
-  if (token_start != i)
-    if (in[i-1] == ')') *res = in.substr(token_start, i-token_start-1);
-    else *res = in.substr(token_start, i-token_start);
-  return res;}
-
-} // end unnamed namespace
 
 Arg_spec::Arg_spec(const std::string& script, unsigned max_soon) : 
       soon_level(0), ref_level(0), expand(false), word_selection(-1),

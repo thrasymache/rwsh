@@ -129,6 +129,7 @@ m &{e ((zero zero) (one one) two three)}$ {e $# $*}
 m &{e ((zero zero) (one one) two three)}$1 {e $# $*}
 m &{e ((zero zero) (one one) two three)}$10 {e $# $*}
 m &{e (zero zero) \)one one two three}$1 {e $# $*}
+m &{e (zero zero) \(one one two three}$1 {e $# $*}
 m &{e (zero zero) \)one one two three} {e $# $*}
 c x &{.echo (y y)}$ x
 c x &{.echo ( y y )}$ x
@@ -652,6 +653,24 @@ m {.is_default_error}
 .return 2147483647
 .return 2147483649
 .return -2147483649
+
+# .scope
+.scope {e $foo}
+.scope foo
+.scope a (y y) {e illegal duplicate required parameter}
+.scope a ([-x] [-x]) {e illegal duplicate flag parameter}
+.scope a ([x x]) {e illegal duplicate optional parameter}
+.scope a ([-x arg bar] [-y arg]) {e illegal duplicate flag argument}
+.scope a (-x [-x]) {e evil duplication between flags positional}
+.scope a -- {e -- cannot be a required parameter}
+.scope a ([--] [--]) {e even -- cannot be a duplicate flag parameter}
+.scope a ([-- arg]) {e -- cannot take arguments}
+.scope a ([arg -- foo]) {e -- cannot be an argument}
+.scope bar foo {e aa $foo bb}
+.scope baz bax (foo bar) {e aa $bar bb $foo cc}
+.scope foo bar baz bax (args ...) {e aa $args$2 bb $args$1 cc}
+.scope single ([-x] [--long-opt y] second) {.list_locals}
+.return 0
 
 # .selection_set
 .selection_set A

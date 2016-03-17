@@ -2,7 +2,7 @@
 // standard stream and defines an input operator for Argm objects. It also
 // handles the calling of rwsh.prompt.
 //
-// Copyright (C) 2005-2015 Samuel Newbold
+// Copyright (C) 2005-2016 Samuel Newbold
 
 #include <iostream>
 #include <map>
@@ -22,6 +22,8 @@
 #include "command_stream.h"
 #include "executable.h"
 #include "executable_map.h"
+#include "prototype.h"
+
 #include "function.h"
 
 Command_stream::Command_stream(std::istream& s, bool subprompt_i) :

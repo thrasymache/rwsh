@@ -3,7 +3,7 @@
 // its key so that it can return argument functions which are part of the Argm
 // object.
 //
-// Copyright (C) 2005-2015 Samuel Newbold
+// Copyright (C) 2005-2016 Samuel Newbold
 
 #include <map>
 #include <set>
@@ -17,8 +17,10 @@
 #include "argm.h"
 #include "arg_script.h"
 #include "executable.h"
-#include "function.h"
 #include "executable_map.h"
+#include "prototype.h"
+
+#include "function.h"
 
 Executable_map::Executable_map(void) : in_autofunction(false) {}
 

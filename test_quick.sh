@@ -52,3 +52,12 @@ recurse a b c d e f g h i j k l m n o p q r s t u v w x y z
 # recurse ((((((((a b))) (c d)) (e f)) (g h)) (i j)) k l) m n (o (p (q (r (s (t (u (v (w (x (y z)))))))))))
 recurse (a b) ((c d e) ((f g h) ((i j k) ((l m n) ((o p q) ((r s t) ((u v w) ((x y z)))))))))
 
+.function_some_flags a x [... y z] {
+  .for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
+  .combine $nl
+  .echo (\\$x$: ) $x$1 $nl
+  .echo (\\$x$: ) $x$ $nl}
+a \( (sec ond) third fourth
+#  if (nesting) throw Signal_argm (Argm::Mismatched_parenthesis, in);
+# and that line is what thows the earlier parenthesis. i don't know why the
+# semicolon causes a mismatched brace error

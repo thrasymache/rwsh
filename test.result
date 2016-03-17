@@ -531,6 +531,10 @@ $m &{e (zero zero) \)one one two three}$1 {e $# $*}
 signal triggered: rwsh.mismatched_parenthesis ( zero zero ) ) 
 
 -1
+$m &{e (zero zero) \(one one two three}$1 {e $# $*}
+signal triggered: rwsh.mismatched_parenthesis ( zero zero (one one two three ) 
+
+-1
 $m &{e (zero zero) \)one one two three} {e $# $*}
 2 zero zero )one one two three
 0
@@ -2287,9 +2291,74 @@ signal triggered: rwsh.input_range ( -2147483649 .return )
 $
 
 -1
-$# .selection_set
+$# .scope
 
 -1
+$.scope {e $foo}
+signal triggered: rwsh.bad_argc ( 0 2 0 .scope ) 
+
+-1
+$.scope foo
+signal triggered: rwsh.missing_argfunction ( .scope ) 
+
+-1
+$.scope a (y y) {e illegal duplicate required parameter}
+signal triggered: rwsh.duplicate_parameter ( y .scope ) 
+
+-1
+$.scope a ([-x] [-x]) {e illegal duplicate flag parameter}
+signal triggered: rwsh.duplicate_parameter ( -x .scope ) 
+
+-1
+$.scope a ([x x]) {e illegal duplicate optional parameter}
+signal triggered: rwsh.duplicate_parameter ( x .scope ) 
+
+-1
+$.scope a ([-x arg bar] [-y arg]) {e illegal duplicate flag argument}
+signal triggered: rwsh.duplicate_parameter ( arg .scope ) 
+
+-1
+$.scope a (-x [-x]) {e evil duplication between flags positional}
+signal triggered: rwsh.duplicate_parameter ( -x .scope ) 
+
+-1
+$.scope a -- {e -- cannot be a required parameter}
+signal triggered: rwsh.duplicate_parameter ( -- .scope ) 
+
+-1
+$.scope a ([--] [--]) {e even -- cannot be a duplicate flag parameter}
+signal triggered: rwsh.duplicate_parameter ( -- .scope ) 
+
+-1
+$.scope a ([-- arg]) {e -- cannot take arguments}
+signal triggered: rwsh.dash_dash_argument ( [-- arg] .scope ) 
+
+-1
+$.scope a ([arg -- foo]) {e -- cannot be an argument}
+signal triggered: rwsh.dash_dash_argument ( [arg -- foo] .scope ) 
+
+-1
+$.scope bar foo {e aa $foo bb}
+aa bar bb
+0
+$.scope baz bax (foo bar) {e aa $bar bb $foo cc}
+aa bax bb baz cc
+0
+$.scope foo bar baz bax (args ...) {e aa $args$2 bb $args$1 cc}
+aa baz bb bar cc
+0
+$.scope single ([-x] [--long-opt y] second) {.list_locals}
+
+1
+$.return 0
+
+0
+$
+
+0
+$# .selection_set
+
+0
 $.selection_set A
 signal triggered: rwsh.bad_argc ( 1 2 0 .selection_set ) 
 
