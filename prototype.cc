@@ -31,6 +31,7 @@ Prototype::Prototype(Argm::const_iterator first_parameter,
       if (!positional.size()) throw Signal_argm(Argm::Elipsis_first_arg, *i);
       else if (has_elipsis) throw Signal_argm(Argm::Post_elipsis_option, *i);
       else positional.back().elipsis = 0, has_elipsis = true;
+    else if (*i == "-*") flags = SOME;
     else if ((*i)[0] != '[')
       if (*i == "--") throw Signal_argm(Argm::Duplicate_parameter, *i);
       else {
@@ -45,8 +46,7 @@ Prototype::Prototype(Argm::const_iterator first_parameter,
       bool group_end((*i)[i->length()-1] == ']');
       std::string first_name(i->substr(1, i->length() - 1 - group_end));
       Parameter_group group(false);
-      if (first_name == "...") group.elipsis = -1, has_elipsis = true;
-      else group.names.push_back(first_name);
+      if (first_name != "...") group.names.push_back(first_name);
       while (!group_end && ++i != parameter_end) {
         group_end = (*i)[i->length()-1] == ']';
         std::string name(i->substr(0, i->length() - group_end));
@@ -58,8 +58,10 @@ Prototype::Prototype(Argm::const_iterator first_parameter,
         std::string group_str(group.str());
         throw Signal_argm(Argm::Mismatched_bracket,
                           group_str.substr(0, group_str.length()-1));}
-      if (group.elipsis == -1 && !positional.size())
-        throw Signal_argm(Argm::Elipsis_first_arg, group.str());
+      if (first_name == "...") {
+        group.elipsis = -1, has_elipsis = true;
+        if (!positional.size())
+          throw Signal_argm(Argm::Elipsis_first_arg, group.str());}
       for (std::vector<std::string>::const_iterator i = group.names.begin();
            i != group.names.end(); ++i) {
         if (parameter_names.find(*i) != parameter_names.end())
@@ -69,11 +71,14 @@ Prototype::Prototype(Argm::const_iterator first_parameter,
           throw Signal_argm(Argm::Dash_dash_argument, group.str());}
       if (first_name[0] != '-') positional.push_back(group);
       else if (first_name == "--") explicit_dash_dash = true;
-      else if (flags_i == IGNORANT)
+      else if (first_name == "-*")
+        if (group.names.size() == 1) flags = SOME;
+        else throw Signal_argm(Argm::Dash_star_argument, group.str());
+      else if (flags == IGNORANT)
         throw Signal_argm(Argm::Ignored_flag, group.str());
       else flag_options[first_name] = group;}}
 
-Variable_map Prototype::arg_to_param(const Argm& argm) {
+Variable_map Prototype::arg_to_param(const Argm& argm) const {
   Variable_map locals(argm.parent_map());
   if (non_prototype) return locals;
   if (flags == SOME || flag_options.begin() != flag_options.end())
@@ -145,7 +150,7 @@ std::string Prototype::str(const std::string &name) const {
     switch (flags) {
       case ALL: result = ".function_all_flags " + escape(name) + " ";break;
       case SOME:
-        result = ".function_some_flags " + escape(name) + " "; break;
+        result = ".function_all_flags " + escape(name) + " [-*] "; break;
       case IGNORANT:
         result = ".function_flag_ignorant " + escape(name) + " "; break;}
     for (std::map<std::string, Parameter_group>::const_iterator i =

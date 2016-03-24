@@ -36,12 +36,12 @@ $.function if_only {.if $* {rwsh.argfunction}; .else {.nop}}
 $.function_flag_ignorant c args ... {.combine $args$}
 
 0
-$.function_some_flags a [-x b ...] c {
+$.function_all_flags a [-*] [-x b ...] c {
   .for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
 $.which_executable a
-.function_some_flags a [-x b ...] c {
+.function_all_flags a [-*] [-x b ...] c {
   .for &{.list_locals}$ {.combine $1 ( $$1 ) \ }}
 0
 $a first
@@ -60,7 +60,7 @@ $a -x first (sec ond) third
 $a -x (fi rst) (sec ond) third fourth
 -*(-x (fi rst) (sec ond) third) -x(-x (fi rst) sec ond third) b((fi rst) sec ond third) c(fourth) 
 0
-$.function_some_flags a [-x ... b] c {
+$.function_all_flags a [-*] [-x ... b] c {
   .for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
   .combine $nl
   # if_only .test_not_empty $-* {c (-*: ) $-*$ $nl}
@@ -71,7 +71,7 @@ $.function_some_flags a [-x ... b] c {
 
 0
 $.which_executable a
-.function_some_flags a [-x ... b] c {
+.function_all_flags a [-*] [-x ... b] c {
   .for &{.list_locals}$ {.combine $1 ( $$1 ) \ }
   .combine $nl
   # if_only .test_not_empty $-* {c -*:  $-*$ $nl}

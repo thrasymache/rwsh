@@ -12,11 +12,11 @@ set_if_undefined FIGNORE .*
 
 # selection commands
 fn sfn command {
-  .function_some_flags $command [file ...] {
+  .function_all_flags $command [-*] [file ...] {
     if_only .var_exists file {.selection_set s $file}
     &&{.which_path $command $PATH} $-*$ @$s}}
 fn sfn-subcommand system command {
-  .function_some_flags &&{c $system - $command} [file ...] {
+  .function_all_flags &&{c $system - $command} [-*] [file ...] {
     if_only .var_exists file {.selection_set s $file}
     .if .test_not_empty $s {&&{whichp $system} &&command $-*$ @$s}
     .else {&&{whichp $system} &&command $-*$}}}
@@ -156,6 +156,9 @@ fn unselect {.set s ()}
   .return -1}
 .function rwsh.dash_dash_argument {
   .echo optional -- parameter cannot take arguments \( $1 \) with call stack: $*2 $nl
+  .return -1}
+.function rwsh.dash_star_argument {
+  .echo optional -* parameter cannot take arguments \( $1 \) with call stack: $*2 $nl
   .return -1}
 .function rwsh.divide_by_zero {
   .echo attempt to divide $1 by 0 with call stack: $*2 $nl

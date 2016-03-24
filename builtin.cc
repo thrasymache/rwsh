@@ -200,12 +200,6 @@ int b_function_all_flags(const Argm& argm) {
 int b_function_flag_ignorant(const Argm& argm) {
   return function_core(argm, IGNORANT);}
 
-// add argfunction to executable map with name $1 and arguments $*2
-// the arguments need not all flags that can be passed to this function
-// variables for declared flags will be set, all flags will be available in $-*
-int b_function_some_flags(const Argm& argm) {
-  return function_core(argm, SOME);}
-
 // add a variable to the variable map that will remain after the enclosing
 // function terminates
 int b_global(const Argm& argm) {
@@ -402,10 +396,7 @@ int b_scope(const Argm& argm) {
   Prototype prototype(prototype_argm.begin(), prototype_argm.end(), false, ALL);
   Argm invoking_argm(argm.begin(), argm.end()-1, NULL, argm.parent_map(),
                      default_input, default_output, default_error);
-  Variable_map locals(prototype.arg_to_param(invoking_argm));
-  Argm result(&locals, default_input, default_output, default_error);
-  result.push_back("rwsh.mapped_argfunction");
-  int ret = (*argm.argfunction())(result);
+  int ret = (*argm.argfunction()).prototype_execute(invoking_argm, prototype);
   if (Named_executable::unwind_stack()) return -1;
   else return ret;}
 

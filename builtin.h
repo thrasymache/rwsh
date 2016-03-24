@@ -15,7 +15,6 @@ int b_fork(const Argm& argm);
 int b_function(const Argm& argm);
 int b_function_all_flags(const Argm& argm);
 int b_function_flag_ignorant(const Argm& argm);
-int b_function_some_flags(const Argm& argm);
 int b_global(const Argm& argm);
 int b_importenv_overwrite(const Argm& argm);
 int b_importenv_preserve(const Argm& argm);

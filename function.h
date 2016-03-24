@@ -20,7 +20,8 @@ class Command_block : public Base_executable, public std::vector<Arg_script> {
       Command_block* result = new Command_block(*this);
       return result;}};
   Command_block* apply(const Argm& argm, unsigned nesting) const;
-  int internal_execute(const Argm& src_argm);
+  int internal_execute(const Argm& src_argm) const;
+  int prototype_execute(const Argm& argm, const Prototype& prototype) const;
   int operator() (const Argm& src_argm);
   void promote_soons(unsigned nesting);
   std::string str() const; };

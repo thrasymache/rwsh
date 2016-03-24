@@ -37,8 +37,6 @@ void internal_init(void) {
                                    b_function_all_flags));
   executable_map.set(new Builtin(".function_flag_ignorant",
                                    b_function_flag_ignorant));
-  executable_map.set(new Builtin(".function_some_flags",
-                                   b_function_some_flags));
   executable_map.set(new Builtin(".global", b_global));
   executable_map.set(new Builtin(".if", b_if));
   executable_map.set(new Builtin(".importenv_overwrite",

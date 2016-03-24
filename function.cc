@@ -1,4 +1,4 @@
-// The definition of the Function class which can be used to change the 
+// The definition of the Function class which can be used to change the
 // arguments passed to an executable and/or tie several other executables into
 // a single executable.
 //
@@ -40,7 +40,7 @@ Command_block* Command_block::apply(const Argm& argm, unsigned nesting) const {
       i->apply(argm, nesting, ins);}
     result->trailing = trailing;
     return result;}}
-  
+
 int Command_block::operator() (const Argm& src_argm) {
   try {
     if (increment_nesting(src_argm)) return Variable_map::dollar_question;
@@ -53,13 +53,20 @@ int Command_block::operator() (const Argm& src_argm) {
     decrement_nesting(src_argm);
     return -1;}}
 
-int Command_block::internal_execute(const Argm& src_argm) {
+int Command_block::internal_execute(const Argm& src_argm) const {
   int ret;
   for (const_iterator i = begin(); i != end(); ++i) {
     Argm statement_argm = i->interpret(src_argm);
     ret = executable_map.run(statement_argm);
     if (unwind_stack()) break;}
   return ret;}
+
+int Command_block::prototype_execute(const Argm& argm,
+                                     const Prototype& prototype) const {
+  Variable_map locals(prototype.arg_to_param(argm));
+  Argm params(argm.begin(), argm.end(), argm.argfunction(), &locals,
+              argm.input, argm.output, argm.error);
+  return internal_execute(params);}
 
 void Command_block::promote_soons(unsigned nesting) {
   if (!this) return;
@@ -112,7 +119,6 @@ Function::Function(const std::string& name_i, const std::string& src) :
     throw "unclosed parenthesis on construction of function " + name_i + "\n" +
       error.prefix + "\n";}}
 
-// constructor that parses prototypes
 Function::Function(const std::string& name_i,
                    Argm::const_iterator first_parameter,
                    Argm::const_iterator parameter_end,
@@ -121,30 +127,26 @@ Function::Function(const std::string& name_i,
                    const Command_block& src) :
     prototype(first_parameter, parameter_end, non_prototype_i, flags_i),
     name_v(name_i), body(src) {}
-  
+
 // run the given function
-int Function::operator() (const Argm& invoking_argm) { 
+int Function::operator() (const Argm& argm) {
   try {
-    if (increment_nesting(invoking_argm)) return Variable_map::dollar_question;
+    if (increment_nesting(argm)) return Variable_map::dollar_question;
     struct timeval start_time;
     gettimeofday(&start_time, rwsh_clock.no_timezone);
     ++execution_count_v;
-    Variable_map locals_map(prototype.arg_to_param(invoking_argm));
-    Argm interpreted_argm(invoking_argm.begin(), invoking_argm.end(),
-               invoking_argm.argfunction(), &locals_map,
-               invoking_argm.input, invoking_argm.output, invoking_argm.error);
-    int ret = body.internal_execute(interpreted_argm);
+    int ret = body.prototype_execute(argm, prototype);
     last_return = ret;
     struct timeval end_time;
     gettimeofday(&end_time, rwsh_clock.no_timezone);
     last_execution_time_v = Clock::timeval_sub(end_time, start_time);
     Clock::timeval_add(total_execution_time_v, last_execution_time_v);
-    if (decrement_nesting(invoking_argm)) ret = Variable_map::dollar_question;
+    if (decrement_nesting(argm)) ret = Variable_map::dollar_question;
     return ret;}
   catch (Signal_argm error) {
     caught_signal = error.signal;
     std::copy(error.begin(), error.end(), std::back_inserter(call_stack));
-    decrement_nesting(invoking_argm);
+    decrement_nesting(argm);
     return -1;}}
 
 void Function::promote_soons(unsigned nesting) {

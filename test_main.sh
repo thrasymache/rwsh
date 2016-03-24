@@ -133,6 +133,7 @@ m &{e (zero zero) \(one one two three}$1 {e $# $*}
 m &{e (zero zero) \)one one two three} {e $# $*}
 c x &{.echo (y y)}$ x
 c x &{.echo ( y y )}$ x
+c x &{.echo (( y) (y ))}$ x
 c x &{.echo (    )}$ x
 c x &{.echo (
 y
@@ -256,7 +257,7 @@ b
 f g {e hi $nl; f g {e there $nl}; f h {e nothing here}; g}
 g
 
-# .function_all_flags .function_some_flags
+# .function_all_flags .function_flag_ignorant
 .function_all_flags
 .function_all_flags /bin/echo {e cannot define a path to be a function}
 .function_all_flags .exit {e cannot redefine a builtin as a function}
@@ -367,7 +368,7 @@ a -first --
 a -first excess
 a -to -- -first -- stops flag parsing rather than being a flag
 a -to -first
-.function_some_flags a [-first] {
+.function_all_flags a [-*] [-first] {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
   e nothing_required}
 w a
@@ -378,37 +379,37 @@ a -first --
 a -first excess
 a -to -- -first
 a -to -first
-.function_some_flags a {
+.function_all_flags a [-*] {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
   e nothing_required}
 w a
 a
-.function_some_flags a ... y {}
-.function_some_flags a [-x] [--file file] ... y {}
-.function_some_flags a [...] x {}
-.function_some_flags a [... y] x {}
-.function_some_flags a x ... [y z] {}
-.function_some_flags a x ... y ... {}
-.function_some_flags a [x ...] [y z] {}
-.function_some_flags a [x ...] y ... {}
-.function_some_flags a [x ... a] [y] {}
-.function_some_flags a [x ... a] y ... {}
-.function_some_flags a [x ... a ...] {}
-.function_some_flags a [x ... a ... b] {}
-.function_some_flags a [-x ...] b [c] {}
-.function_some_flags a x ... y {
+.function_all_flags a ... y {}
+.function_all_flags a [-x] [--file file] ... y {}
+.function_all_flags a [...] x {}
+.function_all_flags a [... y] x {}
+.function_all_flags a x ... [y z] {}
+.function_all_flags a x ... y ... {}
+.function_all_flags a [x ...] [y z] {}
+.function_all_flags a [x ...] y ... {}
+.function_all_flags a [x ... a] [y] {}
+.function_all_flags a [x ... a] y ... {}
+.function_all_flags a [x ... a ...] {}
+.function_all_flags a [x ... a ... b] {}
+.function_all_flags a [-x ...] b [c] {}
+.function_all_flags a [-*] x ... y {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a first
 a first (se cond)
 a first (se cond) third
 a first (se cond) third fourth (fi fth)
-.function_some_flags a x [...] {
+.function_all_flags a [-*] x [...] {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a
 a first second third fourth fifth
-.function_some_flags a x [y ...] {
+.function_all_flags a [-*] x [y ...] {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a
@@ -416,7 +417,7 @@ a first
 a first second
 a first second third
 a first second third fourth fifth
-.function_some_flags a a [b ... c] d {
+.function_all_flags a [-*] a [b ... c] d {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a first
@@ -425,7 +426,7 @@ a first second third
 a first second third fourth
 a first second third fourth fifth
 a first second third fourth fifth sixth
-.function_some_flags a [-x ...] b c {
+.function_all_flags a [-x ...] b c {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a first second
@@ -433,7 +434,7 @@ a -x first
 a -x first second
 a -x first second third
 a -x first second third fourth
-.function_some_flags a [-x b ...] c {
+.function_all_flags a [-x b ...] c {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a first
@@ -441,7 +442,7 @@ a -x first
 a -x (fi rst) second
 a -x first (sec ond) third
 a -x (fi rst) (sec ond) third fourth
-.function_some_flags a [-x ... b] c {
+.function_all_flags a [-x ... b] c {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
   .combine $nl
   if_only .test_not_empty $-* {c (-*: ) $-*$ $nl}
@@ -456,7 +457,7 @@ a -x (fi rst) second
 a -x () (fi rst) second
 a -x first (sec ond) third
 a -x (fi rst) (sec ond) third fourth
-.function_some_flags a x [... y z] {
+.function_all_flags a x [-*] [... y z] {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
   .combine $nl
   if_only .var_exists x {c (x: ) $x$ $nl}}
@@ -468,7 +469,7 @@ a first (sec ond) third
 a (fi rst) (sec ond) third fourth
 a () (sec ond) third fourth
 a (fi rst) (sec ond) (thi rd) (fou rth) (fi fth)
-.function_some_flags a [x] [... y] {
+.function_all_flags a [-*] [x] [... y] {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a
@@ -477,7 +478,7 @@ a (fi rst) second
 a first (sec ond) third
 a (fi rst) (sec ond) third fourth
 a (fi rst) (sec ond) (thi rd) (fou rth) (fi fth)
-.function_some_flags a [x y] [... z] {
+.function_all_flags a [-*] [x y] [... z] {
   for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
   .combine $nl
   if_only .var_exists x {c (x: ) $x $nl}
@@ -666,10 +667,61 @@ m {.is_default_error}
 .scope a ([--] [--]) {e even -- cannot be a duplicate flag parameter}
 .scope a ([-- arg]) {e -- cannot take arguments}
 .scope a ([arg -- foo]) {e -- cannot be an argument}
+.scope -x -y a b ([-*] args ...) {for &&{.list_locals}$ {.combine $1 = $$1 \ }}
+.scope a ([-* bad] args ...) {e -* cannot currently take arguments}
+.scope -a -* -b a ([-*] a) {for &&{.list_locals}$ {.combine $1 = $$1 \ }}
 .scope bar foo {e aa $foo bb}
-.scope baz bax (foo bar) {e aa $bar bb $foo cc}
+.scope baz bax (foo bar) {for &&{.list_locals}$ {.combine $1 = $$1 \ }}
 .scope foo bar baz bax (args ...) {e aa $args$2 bb $args$1 cc}
 .scope single ([-x] [--long-opt y] second) {.list_locals}
+.function_all_flags a [-x] [--long-opt y] second {
+  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+w a
+.function_flag_ignorant pt args ... {
+  .scope $args$ ([-x] [--long-opt y] second) {
+    for &&&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  .combine $nl
+  .scope $args$ ( [-*] [--long-opt y] second) {
+    for &&&{.list_locals}$ {.combine $1 \( $$1 \) \ }}}
+w pt
+a
+a single
+pt single
+a -x single
+pt -x single
+a --long-opt arg single
+pt --long-opt arg single
+a --long-opt single
+pt --long-opt single
+a --long-opt first -x --long-opt second single
+pt --long-opt first -x --long-opt second single
+.function_all_flags a [-*] [-first] {
+  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
+  e nothing_required}
+w a
+.function_flag_ignorant pts [args ...] {
+  .if var_exists args {
+    .scope $args$ ([-first] [-*]) {
+      .for &&&&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+      e nothing_required}
+  else {.scope ([-first] [-*]) {
+      .for &&&&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+      e nothing_required}}
+w pts
+a
+pts
+a excess
+pts excess
+a -to
+pts -to
+a -first --
+pts -first --
+a -first excess
+pts -first excess
+a -to -- -first
+pts -to -- -first
+a -to -first
+pts -to -first
 .return 0
 
 # .selection_set

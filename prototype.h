@@ -23,5 +23,5 @@ class Prototype {
   Prototype(Argm::const_iterator first_parameter,
             Argm::const_iterator parameter_end,
             bool non_prototype_i, Flag_type flags_i);
-  Variable_map arg_to_param(const Argm& invoking_argm);
+  Variable_map arg_to_param(const Argm& invoking_argm) const;
   std::string str(const std::string &function_name) const;};

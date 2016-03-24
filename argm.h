@@ -11,11 +11,11 @@ class Argm : private std::vector<std::string> {
  public:
   Argm(Variable_map* parent_map_i,
        Rwsh_istream_p input_i, Rwsh_ostream_p output_i, Rwsh_ostream_p error_i);
-  template <class String_it> 
+  template <class String_it>
   Argm(String_it first_string, String_it last_string,
        Command_block* argfunction_i, Variable_map* parent_map_i,
        Rwsh_istream_p input_i, Rwsh_ostream_p output_i, Rwsh_ostream_p error_i);
-  template <class String_it> 
+  template <class String_it>
   Argm(const std::string& first_string,
        String_it second_string, String_it last_string,
        Command_block* argfunction_i, Variable_map* parent_map_i,
@@ -36,10 +36,11 @@ class Argm : private std::vector<std::string> {
     Arguments_for_argfunction,
     Bad_argc,
     Bad_argfunction_style,
-    Bad_if_nest, 
+    Bad_if_nest,
     Binary_not_found,
-    Dash_dash_argument, 
-    Divide_by_zero, 
+    Dash_dash_argument,
+    Dash_star_argument,
+    Divide_by_zero,
     Double_redirection,
     Duplicate_parameter,
     Elipsis_first_arg,
@@ -86,7 +87,7 @@ class Argm : private std::vector<std::string> {
     Version_incompatible,
     Signal_count};
 
-  static std::string signal_names[];
+  static std::string signal_names[Signal_count];
 
 // variables
   char** export_env(void) const;
@@ -97,7 +98,7 @@ class Argm : private std::vector<std::string> {
   Variable_map::iterator local_end(void) const;
   unsigned max_nesting(void) const;
   int set_var(const std::string& key, const std::string& value) const;
-  template<class Out> 
+  template<class Out>
   Out star_var(const std::string& key, unsigned reference_level, Out res) const;
   int unset_var(const std::string& key) const;
   bool var_exists(const std::string& key) const;

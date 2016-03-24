@@ -31,8 +31,8 @@
   .else_if .test_number_equal $ret 3 {echo cannot set argfunctions in executable map}
   .else_if .test_number_equal $ret 4 {echo function &&1 did not exist to be erased}
   .else {.return $ret}}
-.function_flag_ignorant fns prototype ... {
-  .function_some_flags $prototype$ {rwsh.argfunction}
+.function_flag_ignorant fns name prototype ... {
+  .function_all_flags $name [-*] $prototype$ {rwsh.argfunction}
   .local ret $?
   .if .test_number_equal $ret 1 {echo cannot set paths as functions}
   .else_if .test_number_equal $ret 2 {echo cannot set builtins as functions}

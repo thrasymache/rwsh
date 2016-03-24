@@ -2,7 +2,7 @@
 .function if_only {.if $* {rwsh.argfunction}; .else {.nop}}
 .function_flag_ignorant c args ... {.combine $args$}
 .function_flag_ignorant cc args {.combine $args$}
-.function_some_flags a [-x b ...] c {
+.function_all_flags a [-*] [-x b ...] c {
   .for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
 .which_executable a
 a first
@@ -10,7 +10,7 @@ a -x first
 a -x (fi rst) second
 a -x first (sec ond) third
 a -x (fi rst) (sec ond) third fourth
-.function_some_flags a [-x ... b] c {
+.function_all_flags a [-*] [-x ... b] c {
   .for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
   .combine $nl
   if_only .test_not_empty $-* {c (-*: ) $-*$ $nl}
@@ -52,7 +52,7 @@ recurse a b c d e f g h i j k l m n o p q r s t u v w x y z
 # recurse ((((((((a b))) (c d)) (e f)) (g h)) (i j)) k l) m n (o (p (q (r (s (t (u (v (w (x (y z)))))))))))
 recurse (a b) ((c d e) ((f g h) ((i j k) ((l m n) ((o p q) ((r s t) ((u v w) ((x y z)))))))))
 
-.function_some_flags a x [... y z] {
+.function_all_flags a [-*] x [... y z] {
   .for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
   .combine $nl
   .echo (\\$x$: ) $x$1 $nl

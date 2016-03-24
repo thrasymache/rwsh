@@ -58,15 +58,15 @@ inline Argm::star_var(const std::string& key, unsigned reference_level,
 template<class Out>
 Out tokenize_words(const std::string& in, Out res) {
   unsigned token_start=0, i=0, nesting=0;
-  while (i<in.length() && isspace(in[i])) ++i;           // keep leading space
+  while (i<in.length() && isspace(in[i])) ++i;
+  token_start = i;                                       // drop leading space
   for (; i<in.length(); ++i)
     if (in[i] == '(') {if (!nesting++) ++token_start;}
     else if (in[i] == ')') {if (!nesting--)
       throw Signal_argm(Argm::Mismatched_parenthesis, in.substr(0, i+1));}
     else if (!nesting && isspace(in[i])) {
       unsigned end = i;
-      while (i<in.length() && isspace(in[i])) ++i;
-      if (i == in.length()) end = i;                     // keep trailing space
+      while (i<in.length() && isspace(in[i])) ++i;       // drop leading space
       if (in[end-1] == ')') *res++ = in.substr(token_start, end-token_start-1);
       else *res++ = in.substr(token_start, end-token_start);
       token_start = i--;}
