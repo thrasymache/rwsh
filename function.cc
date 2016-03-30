@@ -69,8 +69,8 @@ int Command_block::prototype_execute(const Argm& argm,
   return internal_execute(params);}
 
 void Command_block::promote_soons(unsigned nesting) {
-  if (!this) return;
-  for (iterator i = begin(); i != end(); ++i) i->promote_soons(nesting);}
+  if (this)
+    for (iterator i = begin(); i != end(); ++i) i->promote_soons(nesting);}
 
 std::string Command_block::str() const {
   std::string body;
@@ -150,8 +150,7 @@ int Function::operator() (const Argm& argm) {
     return -1;}}
 
 void Function::promote_soons(unsigned nesting) {
-  if (!this) return;
-  else body.promote_soons(nesting);}
+  if (this) body.promote_soons(nesting);}
 
 // convert the function to a string. except for the handling of the name this
 // is the inverse of the string constructor.

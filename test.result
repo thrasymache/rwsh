@@ -197,9 +197,9 @@ $.which_executable rwsh.argfunction {{{{{{{{{{{}}}}}}}}}}}
 {{{{{{{{{{{}}}}}}}}}}}
 0
 $.which_executable rwsh.argfunction {
-  .function  x  { &&{ .which_path  echo  $PATH }  something } }
+  .function  x  { ${ .which_path  echo  $PATH }  something } }
 {
-  .function x { &{ .which_path echo $PATH} something}}
+  .function x { ${ .which_path echo $PATH} something}}
 0
 $
 
@@ -337,21 +337,24 @@ $m {.set A not_bin; e &A &&A $A $nl; m {.set A otherwise; e &A &&A &&&A $A}}
 $.set A /bin
 
 0
-$m {.set A not_bin
+$e ${e $A}
+/bin
+0
+$w rwsh.argfunction {e ${e $A}}
+{e ${e $A}}
+0
+$.scope not_bin A {
    e &{.echo $A} &&{.echo $A} $A $nl
-   m {.set A otherwise
-      e &{.echo $A} &&{.echo $A} &&&{.echo $A} $A}}
+   .scope otherwise A {
+      e &{.echo $A} &&{.echo $A} &&&{.echo $A} ${.echo $A} $A}}
 /bin not_bin not_bin 
-/bin not_bin otherwise otherwise
+/bin not_bin otherwise otherwise otherwise
 0
-$.set A /bin
-
-0
-$m {.set A not_bin; e &{.echo &A} &&{.echo &A &&A}}
-/bin /bin not_bin
+$.scope not_bin A {e &{.echo &A $A} &&{.echo &A &&A} ${.echo &A $A}}
+/bin /bin /bin not_bin /bin not_bin
 0
 $m &{.echo $A} {e $1 &1}
-not_bin &{.echo $A}
+/bin &{.echo $A}
 0
 $m $FOO {}
 signal triggered: rwsh.undefined_variable ( FOO ) 
@@ -363,6 +366,10 @@ signal triggered: rwsh.undefined_variable ( FOO rwsh.mapped_argfunction m )
 -1
 $m &{.return 1} {}
 signal triggered: rwsh.failed_substitution ( &{.return 1} ) 
+
+-1
+$m ${.return 1} {}
+signal triggered: rwsh.failed_substitution ( ${.return 1} ) 
 
 -1
 $m {e &{.return 1}}
@@ -390,7 +397,23 @@ $# bad_argfunction_style
 
 0
 $e x{e x}
-signal triggered: rwsh.bad_argfunction_style ( x{e x} ) 
+signal triggered: rwsh.bad_argfunction_style ( x ) 
+
+-1
+$e x&&&{e x}
+signal triggered: rwsh.bad_argfunction_style ( x&&& ) 
+
+-1
+$e $+{e x}
+signal triggered: rwsh.bad_argfunction_style ( $+ ) 
+
+-1
+$e &+{e x}
+signal triggered: rwsh.bad_argfunction_style ( &+ ) 
+
+-1
+$e &&${e x}
+signal triggered: rwsh.bad_argfunction_style ( &&$ ) 
 
 -1
 $e @/etc
@@ -481,7 +504,7 @@ $.return &{.return 0}
 signal triggered: rwsh.not_a_number (  .return ) 
 
 -1
-$.return &{e 0 $nl}
+$.return ${e 0 $nl}
 signal triggered: rwsh.not_a_number ( 0 
  .return ) 
 
@@ -513,7 +536,7 @@ $m $A$10 {e $# $*}
 signal triggered: rwsh.undefined_variable ( $A$10 ) 
 
 -1
-$m &{e ((zero zero) (one one) two three)}@ {e $# $*}
+$m ${e ((zero zero) (one one) two three)}@ {e $# $*}
 signal triggered: rwsh.invalid_word_selection ( @ ) 
 
 -1
@@ -521,20 +544,20 @@ $m &{e ((zero zero) (one one) two three)}$$ {e $# $*}
 signal triggered: rwsh.invalid_word_selection ( $ ) 
 
 -1
-$m &{e ((zero zero) (one one) two three)} {e $# $*}
+$m ${e ((zero zero) (one one) two three)} {e $# $*}
 2 (zero zero) (one one) two three
 0
 $m &{e ((zero zero) (one one) two three)}$ {e $# $*}
 5 zero zero one one two three
 0
-$m &{e ((zero zero) (one one) two three)}$1 {e $# $*}
+$m ${e ((zero zero) (one one) two three)}$1 {e $# $*}
 2 one one
 0
 $m &{e ((zero zero) (one one) two three)}$10 {e $# $*}
 signal triggered: rwsh.undefined_variable ( &{e ((zero zero) (one one) two three)}$10 ) 
 
 -1
-$m &{e (zero zero) \)one one two three}$1 {e $# $*}
+$m ${e (zero zero) \)one one two three}$1 {e $# $*}
 signal triggered: rwsh.mismatched_parenthesis ( zero zero ) ) 
 
 -1
@@ -542,19 +565,19 @@ $m &{e (zero zero) \(one one two three}$1 {e $# $*}
 signal triggered: rwsh.mismatched_parenthesis ( zero zero (one one two three ) 
 
 -1
-$m &{e (zero zero) \)one one two three} {e $# $*}
+$m ${e (zero zero) \)one one two three} {e $# $*}
 2 zero zero )one one two three
 0
 $c x &{.echo (y y)}$ x
 xyyx
 0
-$c x &{.echo ( y y )}$ x
+$c x ${.echo ( y y )}$ x
 xyyx
 0
 $c x &{.echo (( y) (y ))}$ x
 x yy x
 0
-$c x &{.echo (    )}$ x
+$c x ${.echo (    )}$ x
 xx
 0
 $c x &{.echo (
@@ -696,26 +719,25 @@ $f x {.var_add A 1
                  m {rwsh.argfunction}}}}}}
 
 0
-$x {e &A &&A $A}
-0 5 5
+$.scope 00 A {x {e &A &&A &&&A $A}}
+0 00 5 5
+0
+$.scope 00 A {x {x {x {x {e &A &&A &&&A &&&&A &&&&&A &&&&&&A $A}}}}}
+0 00 5 10 15 20 20
+0
+$.scope 00 A {
+  x {e &{.echo &A $A} . &&{.echo &A &&A $A} . &&&{.echo &A &&A &&&A $A} . ${
+  .echo &A &&A &&&A $A} . $A}}
+0 0 . 0 00 00 . 0 00 5 5 . 0 00 5 5 . 5
 0
 $.set A 0
 
 0
-$x {x {x {x {e &A &&A &&&A &&&&A &&&&&A $A}}}}
-0 5 10 15 20 20
-0
-$.set A 0
-
-0
-$x {e &{.echo &A $A} &&{.echo &A &&A $A} $A}
-0 0 0 5 5 5
-0
-$.set A 0
-
-0
-$x {x {x {x {e &{.echo &A $A} &&{.echo &A &&A $A} &&&{.echo &A &&A &&&A $A} &&&&{.echo &A &&A &&&A &&&&A $A} &&&&&{.echo &A &&A &&&A &&&&A &&&&&A $A} $A}}}}
-0 0 0 5 5 0 5 10 10 0 5 10 15 15 0 5 10 15 20 20 20
+$x {x {x {x {
+  e &{.echo &A $A} . &&{.echo &A &&A $A} . &&&{.echo &A &&A &&&A $A} . &&&&{
+  .echo &A &&A &&&A &&&&A $A} . &&&&&{.echo &A &&A &&&A &&&&A &&&&&A $A} . ${
+  .echo &A &&A &&&A &&&&A &&&&&A $A} . $A}}}}
+0 0 . 0 5 5 . 0 5 10 10 . 0 5 10 15 15 . 0 5 10 15 20 20 . 0 5 10 15 20 20 . 20
 0
 $f x
 
@@ -1068,12 +1090,12 @@ signal triggered: rwsh.unrecognized_flag ( -x test_var_greater a )
 
 -1
 $.function_all_flags a [-x] [--long-opt y] second {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
 $w a
 .function_all_flags a [--long-opt y] [-x] second {
-  for &{.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
 0
 $a
 signal triggered: rwsh.bad_argc ( 0 1 0 a ) 
@@ -1096,12 +1118,12 @@ $a --long-opt first -x --long-opt second single
 -*(--long-opt first -x --long-opt second) --long-opt(--long-opt first --long-opt second) -x(-x) second(single) y(first second) 
 0
 $.function_all_flags a [-q option1 option2] [-x o1 o2 o3 o4] required {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
 $w a
 .function_all_flags a [-q option1 option2] [-x o1 o2 o3 o4] required {
-  for &{.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
 0
 $a
 signal triggered: rwsh.bad_argc ( 0 1 0 a ) 
@@ -1131,12 +1153,12 @@ $a -x one two three four -q five six seven
 -*(-x one two three four -q five six) -q(-q five six) -x(-x one two three four) o1(one) o2(two) o3(three) o4(four) option1(five) option2(six) required(seven) 
 0
 $.function_all_flags a [optional0] [optional1 optional2 optional3] required {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
 $w a
 .function_all_flags a [optional0] [optional1 optional2 optional3] required {
-  for &{.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
 0
 $a
 signal triggered: rwsh.bad_argc ( 0 1 0 a ) 
@@ -1160,12 +1182,12 @@ signal triggered: rwsh.bad_argc ( 2 1 4 a )
 
 -1
 $.function_all_flags a -y [second] {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
 $w a
 .function_all_flags a -y [second] {
-  for &{.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
 0
 $a
 signal triggered: rwsh.bad_argc ( 0 1 0 a ) 
@@ -1182,12 +1204,12 @@ signal triggered: rwsh.bad_argc ( 2 1 1 a )
 
 -1
 $.function_all_flags a [-x] [-] [--long-opt] -y second {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
 $w a
 .function_all_flags a [-] [--long-opt] [-x] -y second {
-  for &{.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
 0
 $a --long-opt -xx over-long flag
 signal triggered: rwsh.unrecognized_flag ( -xx a ) 
@@ -1283,13 +1305,13 @@ $a --long-opt - -x -x - --long-opt all_flags doubled
 -(- -) -*(--long-opt - -x -x - --long-opt) --long-opt(--long-opt --long-opt) -x(-x -x) -y(all_flags) second(doubled) 
 0
 $.function_all_flags a [-first] [-to] [--] {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   e nothing_required}
 
 0
 $w a
 .function_all_flags a [-first] [-to] [--] {
-  for &{.list_locals}$ {.combine $1 \( $$1 \) ( )}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
   e nothing_required}
 0
 $a
@@ -1317,13 +1339,13 @@ $a -to -first
 -*(-to -first) -first(-first) -to(-to) nothing_required
 0
 $.function_all_flags a [-*] [-first] {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   e nothing_required}
 
 0
 $w a
 .function_all_flags a [-*] [-first] {
-  for &{.list_locals}$ {.combine $1 \( $$1 \) ( )}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
   e nothing_required}
 0
 $a
@@ -1351,13 +1373,13 @@ $a -to -first
 -*(-to -first) -first(-first) nothing_required
 0
 $.function_all_flags a [-*] {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   e nothing_required}
 
 0
 $w a
 .function_all_flags a [-*] {
-  for &{.list_locals}$ {.combine $1 \( $$1 \) ( )}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
   e nothing_required}
 0
 $a
@@ -1416,12 +1438,12 @@ signal triggered: rwsh.post_elipsis_option ( [c] .function_all_flags )
 
 -1
 $.function_all_flags a [-*] x ... y {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
 $w a
 .function_all_flags a [-*] x ... y {
-  for &{.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
 0
 $a first
 signal triggered: rwsh.bad_argc ( 1 2 0 a ) 
@@ -1437,12 +1459,12 @@ $a first (se cond) third fourth (fi fth)
 -*() x(first (se cond) third fourth) y(fi fth) 
 0
 $.function_all_flags a [-*] x [...] {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
 $w a
 .function_all_flags a [-*] x ... {
-  for &{.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
 0
 $a
 signal triggered: rwsh.bad_argc ( 0 1 0 a ) 
@@ -1452,12 +1474,12 @@ $a first second third fourth fifth
 -*() x(first second third fourth fifth) 
 0
 $.function_all_flags a [-*] x [y ...] {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
 $w a
 .function_all_flags a [-*] x [y ...] {
-  for &{.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
 0
 $a
 signal triggered: rwsh.bad_argc ( 0 1 0 a ) 
@@ -1476,12 +1498,12 @@ $a first second third fourth fifth
 -*() x(first) y(second third fourth fifth) 
 0
 $.function_all_flags a [-*] a [b ... c] d {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
 $w a
 .function_all_flags a [-*] a [b ... c] d {
-  for &{.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
 0
 $a first
 signal triggered: rwsh.bad_argc ( 1 2 0 a ) 
@@ -1504,12 +1526,12 @@ $a first second third fourth fifth sixth
 -*() a(first) b(second third fourth) c(fifth) d(sixth) 
 0
 $.function_all_flags a [-x ...] b c {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
 $w a
 .function_all_flags a [-x ...] b c {
-  for &{.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
 0
 $a first second
 -*() b(first) c(second) 
@@ -1528,12 +1550,12 @@ $a -x first second third fourth
 -*(-x first second) -x(-x first second) b(third) c(fourth) 
 0
 $.function_all_flags a [-x b ...] c {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
 $w a
 .function_all_flags a [-x b ...] c {
-  for &{.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
 0
 $a first
 -*() c(first) 
@@ -1552,7 +1574,7 @@ $a -x (fi rst) (sec ond) third fourth
 -*(-x (fi rst) (sec ond) third) -x(-x (fi rst) (sec ond) third) b((fi rst) (sec ond) third) c(fourth) 
 0
 $.function_all_flags a [-x ... b] c {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   .combine $nl
   if_only .test_not_empty $-* {c (-*: ) $-*$ $nl}
   if_only .var_exists -x {c (-x: ) $-x$ $nl}
@@ -1563,7 +1585,7 @@ $.function_all_flags a [-x ... b] c {
 0
 $w a
 .function_all_flags a [-x ... b] c {
-  for &{.list_locals}$ {.combine $1 \( $$1 \) ( )}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
   .combine $nl
   if_only .test_not_empty $-* {c (-*: ) $-*$ $nl}
   if_only .var_exists -x {c (-x: ) $-x$ $nl}
@@ -1613,14 +1635,14 @@ c: fourth
 
 0
 $.function_all_flags a x [-*] [... y z] {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   .combine $nl
   if_only .var_exists x {c (x: ) $x$ $nl}}
 
 0
 $w a
 .function_all_flags a [-*] x [... y z] {
-  for &{.list_locals}$ {.combine $1 \( $$1 \) ( )}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
   .combine $nl
   if_only .var_exists x {c (x: ) $x$ $nl}}
 0
@@ -1658,12 +1680,12 @@ x: fi rstsec ondthi rd
 
 0
 $.function_all_flags a [-*] [x] [... y] {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
 $w a
 .function_all_flags a [-*] [x] [... y] {
-  for &{.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
 0
 $a
 -*() 
@@ -1684,7 +1706,7 @@ $a (fi rst) (sec ond) (thi rd) (fou rth) (fi fth)
 -*() x((fi rst) (sec ond) (thi rd) (fou rth)) y(fi fth) 
 0
 $.function_all_flags a [-*] [x y] [... z] {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   .combine $nl
   if_only .var_exists x {c (x: ) $x $nl}
   if_only .var_exists y {c (y: ) $y$ $nl}
@@ -1693,7 +1715,7 @@ $.function_all_flags a [-*] [x y] [... z] {
 0
 $w a
 .function_all_flags a [-*] [x y] [... z] {
-  for &{.list_locals}$ {.combine $1 \( $$1 \) ( )}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
   .combine $nl
   if_only .var_exists x {c (x: ) $x $nl}
   if_only .var_exists y {c (y: ) $y$ $nl}
@@ -1739,12 +1761,12 @@ signal triggered: rwsh.ignored_flag ( [-x] .function_flag_ignorant )
 
 -1
 $.function_flag_ignorant a [x y] z {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
 $w a
 .function_flag_ignorant a [x y] z {
-  for &{.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
 0
 $a
 signal triggered: rwsh.bad_argc ( 0 1 0 a ) 
@@ -2196,7 +2218,7 @@ $.is_default_output {excess argfunc}
 signal triggered: rwsh.excess_argfunction ( .is_default_output ) 
 
 -1
-$e &{.is_default_output; .echo $?}
+$e ${.is_default_output; .echo $?}
 1
 0
 $m {.is_default_output >dummy_file}
@@ -2347,20 +2369,20 @@ $.scope a ([arg -- foo]) {e -- cannot be an argument}
 signal triggered: rwsh.dash_dash_argument ( [arg -- foo] .scope ) 
 
 -1
-$.scope -x -y a b ([-*] args ...) {for &&{.list_locals}$ {.combine $1 = $$1 \ }}
+$.scope -x -y a b ([-*] args ...) {for ${.list_locals}$ {.combine $1 = $$1 \ }}
 -*=-x -y args=a b 
 0
 $.scope a ([-* bad] args ...) {e -* cannot currently take arguments}
 signal triggered: rwsh.dash_star_argument ( [-* bad] .scope ) 
 
 -1
-$.scope -a -* -b a ([-*] a) {for &&{.list_locals}$ {.combine $1 = $$1 \ }}
+$.scope -a -* -b a ([-*] a) {for ${.list_locals}$ {.combine $1 = $$1 \ }}
 -*=-a -* -b a=a 
 0
 $.scope bar foo {e aa $foo bb}
 aa bar bb
 0
-$.scope baz bax (foo bar) {for &&{.list_locals}$ {.combine $1 = $$1 \ }}
+$.scope baz bax (foo bar) {for ${.list_locals}$ {.combine $1 = $$1 \ }}
 bar=bax foo=baz 
 0
 $.scope foo bar baz bax (args ...) {e aa $args$2 bb $args$1 cc}
@@ -2370,28 +2392,28 @@ $.scope single ([-x] [--long-opt y] second) {.list_locals}
 -* second
 0
 $.function_all_flags a [-x] [--long-opt y] second {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
 $w a
 .function_all_flags a [--long-opt y] [-x] second {
-  for &{.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
 0
 $.function_flag_ignorant pt args ... {
   .scope $args$ ([-x] [--long-opt y] second) {
-    for &&&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+    for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
   .combine $nl
   .scope $args$ ( [-*] [--long-opt y] second) {
-    for &&&{.list_locals}$ {.combine $1 \( $$1 \) \ }}}
+    for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}}
 
 0
 $w pt
 .function_flag_ignorant pt args ... {
   .scope $args$ ([-x] [--long-opt y] second) {
-    for &&{.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+    for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
   .combine $nl
   .scope $args$ ( [-*] [--long-opt y] second) {
-    for &&{.list_locals}$ {.combine $1 \( $$1 \) ( )}}}
+    for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}}
 0
 $a
 signal triggered: rwsh.bad_argc ( 0 1 0 a ) 
@@ -2434,22 +2456,22 @@ $pt --long-opt first -x --long-opt second single
 -*(--long-opt first -x --long-opt second) --long-opt(--long-opt first --long-opt second) second(single) y(first second) 
 0
 $.function_all_flags a [-*] [-first] {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   e nothing_required}
 
 0
 $w a
 .function_all_flags a [-*] [-first] {
-  for &{.list_locals}$ {.combine $1 \( $$1 \) ( )}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
   e nothing_required}
 0
 $.function_flag_ignorant pts [args ...] {
   .if var_exists args {
     .scope $args$ ([-first] [-*]) {
-      .for &&&&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+      .for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
       e nothing_required}
   else {.scope ([-first] [-*]) {
-      .for &&&&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+      .for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
       e nothing_required}}
 
 0
@@ -2457,10 +2479,10 @@ $w pts
 .function_flag_ignorant pts [args ...] {
   .if var_exists args {
     .scope $args$ ([-first] [-*]) {
-      .for &&&{.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+      .for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
       e nothing_required}
   else {.scope ([-first] [-*]) {
-      .for &&&{.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+      .for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
       e nothing_required}}
 0
 $a
@@ -2618,7 +2640,7 @@ signal triggered: rwsh.executable_not_found ( .eturn A )
 $m {.signal_handler rwsh.not_a_number rwsh.executable_not_found {.echo A}}
 A
 0
-$m .echo hi {.signal_handler &{.internal_functions}$ {&&*}}
+$m .echo hi {.signal_handler ${.internal_functions}$ {&&*}}
 hi
 0
 $
@@ -3039,8 +3061,8 @@ $w rwsh.mapped_argfunction {>dummy_file}
 $# new tests here
 
 0
-$w rwsh.mapped_argfunction {{&&{&&x &&{e}} {&&&x &&&{e} {&&&&x &&&&{e}}}}}
-{{&{&x &{e}} {&&x &&{e} {&&&x &&&{e}}}}}
+$w rwsh.mapped_argfunction {{&&{&&x &&{e}} ${&&x ${e}} {&&&x &&&{e} {&&&&x &&&&{e}}}}}
+{{&{&x &{e}} ${&x ${e}} {&&x &&{e} {&&&x &&&{e}}}}}
 0
 $w rwsh.mapped_argfunction {$A $$A $0 $$$1 $# $* $*2 $A$ $A$10 $$*$ $$$*12$}
 {$A $$A $0 $$$1 $# $* $*2 $A$ $A$10 $$*$ $$$*12$}

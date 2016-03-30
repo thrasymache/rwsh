@@ -26,7 +26,7 @@ line continuation
 .which_executable rwsh.argfunction {rwsh.argfunction {with a function arg}}
 .which_executable rwsh.argfunction {{{{{{{{{{{}}}}}}}}}}}
 .which_executable rwsh.argfunction {
-  .function  x  { &&{ .which_path  echo  $PATH }  something } }
+  .function  x  { ${ .which_path  echo  $PATH }  something } }
 
 # ability of functions to immitate built-ins
 .function f {.function $1 {rwsh.argfunction}}
@@ -71,16 +71,18 @@ e &A
 .else {}
 m {.set A not_bin; e &A &&A $A $nl; m {.set A otherwise; e &A &&A &&&A $A}}
 .set A /bin
-m {.set A not_bin
+e ${e $A}
+w rwsh.argfunction {e ${e $A}}
+.scope not_bin A {
    e &{.echo $A} &&{.echo $A} $A $nl
-   m {.set A otherwise
-      e &{.echo $A} &&{.echo $A} &&&{.echo $A} $A}}
-.set A /bin
-m {.set A not_bin; e &{.echo &A} &&{.echo &A &&A}}
+   .scope otherwise A {
+      e &{.echo $A} &&{.echo $A} &&&{.echo $A} ${.echo $A} $A}}
+.scope not_bin A {e &{.echo &A $A} &&{.echo &A &&A} ${.echo &A $A}}
 m &{.echo $A} {e $1 &1}
 m $FOO {}
 m {e $FOO}
 m &{.return 1} {}
+m ${.return 1} {}
 m {e &{.return 1}}
 m {e &&{.return 1}; e after}
 f rwsh.failed_substitution {e &&{.return 1}}
@@ -88,6 +90,10 @@ m {e &&{.return 1}; e after}
 f rwsh.failed_substitution
 # bad_argfunction_style
 e x{e x}
+e x&&&{e x}
+e $+{e x}
+e &+{e x}
+e &&${e x}
 e @/etc
 # rwsh.selection_not_found
 e @/*is*
@@ -113,7 +119,7 @@ sort test_files/tmp
 .set A r*h.cc sel*.h
 e @$A
 .return &{.return 0}
-.return &{e 0 $nl}
+.return ${e 0 $nl}
 .return &{.echo 0}
 e nevermore &{/bin/echo quoth the raven} 
 .set A ((zero zero) (one one) two three)
@@ -122,19 +128,19 @@ m $A {e $# $*}
 m $A$ {e $# $*}
 m $A$1 {e $# $*}
 m $A$10 {e $# $*}
-m &{e ((zero zero) (one one) two three)}@ {e $# $*}
+m ${e ((zero zero) (one one) two three)}@ {e $# $*}
 m &{e ((zero zero) (one one) two three)}$$ {e $# $*}
-m &{e ((zero zero) (one one) two three)} {e $# $*}
+m ${e ((zero zero) (one one) two three)} {e $# $*}
 m &{e ((zero zero) (one one) two three)}$ {e $# $*}
-m &{e ((zero zero) (one one) two three)}$1 {e $# $*}
+m ${e ((zero zero) (one one) two three)}$1 {e $# $*}
 m &{e ((zero zero) (one one) two three)}$10 {e $# $*}
-m &{e (zero zero) \)one one two three}$1 {e $# $*}
+m ${e (zero zero) \)one one two three}$1 {e $# $*}
 m &{e (zero zero) \(one one two three}$1 {e $# $*}
-m &{e (zero zero) \)one one two three} {e $# $*}
+m ${e (zero zero) \)one one two three} {e $# $*}
 c x &{.echo (y y)}$ x
-c x &{.echo ( y y )}$ x
+c x ${.echo ( y y )}$ x
 c x &{.echo (( y) (y ))}$ x
-c x &{.echo (    )}$ x
+c x ${.echo (    )}$ x
 c x &{.echo (
 y
 y
@@ -182,13 +188,16 @@ f x {.var_add A 1
            m {.var_add A 1
               m {.var_add A 1
                  m {rwsh.argfunction}}}}}}
-x {e &A &&A $A}
+.scope 00 A {x {e &A &&A &&&A $A}}
+.scope 00 A {x {x {x {x {e &A &&A &&&A &&&&A &&&&&A &&&&&&A $A}}}}}
+.scope 00 A {
+  x {e &{.echo &A $A} . &&{.echo &A &&A $A} . &&&{.echo &A &&A &&&A $A} . ${
+  .echo &A &&A &&&A $A} . $A}}
 .set A 0
-x {x {x {x {e &A &&A &&&A &&&&A &&&&&A $A}}}}
-.set A 0
-x {e &{.echo &A $A} &&{.echo &A &&A $A} $A}
-.set A 0
-x {x {x {x {e &{.echo &A $A} &&{.echo &A &&A $A} &&&{.echo &A &&A &&&A $A} &&&&{.echo &A &&A &&&A &&&&A $A} &&&&&{.echo &A &&A &&&A &&&&A &&&&&A $A} $A}}}}
+x {x {x {x {
+  e &{.echo &A $A} . &&{.echo &A &&A $A} . &&&{.echo &A &&A &&&A $A} . &&&&{
+  .echo &A &&A &&&A &&&&A $A} . &&&&&{.echo &A &&A &&&A &&&&A &&&&&A $A} . ${
+  .echo &A &&A &&&A &&&&A &&&&&A $A} . $A}}}}
 f x
 .set MAX_NESTING $OLD_NESTING
 .unset A
@@ -291,7 +300,7 @@ ntimes 2 {ntimes 3 {e &&n and $n remaining $nl}}
   test_var_greater -x 1}
 a
 .function_all_flags a [-x] [--long-opt y] second {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a
 a single
@@ -300,7 +309,7 @@ a --long-opt arg single
 a --long-opt single
 a --long-opt first -x --long-opt second single
 .function_all_flags a [-q option1 option2] [-x o1 o2 o3 o4] required {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a
 a single
@@ -311,7 +320,7 @@ a -x first second third fourth req
 a -q one two -q three four five
 a -x one two three four -q five six seven
 .function_all_flags a [optional0] [optional1 optional2 optional3] required {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a
 a single
@@ -320,14 +329,14 @@ a one two three
 a one two three four five
 a one two three four five six seven eight nine
 .function_all_flags a -y [second] {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a
 a 1
 a 1 2
 a 1 2 3
 .function_all_flags a [-x] [-] [--long-opt] -y second {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a --long-opt -xx over-long flag
 a -xx --long-opt over-long flag
@@ -358,7 +367,7 @@ a - --long-opt -x - -x some_flags doubled
 a - -x - -x - one_doubled one_tripled
 a --long-opt - -x -x - --long-opt all_flags doubled
 .function_all_flags a [-first] [-to] [--] {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   e nothing_required}
 w a
 a
@@ -369,7 +378,7 @@ a -first excess
 a -to -- -first -- stops flag parsing rather than being a flag
 a -to -first
 .function_all_flags a [-*] [-first] {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   e nothing_required}
 w a
 a
@@ -380,7 +389,7 @@ a -first excess
 a -to -- -first
 a -to -first
 .function_all_flags a [-*] {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   e nothing_required}
 w a
 a
@@ -398,19 +407,19 @@ a
 .function_all_flags a [x ... a ... b] {}
 .function_all_flags a [-x ...] b [c] {}
 .function_all_flags a [-*] x ... y {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a first
 a first (se cond)
 a first (se cond) third
 a first (se cond) third fourth (fi fth)
 .function_all_flags a [-*] x [...] {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a
 a first second third fourth fifth
 .function_all_flags a [-*] x [y ...] {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a
 a first
@@ -418,7 +427,7 @@ a first second
 a first second third
 a first second third fourth fifth
 .function_all_flags a [-*] a [b ... c] d {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a first
 a first second
@@ -427,7 +436,7 @@ a first second third fourth
 a first second third fourth fifth
 a first second third fourth fifth sixth
 .function_all_flags a [-x ...] b c {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a first second
 a -x first
@@ -435,7 +444,7 @@ a -x first second
 a -x first second third
 a -x first second third fourth
 .function_all_flags a [-x b ...] c {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a first
 a -x first
@@ -443,7 +452,7 @@ a -x (fi rst) second
 a -x first (sec ond) third
 a -x (fi rst) (sec ond) third fourth
 .function_all_flags a [-x ... b] c {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   .combine $nl
   if_only .test_not_empty $-* {c (-*: ) $-*$ $nl}
   if_only .var_exists -x {c (-x: ) $-x$ $nl}
@@ -458,7 +467,7 @@ a -x () (fi rst) second
 a -x first (sec ond) third
 a -x (fi rst) (sec ond) third fourth
 .function_all_flags a x [-*] [... y z] {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   .combine $nl
   if_only .var_exists x {c (x: ) $x$ $nl}}
 w a
@@ -470,7 +479,7 @@ a (fi rst) (sec ond) third fourth
 a () (sec ond) third fourth
 a (fi rst) (sec ond) (thi rd) (fou rth) (fi fth)
 .function_all_flags a [-*] [x] [... y] {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a
 a (fi rst)
@@ -479,7 +488,7 @@ a first (sec ond) third
 a (fi rst) (sec ond) third fourth
 a (fi rst) (sec ond) (thi rd) (fou rth) (fi fth)
 .function_all_flags a [-*] [x y] [... z] {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   .combine $nl
   if_only .var_exists x {c (x: ) $x $nl}
   if_only .var_exists y {c (y: ) $y$ $nl}
@@ -493,7 +502,7 @@ a (fi rst) (sec ond) third (fou rth)
 a (fi rst) (sec ond) (thi rd) (fou rth) (fi fth)
 .function_flag_ignorant a [-x] y z {}
 .function_flag_ignorant a [x y] z {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a
 a --file
@@ -625,7 +634,7 @@ m {.is_default_input <dummy_file}
 m {.is_default_input}
 .is_default_output 1
 .is_default_output {excess argfunc}
-e &{.is_default_output; .echo $?}
+e ${.is_default_output; .echo $?}
 m {.is_default_output >dummy_file}
 m {.is_default_output}
 .is_default_error 1
@@ -667,22 +676,22 @@ m {.is_default_error}
 .scope a ([--] [--]) {e even -- cannot be a duplicate flag parameter}
 .scope a ([-- arg]) {e -- cannot take arguments}
 .scope a ([arg -- foo]) {e -- cannot be an argument}
-.scope -x -y a b ([-*] args ...) {for &&{.list_locals}$ {.combine $1 = $$1 \ }}
+.scope -x -y a b ([-*] args ...) {for ${.list_locals}$ {.combine $1 = $$1 \ }}
 .scope a ([-* bad] args ...) {e -* cannot currently take arguments}
-.scope -a -* -b a ([-*] a) {for &&{.list_locals}$ {.combine $1 = $$1 \ }}
+.scope -a -* -b a ([-*] a) {for ${.list_locals}$ {.combine $1 = $$1 \ }}
 .scope bar foo {e aa $foo bb}
-.scope baz bax (foo bar) {for &&{.list_locals}$ {.combine $1 = $$1 \ }}
+.scope baz bax (foo bar) {for ${.list_locals}$ {.combine $1 = $$1 \ }}
 .scope foo bar baz bax (args ...) {e aa $args$2 bb $args$1 cc}
 .scope single ([-x] [--long-opt y] second) {.list_locals}
 .function_all_flags a [-x] [--long-opt y] second {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 .function_flag_ignorant pt args ... {
   .scope $args$ ([-x] [--long-opt y] second) {
-    for &&&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+    for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
   .combine $nl
   .scope $args$ ( [-*] [--long-opt y] second) {
-    for &&&{.list_locals}$ {.combine $1 \( $$1 \) \ }}}
+    for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}}
 w pt
 a
 a single
@@ -696,16 +705,16 @@ pt --long-opt single
 a --long-opt first -x --long-opt second single
 pt --long-opt first -x --long-opt second single
 .function_all_flags a [-*] [-first] {
-  for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   e nothing_required}
 w a
 .function_flag_ignorant pts [args ...] {
   .if var_exists args {
     .scope $args$ ([-first] [-*]) {
-      .for &&&&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+      .for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
       e nothing_required}
   else {.scope ([-first] [-*]) {
-      .for &&&&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+      .for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
       e nothing_required}}
 w pts
 a
@@ -755,7 +764,7 @@ e $A
 m {.signal_handler rwsh.not_a_number rwsh.executable_not_found {.return A}}
 m {.signal_handler rwsh.not_a_number rwsh.executable_not_found {.eturn A}}
 m {.signal_handler rwsh.not_a_number rwsh.executable_not_found {.echo A}}
-m .echo hi {.signal_handler &{.internal_functions}$ {&&*}}
+m .echo hi {.signal_handler ${.internal_functions}$ {&&*}}
 
 # .source
 .source
@@ -859,7 +868,7 @@ w rwsh.mapped_argfunction {&&A &&0 &&* &&*3 &&$A$ &&*$ &&*6$}
 w rwsh.mapped_argfunction {@a @$a @$1 @$* @$*2}
 w rwsh.mapped_argfunction {>dummy_file}
 # new tests here
-w rwsh.mapped_argfunction {{&&{&&x &&{e}} {&&&x &&&{e} {&&&&x &&&&{e}}}}}
+w rwsh.mapped_argfunction {{&&{&&x &&{e}} ${&&x ${e}} {&&&x &&&{e} {&&&&x &&&&{e}}}}}
 w rwsh.mapped_argfunction {$A $$A $0 $$$1 $# $* $*2 $A$ $A$10 $$*$ $$$*12$}
 w rwsh.mapped_argfunction {&&A &&0 &&* &&*3 &&$A$ &&$A$10 &&*$ &&*6$ {&&&A$ &&&A$10}}
 .function_all_flags wm [args ...] {

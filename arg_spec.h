@@ -4,7 +4,7 @@ class Argm;
 class Command_block;
 
 enum Arg_type {FIXED, REFERENCE, SOON, STAR_REF, STAR_SOON, SELECTION,
-                 SELECT_VAR, SELECT_STAR_VAR, SUBSTITUTION};
+                 SELECT_VAR, SELECT_STAR_VAR, SOON_SUBSTITUTION, SUBSTITUTION};
 
 class Arg_spec {
   Arg_type type;

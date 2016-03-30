@@ -33,13 +33,13 @@
 #include "argm_star_var.cc"
 #include "selection_read.cc"
 
-Arg_spec::Arg_spec(const std::string& script, unsigned max_soon) : 
+Arg_spec::Arg_spec(const std::string& script, unsigned max_soon) :
       soon_level(0), ref_level(0), expand(false), word_selection(-1),
       substitution(0) {
   unsigned i = 1;
   while (i < script.length() && script[i] == '&') ++soon_level, ++i;
   while (i < script.length() && script[i] == '$') ++ref_level, ++i;
-  std::string::size_type key_end; 
+  std::string::size_type key_end;
   if (script[0] != '$' && script[0] != '&') key_end = std::string::npos;
   else if (i < script.length()) key_end = script.find('$', i);
   else key_end = i;
@@ -82,18 +82,21 @@ Arg_spec::Arg_spec(const std::string& script, unsigned max_soon) :
   else if (script[0] == '\\') {type=FIXED; text=script.substr(1);}
   else {type=FIXED; text=script;}};
 
-Arg_spec::Arg_spec(const std::string& src,
-                       std::string::size_type style_start, 
-                       std::string::size_type& point, unsigned max_soon) : 
-      type(SUBSTITUTION), soon_level(0), ref_level(0), expand(false),
-      word_selection(-1), substitution(0), text() {
-  std::string::size_type tpoint = style_start+1;
-  while (tpoint != point && src[tpoint] == '&') ++soon_level, ++tpoint;
-  substitution = new Command_block(src, tpoint, soon_level);
-  if (soon_level+1 != point-style_start || src[style_start] != '&') {
-    delete substitution;
+Arg_spec::Arg_spec(const std::string& src, std::string::size_type style_start,
+                   std::string::size_type& point, unsigned max_soon) :
+      soon_level(0), ref_level(0), expand(false), word_selection(-1),
+      substitution(0), text() {
+  std::string::size_type tpoint = style_start;
+  if (src[tpoint] == '&') {
+    type = SOON_SUBSTITUTION;
+    while (++tpoint != point && src[tpoint] == '&') ++soon_level;}
+  else if (src[tpoint] == '$') {
+    type = SUBSTITUTION;
+    ++tpoint, soon_level = max_soon;}
+  if (src[tpoint] != '{') {
     throw Signal_argm(Argm::Bad_argfunction_style,
-                      src.substr(style_start, tpoint-style_start));}
+                      src.substr(style_start, point-style_start));}
+  substitution = new Command_block(src, tpoint, soon_level);
   if (soon_level > max_soon) {
     delete substitution;
     throw Signal_argm(Argm::Not_soon_enough,
@@ -127,8 +130,8 @@ Arg_spec::Arg_spec(Arg_type type_i, unsigned soon_level_i,
     expand(expand_i), word_selection(word_selection_i),
     substitution(substitution_i), text(text_i), trailing(trailing_i) {}
 
-Arg_spec::Arg_spec(const Arg_spec& src) : 
-  type(src.type), soon_level(src.soon_level), ref_level(src.ref_level), 
+Arg_spec::Arg_spec(const Arg_spec& src) :
+  type(src.type), soon_level(src.soon_level), ref_level(src.ref_level),
   expand(src.expand), word_selection(src.word_selection),
   substitution(src.substitution->copy_pointer()), text(src.text),
   trailing(src.trailing) {}
@@ -138,7 +141,7 @@ Arg_spec::~Arg_spec() {delete substitution;}
 void Arg_spec::apply(const Argm& src, unsigned nesting,
                  std::back_insert_iterator<std::vector<Arg_spec> > res) const {
   switch(type) {
-    case SOON: 
+    case SOON:
       if (soon_level)
         *res++ = Arg_spec(type, soon_level-1, ref_level, expand,
                           word_selection, substitution, text, trailing);
@@ -147,17 +150,17 @@ void Arg_spec::apply(const Argm& src, unsigned nesting,
         for (unsigned i = 0; i < ref_level; ++i) value = src.get_var(value);
         *res++ = Arg_spec(FIXED, 0, 0, 0, -1, substitution, value, trailing);}
       break;
-    case STAR_SOON: 
+    case STAR_SOON:
       if (soon_level)
         *res++ = Arg_spec(type, soon_level-1, ref_level, expand,
                           word_selection, substitution, text, trailing);
       else res = src.star_var(text, ref_level, res);
       break;
-    case SUBSTITUTION: {
+    case SUBSTITUTION: case SOON_SUBSTITUTION: {
       Command_block* new_substitution = substitution->apply(src, nesting+1);
-      if (soon_level) *res++ = Arg_spec(type, soon_level-1, ref_level, expand,
-                                        word_selection, new_substitution, text,
-                                        trailing);
+      if (soon_level)
+        *res++ = Arg_spec(type, soon_level-1, ref_level, expand,
+                          word_selection, new_substitution, text, trailing);
       else {
         Substitution_stream override_stream;
         Argm temp_argm(src);
@@ -172,7 +175,7 @@ void Arg_spec::apply(const Argm& src, unsigned nesting,
 // create a string from Arg_spec. inverse of constructor.
 std::string Arg_spec::str(void) const {
   std::string base, result(text);
-  for (unsigned i=0; i < soon_level; ++i) base += '&';
+  if (type != SUBSTITUTION) for (unsigned i=0; i < soon_level; ++i) base += '&';
   for (unsigned i=0; i < ref_level; ++i) base += '$';
   for (std::string::size_type pos = result.find_first_of("\\");
        pos != std::string::npos; pos = result.find_first_of("\\", pos+2))
@@ -184,7 +187,7 @@ std::string Arg_spec::str(void) const {
     tmp <<word_selection;
     tail += tmp.str();}
   switch(type) {
-    case FIXED: 
+    case FIXED:
       if (!text.length()) return "()" + tail;
       else if (text.find_first_of(" \t\n") != std::string::npos)
         return "(" + result + ")" + tail;
@@ -192,16 +195,17 @@ std::string Arg_spec::str(void) const {
       else return result + tail;
     case SOON: return "&" + base + result + tail;
     case REFERENCE: return "$" + base + result + tail;
-    case STAR_REF: 
+    case STAR_REF:
       if (text == "1") return base + "$*" + tail;
       else return base + "$*" + result + tail;
-    case STAR_SOON: 
+    case STAR_SOON:
       if (text == "1") return base + "&*" + tail;
       else return base + "&*" + result + tail;
     case SELECTION: return "@" + result + tail;
     case SELECT_VAR: return "@$" + result + tail;
     case SELECT_STAR_VAR: return "@$*" + result + tail;
-    case SUBSTITUTION: return "&" + base + substitution->str() + tail;
+    case SOON_SUBSTITUTION: return "&" + base + substitution->str() + tail;
+    case SUBSTITUTION: return "$" + base + substitution->str() + tail;
     default: std::abort();}}
 
 // produce one or more strings for destination Argm from Arg_spec and source
@@ -228,9 +232,9 @@ void Arg_spec::interpret(const Argm& src,
       res = src.star_var(text, ref_level, res); break;
     case SELECTION:  selection_read(text, res); break;
     case SELECT_VAR: selection_read(src.get_var(text), res); break;
-    case SELECT_STAR_VAR: 
+    case SELECT_STAR_VAR:
       default_output <<"@$* not implemented yet\n"; break;
-    case SUBSTITUTION: {
+    case SUBSTITUTION: case SOON_SUBSTITUTION: {
       if (soon_level) std::abort(); // constructor guarantees SOONs already done
       Substitution_stream override_stream;
       Argm temp_argm(src);
@@ -252,7 +256,7 @@ void Arg_spec::interpret(const Argm& src,
 void Arg_spec::promote_soons(unsigned nesting) {
   switch(type) {
     case SOON: case STAR_SOON: soon_level += nesting; break;
-    case SUBSTITUTION:
+    case SUBSTITUTION: case SOON_SUBSTITUTION:
       soon_level += nesting;
       substitution->promote_soons(nesting);
       break;}}
