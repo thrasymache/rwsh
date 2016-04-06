@@ -516,42 +516,75 @@ $e nevermore &{/bin/echo quoth the raven}
 nevermore quoth the raven
 
 0
-$.set A ((zero zero) (one one) two three)
+$.set A ((zero zero) ((one one) one) two three)
 
 0
-$m $A$$ {e $* $#}
-signal triggered: rwsh.invalid_word_selection ( $$ ) 
-
--1
 $m $A {e $# $*}
-2 (zero zero) (one one) two three
+2 (zero zero) ((one one) one) two three
 0
 $m $A$ {e $# $*}
-5 zero zero one one two three
+5 zero zero (one one) one two three
+0
+$m $A$$ {e $# $*}
+7 zero zero one one one two three
+0
+$m $A$$$$ {e $# $*}
+8 zero zero one one one two three
+0
+$m {m $A$$$$ {e $# $*}}
+8 zero zero one one one two three
+0
+$m {m &A$$$$ {e $# $*}}
+8 zero zero one one one two three
+0
+$m {m &A$1 {e $# $*}}
+2 (one one) one
 0
 $m $A$1 {e $# $*}
-2 one one
+2 (one one) one
 0
 $m $A$10 {e $# $*}
 signal triggered: rwsh.undefined_variable ( $A$10 ) 
 
 -1
-$m ${e ((zero zero) (one one) two three)}@ {e $# $*}
+$m $A$$1 {e $# $*}
+2 zero
+0
+$m {m &A$$1 {e $# $*}}
+2 zero
+0
+$m $A$$1x {e $# $*}
+signal triggered: rwsh.invalid_word_selection ( $$1x ) 
+
+-1
+$m $A$$1$ {e $# $*}
+signal triggered: rwsh.invalid_word_selection ( $$1$ ) 
+
+-1
+$m ${e $A}@ {e $# $*}
 signal triggered: rwsh.invalid_word_selection ( @ ) 
 
 -1
-$m &{e ((zero zero) (one one) two three)}$$ {e $# $*}
-signal triggered: rwsh.invalid_word_selection ( $ ) 
-
--1
-$m ${e ((zero zero) (one one) two three)} {e $# $*}
-2 (zero zero) (one one) two three
+$m &{e $A}$$ {e $# $*}
+7 zero zero one one one two three
 0
-$m &{e ((zero zero) (one one) two three)}$ {e $# $*}
-5 zero zero one one two three
+$m ${e $A} {e $# $*}
+2 (zero zero) ((one one) one) two three
 0
-$m ${e ((zero zero) (one one) two three)}$1 {e $# $*}
-2 one one
+$m &{e $A}$ {e $# $*}
+5 zero zero (one one) one two three
+0
+$m {m ${e $A}$1 {e $# $*}}
+2 (one one) one
+0
+$m {m &{e $A}$1 {e $# $*}}
+2 (one one) one
+0
+$m {m ${e $A}$$$1 {e $# $*}}
+2 zero
+0
+$m {m &{e $A}$$$1 {e $# $*}}
+2 zero
 0
 $m &{e ((zero zero) (one one) two three)}$10 {e $# $*}
 signal triggered: rwsh.undefined_variable ( &{e ((zero zero) (one one) two three)}$10 ) 
@@ -3046,12 +3079,6 @@ $w rwsh.mapped_argfunction {.nop 1 () \ \\ \$ \@ \) \(}
 $w rwsh.mapped_argfunction {.nop 1 () \  \\ \$ \@ \) \(}
 {.nop 1 () ( ) \\ \$ \@ \) \(}
 0
-$w rwsh.mapped_argfunction {$A $$A $0 $$$1 $# $* $*2 $A$ $$*$ $$$*12$}
-{$A $$A $0 $$$1 $# $* $*2 $A$ $$*$ $$$*12$}
-0
-$w rwsh.mapped_argfunction {&&A &&0 &&* &&*3 &&$A$ &&*$ &&*6$}
-{&A &0 &* &*3 &$A$ &*$ &*6$}
-0
 $w rwsh.mapped_argfunction {@a @$a @$1 @$* @$*2}
 {@a @$a @$1 @$*1 @$*2}
 0
@@ -3061,14 +3088,14 @@ $w rwsh.mapped_argfunction {>dummy_file}
 $# new tests here
 
 0
-$w rwsh.mapped_argfunction {{&&{&&x &&{e}} ${&&x ${e}} {&&&x &&&{e} {&&&&x &&&&{e}}}}}
-{{&{&x &{e}} ${&x ${e}} {&&x &&{e} {&&&x &&&{e}}}}}
+$w rwsh.mapped_argfunction {{&&{&&x &&{e}}$$$ ${&&x ${e}}$$$ {&&&x &&&{e} {&&&&x &&&&{e}}}}}
+{{&{&x &{e}}$$$ ${&x ${e}}$$$ {&&x &&{e} {&&&x &&&{e}}}}}
 0
-$w rwsh.mapped_argfunction {$A $$A $0 $$$1 $# $* $*2 $A$ $A$10 $$*$ $$$*12$}
-{$A $$A $0 $$$1 $# $* $*2 $A$ $A$10 $$*$ $$$*12$}
+$w rwsh.mapped_argfunction {$A $$A $0 $$$1 $# $* $*2 $A$$$ $A$10 $$*$ $$$*12$}
+{$A $$A $0 $$$1 $# $* $*2 $A$$$ $A$10 $$*$ $$$*12$}
 0
-$w rwsh.mapped_argfunction {&&A &&0 &&* &&*3 &&$A$ &&$A$10 &&*$ &&*6$ {&&&A$ &&&A$10}}
-{&A &0 &* &*3 &$A$ &$A$10 &*$ &*6$ {&&A$ &&A$10}}
+$w rwsh.mapped_argfunction {&&A &&0 &&* &&*3 &&$A$$$ &&$A$10 &&*$ &&*6$ {&&&A$ &&&A$10}}
+{&A &0 &* &*3 &$A$$$ &$A$10 &*$ &*6$ {&&A$ &&A$10}}
 0
 $.function_all_flags wm [args ...] {
    w rwsh.mapped_argfunction {rwsh.argfunction}
@@ -3080,9 +3107,16 @@ $wm (aa ab ac) bb cc {e x &&1 &2 $3 y &&1$1 z &&1$2; m &&1$ {e () w $* $#}}
 {e x &1 bb $3 y &1$1 z &1$2; m &1$ {e () w $* $#}}
 x aa ab ac bb cc y ab z ac w aa ab ac 4
 0
-$m (aa ab ac) bb cc {m &1$ {echo $* $#};m &&1$ {echo $* $#};m $1$ {echo $* $#}}
+$m (aa ab ac) bb cc {m $* {
+  m &1 {echo $* $#}
+  m &&1 {echo $* $#}
+  m &&&1 {echo $* $#}
+  m $1 {echo $* $#}
+  m $1$ {echo $* $#}}}
 ((aa ab ac)) 2 
-aa ab ac 4 
+(aa ab ac) 2 
+(aa ab ac) 2 
+(aa ab ac) 2 
 aa ab ac 4 
 
 0

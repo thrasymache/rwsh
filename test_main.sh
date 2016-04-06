@@ -122,17 +122,28 @@ e @$A
 .return ${e 0 $nl}
 .return &{.echo 0}
 e nevermore &{/bin/echo quoth the raven} 
-.set A ((zero zero) (one one) two three)
-m $A$$ {e $* $#}
+.set A ((zero zero) ((one one) one) two three)
 m $A {e $# $*}
 m $A$ {e $# $*}
+m $A$$ {e $# $*}
+m $A$$$$ {e $# $*}
+m {m $A$$$$ {e $# $*}}
+m {m &A$$$$ {e $# $*}}
+m {m &A$1 {e $# $*}}
 m $A$1 {e $# $*}
 m $A$10 {e $# $*}
-m ${e ((zero zero) (one one) two three)}@ {e $# $*}
-m &{e ((zero zero) (one one) two three)}$$ {e $# $*}
-m ${e ((zero zero) (one one) two three)} {e $# $*}
-m &{e ((zero zero) (one one) two three)}$ {e $# $*}
-m ${e ((zero zero) (one one) two three)}$1 {e $# $*}
+m $A$$1 {e $# $*}
+m {m &A$$1 {e $# $*}}
+m $A$$1x {e $# $*}
+m $A$$1$ {e $# $*}
+m ${e $A}@ {e $# $*}
+m &{e $A}$$ {e $# $*}
+m ${e $A} {e $# $*}
+m &{e $A}$ {e $# $*}
+m {m ${e $A}$1 {e $# $*}}
+m {m &{e $A}$1 {e $# $*}}
+m {m ${e $A}$$$1 {e $# $*}}
+m {m &{e $A}$$$1 {e $# $*}}
 m &{e ((zero zero) (one one) two three)}$10 {e $# $*}
 m ${e (zero zero) \)one one two three}$1 {e $# $*}
 m &{e (zero zero) \(one one two three}$1 {e $# $*}
@@ -863,20 +874,23 @@ wrapper 1 2
 .which_executable #
 w rwsh.mapped_argfunction {.nop 1 () \ \\ \$ \@ \) \(}
 w rwsh.mapped_argfunction {.nop 1 () \  \\ \$ \@ \) \(}
-w rwsh.mapped_argfunction {$A $$A $0 $$$1 $# $* $*2 $A$ $$*$ $$$*12$}
-w rwsh.mapped_argfunction {&&A &&0 &&* &&*3 &&$A$ &&*$ &&*6$}
 w rwsh.mapped_argfunction {@a @$a @$1 @$* @$*2}
 w rwsh.mapped_argfunction {>dummy_file}
 # new tests here
-w rwsh.mapped_argfunction {{&&{&&x &&{e}} ${&&x ${e}} {&&&x &&&{e} {&&&&x &&&&{e}}}}}
-w rwsh.mapped_argfunction {$A $$A $0 $$$1 $# $* $*2 $A$ $A$10 $$*$ $$$*12$}
-w rwsh.mapped_argfunction {&&A &&0 &&* &&*3 &&$A$ &&$A$10 &&*$ &&*6$ {&&&A$ &&&A$10}}
+w rwsh.mapped_argfunction {{&&{&&x &&{e}}$$$ ${&&x ${e}}$$$ {&&&x &&&{e} {&&&&x &&&&{e}}}}}
+w rwsh.mapped_argfunction {$A $$A $0 $$$1 $# $* $*2 $A$$$ $A$10 $$*$ $$$*12$}
+w rwsh.mapped_argfunction {&&A &&0 &&* &&*3 &&$A$$$ &&$A$10 &&*$ &&*6$ {&&&A$ &&&A$10}}
 .function_all_flags wm [args ...] {
    w rwsh.mapped_argfunction {rwsh.argfunction}
    .echo $nl
    m $args$ {rwsh.argfunction}}
 wm (aa ab ac) bb cc {e x &&1 &2 $3 y &&1$1 z &&1$2; m &&1$ {e () w $* $#}}
-m (aa ab ac) bb cc {m &1$ {echo $* $#};m &&1$ {echo $* $#};m $1$ {echo $* $#}}
+m (aa ab ac) bb cc {m $* {
+  m &1 {echo $* $#}
+  m &&1 {echo $* $#}
+  m &&&1 {echo $* $#}
+  m $1 {echo $* $#}
+  m $1$ {echo $* $#}}}
 wm () {.echo \\\ \ \\\ \\\\ \ \\|\\\ \  \  \\ \( \) \\\)}
 wm () {.echo (\\  \\ \\\\) ( \\|\\  ) ( ) (\\) (\() (\)) (\\\))}
 wm () {.echo a\\bc\\d\\\\e fg\\|\\hij klm \\ \) \( \\\(}

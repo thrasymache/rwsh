@@ -14,6 +14,17 @@ class Arg_script {
   Arg_script(const Rwsh_istream_p& input, const Rwsh_ostream_p& output,
              const Rwsh_ostream_p& error, const std::string& indent,
              char terminator);
+  std::string::size_type add_function(const std::string& src,
+                                      std::string::size_type style_start,
+                                      std::string::size_type f_start,
+                                      unsigned max_soon);
+  std::string::size_type add_quote(const std::string& src,
+                                   std::string::size_type point,
+                                   unsigned max_soon);
+  void add_token(const std::string& src, unsigned max_soon);
+  std::string::size_type parse_token(const std::string& src,
+                                     std::string::size_type token_start,
+                                     unsigned max_soon);
  public:
 
   Arg_script(const std::string& src, unsigned max_soon);
@@ -25,11 +36,6 @@ class Arg_script {
   std::string::size_type constructor(const std::string& src,
                               std::string::size_type point, unsigned max_soon);
   Argm argm(void) const;
-  void add_token(const std::string& src, unsigned max_soon);
-  std::string::size_type add_function(const std::string& src,
-                                      std::string::size_type style_start,
-                                      std::string::size_type f_start,
-                                      unsigned max_soon);
   void apply(const Argm& src, unsigned nesting,
              std::back_insert_iterator<std::vector<Arg_script> > res) const;
   std::string str(void) const;

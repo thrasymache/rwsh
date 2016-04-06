@@ -10,13 +10,17 @@ class Arg_spec {
   Arg_type type;
   unsigned soon_level;
   unsigned ref_level;
-  bool expand;
+  unsigned expand_count;
   int word_selection;
   Command_block* substitution;
   std::string text;
   std::string trailing;
 
   void add_function_spec(const std::string& src);
+  template<class Out> Out evaluate_expansion(const std::string& value,
+                                             Out res) const;
+  template<class Out> Out evaluate_substitution(const Argm& src, Out res) const;
+  template<class Out> Out evaluate_var(const Argm& src, Out res) const;
  public:
   Arg_spec(const std::string& script, unsigned max_soon);
   Arg_spec(const std::string& src, std::string::size_type style_start, 
@@ -26,6 +30,7 @@ class Arg_spec {
            Command_block* substitution, const std::string& text,
            const std::string& trailing);
   Arg_spec(const Arg_spec& src);
+  Arg_spec(const std::string& src);
   ~Arg_spec();
   void apply(const Argm& src, unsigned nesting,
              std::back_insert_iterator<std::vector<Arg_spec> > res) const;

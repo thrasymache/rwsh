@@ -27,12 +27,12 @@
 #include "function.h"
 
 namespace {
-const char* all_separators = "\\ \t{};\n";
+const char* all_separators = " \t\n\\{};";
+} // close unnamed namespace
 
-std::string::size_type add_quote(const std::string& src,
-                                 std::string::size_type point,
-                                 unsigned max_soon,
-                                 Arg_script* dest) {
+std::string::size_type Arg_script::add_quote(const std::string& src,
+                                             std::string::size_type point,
+                                             unsigned max_soon) {
   std::string literal;
   const char* separators = "\\()";
   std::string::size_type split = src.find_first_of(separators, point+1); 
@@ -52,16 +52,15 @@ std::string::size_type add_quote(const std::string& src,
   else {
     literal += src.substr(point+1, split-point-1);
     point = src.find_first_not_of(WSPACE, split+1);
-    if (literal[0] != '\\') dest->add_token(literal, max_soon);
-    else dest->add_token("\\" + literal, max_soon);
+    if (literal[0] != '\\') add_token(literal, max_soon);
+    else add_token("\\" + literal, max_soon);
     return point;}}
 
-std::string::size_type parse_token(const std::string& src,
-                                   std::string::size_type token_start,
-                                   unsigned max_soon,
-                                   Arg_script* dest) {
+std::string::size_type Arg_script::parse_token(const std::string& src,
+                                            std::string::size_type token_start,
+                                            unsigned max_soon) {
   if (src[token_start] == '(')
-    return add_quote(src, token_start, max_soon, dest);
+    return add_quote(src, token_start, max_soon);
   else if (src[token_start] == ')')
     throw Signal_argm(Argm::Mismatched_parenthesis,
                       src.substr(0, token_start+1));
@@ -81,16 +80,15 @@ std::string::size_type parse_token(const std::string& src,
   token += src.substr(point, split-point);
   if (split == std::string::npos) {
     point = split;
-    dest->add_token(token, max_soon);
+    add_token(token, max_soon);
     return point;}
   else if (src[split] == '{') {
-    token_start = dest->add_function(src, token_start, split, max_soon);
+    token_start = add_function(src, token_start, split, max_soon);
     return src.find_first_not_of(WSPACE, token_start);}
   else {
     point = src.find_first_not_of(WSPACE, split);
-    dest->add_token(token, max_soon);
+    add_token(token, max_soon);
     return point;}}
-} // close unnamed namespace
 
 Arg_script::Arg_script(const Rwsh_istream_p& input_i,
     const Rwsh_ostream_p& output_i, const Rwsh_ostream_p& error_i,
@@ -120,7 +118,7 @@ Arg_script::Arg_script(const std::string& src, std::string::size_type& point,
 std::string::size_type Arg_script::constructor(const std::string& src,
                               std::string::size_type point, unsigned max_soon) {
   for (; point < src.length();
-       point = parse_token(src, point, max_soon, this)) switch (src[point]) {
+       point = parse_token(src, point, max_soon)) switch (src[point]) {
     default: break;
     case ';': case '\n': case '}': goto after_loop;} // statement terminators
   after_loop:
