@@ -237,8 +237,8 @@ $w e
 $w () {}
 .function () {.nop}
 0
-$e text that doesn't have a prompt appended
-text that doesn't have a prompt appended
+$e text that does not have a prompt appended
+text that does not have a prompt appended
 0
 $m {e again}
 again
@@ -269,23 +269,53 @@ loop 3
 $
 
 0
-$# arg_script tests
+$# arg_script.cc and arg_spec.cc
 
 0
-$.set A /bin
-
-0
-$.global LC_ALL C
-
-0
-$f sort {&{.which_path sort /bin:/usr/bin} $*}
+$# Arg_spec::FIXED, Arg_script::add_quote
 
 0
 $e 5 4 3 2 1
 5 4 3 2 1
 0
-$e $A $0 @$A
-/bin e /bin
+$e a (tight string created by parentheses $#) $#
+a tight string created by parentheses $# 4
+0
+$e a ( spaced string created by parentheses $# ) $#
+a  spaced string created by parentheses $#  4
+0
+$e some escaped \) \(parentheses $#
+some escaped ) (parentheses 6
+0
+$e some (nested (parentheses) $#) $#
+some nested (parentheses) $# 4
+0
+$e some ((((((((((repeated))))) parentheses))))) $#
+some (((((((((repeated))))) parentheses)))) 4
+0
+$e a (multi-line parenthesis
+  enclosed string) $#
+a multi-line parenthesis
+  enclosed string 4
+0
+$e a )mismatched parenthesis
+signal triggered: rwsh.mismatched_parenthesis ( e a ) ) 
+
+-1
+$e a (multi-line parenthesis
+  mismatch))
+signal triggered: rwsh.mismatched_parenthesis ( e a (multi-line parenthesis
+  mismatch)) ) 
+
+-1
+$e (internal \)parenthesis \\ escape ( \))) $#
+internal )parenthesis \ escape ( )) 3
+0
+$
+
+0
+$# star_var
+
 0
 $e 1 2 $* 3 4
 1 2 1 2 $* 3 4 3 4
@@ -293,30 +323,11 @@ $e 1 2 $* 3 4
 $e $*2 1 2
 1 2 1 2
 0
-$e A $1 1 $$3 $$$3
-A A 1 A /bin
+$
+
 0
-$e A 1 2 3 4 5 6 7 $$$$$$$$$8
-A 1 2 3 4 5 6 7 /bin
-0
-$e &&A
-signal triggered: rwsh.not_soon_enough ( &&A ) 
+$# star_soon
 
--1
-$m {e &&&A}
-signal triggered: rwsh.not_soon_enough ( &&&A ) 
-
--1
-$e &{e &&A}
-signal triggered: rwsh.not_soon_enough ( &&A ) 
-
--1
-$e &&{e &A}
-signal triggered: rwsh.not_soon_enough ( &&{e &A} ) 
-
--1
-$e &A
-/bin
 0
 $.if .nop 1 2 3 {e &*}
 .nop 1 2 3
@@ -330,100 +341,17 @@ $.if .nop 1 2 3 {e &*0}
 $.else {}
 
 0
-$m {.set A not_bin; e &A &&A $A $nl; m {.set A otherwise; e &A &&A &&&A $A}}
-/bin not_bin not_bin 
-/bin not_bin otherwise otherwise
-0
-$.set A /bin
+$
 
 0
-$e ${e $A}
-/bin
-0
-$w rwsh.argfunction {e ${e $A}}
-{e ${e $A}}
-0
-$.scope not_bin A {
-   e &{.echo $A} &&{.echo $A} $A $nl
-   .scope otherwise A {
-      e &{.echo $A} &&{.echo $A} &&&{.echo $A} ${.echo $A} $A}}
-/bin not_bin not_bin 
-/bin not_bin otherwise otherwise otherwise
-0
-$.scope not_bin A {e &{.echo &A $A} &&{.echo &A &&A} ${.echo &A $A}}
-/bin /bin /bin not_bin /bin not_bin
-0
-$m &{.echo $A} {e $1 &1}
-/bin &{.echo $A}
-0
-$m $FOO {}
-signal triggered: rwsh.undefined_variable ( FOO ) 
-
--1
-$m {e $FOO}
-signal triggered: rwsh.undefined_variable ( FOO rwsh.mapped_argfunction m ) 
-
--1
-$m &{.return 1} {}
-signal triggered: rwsh.failed_substitution ( &{.return 1} ) 
-
--1
-$m ${.return 1} {}
-signal triggered: rwsh.failed_substitution ( ${.return 1} ) 
-
--1
-$m {e &{.return 1}}
-signal triggered: rwsh.failed_substitution ( &{.return 1} ) 
-
--1
-$m {e &&{.return 1}; e after}
-signal triggered: rwsh.failed_substitution ( &{.return 1} rwsh.mapped_argfunction m ) 
-
--1
-$f rwsh.failed_substitution {e &&{.return 1}}
+$# selection_read
 
 0
-$m {e &&{.return 1}; e after}
-signal handler itself triggered signal
-rwsh.failed_substitution &{.return 1} rwsh.failed_substitution
-original call stack:
-&{.return 1} rwsh.mapped_argfunction m
-
--1
-$f rwsh.failed_substitution
-
-0
-$# bad_argfunction_style
-
-0
-$e x{e x}
-signal triggered: rwsh.bad_argfunction_style ( x ) 
-
--1
-$e x&&&{e x}
-signal triggered: rwsh.bad_argfunction_style ( x&&& ) 
-
--1
-$e $+{e x}
-signal triggered: rwsh.bad_argfunction_style ( $+ ) 
-
--1
-$e &+{e x}
-signal triggered: rwsh.bad_argfunction_style ( &+ ) 
-
--1
-$e &&${e x}
-signal triggered: rwsh.bad_argfunction_style ( &&$ ) 
-
--1
 $e @/etc
 /etc
 0
-$# rwsh.selection_not_found
-
-0
-$e @/*is*
-signal triggered: rwsh.selection_not_found ( /*is* /*is* ) 
+$e @/*selection_not_found*
+signal triggered: rwsh.selection_not_found ( /*selection_not_found* /*selection_not_found* ) 
 
 -1
 $e @test_main.cc
@@ -431,6 +359,12 @@ signal triggered: rwsh.selection_not_found ( test_main.cc test_main.cc )
 
 -1
 $m {m {.for @e*c {e $1 $nl}} >test_files/tmp}
+
+0
+$.global LC_ALL C
+
+0
+$f sort {&{.which_path sort /bin:/usr/bin} $*}
 
 0
 $sort test_files/tmp
@@ -494,12 +428,193 @@ rwshrc
 rwshrc-basic 
 
 0
-$.set A r*h.cc sel*.h
-
-0
-$e @$A
+$.scope r*h.cc sel*.h (A ...) {e @$A}
 rwsh.cc selection.h
 0
+$
+
+0
+$# Arg_spec::REFERENCE, interpret(), evaluate_expansion(), evaluate_var()
+
+0
+$.set A /bin
+
+0
+$.global B ((zero zero) ((one one) one) two three)
+
+0
+$e $A $0 @$A
+/bin e /bin
+0
+$e A $1 1 $$3 $$$3
+A A 1 A /bin
+0
+$e A 1 2 3 4 5 6 7 $$$$$$$$$8
+A 1 2 3 4 5 6 7 /bin
+0
+$m $FOO {}
+signal triggered: rwsh.undefined_variable ( FOO ) 
+
+-1
+$m {e $FOO}
+signal triggered: rwsh.undefined_variable ( FOO rwsh.mapped_argfunction m ) 
+
+-1
+$m $B$$1x {e $# $*}
+signal triggered: rwsh.invalid_word_selection ( $$1x ) 
+
+-1
+$m $B$$1$ {e $# $*}
+signal triggered: rwsh.invalid_word_selection ( $$1$ ) 
+
+-1
+$m $B {e $# $*}
+2 (zero zero) ((one one) one) two three
+0
+$m $B$ {e $# $*}
+5 zero zero (one one) one two three
+0
+$m $B$$ {e $# $*}
+7 zero zero one one one two three
+0
+$m $B$$$$ {e $# $*}
+8 zero zero one one one two three
+0
+$m {m $B$$$$ {e $# $*}}
+8 zero zero one one one two three
+0
+$m $B$10 {e $# $*}
+signal triggered: rwsh.undefined_variable ( $B$10 ) 
+
+-1
+$m $B$1 {e $# $*}
+2 (one one) one
+0
+$m $B$$1 {e $# $*}
+2 zero
+0
+$
+
+0
+$# Arg_spec::SOON, apply()
+
+0
+$e A &1 1 &$3 &$$3
+A A 1 A /bin
+0
+$e &&A
+signal triggered: rwsh.not_soon_enough ( &&A ) 
+
+-1
+$m {e &&&A}
+signal triggered: rwsh.not_soon_enough ( &&&A ) 
+
+-1
+$e &{e &&A}
+signal triggered: rwsh.not_soon_enough ( &&A ) 
+
+-1
+$e &&{e &A}
+signal triggered: rwsh.not_soon_enough ( &&{e &A} ) 
+
+-1
+$e &A
+/bin
+0
+$.scope not_bin A {e &A &&A $A $nl; .scope otherwise A {e &A &&A &&&A $A}}
+/bin not_bin not_bin 
+/bin not_bin otherwise otherwise
+0
+$m {m &B$10 {e $# $*}}
+signal triggered: rwsh.undefined_variable ( &B$10 ) 
+
+-1
+$m {m &B$$$$ {e $# $*}}
+8 zero zero one one one two three
+0
+$m {m &B$1 {e $# $*}}
+2 (one one) one
+0
+$m {m &B$$1 {e $# $*}}
+2 zero
+0
+$
+
+0
+$# Arg_spec::SUBSTITUTION and Arg_spec::SOON_SUBSTITUTION, apply(), interpret(),
+
+0
+$# evaluate_substitution()
+
+0
+$e ${e $A}
+/bin
+0
+$w rwsh.argfunction {e ${e $A}}
+{e ${e $A}}
+0
+$.scope not_bin A {
+   e &{.echo $A} &&{.echo $A} $A $nl
+   .scope otherwise A {
+      e &{.echo $A} &&{.echo $A} &&&{.echo $A} ${.echo $A} $A}}
+/bin not_bin not_bin 
+/bin not_bin otherwise otherwise otherwise
+0
+$.scope not_bin A {e &{.echo &A $A} &&{.echo &A &&A} ${.echo &A $A}}
+/bin /bin /bin not_bin /bin not_bin
+0
+$m &{.echo $A} {e $1 &1}
+/bin &{.echo $A}
+0
+$m &{.return 1} {}
+signal triggered: rwsh.failed_substitution ( &{.return 1} ) 
+
+-1
+$m ${.return 1} {}
+signal triggered: rwsh.failed_substitution ( ${.return 1} ) 
+
+-1
+$m {e &{.return 1}}
+signal triggered: rwsh.failed_substitution ( &{.return 1} ) 
+
+-1
+$m {e &&{.return 1}; e after}
+signal triggered: rwsh.failed_substitution ( &{.return 1} rwsh.mapped_argfunction m ) 
+
+-1
+$f rwsh.failed_substitution {e &&{.return 1}}
+
+0
+$m {e &&{.return 1}; e after}
+signal handler itself triggered signal
+rwsh.failed_substitution &{.return 1} rwsh.failed_substitution
+original call stack:
+&{.return 1} rwsh.mapped_argfunction m
+
+-1
+$f rwsh.failed_substitution
+
+0
+$e x{e bad argfunction style}
+signal triggered: rwsh.bad_argfunction_style ( x ) 
+
+-1
+$e x&&&{e x}
+signal triggered: rwsh.bad_argfunction_style ( x&&& ) 
+
+-1
+$e $+{e x}
+signal triggered: rwsh.bad_argfunction_style ( $+ ) 
+
+-1
+$e &+{e x}
+signal triggered: rwsh.bad_argfunction_style ( &+ ) 
+
+-1
+$e &&${e x}
+signal triggered: rwsh.bad_argfunction_style ( &&$ ) 
+
+-1
 $.return &{.return 0}
 signal triggered: rwsh.not_a_number (  .return ) 
 
@@ -516,75 +631,51 @@ $e nevermore &{/bin/echo quoth the raven}
 nevermore quoth the raven
 
 0
-$.set A ((zero zero) ((one one) one) two three)
-
-0
-$m $A {e $# $*}
-2 (zero zero) ((one one) one) two three
-0
-$m $A$ {e $# $*}
-5 zero zero (one one) one two three
-0
-$m $A$$ {e $# $*}
-7 zero zero one one one two three
-0
-$m $A$$$$ {e $# $*}
-8 zero zero one one one two three
-0
-$m {m $A$$$$ {e $# $*}}
-8 zero zero one one one two three
-0
-$m {m &A$$$$ {e $# $*}}
-8 zero zero one one one two three
-0
-$m {m &A$1 {e $# $*}}
-2 (one one) one
-0
-$m $A$1 {e $# $*}
-2 (one one) one
-0
-$m $A$10 {e $# $*}
-signal triggered: rwsh.undefined_variable ( $A$10 ) 
-
--1
-$m $A$$1 {e $# $*}
-2 zero
-0
-$m {m &A$$1 {e $# $*}}
-2 zero
-0
-$m $A$$1x {e $# $*}
-signal triggered: rwsh.invalid_word_selection ( $$1x ) 
-
--1
-$m $A$$1$ {e $# $*}
-signal triggered: rwsh.invalid_word_selection ( $$1$ ) 
-
--1
-$m ${e $A}@ {e $# $*}
+$m ${e $B}@ {e $# $*}
 signal triggered: rwsh.invalid_word_selection ( @ ) 
 
 -1
-$m &{e $A}$$ {e $# $*}
-7 zero zero one one one two three
-0
-$m ${e $A} {e $# $*}
+$m ${e $B} {e $# $*}
 2 (zero zero) ((one one) one) two three
 0
-$m &{e $A}$ {e $# $*}
+$m &{e $B} {e $# $*}
+2 (zero zero) ((one one) one) two three
+0
+$m ${e $B}$ {e $# $*}
 5 zero zero (one one) one two three
 0
-$m {m ${e $A}$1 {e $# $*}}
+$m &{e $B}$ {e $# $*}
+5 zero zero (one one) one two three
+0
+$e $# &{e $B}$
+3 zero zero (one one) one two three
+0
+$m {e $# &{e $B}$}
+1 zero zero (one one) one two three
+0
+$m &{e $B}$$ {e $# $*}
+7 zero zero one one one two three
+0
+$m ${e $B}$$ {e $# $*}
+7 zero zero one one one two three
+0
+$m {m ${e $B}$1 {e $# $*}}
 2 (one one) one
 0
-$m {m &{e $A}$1 {e $# $*}}
+$m {m &{e $B}$1 {e $# $*}}
 2 (one one) one
 0
-$m {m ${e $A}$$$1 {e $# $*}}
+$m {m ${e $B}$$$1 {e $# $*}}
 2 zero
 0
-$m {m &{e $A}$$$1 {e $# $*}}
+$m {m &{e $B}$$$1 {e $# $*}}
 2 zero
+0
+$.unset A
+
+0
+$.unset B
+
 0
 $m &{e ((zero zero) (one one) two three)}$10 {e $# $*}
 signal triggered: rwsh.undefined_variable ( &{e ((zero zero) (one one) two three)}$10 ) 
@@ -618,42 +709,6 @@ y
 y
 )}$ x
 xyyx
-0
-$e a (tight string created by parentheses $#) $#
-a tight string created by parentheses $# 4
-0
-$e a ( spaced string created by parentheses $# ) $#
-a  spaced string created by parentheses $#  4
-0
-$e some escaped \) \(parentheses $#
-some escaped ) (parentheses 6
-0
-$e some (nested (parentheses) $#) $#
-some nested (parentheses) $# 4
-0
-$e some ((((((((((repeated))))) parentheses))))) $#
-some (((((((((repeated))))) parentheses)))) 4
-0
-$e a (multi-line parenthesis
-  enclosed string) $#
-a multi-line parenthesis
-  enclosed string 4
-0
-$e a )mismatched parenthesis
-signal triggered: rwsh.mismatched_parenthesis ( e a ) ) 
-
--1
-$e a (multi-line parenthesis
-  mismatch))
-signal triggered: rwsh.mismatched_parenthesis ( e a (multi-line parenthesis
-  mismatch)) ) 
-
--1
-$e (internal \)parenthesis \\ escape ( \))) $#
-internal )parenthesis \ escape ( )) 3
-0
-$.unset A
-
 0
 $
 

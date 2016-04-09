@@ -57,36 +57,36 @@ Arg_spec::Arg_spec(const std::string& script, unsigned max_soon) :
         throw Signal_argm(Argm::Invalid_word_selection,
                           script.substr(key_end));}}
   if (!script.length()) type=FIXED;
-  else if (script[0] == '$') {
+  else if (script[0] == '$')
     if (script.length() < 2) type=REFERENCE;
-    else {
+    else
       if (script[key_start] == '*') {
         type = STAR_REF;
         if (script.length() - key_start > 1)
           text = script.substr(key_start+1, key_end-key_start-1);
         else text="1";}
-      else {type=REFERENCE; text=script.substr(key_start, key_end-key_start);}}}
-  else if (script[0] == '&') {
+      else {type=REFERENCE; text=script.substr(key_start, key_end-key_start);}
+  else if (script[0] == '&')
     if (script.length() < 2) type=SOON;
-    else {
+    else
       if (soon_level > max_soon)
         throw Signal_argm(Argm::Not_soon_enough, script);
-      if (script[key_start] == '*') {
+      else if (script[key_start] == '*') {
         type=STAR_SOON;
         if (script.length() - key_start > 1)
           text=script.substr(key_start+1, key_end-key_start-1);
         else text="1";}
-      else {type=SOON; text=script.substr(key_start, key_end-key_start);}}}
-  else if (script[0] == '@') {
+      else {type=SOON; text=script.substr(key_start, key_end-key_start);}
+  else if (script[0] == '@')
     if (script.length() < 2) type=SELECTION;
-    else if (script[1] == '$') {
+    else if (script[1] == '$')
       if (script.length() < 3) type=SELECT_VAR;
       else if (script[2] == '*') {
         type=SELECT_STAR_VAR;
         if (script.length() > 3) text=script.substr(3);
         else text="1";}
-      else {type=SELECT_VAR; text=script.substr(2);}}
-    else {type=SELECTION; text=script.substr(1);}}
+      else {type=SELECT_VAR; text=script.substr(2);}
+    else {type=SELECTION; text=script.substr(1);}
   else if (script[0] == '\\') {type=FIXED; text=script.substr(1);}
   else {type=FIXED; text=script;}};
 
@@ -97,16 +97,16 @@ Arg_spec::Arg_spec(const std::string& src, std::string::size_type style_start,
   std::string::size_type tpoint = style_start;
   if (src[tpoint] == '&') {
     type = SOON_SUBSTITUTION;
-    while (++tpoint != point && src[tpoint] == '&') ++soon_level;}
+    while (++tpoint < src.length() && src[tpoint] == '&') ++soon_level;}
   else if (src[tpoint] == '$') {
     type = SUBSTITUTION;
     ++tpoint, soon_level = max_soon;}
-  if (src[tpoint] != '{') {
+  if (src[tpoint] != '{')
     throw Signal_argm(Argm::Bad_argfunction_style,
-                      src.substr(style_start, point-style_start));}
+                      src.substr(style_start, point-style_start));
   substitution = new Command_block(src, tpoint, soon_level);
   if (soon_level > max_soon) {
-    delete substitution;
+    delete substitution;    // needed to construct substitution to find its end
     throw Signal_argm(Argm::Not_soon_enough,
                       src.substr(style_start, tpoint-style_start));}
   if (tpoint >= src.length() || sub_term_char(src[tpoint])) point = tpoint;

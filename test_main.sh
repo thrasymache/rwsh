@@ -39,7 +39,7 @@ f m {rwsh.argfunction}
 .which_executable m
 w e
 w () {}
-e text that doesn't have a prompt appended
+e text that does not have a prompt appended
 m {e again}
 .function_all_flags if_only first_argument second_argument {
   .if $first_argument $second_argument {rwsh.argfunction}; .else {.nop}}
@@ -50,55 +50,38 @@ if_only .return 0 {e printed without error}
 for {e skipped without error}
 for 1 2 3 {e loop $* $nl}
 
-# arg_script tests
-.set A /bin
-.global LC_ALL C
-f sort {&{.which_path sort /bin:/usr/bin} $*}
+# arg_script.cc and arg_spec.cc
+# Arg_spec::FIXED, Arg_script::add_quote
 e 5 4 3 2 1
-e $A $0 @$A
+e a (tight string created by parentheses $#) $#
+e a ( spaced string created by parentheses $# ) $#
+e some escaped \) \(parentheses $#
+e some (nested (parentheses) $#) $#
+e some ((((((((((repeated))))) parentheses))))) $#
+e a (multi-line parenthesis
+  enclosed string) $#
+e a )mismatched parenthesis
+e a (multi-line parenthesis
+  mismatch))
+e (internal \)parenthesis \\ escape ( \))) $#
+
+# star_var
 e 1 2 $* 3 4
 e $*2 1 2
-e A $1 1 $$3 $$$3
-e A 1 2 3 4 5 6 7 $$$$$$$$$8
-e &&A
-m {e &&&A}
-e &{e &&A}
-e &&{e &A}
-e &A
+
+# star_soon
 .if .nop 1 2 3 {e &*}
 .else {}
 .if .nop 1 2 3 {e &*0}
 .else {}
-m {.set A not_bin; e &A &&A $A $nl; m {.set A otherwise; e &A &&A &&&A $A}}
-.set A /bin
-e ${e $A}
-w rwsh.argfunction {e ${e $A}}
-.scope not_bin A {
-   e &{.echo $A} &&{.echo $A} $A $nl
-   .scope otherwise A {
-      e &{.echo $A} &&{.echo $A} &&&{.echo $A} ${.echo $A} $A}}
-.scope not_bin A {e &{.echo &A $A} &&{.echo &A &&A} ${.echo &A $A}}
-m &{.echo $A} {e $1 &1}
-m $FOO {}
-m {e $FOO}
-m &{.return 1} {}
-m ${.return 1} {}
-m {e &{.return 1}}
-m {e &&{.return 1}; e after}
-f rwsh.failed_substitution {e &&{.return 1}}
-m {e &&{.return 1}; e after}
-f rwsh.failed_substitution
-# bad_argfunction_style
-e x{e x}
-e x&&&{e x}
-e $+{e x}
-e &+{e x}
-e &&${e x}
+
+# selection_read
 e @/etc
-# rwsh.selection_not_found
-e @/*is*
+e @/*selection_not_found*
 e @test_main.cc
 m {m {.for @e*c {e $1 $nl}} >test_files/tmp}
+.global LC_ALL C
+f sort {&{.which_path sort /bin:/usr/bin} $*}
 sort test_files/tmp
 e @test_files/*xx
 e @test_files/*x*x*x*x
@@ -116,34 +99,81 @@ e @*r*w*s*r*c*b*a*
 e @test_main.sh
 m {m {.for @*hrc* {e $1 $nl}} >test_files/tmp}
 sort test_files/tmp
-.set A r*h.cc sel*.h
-e @$A
+.scope r*h.cc sel*.h (A ...) {e @$A}
+
+# Arg_spec::REFERENCE, interpret(), evaluate_expansion(), evaluate_var()
+.set A /bin
+.global B ((zero zero) ((one one) one) two three)
+e $A $0 @$A
+e A $1 1 $$3 $$$3
+e A 1 2 3 4 5 6 7 $$$$$$$$$8
+m $FOO {}
+m {e $FOO}
+m $B$$1x {e $# $*}
+m $B$$1$ {e $# $*}
+m $B {e $# $*}
+m $B$ {e $# $*}
+m $B$$ {e $# $*}
+m $B$$$$ {e $# $*}
+m {m $B$$$$ {e $# $*}}
+m $B$10 {e $# $*}
+m $B$1 {e $# $*}
+m $B$$1 {e $# $*}
+
+# Arg_spec::SOON, apply()
+e A &1 1 &$3 &$$3
+e &&A
+m {e &&&A}
+e &{e &&A}
+e &&{e &A}
+e &A
+.scope not_bin A {e &A &&A $A $nl; .scope otherwise A {e &A &&A &&&A $A}}
+m {m &B$10 {e $# $*}}
+m {m &B$$$$ {e $# $*}}
+m {m &B$1 {e $# $*}}
+m {m &B$$1 {e $# $*}}
+
+# Arg_spec::SUBSTITUTION and Arg_spec::SOON_SUBSTITUTION, apply(), interpret(),
+# evaluate_substitution()
+e ${e $A}
+w rwsh.argfunction {e ${e $A}}
+.scope not_bin A {
+   e &{.echo $A} &&{.echo $A} $A $nl
+   .scope otherwise A {
+      e &{.echo $A} &&{.echo $A} &&&{.echo $A} ${.echo $A} $A}}
+.scope not_bin A {e &{.echo &A $A} &&{.echo &A &&A} ${.echo &A $A}}
+m &{.echo $A} {e $1 &1}
+m &{.return 1} {}
+m ${.return 1} {}
+m {e &{.return 1}}
+m {e &&{.return 1}; e after}
+f rwsh.failed_substitution {e &&{.return 1}}
+m {e &&{.return 1}; e after}
+f rwsh.failed_substitution
+e x{e bad argfunction style}
+e x&&&{e x}
+e $+{e x}
+e &+{e x}
+e &&${e x}
 .return &{.return 0}
 .return ${e 0 $nl}
 .return &{.echo 0}
 e nevermore &{/bin/echo quoth the raven} 
-.set A ((zero zero) ((one one) one) two three)
-m $A {e $# $*}
-m $A$ {e $# $*}
-m $A$$ {e $# $*}
-m $A$$$$ {e $# $*}
-m {m $A$$$$ {e $# $*}}
-m {m &A$$$$ {e $# $*}}
-m {m &A$1 {e $# $*}}
-m $A$1 {e $# $*}
-m $A$10 {e $# $*}
-m $A$$1 {e $# $*}
-m {m &A$$1 {e $# $*}}
-m $A$$1x {e $# $*}
-m $A$$1$ {e $# $*}
-m ${e $A}@ {e $# $*}
-m &{e $A}$$ {e $# $*}
-m ${e $A} {e $# $*}
-m &{e $A}$ {e $# $*}
-m {m ${e $A}$1 {e $# $*}}
-m {m &{e $A}$1 {e $# $*}}
-m {m ${e $A}$$$1 {e $# $*}}
-m {m &{e $A}$$$1 {e $# $*}}
+m ${e $B}@ {e $# $*}
+m ${e $B} {e $# $*}
+m &{e $B} {e $# $*}
+m ${e $B}$ {e $# $*}
+m &{e $B}$ {e $# $*}
+e $# &{e $B}$
+m {e $# &{e $B}$}
+m &{e $B}$$ {e $# $*}
+m ${e $B}$$ {e $# $*}
+m {m ${e $B}$1 {e $# $*}}
+m {m &{e $B}$1 {e $# $*}}
+m {m ${e $B}$$$1 {e $# $*}}
+m {m &{e $B}$$$1 {e $# $*}}
+.unset A
+.unset B
 m &{e ((zero zero) (one one) two three)}$10 {e $# $*}
 m ${e (zero zero) \)one one two three}$1 {e $# $*}
 m &{e (zero zero) \(one one two three}$1 {e $# $*}
@@ -156,18 +186,6 @@ c x &{.echo (
 y
 y
 )}$ x
-e a (tight string created by parentheses $#) $#
-e a ( spaced string created by parentheses $# ) $#
-e some escaped \) \(parentheses $#
-e some (nested (parentheses) $#) $#
-e some ((((((((((repeated))))) parentheses))))) $#
-e a (multi-line parenthesis
-  enclosed string) $#
-e a )mismatched parenthesis
-e a (multi-line parenthesis
-  mismatch))
-e (internal \)parenthesis \\ escape ( \))) $#
-.unset A
 
 # file redirection (but don't overwrite files that exist)
 # .for_each_line
