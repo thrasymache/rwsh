@@ -146,6 +146,17 @@ Signal_argm::Signal_argm(Sig_type signal_i, const std::string& x,
   push_back(x);
   push_back(y);}
 
+Signal_argm::Signal_argm(Sig_type signal_i, const std::string& w,
+                         const std::string& x, const std::string& y,
+                         const std::string& z) :
+    Argm(Variable_map::global_map, default_input,default_output,default_error),
+    signal(signal_i) {
+  push_back(signal_names[signal]);
+  push_back(w);
+  push_back(x);
+  push_back(y);
+  push_back(z);}
+
 Signal_argm::Signal_argm(Sig_type signal_i, int x, int y, int z) :
     Argm(Variable_map::global_map, default_input,default_output,default_error),
     signal(signal_i) {

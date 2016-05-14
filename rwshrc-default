@@ -145,6 +145,9 @@ fn unselect {.set s ()}
 .function rwsh.autofunction {
   .function $1 {&&{.which_path &&1 $PATH} $*}
   # if_only .return 0 {.echo added &&1 to executable map $nl}}
+.function rwsh.ambiguous_prototype_dash_dash {
+  .echo $1 is an ambiguous location for a prototype -- (it requests reading the user's mind) $nl
+  .return -1}
 .function rwsh.bad_argfunction_style {
   .echo $1 is neither an argfunction nor a substitution $nl
   .return -1}
@@ -174,6 +177,10 @@ fn unselect {.set s ()}
   .echo $1: elipsis cannot be the first argument in a prototype $nl
   .echo call stack: $*2 $nl
   .return -1}
+.function rwsh.elipsis_out_of_option_group {
+  .echo $1: for elipsis to apply to option it must occur within the brackets $nl
+  .echo call stack: $*2 $nl
+  .return -1}
 .function rwsh.else_without_if {
   .echo else without if with call stack: $* $nl
   .return -1}
@@ -189,14 +196,13 @@ fn unselect {.set s ()}
 .function rwsh.failed_substitution {
   echo substitution $1 failed
   echo call stack $*2}
+.function rwsh.flag_in_elipsis {
+  echo found flag $1 while collecting arguments for elipsis
+  echo call stack $*2}
 .function rwsh.help {
   .echo this is the default configuration for rwsh \(or something copied from it\), documentation should be available at rwsh.sf.net $nl}
 .function rwsh.if_before_else {
   .echo two .if commands without a .else between them with call stack : $* $nl
-  .return -1}
-.function rwsh.ignored_flag {
-  .echo flag options such as $1 are not accepted by .function_flag_ignorant $nl
-  .echo call stack: $*2 $nl
   .return -1}
 .function rwsh.input_range {
   .echo value $1 is out of usable numeric range $nl
@@ -240,6 +246,10 @@ fn unselect {.set s ()}
   .echo option $1 coming after an elipsis has no meaning $nl
   .echo call stack: $*2 $nl
   .return -1}
+.function rwsh.post_dash_dash_flag {
+  .echo flag option $1 occurs after -- in the prototype $nl
+  .echo call stack: $*2 $nl
+  .return -1}
 .function rwsh.selection_not_found {
   .echo no file matching pattern $1
   .if .test_string_unequal $1 $2 {.echo () for selection &&2 $nl}
@@ -257,6 +267,10 @@ fn unselect {.set s ()}
 .function rwsh.sigusr1 {.echo $nl received SIGUSR1: $* $nl}
 .function rwsh.sigusr2 {.echo $nl received SIGUSR2: $* $nl}
 .function rwsh.sigunknown {.echo $nl received unknown unix signal: $* $nl}
+.function rwsh.tardy_flag {
+  .echo $1 flag comes too late in command $nl
+  .echo call stack: $*2 $nl
+  .return -1}
 .function rwsh.undefined_variable {
   .echo $1 was undefined with call stack $*2 $nl}
 .function rwsh.unreadable_dir {.echo cannot read directory $1 $nl}
@@ -275,11 +289,11 @@ fn unselect {.set s ()}
   echo s $s}
 
 # misc
-.function_flag_ignorant . command ... {.source $command$}
+.function_all_flags . -- command ... {.source $command$}
 .function ! {if $* {.return 1}; else {.return 0}}
-.function_flag_ignorant ex_count cmd {.which_execution_count $cmd; c $nl}
-.function_flag_ignorant exec command ... {.exec $command$ }
-.function_flag_ignorant exit {.exit}
+.function_all_flags ex_count -- cmd {.which_execution_count $cmd; c $nl}
+.function_all_flags exec -- command ... {.exec $command$ }
+.function_all_flags exit {.exit}
 .function last_time {.which_last_execution_time $*; c $nl}
 .function total_time {.which_total_execution_time $*; c $nl}
 .function user_shell_ratio {

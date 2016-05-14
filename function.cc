@@ -77,15 +77,6 @@ std::string Command_block::str() const {
   for (const_iterator i = begin(); i != end()-1; ++i) body += i->str() + "";
   return "{" + body + back().str() + "}";}  //+ trailing + ",";}
 
-std::string Parameter_group::str() const {
-  if (required) return names[0] + (elipsis? "": " ...");
-  else {
-    std::string result("[");
-    if (elipsis == -1) result.append("... ");
-    for (std::vector<std::string>::size_type j = 0; j < names.size(); ++j)
-       result.append((j? " ": "") + names[j] + (elipsis == j? " ...": ""));
-    return result + "]";}}
-
 Command_block::Command_block(const std::string& src,
                                   std::string::size_type& point,
                                   unsigned max_soon) {
@@ -155,4 +146,7 @@ void Function::promote_soons(unsigned nesting) {
 // convert the function to a string. except for the handling of the name this
 // is the inverse of the string constructor.
 std::string Function::str() const {
-  return prototype.str(name()) + body.str();}
+  if (prototype.non_prototype)
+    return ".function " + escape(name()) + " " + body.str();
+  else return ".function_all_flags " + escape(name()) +
+              " " + prototype.str() + " " + body.str();}

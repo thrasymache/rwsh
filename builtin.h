@@ -1,5 +1,6 @@
 // Copyright (C) 2006-2016 Samuel Newbold
 
+int b_argc(const Argm& argm);
 int b_cd(const Argm& argm);
 int b_combine(const Argm& argm);
 int b_echo(const Argm& argm);
@@ -14,7 +15,6 @@ int b_for_each_line(const Argm& argm);
 int b_fork(const Argm& argm);
 int b_function(const Argm& argm);
 int b_function_all_flags(const Argm& argm);
-int b_function_flag_ignorant(const Argm& argm);
 int b_global(const Argm& argm);
 int b_importenv_overwrite(const Argm& argm);
 int b_importenv_preserve(const Argm& argm);

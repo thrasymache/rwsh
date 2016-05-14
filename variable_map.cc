@@ -18,13 +18,11 @@
 
 char** env;
 
-namespace {
 std::string word_from_value(const std::string& value) {
   if (value == "") return std::string("()");
   else if (value.find_first_of(" \t\n") != std::string::npos)
     return "(" + value + ")";
   else return value;}
-} // close unnamed namespace
 
 Variable_map::Variable_map(Variable_map* parent_i) : parent(parent_i) {
   if (parent_i == NULL) {

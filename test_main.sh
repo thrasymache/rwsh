@@ -41,8 +41,6 @@ w e
 w () {}
 e text that does not have a prompt appended
 m {e again}
-.function_all_flags if_only first_argument second_argument {
-  .if $first_argument $second_argument {rwsh.argfunction}; .else {.nop}}
 if_only .return 1 {e not printed}
 if_only .return 0 {e printed without error}
 .function for {
@@ -95,9 +93,9 @@ e @/etc/rw*ic
 e @/etc/rwsh*a*
 .set FIGNORE *de*
 e @/etc/rwsh*a*
-e @*r*w*s*r*c*b*a*
+e @test_files/*i*x*y*y*x*
 e @test_main.sh
-m {m {.for @*hrc* {e $1 $nl}} >test_files/tmp}
+m {m {.for @test_files/*x* {e $1 $nl}} >test_files/tmp}
 sort test_files/tmp
 .scope r*h.cc sel*.h (A ...) {e @$A}
 
@@ -233,6 +231,12 @@ f x
 .unset OLD_NESTING
 
 # builtin tests
+# .argc
+.argc {excess argfunc}
+.argc
+.argc ()
+.argc (1 a) (2 b (c d)) (3 ((e () f)))
+
 # .cd
 .cd
 .cd /bin {excess argfunc}
@@ -295,7 +299,7 @@ b
 f g {e hi $nl; f g {e there $nl}; f h {e nothing here}; g}
 g
 
-# .function_all_flags .function_flag_ignorant
+# .function_all_flags
 .function_all_flags
 .function_all_flags /bin/echo {e cannot define a path to be a function}
 .function_all_flags .exit {e cannot redefine a builtin as a function}
@@ -306,28 +310,30 @@ g
 .function_all_flags a [x x] {e illegal duplicate optional parameter}
 .function_all_flags a [-x arg bar] [-y arg] {e illegal duplicate flag argument}
 .function_all_flags a -x [-x] {e evil duplication between flags positional}
-.function_all_flags a -- {e -- cannot be a required parameter}
-.function_all_flags a [--] [--] {e even -- cannot be a duplicate flag parameter}
+.function_all_flags a -- -- {e -- cannot be a duplicate parameter}
+.function_all_flags a [--] [--] {e [--] cannot be a duplicate parameter}
+.function_all_flags a [--] -- {e -- and [--] cannot both be parameters}
 .function_all_flags a [-- arg] {e -- cannot take arguments}
 .function_all_flags a [arg -- foo] {e -- cannot take arguments}
 .function_all_flags nonsense
 w test_var_greater
-.set A $MAX_NESTING
-.set MAX_NESTING 15
 test_var_greater MAX_NESTING
 test_var_greater MAX_NESTING 3 12
 test_var_greater MAX_NESTING 3
 w ntimes
 ntimes -- 3 {e $n remaining $nl}
-ntimes 3 -- {e -- must preceed all positional arguments}
 ntimes 2 {ntimes 3 {e &&n and $n remaining $nl}}
-.set MAX_NESTING $A
 .function_all_flags a [-x] [-] [--long-opt y second {
   e mismatched bracket (i.e. missing close brakcet)}
-.function_all_flags a [-x] {
-  e unrecognized_flag, not undefined_variable $nl
-  test_var_greater -x 1}
+.function_all_flags a [-*] [--] {.list_locals}
+.function_all_flags a [-x] [--] foo {.list_locals}
+.function_all_flags a [-*] -- foo {.list_locals}
+.function_all_flags a [-x] -- {.list_locals}
+.function_all_flags a [--] {.list_locals}
+w a
 a
+a --
+a foo
 .function_all_flags a [-x] [--long-opt y] second {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
@@ -344,11 +350,13 @@ a
 a single
 a -q one two
 a -q opt and req
-a -x opt and req
+a -x opt and
 a -x first second third fourth req
 a -q one two -q three four five
 a -x one two three four -q five six seven
-.function_all_flags a [optional0] [optional1 optional2 optional3] required {
+a -x one two three four five -q six seven
+a one -x two three four five -q six seven
+.function_all_flags a [optional0] -- [optional1 optional2 optional3] required {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a
@@ -364,7 +372,7 @@ a
 a 1
 a 1 2
 a 1 2 3
-.function_all_flags a [-x] [-] [--long-opt] -y second {
+.function_all_flags a [-x] -y [--long-opt] second [--] [-] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a --long-opt -xx over-long flag
@@ -373,29 +381,35 @@ a --long-op short flag
 a - --long-op short flag
 a no flags
 a deficient
-a flagless excess argument
+a flagless but_has excess argument
 a -x with flag
 a -x -x doubled flag
-a unaccepted -x interlaced_flag
+a accepted -x interlaced_flag -
+a tardy flags_last - -x
 a -x -- - flag_made_fixed_argument
 a -- - flag_again_made_fixed_argument
-a -x with excess argument
+a -x -- flag_and_fixed-x -x
+a -x just flags-x --long-opt
+a -x just flags-x -- --long-opt
+a -x just flags-x --other
+a -x just flags-x -- --other
+a -x with one excess argument
 a - with flag
 a --long-opt with flag
-a -x - some_flags in_order
-a - -x some_flags reversed
+a --long-opt -x - some_flags in_order
+a - -x --long-opt some_flags reversed
 a - --long-opt some_flags in_order
 a --long-opt - some_flags reversed
 a -x --long-opt some_flags in_order
 a --long-opt -x some_flags reversed
-a -x - --long-opt deficient
+a -x --long-opt deficient
 a -x - --long-opt all_flags in_order
 a --long-opt - -x all_flags reversed
 a - --long-opt -x all_flags shuffled
-a - --long-opt -x - -x some_flags doubled
-a - -x - -x - one_doubled one_tripled
-a --long-opt - -x -x - --long-opt all_flags doubled
-.function_all_flags a [-first] [-to] [--] {
+a - --long-opt -x -x some_flags doubled
+a -x --long-opt -x --long-opt -x one_doubled one_tripled
+a --long-opt -x -x - --long-opt all_flags doubled
+.function_all_flags a [-first] [-to] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   e nothing_required}
 w a
@@ -427,6 +441,10 @@ a
 .function_all_flags a [...] x {}
 .function_all_flags a [... y] x {}
 .function_all_flags a x ... [y z] {}
+.function_all_flags a x [... y] z ... {}
+.function_all_flags a [y z] ... x {}
+.function_all_flags a [y] ... x {}
+w a
 .function_all_flags a x ... y ... {}
 .function_all_flags a [x ...] [y z] {}
 .function_all_flags a [x ...] y ... {}
@@ -435,9 +453,15 @@ a
 .function_all_flags a [x ... a ...] {}
 .function_all_flags a [x ... a ... b] {}
 .function_all_flags a [-x ...] b [c] {}
+.function_all_flags a -* x ... y {
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
+w a
+a -c -a -b first second third
+a -c first -a second -b third
 .function_all_flags a [-*] x ... y {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
+a 
 a first
 a first (se cond)
 a first (se cond) third
@@ -447,7 +471,7 @@ a first (se cond) third fourth (fi fth)
 w a
 a
 a first second third fourth fifth
-.function_all_flags a [-*] x [y ...] {
+.function_all_flags a [-*] x [--] [y ...] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a
@@ -479,6 +503,8 @@ a first
 a -x first
 a -x (fi rst) second
 a -x first (sec ond) third
+a -x first -x (sec ond) third
+a -x first -y (sec ond) third
 a -x (fi rst) (sec ond) third fourth
 .function_all_flags a [-x ... b] c {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
@@ -529,8 +555,8 @@ a (fi rst) second
 a (fi rst) (sec ond) (thi rd)
 a (fi rst) (sec ond) third (fou rth)
 a (fi rst) (sec ond) (thi rd) (fou rth) (fi fth)
-.function_flag_ignorant a [-x] y z {}
-.function_flag_ignorant a [x y] z {
+.function_all_flags a -- [-x] y z {}
+.function_all_flags a -- [x y] z {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a
@@ -701,12 +727,15 @@ m {.is_default_error}
 .scope a ([x x]) {e illegal duplicate optional parameter}
 .scope a ([-x arg bar] [-y arg]) {e illegal duplicate flag argument}
 .scope a (-x [-x]) {e evil duplication between flags positional}
-.scope a -- {e -- cannot be a required parameter}
-.scope a ([--] [--]) {e even -- cannot be a duplicate flag parameter}
+.scope -- -- {e -- as a prototype forbids even -- as arguments}
+.scope -- () {e but ${.list_locals} is acceptable for empty prototype}
+.scope a (-- --) {e -- cannot be a duplicate parameter}
+.scope a ([--] [--]) {e [--] cannot be a duplicate flag parameter}
+.scope a ([--] --) {e -- and [--] cannot both be parameters}
 .scope a ([-- arg]) {e -- cannot take arguments}
 .scope a ([arg -- foo]) {e -- cannot be an argument}
 .scope -x -y a b ([-*] args ...) {for ${.list_locals}$ {.combine $1 = $$1 \ }}
-.scope a ([-* bad] args ...) {e -* cannot currently take arguments}
+.scope a ([-* bad] arg) {e -* cannot currently take arguments}
 .scope -a -* -b a ([-*] a) {for ${.list_locals}$ {.combine $1 = $$1 \ }}
 .scope bar foo {e aa $foo bb}
 .scope baz bax (foo bar) {for ${.list_locals}$ {.combine $1 = $$1 \ }}
@@ -715,7 +744,7 @@ m {.is_default_error}
 .function_all_flags a [-x] [--long-opt y] second {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
-.function_flag_ignorant pt args ... {
+.function_all_flags pt -- args ... {
   .scope $args$ ([-x] [--long-opt y] second) {
     for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
   .combine $nl
@@ -737,7 +766,7 @@ pt --long-opt first -x --long-opt second single
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   e nothing_required}
 w a
-.function_flag_ignorant pts [args ...] {
+.function_all_flags pts -- [args ...] {
   .if var_exists args {
     .scope $args$ ([-first] [-*]) {
       .for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
@@ -816,10 +845,6 @@ f wrapper {a $* one; a $* two; a $* three}
 wrapper 1 2
 .stepwise wrapper 1 2 {d $*}
 .stepwise wrapper 1 2 {e $* $nl}
-.set A $MAX_NESTING
-.set MAX_NESTING 15
-.stepwise wrapper 1 2 {d $*}
-.set MAX_NESTING $A 
 
 # .test_string_equal .test_string_unequal .test_not_empty
 .test_string_equal x
@@ -1121,6 +1146,7 @@ g {}
 f g {h}
 f h {g}
 g
+.stepwise g {e $* $nl; $*}
 f rwsh.excessive_nesting {h}
 g
 

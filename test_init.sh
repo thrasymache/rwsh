@@ -1,4 +1,3 @@
-.set MAX_NESTING 7
 .global nl (
 )
 .for &{.internal_functions}$ {.function $1 {.echo signal triggered: $0 \( $* \) $nl; .return -1}}

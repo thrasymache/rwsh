@@ -1,4 +1,4 @@
-.function_flag_ignorant # [ignored ...] {
+.function_all_flags # -- [ignored ...] {
   .local ret $?
   .if .var_exists argv {.nop $ignored}
   .else {.nop}
@@ -9,13 +9,13 @@
 )
 
 # ability of functions to act as builtin wrappers
-.function_flag_ignorant af [argv ...] {rwsh.argfunction}
-.function_flag_ignorant c text ... {.combine $text$}
-.function_flag_ignorant e text ... {.echo $text}
-.function_flag_ignorant echo text ... {.echo $text $nl}
-.function_flag_ignorant elif command ... {.else_if $command$ {rwsh.argfunction}}
-.function_flag_ignorant else {.else {rwsh.argfunction}}
-.function_flag_ignorant fn prototype ... {
+.function_all_flags af -- [argv ...] {rwsh.argfunction}
+.function_all_flags c -- text ... {.combine $text$}
+.function_all_flags e -- text ... {.echo $text}
+.function_all_flags echo -- text ... {.echo $text $nl}
+.function_all_flags elif command ... {.else_if $command$ {rwsh.argfunction}}
+.function_all_flags else {.else {rwsh.argfunction}}
+.function_all_flags fn -- prototype ... {
   .function_all_flags $prototype$ {rwsh.argfunction}
   .local ret $?
   .if .test_number_equal $ret 1 {echo cannot set paths as functions}
@@ -23,16 +23,16 @@
   .else_if .test_number_equal $ret 3 {echo cannot set argfunctions in executable map}
   .else_if .test_number_equal $ret 4 {echo function &&1 did not exist to be erased}
   .else {.return $ret}}
-.function_flag_ignorant fni prototype ... {
-  .function_flag_ignorant $prototype$ {rwsh.argfunction}
+.function_all_flags fni -- name args ... {
+  .function_all_flags $name -- $args$ {rwsh.argfunction}
   .local ret $?
   .if .test_number_equal $ret 1 {echo cannot set paths as functions}
   .else_if .test_number_equal $ret 2 {echo cannot set builtins as functions}
   .else_if .test_number_equal $ret 3 {echo cannot set argfunctions in executable map}
   .else_if .test_number_equal $ret 4 {echo function &&1 did not exist to be erased}
   .else {.return $ret}}
-.function_flag_ignorant fns name prototype ... {
-  .function_all_flags $name [-*] $prototype$ {rwsh.argfunction}
+.function_all_flags fns -- name args ... {
+  .function_all_flags $name [-*] $args$ {rwsh.argfunction}
   .local ret $?
   .if .test_number_equal $ret 1 {echo cannot set paths as functions}
   .else_if .test_number_equal $ret 2 {echo cannot set builtins as functions}
@@ -40,7 +40,8 @@
   .else_if .test_number_equal $ret 4 {echo function &&1 did not exist to be erased}
   .else {.return $ret}}
 .function if {.if $* {rwsh.argfunction}}
-.function if_only {.if $* {rwsh.argfunction}; .else {.nop}}
+.function_all_flags if_only -- args ... {
+  .if $args$ {rwsh.argfunction}; .else {.nop}}
 .function if_only_not {.if $* {.nop}; .else {rwsh.argfunction}}
 .function timings {
   .echo last time (); .which_last_execution_time $*; c $nl
@@ -50,12 +51,12 @@
 .function setf {
   .if .var_exists $1 {.set &&1 &&2}
   .else {.global &&1 &&2}}
-.function_flag_ignorant set_if_undefined var [value] {
+.function_all_flags set_if_undefined -- var [value] {
   .if .var_exists $var {.nop}
   .else_if .var_exists value {.global $var $value}
   .else {.global $var ()}}
 fn test_var_not_equal var value {.test_string_unequal $$var $value}
-fn test_var_greater var value {.test_greater $$var $value}
+.function_all_flags test_var_greater -- var value {.test_greater $$var $value}
 fn ntimes n {
   .while test_var_greater n 0 {
     rwsh.mapped_argfunction {rwsh.argfunction}
@@ -72,5 +73,20 @@ fn whichp binary {
   .if .test_number_equal $? 0 {.nop}
   .else {echo &&binary not found in $PATH; .return 1}}
 .function while {.while $* {rwsh.argfunction}}
-fn var_exists var {.var_exists $var}
-
+.function_all_flags var_exists -- var {.var_exists $var}
+.function_all_flags paren_if_words -- value {
+  .if .test_number_equal ${.argc $value$} 1 {.combine $value}
+  .else {.combine \( $value \)}}
+.function_all_flags rwsh.bad_args -- proto assigned needed excess call_stack ... {
+  .combine (unacceptable arguments: for prototype ) $proto , $nl
+  if_only .test_not_empty $assigned {
+    .combine ( assigned )
+    .for $assigned$ {.combine $1$0 = ${paren_if_words $1$1} ( )}
+    .combine , $nl ( but)}
+  if_only .test_not_empty $needed {
+    .combine ( needed \() $needed \), $nl
+    if_only .test_not_empty $excess {.combine ( and)}}
+  if_only .test_not_empty $excess {
+    .combine ( found \() $excess (\) excess) $nl}
+  .echo \ call stack:  $call_stack $nl
+  .return -1}

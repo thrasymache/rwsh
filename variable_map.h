@@ -1,6 +1,7 @@
 // Copyright (C) 2006-2016 Samuel Newbold
 
 extern const char* WSPACE;
+std::string word_from_value(const std::string& value);
 
 class Variable_map : private std::map<std::string, std::string> {
   typedef std::map<std::string, std::string> Base;

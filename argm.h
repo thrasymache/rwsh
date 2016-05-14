@@ -33,9 +33,11 @@ class Argm : private std::vector<std::string> {
 
   enum Sig_type {
     No_signal,
+    Ambiguous_prototype_dash_dash,
     Arguments_for_argfunction,
     Bad_argc,
     Bad_argfunction_style,
+    Bad_args,
     Bad_if_nest,
     Binary_not_found,
     Dash_dash_argument,
@@ -44,14 +46,15 @@ class Argm : private std::vector<std::string> {
     Double_redirection,
     Duplicate_parameter,
     Elipsis_first_arg,
+    Elipsis_out_of_option_group,
     Else_without_if,
     Excess_argfunction,
     Excessive_nesting,
     Executable_not_found,
     Failed_substitution,
     File_open_failure,
+    Flag_in_elipsis,
     If_before_else,
-    Ignored_flag,
     Input_range,
     Invalid_word_selection,
     // Line_continuation,
@@ -66,6 +69,7 @@ class Argm : private std::vector<std::string> {
     Raw_command,
     Result_range,
     Post_elipsis_option,
+    Post_dash_dash_flag,
     Prompt,
     Selection_not_found,
     Shutdown,
@@ -80,6 +84,7 @@ class Argm : private std::vector<std::string> {
     Sigusr1,
     Sigusr2,
     Sigunknown,
+    Tardy_flag,
     Undefined_variable,
     Unreadable_dir,
     Unrecognized_flag,
@@ -128,6 +133,8 @@ struct Signal_argm : public Argm {
   Signal_argm(Sig_type signal);
   Signal_argm(Sig_type signal, const std::string& value);
   Signal_argm(Sig_type signal, const std::string& x, const std::string& y);
+  Signal_argm(Sig_type signal, const std::string& w, const std::string& x,
+              const std::string& y, const std::string& z);
   Signal_argm(Sig_type signal, int x, int y, int z);
   Signal_argm(Sig_type signal, const Argm& src);};
 

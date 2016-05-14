@@ -42,7 +42,7 @@ $.nop .init is tested by having test_init.sh define rwsh.before_command etc.
 
 0
 $.source /etc/rwshrc-basic
-.function_flag_ignorant # [ignored ...] {
+.function_all_flags # -- [ignored ...] {
   .local ret $?
   .if .var_exists argv {.nop $ignored}
   .else {.nop}
@@ -53,13 +53,13 @@ $.source /etc/rwshrc-basic
 )
 
 # ability of functions to act as builtin wrappers
-.function_flag_ignorant af [argv ...] {rwsh.argfunction}
-.function_flag_ignorant c text ... {.combine $text$}
-.function_flag_ignorant e text ... {.echo $text}
-.function_flag_ignorant echo text ... {.echo $text $nl}
-.function_flag_ignorant elif command ... {.else_if $command$ {rwsh.argfunction}}
-.function_flag_ignorant else {.else {rwsh.argfunction}}
-.function_flag_ignorant fn prototype ... {
+.function_all_flags af -- [argv ...] {rwsh.argfunction}
+.function_all_flags c -- text ... {.combine $text$}
+.function_all_flags e -- text ... {.echo $text}
+.function_all_flags echo -- text ... {.echo $text $nl}
+.function_all_flags elif command ... {.else_if $command$ {rwsh.argfunction}}
+.function_all_flags else {.else {rwsh.argfunction}}
+.function_all_flags fn -- prototype ... {
   .function_all_flags $prototype$ {rwsh.argfunction}
   .local ret $?
   .if .test_number_equal $ret 1 {echo cannot set paths as functions}
@@ -67,16 +67,16 @@ $.source /etc/rwshrc-basic
   .else_if .test_number_equal $ret 3 {echo cannot set argfunctions in executable map}
   .else_if .test_number_equal $ret 4 {echo function &&1 did not exist to be erased}
   .else {.return $ret}}
-.function_flag_ignorant fni prototype ... {
-  .function_flag_ignorant $prototype$ {rwsh.argfunction}
+.function_all_flags fni -- name args ... {
+  .function_all_flags $name -- $args$ {rwsh.argfunction}
   .local ret $?
   .if .test_number_equal $ret 1 {echo cannot set paths as functions}
   .else_if .test_number_equal $ret 2 {echo cannot set builtins as functions}
   .else_if .test_number_equal $ret 3 {echo cannot set argfunctions in executable map}
   .else_if .test_number_equal $ret 4 {echo function &&1 did not exist to be erased}
   .else {.return $ret}}
-.function_flag_ignorant fns name prototype ... {
-  .function_all_flags $name [-*] $prototype$ {rwsh.argfunction}
+.function_all_flags fns -- name args ... {
+  .function_all_flags $name [-*] $args$ {rwsh.argfunction}
   .local ret $?
   .if .test_number_equal $ret 1 {echo cannot set paths as functions}
   .else_if .test_number_equal $ret 2 {echo cannot set builtins as functions}
@@ -84,7 +84,8 @@ $.source /etc/rwshrc-basic
   .else_if .test_number_equal $ret 4 {echo function &&1 did not exist to be erased}
   .else {.return $ret}}
 .function if {.if $* {rwsh.argfunction}}
-.function if_only {.if $* {rwsh.argfunction}; .else {.nop}}
+.function_all_flags if_only -- args ... {
+  .if $args$ {rwsh.argfunction}; .else {.nop}}
 .function if_only_not {.if $* {.nop}; .else {rwsh.argfunction}}
 .function timings {
   .echo last time (); .which_last_execution_time $*; c $nl
@@ -94,12 +95,12 @@ $.source /etc/rwshrc-basic
 .function setf {
   .if .var_exists $1 {.set &&1 &&2}
   .else {.global &&1 &&2}}
-.function_flag_ignorant set_if_undefined var [value] {
+.function_all_flags set_if_undefined -- var [value] {
   .if .var_exists $var {.nop}
   .else_if .var_exists value {.global $var $value}
   .else {.global $var ()}}
 fn test_var_not_equal var value {.test_string_unequal $$var $value}
-fn test_var_greater var value {.test_greater $$var $value}
+.function_all_flags test_var_greater -- var value {.test_greater $$var $value}
 fn ntimes n {
   .while test_var_greater n 0 {
     rwsh.mapped_argfunction {rwsh.argfunction}
@@ -116,8 +117,23 @@ fn whichp binary {
   .if .test_number_equal $? 0 {.nop}
   .else {echo &&binary not found in $PATH; .return 1}}
 .function while {.while $* {rwsh.argfunction}}
-fn var_exists var {.var_exists $var}
-
+.function_all_flags var_exists -- var {.var_exists $var}
+.function_all_flags paren_if_words -- value {
+  .if .test_number_equal ${.argc $value$} 1 {.combine $value}
+  .else {.combine \( $value \)}}
+.function_all_flags rwsh.bad_args -- proto assigned needed excess call_stack ... {
+  .combine (unacceptable arguments: for prototype ) $proto , $nl
+  if_only .test_not_empty $assigned {
+    .combine ( assigned )
+    .for $assigned$ {.combine $1$0 = ${paren_if_words $1$1} ( )}
+    .combine , $nl ( but)}
+  if_only .test_not_empty $needed {
+    .combine ( needed \() $needed \), $nl
+    if_only .test_not_empty $excess {.combine ( and)}}
+  if_only .test_not_empty $excess {
+    .combine ( found \() $excess (\) excess) $nl}
+  .echo \ call stack:  $call_stack $nl
+  .return -1}
 
 0
 $
@@ -223,7 +239,7 @@ $.which_executable f
 .function f {.function $1 {rwsh.argfunction}}
 0
 $.which_executable w
-.function_flag_ignorant w command {.which_executable $command {rwsh.argfunction}}
+.function_all_flags w -- command {.which_executable $command {rwsh.argfunction}}
 0
 $.which_executable e
 .function e {.echo $*}
@@ -242,10 +258,6 @@ text that does not have a prompt appended
 0
 $m {e again}
 again
-0
-$.function_all_flags if_only first_argument second_argument {
-  .if $first_argument $second_argument {rwsh.argfunction}; .else {.nop}}
-
 0
 $if_only .return 1 {e not printed}
 
@@ -414,18 +426,18 @@ $.set FIGNORE *de*
 $e @/etc/rwsh*a*
 /etc/rwshrc-basic
 0
-$e @*r*w*s*r*c*b*a*
-rwshrc-basic
+$e @test_files/*i*x*y*y*x*
+test_files/ixyxyxy
 0
 $e @test_main.sh
 test_main.sh
 0
-$m {m {.for @*hrc* {e $1 $nl}} >test_files/tmp}
+$m {m {.for @test_files/*x* {e $1 $nl}} >test_files/tmp}
 
 0
 $sort test_files/tmp
-rwshrc 
-rwshrc-basic 
+test_files/ixxx 
+test_files/ixyxyxy 
 
 0
 $.scope r*h.cc sel*.h (A ...) {e @$A}
@@ -845,6 +857,25 @@ $
 $# builtin tests
 
 0
+$# .argc
+
+0
+$.argc {excess argfunc}
+signal triggered: rwsh.excess_argfunction ( .argc ) 
+
+-1
+$.argc
+0
+0
+$.argc ()
+1
+0
+$.argc (1 a) (2 b (c d)) (3 ((e () f)))
+3
+0
+$
+
+0
 $# .cd
 
 0
@@ -1056,7 +1087,7 @@ there
 $
 
 0
-$# .function_all_flags .function_flag_ignorant
+$# .function_all_flags
 
 0
 $.function_all_flags
@@ -1095,11 +1126,15 @@ $.function_all_flags a -x [-x] {e evil duplication between flags positional}
 signal triggered: rwsh.duplicate_parameter ( -x .function_all_flags ) 
 
 -1
-$.function_all_flags a -- {e -- cannot be a required parameter}
+$.function_all_flags a -- -- {e -- cannot be a duplicate parameter}
 signal triggered: rwsh.duplicate_parameter ( -- .function_all_flags ) 
 
 -1
-$.function_all_flags a [--] [--] {e even -- cannot be a duplicate flag parameter}
+$.function_all_flags a [--] [--] {e [--] cannot be a duplicate parameter}
+signal triggered: rwsh.duplicate_parameter ( -- .function_all_flags ) 
+
+-1
+$.function_all_flags a [--] -- {e -- and [--] cannot both be parameters}
 signal triggered: rwsh.duplicate_parameter ( -- .function_all_flags ) 
 
 -1
@@ -1115,20 +1150,20 @@ $.function_all_flags nonsense
 
 4
 $w test_var_greater
-.function_all_flags test_var_greater var value {.test_greater $$var $value}
-0
-$.set A $MAX_NESTING
-
-0
-$.set MAX_NESTING 15
-
+.function_all_flags test_var_greater -- var value {.test_greater $$var $value}
 0
 $test_var_greater MAX_NESTING
-signal triggered: rwsh.bad_argc ( 1 2 0 test_var_greater ) 
+unacceptable arguments: for prototype -- var value,
+ assigned var=MAX_NESTING ,
+ but needed (value),
+ call stack: test_var_greater 
 
 -1
 $test_var_greater MAX_NESTING 3 12
-signal triggered: rwsh.bad_argc ( 3 2 0 test_var_greater ) 
+unacceptable arguments: for prototype -- var value,
+ assigned value=3 var=MAX_NESTING ,
+ but found (12) excess
+ call stack: test_var_greater 
 
 -1
 $test_var_greater MAX_NESTING 3
@@ -1146,10 +1181,6 @@ $ntimes -- 3 {e $n remaining $nl}
 1 remaining 
 
 0
-$ntimes 3 -- {e -- must preceed all positional arguments}
-signal triggered: rwsh.bad_argc ( 2 1 0 ntimes ) 
-
--1
 $ntimes 2 {ntimes 3 {e &&n and $n remaining $nl}}
 2 and 3 remaining 
 2 and 2 remaining 
@@ -1159,22 +1190,43 @@ $ntimes 2 {ntimes 3 {e &&n and $n remaining $nl}}
 1 and 1 remaining 
 
 0
-$.set MAX_NESTING $A
-
-0
 $.function_all_flags a [-x] [-] [--long-opt y second {
   e mismatched bracket (i.e. missing close brakcet)}
 signal triggered: rwsh.mismatched_bracket ( [--long-opt y second .function_all_flags ) 
 
 -1
-$.function_all_flags a [-x] {
-  e unrecognized_flag, not undefined_variable $nl
-  test_var_greater -x 1}
+$.function_all_flags a [-*] [--] {.list_locals}
+signal triggered: rwsh.ambiguous_prototype_dash_dash ( [-*] [--] .function_all_flags ) 
+
+-1
+$.function_all_flags a [-x] [--] foo {.list_locals}
+signal triggered: rwsh.ambiguous_prototype_dash_dash ( [-x] [--] .function_all_flags ) 
+
+-1
+$.function_all_flags a [-*] -- foo {.list_locals}
+signal triggered: rwsh.ambiguous_prototype_dash_dash ( [-*] -- .function_all_flags ) 
+
+-1
+$.function_all_flags a [-x] -- {.list_locals}
+signal triggered: rwsh.ambiguous_prototype_dash_dash ( [-x] -- .function_all_flags ) 
+
+-1
+$.function_all_flags a [--] {.list_locals}
 
 0
+$w a
+.function_all_flags a [--] {.list_locals}
+0
 $a
-unrecognized_flag, not undefined_variable 
-signal triggered: rwsh.unrecognized_flag ( -x test_var_greater a ) 
+
+1
+$a --
+--
+0
+$a foo
+unacceptable arguments: for prototype [--],
+ found (foo) excess
+ call stack: a 
 
 -1
 $.function_all_flags a [-x] [--long-opt y] second {
@@ -1186,7 +1238,10 @@ $w a
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
 0
 $a
-signal triggered: rwsh.bad_argc ( 0 1 0 a ) 
+unacceptable arguments: for prototype [--long-opt y] [-x] second,
+ assigned -*=() ,
+ but needed (second),
+ call stack: a 
 
 -1
 $a single
@@ -1199,7 +1254,10 @@ $a --long-opt arg single
 -*(--long-opt arg) --long-opt(--long-opt arg) second(single) y(arg) 
 0
 $a --long-opt single
-signal triggered: rwsh.bad_argc ( 0 1 2 a ) 
+unacceptable arguments: for prototype [--long-opt y] [-x] second,
+ assigned -*=(--long-opt single) --long-opt=(--long-opt single) y=single ,
+ but needed (second),
+ call stack: a 
 
 -1
 $a --long-opt first -x --long-opt second single
@@ -1214,21 +1272,30 @@ $w a
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
 0
 $a
-signal triggered: rwsh.bad_argc ( 0 1 0 a ) 
+unacceptable arguments: for prototype [-q option1 option2] [-x o1 o2 o3 o4] required,
+ assigned -*=() ,
+ but needed (required),
+ call stack: a 
 
 -1
 $a single
 -*() required(single) 
 0
 $a -q one two
-signal triggered: rwsh.bad_argc ( 0 1 3 a ) 
+unacceptable arguments: for prototype [-q option1 option2] [-x o1 o2 o3 o4] required,
+ assigned -*=(-q one two) -q=(-q one two) option1=one option2=two ,
+ but needed (required),
+ call stack: a 
 
 -1
 $a -q opt and req
 -*(-q opt and) -q(-q opt and) option1(opt) option2(and) required(req) 
 0
-$a -x opt and req
-signal triggered: rwsh.bad_argc ( -1 1 5 a ) 
+$a -x opt and
+unacceptable arguments: for prototype [-q option1 option2] [-x o1 o2 o3 o4] required,
+ assigned -*=(-x opt and) -x=(-x opt and) o1=opt o2=and ,
+ but needed (o3 o4 required),
+ call stack: a 
 
 -1
 $a -x first second third fourth req
@@ -1240,16 +1307,24 @@ $a -q one two -q three four five
 $a -x one two three four -q five six seven
 -*(-x one two three four -q five six) -q(-q five six) -x(-x one two three four) o1(one) o2(two) o3(three) o4(four) option1(five) option2(six) required(seven) 
 0
-$.function_all_flags a [optional0] [optional1 optional2 optional3] required {
+$a -x one two three four five -q six seven
+-*(-x one two three four -q six seven) -q(-q six seven) -x(-x one two three four) o1(one) o2(two) o3(three) o4(four) option1(six) option2(seven) required(five) 
+0
+$a one -x two three four five -q six seven
+-*(-x two three four five -q six seven) -q(-q six seven) -x(-x two three four five) o1(two) o2(three) o3(four) o4(five) option1(six) option2(seven) required(one) 
+0
+$.function_all_flags a [optional0] -- [optional1 optional2 optional3] required {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
 $w a
-.function_all_flags a [optional0] [optional1 optional2 optional3] required {
+.function_all_flags a [optional0] -- [optional1 optional2 optional3] required {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
 0
 $a
-signal triggered: rwsh.bad_argc ( 0 1 0 a ) 
+unacceptable arguments: for prototype [optional0] -- [optional1 optional2 optional3] required,
+ needed (required),
+ call stack: a 
 
 -1
 $a single
@@ -1259,14 +1334,20 @@ $a one two
 optional0(one) required(two) 
 0
 $a one two three
-signal triggered: rwsh.bad_argc ( 2 1 1 a ) 
+unacceptable arguments: for prototype [optional0] -- [optional1 optional2 optional3] required,
+ assigned optional0=one optional1=two optional2=three ,
+ but needed (optional3 required),
+ call stack: a 
 
 -1
 $a one two three four five
 optional0(one) optional1(two) optional2(three) optional3(four) required(five) 
 0
 $a one two three four five six seven eight nine
-signal triggered: rwsh.bad_argc ( 2 1 4 a ) 
+unacceptable arguments: for prototype [optional0] -- [optional1 optional2 optional3] required,
+ assigned optional0=one optional1=two optional2=three optional3=four required=five ,
+ but found (six seven eight nine) excess
+ call stack: a 
 
 -1
 $.function_all_flags a -y [second] {
@@ -1278,7 +1359,9 @@ $w a
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
 0
 $a
-signal triggered: rwsh.bad_argc ( 0 1 0 a ) 
+unacceptable arguments: for prototype -y [second],
+ needed (-y),
+ call stack: a 
 
 -1
 $a 1
@@ -1288,15 +1371,18 @@ $a 1 2
 -y(1) second(2) 
 0
 $a 1 2 3
-signal triggered: rwsh.bad_argc ( 2 1 1 a ) 
+unacceptable arguments: for prototype -y [second],
+ assigned -y=1 second=2 ,
+ but found (3) excess
+ call stack: a 
 
 -1
-$.function_all_flags a [-x] [-] [--long-opt] -y second {
+$.function_all_flags a [-x] -y [--long-opt] second [--] [-] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
 $w a
-.function_all_flags a [-] [--long-opt] [-x] -y second {
+.function_all_flags a [--long-opt] [-x] -y second [--] [-] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
 0
 $a --long-opt -xx over-long flag
@@ -1319,11 +1405,17 @@ $a no flags
 -*() -y(no) second(flags) 
 0
 $a deficient
-signal triggered: rwsh.bad_argc ( 1 2 0 a ) 
+unacceptable arguments: for prototype [--long-opt] [-x] -y second [--] [-],
+ assigned -*=() -y=deficient ,
+ but needed (second),
+ call stack: a 
 
 -1
-$a flagless excess argument
-signal triggered: rwsh.bad_argc ( 3 2 0 a ) 
+$a flagless but_has excess argument
+unacceptable arguments: for prototype [--long-opt] [-x] -y second [--] [-],
+ assigned -=excess -*=() -y=flagless second=but_has ,
+ but found (argument) excess
+ call stack: a 
 
 -1
 $a -x with flag
@@ -1332,8 +1424,11 @@ $a -x with flag
 $a -x -x doubled flag
 -*(-x -x) -x(-x -x) -y(doubled) second(flag) 
 0
-$a unaccepted -x interlaced_flag
-signal triggered: rwsh.bad_argc ( 3 2 0 a ) 
+$a accepted -x interlaced_flag -
+-(-) -*(-x) -x(-x) -y(accepted) second(interlaced_flag) 
+0
+$a tardy flags_last - -x
+signal triggered: rwsh.tardy_flag ( -x a ) 
 
 -1
 $a -x -- - flag_made_fixed_argument
@@ -1342,27 +1437,47 @@ $a -x -- - flag_made_fixed_argument
 $a -- - flag_again_made_fixed_argument
 -*(--) --(--) -y(-) second(flag_again_made_fixed_argument) 
 0
-$a -x with excess argument
-signal triggered: rwsh.bad_argc ( 3 2 1 a ) 
+$a -x -- flag_and_fixed-x -x
+-*(-x --) --(--) -x(-x) -y(flag_and_fixed-x) second(-x) 
+0
+$a -x just flags-x --long-opt
+signal triggered: rwsh.tardy_flag ( --long-opt a ) 
+
+-1
+$a -x just flags-x -- --long-opt
+-(--long-opt) -*(-x --) --(--) -x(-x) -y(just) second(flags-x) 
+0
+$a -x just flags-x --other
+signal triggered: rwsh.tardy_flag ( --other a ) 
+
+-1
+$a -x just flags-x -- --other
+-(--other) -*(-x --) --(--) -x(-x) -y(just) second(flags-x) 
+0
+$a -x with one excess argument
+unacceptable arguments: for prototype [--long-opt] [-x] -y second [--] [-],
+ assigned -=excess -*=-x -x=-x -y=with second=one ,
+ but found (argument) excess
+ call stack: a 
 
 -1
 $a - with flag
--(-) -*(-) -y(with) second(flag) 
+-(flag) -*() -y(-) second(with) 
 0
 $a --long-opt with flag
 -*(--long-opt) --long-opt(--long-opt) -y(with) second(flag) 
 0
-$a -x - some_flags in_order
--(-) -*(-x -) -x(-x) -y(some_flags) second(in_order) 
+$a --long-opt -x - some_flags in_order
+-(in_order) -*(--long-opt -x) --long-opt(--long-opt) -x(-x) -y(-) second(some_flags) 
 0
-$a - -x some_flags reversed
--(-) -*(- -x) -x(-x) -y(some_flags) second(reversed) 
+$a - -x --long-opt some_flags reversed
+-(reversed) -*(-x --long-opt) --long-opt(--long-opt) -x(-x) -y(-) second(some_flags) 
 0
 $a - --long-opt some_flags in_order
--(-) -*(- --long-opt) --long-opt(--long-opt) -y(some_flags) second(in_order) 
+-(in_order) -*(--long-opt) --long-opt(--long-opt) -y(-) second(some_flags) 
 0
 $a --long-opt - some_flags reversed
--(-) -*(--long-opt -) --long-opt(--long-opt) -y(some_flags) second(reversed) 
+-(reversed) -*(--long-opt) --long-opt(--long-opt) -y(-) second(some_flags) 
 0
 $a -x --long-opt some_flags in_order
 -*(-x --long-opt) --long-opt(--long-opt) -x(-x) -y(some_flags) second(in_order) 
@@ -1370,35 +1485,38 @@ $a -x --long-opt some_flags in_order
 $a --long-opt -x some_flags reversed
 -*(--long-opt -x) --long-opt(--long-opt) -x(-x) -y(some_flags) second(reversed) 
 0
-$a -x - --long-opt deficient
-signal triggered: rwsh.bad_argc ( 1 2 3 a ) 
+$a -x --long-opt deficient
+unacceptable arguments: for prototype [--long-opt] [-x] -y second [--] [-],
+ assigned -*=(-x --long-opt) --long-opt=--long-opt -x=-x -y=deficient ,
+ but needed (second),
+ call stack: a 
 
 -1
 $a -x - --long-opt all_flags in_order
--(-) -*(-x - --long-opt) --long-opt(--long-opt) -x(-x) -y(all_flags) second(in_order) 
+-(in_order) -*(-x --long-opt) --long-opt(--long-opt) -x(-x) -y(-) second(all_flags) 
 0
 $a --long-opt - -x all_flags reversed
--(-) -*(--long-opt - -x) --long-opt(--long-opt) -x(-x) -y(all_flags) second(reversed) 
+-(reversed) -*(--long-opt -x) --long-opt(--long-opt) -x(-x) -y(-) second(all_flags) 
 0
 $a - --long-opt -x all_flags shuffled
--(-) -*(- --long-opt -x) --long-opt(--long-opt) -x(-x) -y(all_flags) second(shuffled) 
+-(shuffled) -*(--long-opt -x) --long-opt(--long-opt) -x(-x) -y(-) second(all_flags) 
 0
-$a - --long-opt -x - -x some_flags doubled
--(- -) -*(- --long-opt -x - -x) --long-opt(--long-opt) -x(-x -x) -y(some_flags) second(doubled) 
+$a - --long-opt -x -x some_flags doubled
+-(doubled) -*(--long-opt -x -x) --long-opt(--long-opt) -x(-x -x) -y(-) second(some_flags) 
 0
-$a - -x - -x - one_doubled one_tripled
--(- - -) -*(- -x - -x -) -x(-x -x) -y(one_doubled) second(one_tripled) 
+$a -x --long-opt -x --long-opt -x one_doubled one_tripled
+-*(-x --long-opt -x --long-opt -x) --long-opt(--long-opt --long-opt) -x(-x -x -x) -y(one_doubled) second(one_tripled) 
 0
-$a --long-opt - -x -x - --long-opt all_flags doubled
--(- -) -*(--long-opt - -x -x - --long-opt) --long-opt(--long-opt --long-opt) -x(-x -x) -y(all_flags) second(doubled) 
+$a --long-opt -x -x - --long-opt all_flags doubled
+-(doubled) -*(--long-opt -x -x --long-opt) --long-opt(--long-opt --long-opt) -x(-x -x) -y(-) second(all_flags) 
 0
-$.function_all_flags a [-first] [-to] [--] {
+$.function_all_flags a [-first] [-to] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   e nothing_required}
 
 0
 $w a
-.function_all_flags a [-first] [-to] [--] {
+.function_all_flags a [-first] [-to] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
   e nothing_required}
 0
@@ -1406,7 +1524,10 @@ $a
 -*() nothing_required
 0
 $a excess
-signal triggered: rwsh.bad_argc ( 1 0 0 a ) 
+unacceptable arguments: for prototype [-first] [-to],
+ assigned -*=() ,
+ but found (excess) excess
+ call stack: a 
 
 -1
 $a -to
@@ -1416,11 +1537,17 @@ $a -first --
 -*(-first --) --(--) -first(-first) nothing_required
 0
 $a -first excess
-signal triggered: rwsh.bad_argc ( 1 0 1 a ) 
+unacceptable arguments: for prototype [-first] [-to],
+ assigned -*=-first -first=-first ,
+ but found (excess) excess
+ call stack: a 
 
 -1
 $a -to -- -first -- stops flag parsing rather than being a flag
-signal triggered: rwsh.bad_argc ( 1 0 2 a ) 
+unacceptable arguments: for prototype [-first] [-to],
+ assigned -*=(-to --) --=-- -to=-to ,
+ but found (-first -- stops flag parsing rather than being a flag) excess
+ call stack: a 
 
 -1
 $a -to -first
@@ -1440,7 +1567,10 @@ $a
 -*() nothing_required
 0
 $a excess
-signal triggered: rwsh.bad_argc ( 1 0 0 a ) 
+unacceptable arguments: for prototype [-*] [-first],
+ assigned -*=() ,
+ but found (excess) excess
+ call stack: a 
 
 -1
 $a -to
@@ -1450,11 +1580,17 @@ $a -first --
 -*(-first --) --(--) -first(-first) nothing_required
 0
 $a -first excess
-signal triggered: rwsh.bad_argc ( 1 0 1 a ) 
+unacceptable arguments: for prototype [-*] [-first],
+ assigned -*=-first -first=-first ,
+ but found (excess) excess
+ call stack: a 
 
 -1
 $a -to -- -first
-signal triggered: rwsh.bad_argc ( 1 0 2 a ) 
+unacceptable arguments: for prototype [-*] [-first],
+ assigned -*=(-to --) --=-- ,
+ but found (-first) excess
+ call stack: a 
 
 -1
 $a -to -first
@@ -1490,19 +1626,33 @@ signal triggered: rwsh.elipsis_first_arg ( [... y] .function_all_flags )
 
 -1
 $.function_all_flags a x ... [y z] {}
-signal triggered: rwsh.post_elipsis_option ( [y .function_all_flags ) 
+signal triggered: rwsh.post_elipsis_option ( [y z] .function_all_flags ) 
 
 -1
+$.function_all_flags a x [... y] z ... {}
+signal triggered: rwsh.duplicate_parameter ( ... .function_all_flags ) 
+
+-1
+$.function_all_flags a [y z] ... x {}
+signal triggered: rwsh.elipsis_out_of_option_group ( [y z] .function_all_flags ) 
+
+-1
+$.function_all_flags a [y] ... x {}
+
+0
+$w a
+.function_all_flags a [y ...] x {}
+0
 $.function_all_flags a x ... y ... {}
-signal triggered: rwsh.post_elipsis_option ( ... .function_all_flags ) 
+signal triggered: rwsh.duplicate_parameter ( ... .function_all_flags ) 
 
 -1
 $.function_all_flags a [x ...] [y z] {}
-signal triggered: rwsh.post_elipsis_option ( [y .function_all_flags ) 
+signal triggered: rwsh.post_elipsis_option ( [y z] .function_all_flags ) 
 
 -1
 $.function_all_flags a [x ...] y ... {}
-signal triggered: rwsh.post_elipsis_option ( ... .function_all_flags ) 
+signal triggered: rwsh.duplicate_parameter ( ... .function_all_flags ) 
 
 -1
 $.function_all_flags a [x ... a] [y] {}
@@ -1510,19 +1660,34 @@ signal triggered: rwsh.post_elipsis_option ( [y] .function_all_flags )
 
 -1
 $.function_all_flags a [x ... a] y ... {}
-signal triggered: rwsh.post_elipsis_option ( ... .function_all_flags ) 
+signal triggered: rwsh.duplicate_parameter ( ... .function_all_flags ) 
 
 -1
 $.function_all_flags a [x ... a ...] {}
-signal triggered: rwsh.post_elipsis_option ( ... .function_all_flags ) 
+signal triggered: rwsh.duplicate_parameter ( ... .function_all_flags ) 
 
 -1
 $.function_all_flags a [x ... a ... b] {}
-signal triggered: rwsh.post_elipsis_option ( ... .function_all_flags ) 
+signal triggered: rwsh.duplicate_parameter ( ... .function_all_flags ) 
 
 -1
 $.function_all_flags a [-x ...] b [c] {}
 signal triggered: rwsh.post_elipsis_option ( [c] .function_all_flags ) 
+
+-1
+$.function_all_flags a -* x ... y {
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
+
+0
+$w a
+.function_all_flags a [-*] x ... y {
+  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+0
+$a -c -a -b first second third
+-*(-c -a -b) x(first second) y(third) 
+0
+$a -c first -a second -b third
+signal triggered: rwsh.flag_in_elipsis ( -a a ) 
 
 -1
 $.function_all_flags a [-*] x ... y {
@@ -1533,8 +1698,18 @@ $w a
 .function_all_flags a [-*] x ... y {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
 0
+$a 
+unacceptable arguments: for prototype [-*] x ... y,
+ assigned -*=() ,
+ but needed (x y),
+ call stack: a 
+
+-1
 $a first
-signal triggered: rwsh.bad_argc ( 1 2 0 a ) 
+unacceptable arguments: for prototype [-*] x ... y,
+ assigned -*=() x=first ,
+ but needed (y),
+ call stack: a 
 
 -1
 $a first (se cond)
@@ -1555,22 +1730,28 @@ $w a
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
 0
 $a
-signal triggered: rwsh.bad_argc ( 0 1 0 a ) 
+unacceptable arguments: for prototype [-*] x ...,
+ assigned -*=() ,
+ but needed (x),
+ call stack: a 
 
 -1
 $a first second third fourth fifth
 -*() x(first second third fourth fifth) 
 0
-$.function_all_flags a [-*] x [y ...] {
+$.function_all_flags a [-*] x [--] [y ...] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
 $w a
-.function_all_flags a [-*] x [y ...] {
+.function_all_flags a [-*] x [--] [y ...] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
 0
 $a
-signal triggered: rwsh.bad_argc ( 0 1 0 a ) 
+unacceptable arguments: for prototype [-*] x [--] [y ...],
+ assigned -*=() ,
+ but needed (x),
+ call stack: a 
 
 -1
 $a first
@@ -1594,14 +1775,20 @@ $w a
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
 0
 $a first
-signal triggered: rwsh.bad_argc ( 1 2 0 a ) 
+unacceptable arguments: for prototype [-*] a [b ... c] d,
+ assigned -*=() a=first ,
+ but needed (d),
+ call stack: a 
 
 -1
 $a first second
 -*() a(first) d(second) 
 0
 $a first second third
-signal triggered: rwsh.bad_argc ( 3 2 0 a ) 
+unacceptable arguments: for prototype [-*] a [b ... c] d,
+ assigned -*=() a=first b=second c=third ,
+ but needed (d),
+ call stack: a 
 
 -1
 $a first second third fourth
@@ -1625,7 +1812,10 @@ $a first second
 -*() b(first) c(second) 
 0
 $a -x first
-signal triggered: rwsh.bad_argc ( 1 2 1 a ) 
+unacceptable arguments: for prototype [-x ...] b c,
+ assigned -*=-x -x=-x b=first ,
+ but needed (c),
+ call stack: a 
 
 -1
 $a -x first second
@@ -1649,7 +1839,10 @@ $a first
 -*() c(first) 
 0
 $a -x first
-signal triggered: rwsh.bad_argc ( 0 1 2 a ) 
+unacceptable arguments: for prototype [-x b ...] c,
+ assigned -*=(-x first) -x=(-x first) b=first ,
+ but needed (c),
+ call stack: a 
 
 -1
 $a -x (fi rst) second
@@ -1658,6 +1851,14 @@ $a -x (fi rst) second
 $a -x first (sec ond) third
 -*(-x first (sec ond)) -x(-x first (sec ond)) b(first (sec ond)) c(third) 
 0
+$a -x first -x (sec ond) third
+signal triggered: rwsh.flag_in_elipsis ( -x a ) 
+
+-1
+$a -x first -y (sec ond) third
+signal triggered: rwsh.flag_in_elipsis ( -y a ) 
+
+-1
 $a -x (fi rst) (sec ond) third fourth
 -*(-x (fi rst) (sec ond) third) -x(-x (fi rst) (sec ond) third) b((fi rst) (sec ond) third) c(fourth) 
 0
@@ -1687,7 +1888,10 @@ c: first
 
 0
 $a -x first
-signal triggered: rwsh.bad_argc ( 0 1 2 a ) 
+unacceptable arguments: for prototype [-x ... b] c,
+ assigned -*=(-x first) -x=(-x first) b=first ,
+ but needed (c),
+ call stack: a 
 
 -1
 $a -x (fi rst) second
@@ -1735,7 +1939,10 @@ $w a
   if_only .var_exists x {c (x: ) $x$ $nl}}
 0
 $a
-signal triggered: rwsh.bad_argc ( 0 1 0 a ) 
+unacceptable arguments: for prototype [-*] x [... y z],
+ assigned -*=() ,
+ but needed (x),
+ call stack: a 
 
 -1
 $a (fi rst)
@@ -1744,7 +1951,10 @@ x: fi rst
 
 0
 $a (fi rst) second
-signal triggered: rwsh.bad_argc ( 2 1 0 a ) 
+unacceptable arguments: for prototype [-*] x [... y z],
+ assigned -*=() x=(fi rst) y=second ,
+ but needed (z),
+ call stack: a 
 
 -1
 $a first (sec ond) third
@@ -1814,7 +2024,10 @@ $a
 
 0
 $a (fi rst)
-signal triggered: rwsh.bad_argc ( 1 0 0 a ) 
+unacceptable arguments: for prototype [-*] [x y] [... z],
+ assigned -*=() x=(fi rst) ,
+ but needed (y),
+ call stack: a 
 
 -1
 $a (fi rst) second
@@ -1844,20 +2057,22 @@ y: sec ondthi rdfou rth
 z: fifth
 
 0
-$.function_flag_ignorant a [-x] y z {}
-signal triggered: rwsh.ignored_flag ( [-x] .function_flag_ignorant ) 
+$.function_all_flags a -- [-x] y z {}
+signal triggered: rwsh.post_dash_dash_flag ( [-x] .function_all_flags ) 
 
 -1
-$.function_flag_ignorant a [x y] z {
+$.function_all_flags a -- [x y] z {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
 $w a
-.function_flag_ignorant a [x y] z {
+.function_all_flags a -- [x y] z {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
 0
 $a
-signal triggered: rwsh.bad_argc ( 0 1 0 a ) 
+unacceptable arguments: for prototype -- [x y] z,
+ needed (z),
+ call stack: a 
 
 -1
 $a --file
@@ -2223,9 +2438,11 @@ $.internal_features
 rwsh.after_command rwsh.before_command rwsh.run_logic
 0
 $.internal_functions
+rwsh.ambiguous_prototype_dash_dash
 rwsh.arguments_for_argfunction
 rwsh.bad_argc
 rwsh.bad_argfunction_style
+rwsh.bad_args
 rwsh.bad_if_nest
 rwsh.binary_not_found
 rwsh.dash_dash_argument
@@ -2234,14 +2451,15 @@ rwsh.divide_by_zero
 rwsh.double_redirection
 rwsh.duplicate_parameter
 rwsh.elipsis_first_arg
+rwsh.elipsis_out_of_option_group
 rwsh.else_without_if
 rwsh.excess_argfunction
 rwsh.excessive_nesting
 rwsh.executable_not_found
 rwsh.failed_substitution
 rwsh.file_open_failure
+rwsh.flag_in_elipsis
 rwsh.if_before_else
-rwsh.ignored_flag
 rwsh.input_range
 rwsh.invalid_word_selection
 rwsh.mismatched_brace
@@ -2255,6 +2473,7 @@ rwsh.not_soon_enough
 rwsh.raw_command
 rwsh.result_range
 rwsh.post_elipsis_option
+rwsh.post_dash_dash_flag
 rwsh.prompt
 rwsh.selection_not_found
 rwsh.shutdown
@@ -2269,6 +2488,7 @@ rwsh.sigchld
 rwsh.sigusr1
 rwsh.sigusr2
 rwsh.sigunknown
+rwsh.tardy_flag
 rwsh.undefined_variable
 rwsh.unreadable_dir
 rwsh.unrecognized_flag
@@ -2441,11 +2661,24 @@ $.scope a (-x [-x]) {e evil duplication between flags positional}
 signal triggered: rwsh.duplicate_parameter ( -x .scope ) 
 
 -1
-$.scope a -- {e -- cannot be a required parameter}
+$.scope -- -- {e -- as a prototype forbids even -- as arguments}
+unacceptable arguments: for prototype --,
+ found (--) excess
+ call stack: .scope 
+
+-1
+$.scope -- () {e but ${.list_locals} is acceptable for empty prototype}
+but -- is acceptable for empty prototype
+0
+$.scope a (-- --) {e -- cannot be a duplicate parameter}
 signal triggered: rwsh.duplicate_parameter ( -- .scope ) 
 
 -1
-$.scope a ([--] [--]) {e even -- cannot be a duplicate flag parameter}
+$.scope a ([--] [--]) {e [--] cannot be a duplicate flag parameter}
+signal triggered: rwsh.duplicate_parameter ( -- .scope ) 
+
+-1
+$.scope a ([--] --) {e -- and [--] cannot both be parameters}
 signal triggered: rwsh.duplicate_parameter ( -- .scope ) 
 
 -1
@@ -2460,7 +2693,7 @@ signal triggered: rwsh.dash_dash_argument ( [arg -- foo] .scope )
 $.scope -x -y a b ([-*] args ...) {for ${.list_locals}$ {.combine $1 = $$1 \ }}
 -*=-x -y args=a b 
 0
-$.scope a ([-* bad] args ...) {e -* cannot currently take arguments}
+$.scope a ([-* bad] arg) {e -* cannot currently take arguments}
 signal triggered: rwsh.dash_star_argument ( [-* bad] .scope ) 
 
 -1
@@ -2487,7 +2720,7 @@ $w a
 .function_all_flags a [--long-opt y] [-x] second {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
 0
-$.function_flag_ignorant pt args ... {
+$.function_all_flags pt -- args ... {
   .scope $args$ ([-x] [--long-opt y] second) {
     for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
   .combine $nl
@@ -2496,7 +2729,7 @@ $.function_flag_ignorant pt args ... {
 
 0
 $w pt
-.function_flag_ignorant pt args ... {
+.function_all_flags pt -- args ... {
   .scope $args$ ([-x] [--long-opt y] second) {
     for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
   .combine $nl
@@ -2504,7 +2737,10 @@ $w pt
     for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}}
 0
 $a
-signal triggered: rwsh.bad_argc ( 0 1 0 a ) 
+unacceptable arguments: for prototype [--long-opt y] [-x] second,
+ assigned -*=() ,
+ but needed (second),
+ call stack: a 
 
 -1
 $a single
@@ -2529,11 +2765,17 @@ $pt --long-opt arg single
 -*(--long-opt arg) --long-opt(--long-opt arg) second(single) y(arg) 
 0
 $a --long-opt single
-signal triggered: rwsh.bad_argc ( 0 1 2 a ) 
+unacceptable arguments: for prototype [--long-opt y] [-x] second,
+ assigned -*=(--long-opt single) --long-opt=(--long-opt single) y=single ,
+ but needed (second),
+ call stack: a 
 
 -1
 $pt --long-opt single
-signal triggered: rwsh.bad_argc ( 0 1 2 .scope pt ) 
+unacceptable arguments: for prototype [--long-opt y] [-x] second,
+ assigned -*=(--long-opt single) --long-opt=(--long-opt single) y=single ,
+ but needed (second),
+ call stack: .scope pt 
 
 -1
 $a --long-opt first -x --long-opt second single
@@ -2553,7 +2795,7 @@ $w a
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
   e nothing_required}
 0
-$.function_flag_ignorant pts [args ...] {
+$.function_all_flags pts -- [args ...] {
   .if var_exists args {
     .scope $args$ ([-first] [-*]) {
       .for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
@@ -2564,7 +2806,7 @@ $.function_flag_ignorant pts [args ...] {
 
 0
 $w pts
-.function_flag_ignorant pts [args ...] {
+.function_all_flags pts -- [args ...] {
   .if var_exists args {
     .scope $args$ ([-first] [-*]) {
       .for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
@@ -2580,11 +2822,17 @@ $pts
 -*() nothing_required
 0
 $a excess
-signal triggered: rwsh.bad_argc ( 1 0 0 a ) 
+unacceptable arguments: for prototype [-*] [-first],
+ assigned -*=() ,
+ but found (excess) excess
+ call stack: a 
 
 -1
 $pts excess
-signal triggered: rwsh.bad_argc ( 1 0 0 .scope rwsh.mapped_argfunction .if pts ) 
+unacceptable arguments: for prototype [-*] [-first],
+ assigned -*=() ,
+ but found (excess) excess
+ call stack: .scope rwsh.mapped_argfunction .if pts 
 
 -1
 $a -to
@@ -2600,19 +2848,31 @@ $pts -first --
 -*(-first --) --(--) -first(-first) nothing_required
 0
 $a -first excess
-signal triggered: rwsh.bad_argc ( 1 0 1 a ) 
+unacceptable arguments: for prototype [-*] [-first],
+ assigned -*=-first -first=-first ,
+ but found (excess) excess
+ call stack: a 
 
 -1
 $pts -first excess
-signal triggered: rwsh.bad_argc ( 1 0 1 .scope rwsh.mapped_argfunction .if pts ) 
+unacceptable arguments: for prototype [-*] [-first],
+ assigned -*=-first -first=-first ,
+ but found (excess) excess
+ call stack: .scope rwsh.mapped_argfunction .if pts 
 
 -1
 $a -to -- -first
-signal triggered: rwsh.bad_argc ( 1 0 2 a ) 
+unacceptable arguments: for prototype [-*] [-first],
+ assigned -*=(-to --) --=-- ,
+ but found (-first) excess
+ call stack: a 
 
 -1
 $pts -to -- -first
-signal triggered: rwsh.bad_argc ( 1 0 2 .scope rwsh.mapped_argfunction .if pts ) 
+unacceptable arguments: for prototype [-*] [-first],
+ assigned -*=(-to --) --=-- ,
+ but found (-first) excess
+ call stack: .scope rwsh.mapped_argfunction .if pts 
 
 -1
 $a -to -first
@@ -2822,23 +3082,6 @@ $wrapper 1 2
 0
 $.stepwise wrapper 1 2 {d $*}
 a 1 2 one 
-signal triggered: rwsh.excessive_nesting ( e d rwsh.mapped_argfunction a .stepwise d rwsh.mapped_argfunction wrapper .stepwise ) 
-
--1
-$.stepwise wrapper 1 2 {e $* $nl}
-a 1 2 one 
-a 1 2 two 
-a 1 2 three 
-
-0
-$.set A $MAX_NESTING
-
-0
-$.set MAX_NESTING 15
-
-0
-$.stepwise wrapper 1 2 {d $*}
-a 1 2 one 
 e 1 2 one one 
  
 .echo 1 2 one one 
@@ -2879,7 +3122,10 @@ e 1 2 three three
  
 
 2
-$.set MAX_NESTING $A 
+$.stepwise wrapper 1 2 {e $* $nl}
+a 1 2 one 
+a 1 2 two 
+a 1 2 three 
 
 0
 $
@@ -3122,7 +3368,7 @@ $.which_executable j
 
 1
 $.which_executable #
-.function_flag_ignorant # [ignored ...] {
+.function_all_flags # -- [ignored ...] {
   .local ret $?
   .if .var_exists argv {.nop $ignored}
   .else {.nop}
@@ -3886,7 +4132,12 @@ $f h {g}
 
 0
 $g
-signal triggered: rwsh.excessive_nesting ( g h g h g h g h g ) 
+signal triggered: rwsh.excessive_nesting ( h g h g h g h g h g h g h g h g h g h g h g ) 
+
+-1
+$.stepwise g {e $* $nl; $*}
+h 
+signal triggered: rwsh.excessive_nesting ( h g h g h g h g h g h g h g h g h g h rwsh.mapped_argfunction g .stepwise ) 
 
 -1
 $f rwsh.excessive_nesting {h}
@@ -3894,9 +4145,9 @@ $f rwsh.excessive_nesting {h}
 0
 $g
 signal handler itself triggered signal
-rwsh.excessive_nesting g h g h g h g h rwsh.excessive_nesting
+rwsh.excessive_nesting h g h g h g h g h g h g h g h g h g h g h rwsh.excessive_nesting
 original call stack:
-g h g h g h g h g
+h g h g h g h g h g h g h g h g h g h g h g
 
 -1
 $
@@ -3955,7 +4206,7 @@ $/usr/bin/printenv
 A=-7.29496e+09
 FIGNORE=*de*
 LC_ALL=C
-MAX_NESTING=7
+MAX_NESTING=20
 N=4
 last_command_return=0
 nl=

@@ -21,6 +21,7 @@
 #include "function.h"
 
 void internal_init(void) {
+  executable_map.set(new Builtin(".argc", b_argc));
   executable_map.set(new Builtin(".cd", b_cd));
   executable_map.set(new Builtin(".combine", b_combine));
   executable_map.set(new Builtin(".echo", b_echo));
@@ -35,8 +36,6 @@ void internal_init(void) {
   executable_map.set(new Builtin(".function", b_function));
   executable_map.set(new Builtin(".function_all_flags",
                                    b_function_all_flags));
-  executable_map.set(new Builtin(".function_flag_ignorant",
-                                   b_function_flag_ignorant));
   executable_map.set(new Builtin(".global", b_global));
   executable_map.set(new Builtin(".if", b_if));
   executable_map.set(new Builtin(".importenv_overwrite",

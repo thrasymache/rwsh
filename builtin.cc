@@ -45,6 +45,12 @@ extern char** environ;
 #include "function.h"
 #include "argm_star_var.cc"
 
+// print the number of arguments passed
+int b_argc(const Argm& argm) {
+  if (argm.argfunction()) throw Signal_argm(Argm::Excess_argfunction);
+  argm.output <<argm.argc()-1;
+  return 0;}
+
 // change the current directory to the one given
 // returns the error returned from chdir
 int b_cd(const Argm& argm) {
@@ -168,7 +174,7 @@ int b_function(const Argm& argm) {
     return 4 * !executable_map.erase(*(argm.begin()+1));}
   else {
     executable_map.set(new Function(argm[1], argm.end(), argm.end(), true,
-                                    IGNORANT, *argm.argfunction()));
+                                    ALL, *argm.argfunction()));
     return 0;}}
 
 namespace {
@@ -193,12 +199,6 @@ int function_core(const Argm& argm, Flag_type all_flags) {
 // the arguments must include all flags that can be passed to this function
 int b_function_all_flags(const Argm& argm) {
   return function_core(argm, ALL);}
-
-// add argfunction to executable map with name $1 and arguments $*2
-// all arguments will be treated as positional arguments whether they begin
-// with a dash or not.
-int b_function_flag_ignorant(const Argm& argm) {
-  return function_core(argm, IGNORANT);}
 
 // add a variable to the variable map that will remain after the enclosing
 // function terminates
