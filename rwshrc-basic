@@ -8,6 +8,8 @@
 .global nl (
 )
 
+# internal functions
+
 # ability of functions to act as builtin wrappers
 .function_all_flags af -- [argv ...] {rwsh.argfunction}
 .function_all_flags c -- text ... {.combine $text$}

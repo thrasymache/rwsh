@@ -24,7 +24,7 @@ class Entry_pattern {
   bool match(const std::string& s) const;
   std::string str(void) const;};
 
-void str_to_entry_pattern_list(const std::string& src, 
+void str_to_entry_pattern_list(const std::string& src,
                                std::list<Entry_pattern>& res);
 std::string entry_pattern_list_to_str(
                                std::list<Entry_pattern>::const_iterator start,

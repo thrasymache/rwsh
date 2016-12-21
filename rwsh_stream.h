@@ -14,7 +14,7 @@ class Rwsh_istream_p {
   bool is_default_v;
 
  public:
-  Rwsh_istream_p(Rwsh_istream* imp, bool inherited_i, bool is_default_i) : 
+  Rwsh_istream_p(Rwsh_istream* imp, bool inherited_i, bool is_default_i) :
     implementation(imp), inherited(inherited_i), is_default_v(is_default_i) {};
   Rwsh_istream_p(const Rwsh_istream_p& src);
   Rwsh_istream_p child_stream(void) const;
@@ -46,7 +46,7 @@ class Rwsh_ostream_p {
   bool is_default_v;
 
  public:
-  Rwsh_ostream_p(Rwsh_ostream* imp, bool inherited_i, bool is_default_i) : 
+  Rwsh_ostream_p(Rwsh_ostream* imp, bool inherited_i, bool is_default_i) :
     implementation(imp), inherited(inherited_i), is_default_v(is_default_i) {};
   Rwsh_ostream_p(const Rwsh_ostream_p& src);
   Rwsh_ostream_p child_stream(void) const;

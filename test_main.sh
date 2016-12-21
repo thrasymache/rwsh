@@ -16,6 +16,7 @@
 line continuation
  .echo ignore leading space
 	.echo ignore leading tab
+rwsh.mapped_argfunction {	   .echo ignore leading tab in argfunction}
 .which_executable rwsh.mapped_argfunction {.nop}
 .which_executable rwsh.argfunction {
   multiple line argfunction }
@@ -73,8 +74,10 @@ e $*2 1 2
 .if .nop 1 2 3 {e &*0}
 .else {}
 
-# selection_read
+# selection_read read_dir()
 e @/etc
+e @test_files/i*xx
+e @test_files/i*xx/f*
 e @/*selection_not_found*
 e @test_main.cc
 m {m {.for @e*c {e $1 $nl}} >test_files/tmp}
@@ -145,9 +148,9 @@ m &{.return 1} {}
 m ${.return 1} {}
 m {e &{.return 1}}
 m {e &&{.return 1}; e after}
-f rwsh.failed_substitution {e &&{.return 1}}
+f rwsh.failed_substitution {e $Z}
 m {e &&{.return 1}; e after}
-f rwsh.failed_substitution
+f rwsh.failed_substitution {.echo signal triggered: $0 \( $* \) $nl; .return -1}
 e x{e bad argfunction style}
 e x&&&{e x}
 e $+{e x}
@@ -207,8 +210,8 @@ m {m >dummy_file {e line 1 $nl; e line 2 longer $nl; .echo $nl; e ending}}
 
 # soon level promotion
 .global A 0
-.global OLD_NESTING $MAX_NESTING
-.set MAX_NESTING 46
+.global OLD_NESTING ${.get_max_nesting}
+.set_max_nesting 46
 f x {.var_add A 1
      m {.var_add A 1
         m {.var_add A 1
@@ -226,7 +229,7 @@ x {x {x {x {
   .echo &A &&A &&&A &&&&A $A} . &&&&&{.echo &A &&A &&&A &&&&A &&&&&A $A} . ${
   .echo &A &&A &&&A &&&&A &&&&&A $A} . $A}}}}
 f x
-.set MAX_NESTING $OLD_NESTING
+.set_max_nesting $OLD_NESTING
 .unset A
 .unset OLD_NESTING
 
@@ -261,6 +264,21 @@ f x
 .exec
 .exec something {excess argfunc}
 .fork m {.exec /bin/echo something; /bin/echo else}
+
+# .fallback_handler .get_fallback_message .set_fallback_message
+.fallback_handler
+.fallback_handler something {excess argfunc}
+.get_fallback_message something 
+.get_fallback_message {excess argfunc}
+.set_fallback_message
+.set_fallback_message something {excess argfunc}
+.fallback_handler pretend_error
+.local original_message &{.get_fallback_message}
+.set_fallback_message spaceless fallback message
+.fallback_handler second pretend error
+.set_fallback_message (alternate fallback message: )
+.fallback_handler a third
+.set_fallback_message $original_message
 
 # .for
 .for {e no arguments $1}
@@ -317,9 +335,9 @@ g
 .function_all_flags a [arg -- foo] {e -- cannot take arguments}
 .function_all_flags nonsense
 w test_var_greater
-test_var_greater MAX_NESTING
-test_var_greater MAX_NESTING 3 12
-test_var_greater MAX_NESTING 3
+.scope 5 n {test_var_greater n}
+.scope 5 n {test_var_greater n 3 12}
+.scope 5 n {test_var_greater n 3}
 w ntimes
 ntimes -- 3 {e $n remaining $nl}
 ntimes 2 {ntimes 3 {e &&n and $n remaining $nl}}
@@ -637,20 +655,7 @@ e $x
 e $x
 .unset x
 
-# .if .else_if .else_if_not .else
-.if
-.else_if
-.else_if_not
-.else
-.if missing argfunction
-.else_if missing argfunction
-.else_if_not missing argfunction
-.if .return 0 {e if true; .return 1}
-.else {e else true; .return 3}
-.if .return 1 {e if false; .return 4}
-.else {e else false; .return 5}
-.else_if .return 0 {e not this one; .return 6}
-.else_if_not .return 1 {e not this one; .return 7}
+# if_core
 .if .return 1 {e nor this; .return 8}
 .else_if .return 1 {e nor this; .return 9}
 .else_if .return 0 {e but this; .return 10}
@@ -663,15 +668,53 @@ e $x
 .else_if_not .return 1 {e this should be skipped; .return 17}
 .else_if_not .return 0 {e and certainly this; .return 18}
 .else {e nor this; .return 19}
-.if .return 0 {.if .return 1 {
-	   not to be printed; .return 20}
-       .else_if .return 0 {
-	   e nested else_if; .return 21}}
-.else {e else_if failed to appropriately set IF_TEST on exit; .return 22}
 .if .nop {e set up}
 .if .nop {e if before else}
-.if .return 0 {.else_if .return 0 {e nested syntax; .return 23}}
-.else {e already tested; .return 24}
+.if .return 0 {.else_if .return 0 {e nested syntax; .return 20}}
+.else {e already tested; .return 21}
+.if .return 0 {.if .return 1 {
+	   not to be printed; .return 22}
+       .else_if .return 0 {
+	   e nested else_if; .return 23}
+       .else {
+	   e nested else not printed; .return 24}}
+.else {e still not printed; .return 25}
+.if .return 0 {.if .return 1 {
+	   not to be printed; .return 22}
+       .else_if .return 0 {
+	   e about to trigger bad_if_nest $nl; .return 23}}
+.else {e else_if failed to appropriately set IF_TEST on exit; .return 24}
+.if .return 1 {}
+.else {
+  .if .return 1 {e about to trigger bad_if_nest $nl}}
+.if .return 0 {.if .return 0 {
+	   /bin/false should nest properly; .return 22}
+       .else {
+	   e nested else not printed; .return 24}}
+
+# .if .else_if .else_if_not .else
+.if
+.else_if .return 0 {e do not run after an exception}
+.else_if_not .return 1 {e do not run after an exception}
+.else_if
+.else_if_not
+.else {e do not run after an exception}
+.if missing argfunction
+.else_if missing argfunction
+.else_if_not missing argfunction
+.else
+.if .return 1 {}
+.else
+.else {e second else for if}
+.if .return 0 {e if true; .return 1}
+.else {e else true; .return 3}
+.if .return 1 {e if false; .return 4}
+.else {e else false; .return 5}
+.else {}
+.else_if .return 0 {e not this one; .return 6}
+.else {}
+.else_if_not .return 1 {e not this one; .return 7}
+.else {}
 
 # .internal_features .internal_functions .internal_vars
 .internal_features 1
@@ -705,6 +748,20 @@ m {.is_default_error}
 .nop
 .nop {optional argfunc}
 .nop 1 2 3 4 5
+
+# .getpid .getppid
+.getpid excess
+.getpid {excess argfunc}
+.getppid excess
+.getppid {excess argfunc}
+.fork m {/bin/kill ${.getppid}}
+.fork m {/bin/kill ${.getpid}}
+m {.fork m {/bin/kill ${.getppid}
+            echo after the signal in subshell}
+   echo after the signal in parent}
+m {.fork m {/bin/kill ${.getpid}
+            echo after the signal in subshell}
+   echo after the signal in parent}
 
 # .return
 .return
@@ -813,16 +870,119 @@ e $A
 .set A
 .set B x
 .set B x {excess argfunc}
-.set IF_TEST x
 .set A x
 e $A
 
-# .signal_handler
-.signal_handler {.return A}
-m {.signal_handler rwsh.not_a_number rwsh.executable_not_found {.return A}}
-m {.signal_handler rwsh.not_a_number rwsh.executable_not_found {.eturn A}}
-m {.signal_handler rwsh.not_a_number rwsh.executable_not_found {.echo A}}
-m .echo hi {.signal_handler ${.internal_functions}$ {&&*}}
+# .get_max_collectible_exceptions .set_max_collectible_exceptions
+.get_max_collectible_exceptions excess
+.set_max_collectible_exceptions
+.get_max_collectible_exceptions {excess}
+.set_max_collectible_exceptions 1 {excess}
+.set_max_collectible_exceptions NaN
+.set_max_collectible_exceptions 0
+.get_max_collectible_exceptions
+.set_max_collectible_exceptions 7
+m {.collect_errors_except .nop {
+     m {echo before exception
+        .throw rwsh.not_a_number 7
+        echo after exception}
+     echo between exceptions
+     .scope () {.throw rwsh.executable_not_found foo}
+     echo inside collect}
+   echo outside collect}
+m {.collect_errors_except echo {
+     .throw rwsh.executable_not_found foo
+     echo between exceptions
+     .throw echo 7
+     echo inside collect}
+   echo outside collect}
+m {.collect_errors_only rwsh.executable_not_found {
+     .throw rwsh.executable_not_found foo
+     echo between exceptions
+     .throw echo 7
+     echo inside collect}
+   echo outside collect}
+.collect_errors_except echo {
+ .collect_errors_except echo {
+  .collect_errors_except echo {
+   .collect_errors_except echo {
+    .collect_errors_except .echo {
+     echo inside 5
+     .throw echo inside 5
+     .collect_errors_except echo {
+      .collect_errors_except echo {
+       .collect_errors_except echo {
+        .collect_errors_except echo {
+         .collect_errors_except .echo {
+          echo inside 10
+          .throw echo inside 10
+          .collect_errors_except echo {
+           .collect_errors_except echo {
+            .collect_errors_except echo {
+             .collect_errors_except echo {
+              .collect_errors_except .echo {
+               echo inside 15
+               .throw echo inside 15
+               .collect_errors_except echo {
+                .collect_errors_except echo {
+                 .collect_errors_except echo {
+                  .collect_errors_except echo {
+                   .collect_errors_except .echo {
+                    echo inside 20
+                    .throw echo inside 20
+                   .collect_errors_except .echo {echo inside 21}
+}}}}}}}}}}}}}}}}}}}}
+.set_max_collectible_exceptions 1
+.function_all_flags collecting_handler args ... {
+  echo $args$
+}
+.set_max_extra_exceptions 1
+.try_catch_recursive collecting_handler {
+  .collect_errors_except .echo {
+    .throw collecting_handler 1
+    .throw collecting_handler 2}}
+.try_catch_recursive collecting_handler {
+  .collect_errors_except .echo {
+    .throw collecting_handler 1
+    .throw collecting_handler 2
+    echo almost nothing}}
+.set_max_extra_exceptions 0
+.try_catch_recursive collecting_handler {
+  .collect_errors_except .echo {
+    .throw collecting_handler 1
+    .throw collecting_handler 2}}
+.try_catch_recursive collecting_handler {
+  .collect_errors_except .echo {
+    .throw collecting_handler 1
+    .throw collecting_handler 2
+    echo almost nothing}}
+.set_max_extra_exceptions 1
+.get_max_collectible_exceptions
+
+# .try_catch_recursive .get_max_extra_exceptions .set_max_extra_exceptions
+.try_catch_recursive rwsh.executable_not_found 
+.try_catch_recursive {.return A}
+f e_after {m {rwsh.argfunction}; echo after}
+e_after {.try_catch_recursive rwsh.not_a_number rwsh.executable_not_found {
+  .return A}}
+f rwsh.autofunction {.nop}
+e_after {.try_catch_recursive rwsh.executable_not_found {.eturn A}}
+e_after {.try_catch_recursive rwsh.not_a_number {.return A}}
+e_after {.try_catch_recursive rwsh.not_a_number {.cho A}}
+e_after {.try_catch_recursive rwsh.not_a_number rwsh.executable_not_found {echo A}}
+e_after {m echo hi {.try_catch_recursive ${.internal_functions}$ {&&&*}}}
+.get_max_extra_exceptions excess
+.set_max_extra_exceptions
+.get_max_extra_exceptions {excess}
+.set_max_extra_exceptions 1 {excess}
+.set_max_extra_exceptions NaN
+.set_max_extra_exceptions -1
+.get_max_extra_exceptions
+.set_max_extra_exceptions 0
+.get_max_extra_exceptions
+e_after {.try_catch_recursive rwsh.not_a_number {.try_catch_recursive rwsh.not_a_number {.return A}}}
+e_after {.try_catch_recursive rwsh.not_a_number {.try_catch_recursive rwsh.not_a_number {.return A}}}
+e_after {m echo hi {.try_catch_recursive ${.internal_functions}$ {&&&*}}}
 
 # .source
 .source
@@ -962,17 +1122,35 @@ w rwsh.mapped_argfunction {>dummy_file}
 .which_return
 .which_return rwsh.mapped_argfunction
 .which_return rwsh.mapped_argfunction {echo not tracked}
-.which_return .which_return
 .which_return j
+.which_return .which_return
 .which_return .waiting_for_binary
+
+# .which_last_exception
+.which_last_exception .which_last_exception
+.which_last_exception
+.which_last_exception .try_catch_recursive {excess argfunc}
+.which_last_exception .which_last_exception
+.which_last_exception .which_last_return
+.which_last_exception .try_catch_recursive
+.which_last_exception .which_last_execution_time
+.which_last_exception /bin/which
+.which_last_exception /bin/cat
+.which_last_exception /bin/echo
+.which_last_exception e
+.which_last_exception test_var_greater
 
 # .usleep .which_execution_count .which_last_execution_time
 # .which_total_execution_time
+.usleep_overhead excess
+.usleep_overhead {excess argfunc}
+.usleep_overhead 
 .usleep
-.usleep 8000 {excess argfunc}
+.usleep 800 {excess argfunc}
 .usleep -6
 .usleep 5i
-.usleep 8000
+.usleep 800
+# .usleep_overhead 
 .which_execution_count
 .which_execution_count j
 .which_execution_count rwsh.mapped_argfunction {echo not tracked}
@@ -1091,6 +1269,7 @@ e $A
 
 # binary test implicitly tests Old_argv_t
 /bn/echo 1 2 3
+.which_return /bn/echo
 /bin/echo 1 2 3
 
 # internal functions 
@@ -1105,6 +1284,7 @@ w rwsh.raw_command
 w x {rwsh.escaped_argfunction me}
 f rwsh.before_command {.echo $*0; .echo $nl}
 /bn
+.which_return /bn
 f rwsh.before_command
 
 # rwsh.autofunction
@@ -1142,13 +1322,44 @@ f g {w rwsh.argfunction {rwsh.unescaped_argfunction}
      w rwsh.argfunction {rwsh.escaped_argfunction}}
 g {}
 
-# rwsh.excessive_nesting
+# rwsh.excessive_nesting Base_executable::exception_handler
 f g {h}
 f h {g}
 g
 .stepwise g {e $* $nl; $*}
 f rwsh.excessive_nesting {h}
 g
+f rwsh.excessive_nesting {e &&{.return 1}}
+f rwsh.failed_substitution {e $Z}
+g
+e_after {.try_catch_recursive rwsh.undefined_variable rwsh.excessive_nesting rwsh.failed_substitution {g}}
+.set_max_extra_exceptions 5
+e_after {.try_catch_recursive rwsh.undefined_variable rwsh.excessive_nesting rwsh.failed_substitution {g}}
+e_after {.try_catch_recursive rwsh.undefined_variable rwsh.failed_substitution {
+  e ${.return 1}}}
+f rwsh.else_without_if {e ${.return 1}}
+e_after {.try_catch_recursive rwsh.undefined_variable rwsh.else_without_if {
+  .else {}}}
+f rwsh.failed_substitution {e ${.return 2}}
+e_after {.try_catch_recursive rwsh.undefined_variable rwsh.failed_substitution {
+  e ${.return 1}}}
+f rwsh.else_without_if {e $Z}
+e_after {.try_catch_recursive rwsh.undefined_variable rwsh.else_without_if {
+  .else {}}}
+f rwsh.failed_substitution {.return Z}
+e_after {.try_catch_recursive rwsh.not_a_number rwsh.failed_substitution {
+  e ${.return 1}}}
+
+# .throw
+.throw
+.throw .nop
+.throw rwsh.not_a_number 7
+m {if_only .return 0 {.throw m {echo even from $* 7 is a number}}}
+m {.try_catch_recursive echo {
+      echo first
+      .throw echo failing successfully
+      echo second}
+   echo third}
 
 # rwsh.run_logic
 f rwsh.run_logic {.if .return $1 {.nop}; .else_if $*2 {.nop}; .else {.nop}}

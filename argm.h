@@ -31,8 +31,8 @@ class Argm : private std::vector<std::string> {
   mutable Rwsh_istream_p input;
   mutable Rwsh_ostream_p output, error;
 
-  enum Sig_type {
-    No_signal,
+  enum Exception_t {
+    No_exception,
     Ambiguous_prototype_dash_dash,
     Arguments_for_argfunction,
     Bad_argc,
@@ -49,6 +49,8 @@ class Argm : private std::vector<std::string> {
     Elipsis_out_of_option_group,
     Else_without_if,
     Excess_argfunction,
+    Excessive_exceptions_collected,
+    Excessive_exceptions_in_catch,
     Excessive_nesting,
     Executable_not_found,
     Failed_substitution,
@@ -67,6 +69,7 @@ class Argm : private std::vector<std::string> {
     Not_executable,
     Not_soon_enough,
     Raw_command,
+    Return_code,
     Result_range,
     Post_elipsis_option,
     Post_dash_dash_flag,
@@ -90,9 +93,9 @@ class Argm : private std::vector<std::string> {
     Unrecognized_flag,
     Vars,
     Version_incompatible,
-    Signal_count};
+    Exception_count};
 
-  static std::string signal_names[Signal_count];
+  static std::string exception_names[Exception_count];
 
 // variables
   char** export_env(void) const;
@@ -101,7 +104,6 @@ class Argm : private std::vector<std::string> {
   int local(const std::string& key, const std::string& value) const;
   Variable_map::iterator local_begin(void) const;
   Variable_map::iterator local_end(void) const;
-  unsigned max_nesting(void) const;
   int set_var(const std::string& key, const std::string& value) const;
   template<class Out>
   Out star_var(const std::string& key, unsigned reference_level, Out res) const;
@@ -128,15 +130,17 @@ class Argm : private std::vector<std::string> {
   reference operator[] (int i) {return Base::operator[](i);};
   const_reference operator[] (int i) const {return Base::operator[](i);}; };
 
-struct Signal_argm : public Argm {
-  Argm::Sig_type signal;
-  Signal_argm(Sig_type signal);
-  Signal_argm(Sig_type signal, const std::string& value);
-  Signal_argm(Sig_type signal, const std::string& x, const std::string& y);
-  Signal_argm(Sig_type signal, const std::string& w, const std::string& x,
+struct Exception : public Argm {
+  Argm::Exception_t exception;
+  Exception(Exception_t exception);
+  Exception(Exception_t exception, const std::string& value);
+  Exception(Exception_t exception, const std::string& value, int errno_v);
+  Exception(Exception_t exception, const std::string& x, const std::string& y);
+  Exception(Exception_t exception, const std::string& w, const std::string& x,
               const std::string& y, const std::string& z);
-  Signal_argm(Sig_type signal, int x, int y, int z);
-  Signal_argm(Sig_type signal, const Argm& src);};
+  Exception(Exception_t exception_i, int x);
+  Exception(Exception_t exception, int x, int y, int z);
+  Exception(Exception_t exception, const Argm& src);};
 
 class Old_argv {
   char** focus;

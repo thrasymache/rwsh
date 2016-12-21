@@ -1,11 +1,11 @@
-// Copyright (C) 2007 Samuel Newbold
+// Copyright (C) 2007-2016 Samuel Newbold
 
 #include <string>
 
 #include "rwsh_stream.h"
 
 Rwsh_istream_p::Rwsh_istream_p(const Rwsh_istream_p& src) :
-  inherited(src.inherited), is_default_v(src.is_default_v) { 
+  inherited(src.inherited), is_default_v(src.is_default_v) {
   if (src.inherited) implementation = src.implementation;
   else implementation = src.implementation->copy_pointer();}
 
@@ -27,7 +27,7 @@ Rwsh_istream_p::~Rwsh_istream_p(void) {
   if (!inherited) delete implementation;}
 
 Rwsh_ostream_p::Rwsh_ostream_p(const Rwsh_ostream_p& src) :
-  inherited(src.inherited), is_default_v(src.is_default_v) { 
+  inherited(src.inherited), is_default_v(src.is_default_v) {
   if (src.inherited) implementation = src.implementation;
   else implementation = src.implementation->copy_pointer();}
 

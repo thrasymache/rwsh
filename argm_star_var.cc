@@ -5,26 +5,26 @@
 // Copyright (C) 2006-2016 Samuel Newbold
 
 // constructor of Argm from a pair of iterators
-template <class String_it> 
+template <class String_it>
 inline Argm::Argm(String_it first_string, String_it last_string,
        Command_block* argfunction_i, Variable_map* parent_map_i,
        Rwsh_istream_p input_i, Rwsh_ostream_p output_i,
        Rwsh_ostream_p error_i) :
   Base(first_string, last_string),
-  argfunction_v(argfunction_i->copy_pointer()), 
+  argfunction_v(argfunction_i->copy_pointer()),
   input(input_i), output(output_i), error(error_i),
   parent_map_v(parent_map_i) {
     argc_v = Base::size();};
 
 // constructor of Argm from an initial argument and a  pair of iterators
-template <class String_it> 
+template <class String_it>
 inline Argm::Argm(const std::string& first_string,
        String_it second_string, String_it last_string,
        Command_block* argfunction_i, Variable_map* parent_map_i,
        Rwsh_istream_p input_i, Rwsh_ostream_p output_i,
        Rwsh_ostream_p error_i) :
   Base(second_string, last_string),
-  argfunction_v(argfunction_i->copy_pointer()), 
+  argfunction_v(argfunction_i->copy_pointer()),
   input(input_i), output(output_i), error(error_i),
   parent_map_v(parent_map_i) {
     Base::insert(Base::begin(), first_string);
@@ -32,7 +32,7 @@ inline Argm::Argm(const std::string& first_string,
 
 // write the strings corresponding to $*
 template<class Out>
-inline Out Argm::star_var(const std::string& key, unsigned reference_level, 
+inline Out Argm::star_var(const std::string& key, unsigned reference_level,
                      Out res) const {
   int n = std::atoi(key.c_str());
   if (n < 0) n = 0;
@@ -51,14 +51,14 @@ Out tokenize_words(const std::string& in, Out res) {
   for (; i<in.length(); ++i)
     if (in[i] == '(') {if (!nesting++) ++token_start;}
     else if (in[i] == ')') {if (!nesting--)
-      throw Signal_argm(Argm::Mismatched_parenthesis, in.substr(0, i+1));}
+      throw Exception(Argm::Mismatched_parenthesis, in.substr(0, i+1));}
     else if (!nesting && isspace(in[i])) {
       unsigned end = i;
       while (i<in.length() && isspace(in[i])) ++i;       // drop leading space
       if (in[end-1] == ')') *res++ = in.substr(token_start, end-token_start-1);
       else *res++ = in.substr(token_start, end-token_start);
       token_start = i--;}
-  if (nesting) throw Signal_argm(Argm::Mismatched_parenthesis, in);
+  if (nesting) throw Exception(Argm::Mismatched_parenthesis, in);
   if (token_start != i)
     if (in[i-1] == ')') *res = in.substr(token_start, i-token_start-1);
     else *res = in.substr(token_start, i-token_start);

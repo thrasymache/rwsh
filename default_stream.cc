@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2015 Samuel Newbold
+// Copyright (C) 2008-2016 Samuel Newbold
 
 #include <cstdlib>
 #include <iostream>
@@ -36,19 +36,19 @@ Default_ostream::Default_ostream(int fd_i) : fd_v(fd_i) {
 Rwsh_ostream* Default_ostream::copy_pointer(void) {std::abort();}; // not needed
 
 Rwsh_ostream& Default_ostream::operator<<(const std::string& r) {
-  *implementation <<r; 
+  *implementation <<r;
   return *this;}
 
 Rwsh_ostream& Default_ostream::operator<<(int r) {
-  *implementation <<r; 
+  *implementation <<r;
   return *this;}
 
 Rwsh_ostream& Default_ostream::operator<<(unsigned int r) {
-  *implementation <<r; 
+  *implementation <<r;
   return *this;}
 
 Rwsh_ostream& Default_ostream::operator<<(double r) {
-  *implementation <<r; 
+  *implementation <<r;
   return *this;}
 
 Rwsh_ostream& Default_ostream::operator<<(struct timeval r) {

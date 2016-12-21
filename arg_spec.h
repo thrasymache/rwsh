@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2015 Samuel Newbold
+// Copyright (C) 2006-2016 Samuel Newbold
 
 class Argm;
 class Command_block;
@@ -19,11 +19,12 @@ class Arg_spec {
   void add_function_spec(const std::string& src);
   template<class Out> Out evaluate_expansion(const std::string& value,
                                              Out res) const;
-  template<class Out> Out evaluate_substitution(const Argm& src, Out res) const;
+  template<class Out> Out evaluate_substitution(const Argm& src, Out res,
+                                             std::list<Argm>& exceptions) const;
   template<class Out> Out evaluate_var(const Argm& src, Out res) const;
  public:
   Arg_spec(const std::string& script, unsigned max_soon);
-  Arg_spec(const std::string& src, std::string::size_type style_start, 
+  Arg_spec(const std::string& src, std::string::size_type style_start,
            std::string::size_type& point, unsigned max_soon);
   Arg_spec(Arg_type type, unsigned soon_level, unsigned ref_level,
            unsigned expand_count, int word_selection,
@@ -33,9 +34,11 @@ class Arg_spec {
   Arg_spec(const std::string& src);
   ~Arg_spec();
   void apply(const Argm& src, unsigned nesting,
-             std::back_insert_iterator<std::vector<Arg_spec> > res) const;
+             std::back_insert_iterator<std::vector<Arg_spec> > res,
+             std::list<Argm>& exceptions) const;
   void interpret(const Argm& src,
-                 std::back_insert_iterator<Argm> res) const;
+                 std::back_insert_iterator<Argm> res,
+                 std::list<Argm>& exceptions) const;
   void promote_soons(unsigned nesting);
   std::string str(void) const; };
 

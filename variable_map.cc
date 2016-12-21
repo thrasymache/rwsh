@@ -4,6 +4,7 @@
 // Copyright (C) 2006-2016 Samuel Newbold
 
 #include <cstring>
+#include <list>
 #include <map>
 #include <stdlib.h>
 #include <sstream>
@@ -27,13 +28,12 @@ std::string word_from_value(const std::string& value) {
 Variable_map::Variable_map(Variable_map* parent_i) : parent(parent_i) {
   if (parent_i == NULL) {
     local("?", "");
-    local("FIGNORE", "");
-    local("MAX_NESTING", "0");}}
+    local("FIGNORE", "");}}
 
 void Variable_map::append_word_locally(const std::string& key,
                                        const std::string& value) {
   std::map<std::string, std::string>::iterator i = find(key);
-  if (i == end()) throw Signal_argm(Argm::Undefined_variable, key);
+  if (i == end()) throw Exception(Argm::Undefined_variable, key);
   else i->second += " " + word_from_value(value);}
 
 void Variable_map::append_word_if_exists(const std::string& key,
@@ -57,13 +57,13 @@ bool Variable_map::exists(const std::string& key) const {
 
 const std::string& Variable_map::get(const std::string& key) {
   if (key == "?") {
-    std::ostringstream tmp; 
+    std::ostringstream tmp;
     tmp <<dollar_question;
     (*this)["?"] = tmp.str();}
   std::map<std::string, std::string>::const_iterator i = find(key);
   if (i != end()) return i->second;
   else if (parent) return parent->get(key);
-  else throw Signal_argm(Argm::Undefined_variable, key);}
+  else throw Exception(Argm::Undefined_variable, key);}
 
 int Variable_map::global(const std::string& key, const std::string& value) {
   if (parent)
@@ -78,17 +78,12 @@ int Variable_map::local(const std::string& key, const std::string& value) {
 
 void Variable_map::set(const std::string& key, const std::string& value) {
   std::map<std::string, std::string>::iterator i = find(key);
-  if (i != end()) {
-    i->second = value;
-    if (key == "MAX_NESTING") {
-      int temp = atoi(i->second.c_str());
-      if (temp < 0) this->max_nesting_v = 0;
-      else this->max_nesting_v = temp;}}
+  if (i != end()) i->second = value;
   else if (parent) parent->set(key, value);
-  else throw Signal_argm(Argm::Undefined_variable, key);}
+  else throw Exception(Argm::Undefined_variable, key);}
 
 int Variable_map::unset(const std::string& key) {
-  if (key == "MAX_NESTING" || key == "FIGNORE" || key == "?") return 2;
+  if (key == "FIGNORE" || key == "?") return 2;
   std::map<std::string, std::string>::iterator i = find(key);
   if (i != end()) {erase(i); return 0;}
   else if (parent) return parent->unset(key);

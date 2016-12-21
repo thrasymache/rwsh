@@ -6,6 +6,7 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <list>
 #include <map>
 
 #include "arg_spec.h"
@@ -26,7 +27,7 @@ void p_elipsis(Variable_map& locals, Argm::const_iterator& f_arg,
     if (*flag != name) locals.append_word_locally(*flag, *f_arg);}
   for (f_arg++; available > needed; --available, f_arg++) {
     if ((*f_arg)[0] == '-' && !dash_dash && f_arg->length() > 1)
-      throw Signal_argm(Argm::Flag_in_elipsis, *f_arg);
+      throw Exception(Argm::Flag_in_elipsis, *f_arg);
     locals.append_word_locally(name, *f_arg);
     if (flag) {
       locals.append_word_locally("-*", *f_arg);
@@ -45,19 +46,19 @@ Parameter_group::Parameter_group(Argm::const_iterator& focus,
        focus->substr(group_begin, focus->length() - group_begin - group_end));
     if (name != "...") names.push_back(name);
     else if (!parameter_names.insert(name).second)
-      throw Signal_argm(Argm::Duplicate_parameter, name);
+      throw Exception(Argm::Duplicate_parameter, name);
     else elipsis = names.size()-1;}
   while (!required && !group_end && ++focus != end);
   if (!required && !group_end) {
     std::string gs(str());
-    throw Signal_argm(Argm::Mismatched_bracket, gs.substr(0, gs.length()-1));}
+    throw Exception(Argm::Mismatched_bracket, gs.substr(0, gs.length()-1));}
   for (std::vector<std::string>::const_iterator i = names.begin();
        i != names.end(); ++i)
     if (!parameter_names.insert(*i).second)
-      throw Signal_argm(Argm::Duplicate_parameter, *i);
+      throw Exception(Argm::Duplicate_parameter, *i);
     else if (names.size() > 1)
-      if (*i == "-*")      throw Signal_argm(Argm::Dash_star_argument, str());
-      else if (*i == "--") throw Signal_argm(Argm::Dash_dash_argument, str());}
+      if (*i == "-*")      throw Exception(Argm::Dash_star_argument, str());
+      else if (*i == "--") throw Exception(Argm::Dash_dash_argument, str());}
 
 void Parameter_group::arg_to_param(Variable_map& locals,
                                    int& available, int& needed,
@@ -103,37 +104,37 @@ Prototype::Prototype(bool non_prototype_i) :
     dash_dash_position(-1), elipsis_var("") {}
 
 Prototype::Prototype(Argm::const_iterator fp, Argm::const_iterator end,
-                     bool non_prototype_i, Flag_type flags_i) :
+                     bool non_prototype_i) :
     positional(), required_argc(), flag_options(), parameter_names(),
-    non_prototype(non_prototype_i), flags(flags_i), bare_dash_dash(false),
+    non_prototype(non_prototype_i), flags(ALL), bare_dash_dash(false),
     dash_dash_position(-1), elipsis_var("") {
   bool has_elipsis = false;
   for (; fp != end; ++fp) {
     Parameter_group group(fp, end, parameter_names);
     if (has_elipsis && !group.required)
-      throw Signal_argm(Argm::Post_elipsis_option, group.str());
+      throw Exception(Argm::Post_elipsis_option, group.str());
     else if (group.elipsis == -1) {
       if (!positional.size())
-        throw Signal_argm(Argm::Elipsis_first_arg, group.str());
+        throw Exception(Argm::Elipsis_first_arg, group.str());
       has_elipsis = true;
       elipsis_var = positional.back().names.back();
       if (group.names.size()) positional.push_back(group);
       else if (positional.back().names.size() != 1)
-        throw Signal_argm(Argm::Elipsis_out_of_option_group,
-                          positional.back().str());
+        throw Exception(Argm::Elipsis_out_of_option_group,
+                        positional.back().str());
       else positional.back().elipsis = 0;}
     else if (group.names[0] == "--") {
       dash_dash_position = positional.size();
       bare_dash_dash = group.required;
       if (!dash_dash_position && (flag_options.size() || flags == SOME))
-        throw Signal_argm(Argm::Ambiguous_prototype_dash_dash, str());}
+        throw Exception(Argm::Ambiguous_prototype_dash_dash, str());}
     else if (group.names[0] == "-*") flags = SOME;
     else if (group.required || group.names[0][0] != '-' ||
              group.names[0].length() == 1) {
       required_argc += group.required;
       positional.push_back(group);}
     else if (dash_dash_position != -1)
-      throw Signal_argm(Argm::Post_dash_dash_flag, group.str());
+      throw Exception(Argm::Post_dash_dash_flag, group.str());
     else flag_options[group.names[0]] = group;
     if (group.elipsis >= 0) {
       has_elipsis = true;
@@ -154,7 +155,7 @@ Variable_map Prototype::arg_to_param(const Argm& argm) const {
       std::map<std::string, Parameter_group>::const_iterator h =
                                                      flag_options.find(*f_arg);
       if (dash_dash == BRACKET && *f_arg != "--")
-        throw Signal_argm(Argm::Tardy_flag, *f_arg);
+        throw Exception(Argm::Tardy_flag, *f_arg);
       else if (h != flag_options.end())
         h->second.arg_to_param(locals, available, needed, missing, f_arg,
                       argm.end(), &h->second.names[0], elipsis_var, dash_dash);
@@ -163,7 +164,7 @@ Variable_map Prototype::arg_to_param(const Argm& argm) const {
           locals.local("--", "--");
           dash_dash = BARE;}
         else if (flags == ALL)
-          throw Signal_argm(Argm::Unrecognized_flag, *f_arg);
+          throw Exception(Argm::Unrecognized_flag, *f_arg);
         locals.append_word_if_exists("-*", *f_arg++);
         --available;}}
     else if (param == positional.end()) break;
@@ -192,7 +193,7 @@ Argm Prototype::bad_args(std::string& missing, const Variable_map& locals,
   std::string unassigned;
   while (f_arg != end)
     unassigned += (unassigned.length()?" ":"") + *f_arg++;
-  throw Signal_argm(Argm::Bad_args, str(), assigned, missing, unassigned);}
+  throw Exception(Argm::Bad_args, str(), assigned, missing, unassigned);}
 
 std::string escape(const std::string& src) {
   if (!src.length()) return "()";

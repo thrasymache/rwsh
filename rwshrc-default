@@ -67,7 +67,7 @@ fns gdb [binary] {
   &{whichp gdb} $-*$ $BUILT_EXECUTABLE}
 .function git-git {&{whichp git} $*}
 fns git command [file ...] {
-  if_only .var_exists file {.selection_set s $file}
+  if_only .var_exists file {.selection_set s $file$}
   .if .test_not_empty $s {&{whichp git} $-*$ $command @$s}
   .else {&{whichp git} $-*$ $command}}
 sfn-subcommand git add
@@ -78,13 +78,13 @@ sfn-subcommand git status
 fns grep [-l] [regex] [file ...] {
   if_only .var_exists regex {.set REGEX $regex}
   if_only .var_exists file {.selection_set s $file}
-  .if .var_exists -l {
-    .set grep-sel $s
-    .local result ()
-    .store_output result {&{whichp grep} $-*$ $REGEX @$s}
-    .echo $result
-    .selection_set grep-sel $result$}
-  .else {&{whichp grep} $-*$ $REGEX @$s}}
+  .try_catch_recursive rwsh.return_code {
+    .if .var_exists -l {
+      .local result ()
+      .store_output result {&{whichp grep} $-*$ $REGEX @$s}
+      .echo $result
+      .set grep-sel $result$}
+    .else {&{whichp grep} $-*$ $REGEX @$s}}}
 fn grep-sel {.set s $grep-sel}
 fn gs       {.set s $grep-sel}
 sfn gzip
@@ -108,7 +108,7 @@ fns mv dest {
   .set s $dest}
 fns regrep [file ...] {
   # wrap grep function to keep REGEX but change file
-  .if .var_exists file {grep $-*$ $REGEX $file}
+  .if .var_exists file {grep $-*$ $REGEX $file$}
   .else {grep $-*$}}
 sfn rm 
 sfn sum
@@ -132,7 +132,7 @@ fn unselect {.set s ()}
 
 # internal functions
 .function rwsh.run_logic {
-   .signal_handler &{.internal_functions}$ {&&* {rwsh.argfunction}}
+   .try_catch_recursive &{.internal_functions}$ {&&* {rwsh.argfunction}}
   # $* {rwsh.argfunction}
   .local ret $?
   if_only_not .test_number_equal $ret 0 {echo &&1 returned $ret}}
@@ -184,8 +184,11 @@ fn unselect {.set s ()}
 .function rwsh.else_without_if {
   .echo else without if with call stack: $* $nl
   .return -1}
+.function rwsh.excessive_exceptions {
+  .echo exceeded maximum number of exceptions \( $1 \). call stack: $*2 $nl
+  .return -1}
 .function rwsh.excessive_nesting {
-  .echo $nl function exceeded MAX_NESTING \( $MAX_NESTING \). call stack: $* $nl
+  .echo $nl function exceeded max nesting \( ${.get_max_nesting} \). call stack: $* $nl
   .return -1}
 .function rwsh.excess_argfunction {
   .echo $1 does not accept an argfunction with call stack: $* $nl
@@ -236,6 +239,9 @@ fn unselect {.set s ()}
   .return -1}
 .function rwsh.not_soon_enough {
   .echo $1 attempts to substitute after the command has been run $nl
+  .return -1}
+.function rwsh.return_code {
+  .echo $2 returned $1 $nl
   .return -1}
 .function rwsh.prompt {.echo $s; .echo \$}
 .function rwsh.result_range {
@@ -313,6 +319,9 @@ fn st {/bin/rwsh -to <test_main.sh >last.test.result
 fn bless-t {/bin/cp last.test.result test.result}
 fn to {/bin/rwsh -to}
 fn mst {make; st}
+fn ti {/bin/rwsh -to <test_inconsistent.sh >last.test_inconsistent.result
+  &{whichp diff} -c test_inconsistent.result last.test_inconsistent.result}
+fn ti-bless {/bin/cp last.test_inconsistent.result test_inconsistent.result}
 
 # final setup and individual configuration
 .source &{c $HOME /.rwshrc}

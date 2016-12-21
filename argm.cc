@@ -5,6 +5,7 @@
 
 #include <cstring>
 #include <cstdlib>
+#include <list>
 #include <map>
 #include <set>
 #include <sstream>
@@ -23,17 +24,17 @@
 
 Argm::Argm(Variable_map* parent_map_i, Rwsh_istream_p input_i,
            Rwsh_ostream_p output_i, Rwsh_ostream_p error_i) :
-  argc_v(0), argfunction_v(0), 
+  argc_v(0), argfunction_v(0),
   input(input_i), output(output_i), error(error_i),
   parent_map_v(parent_map_i) {}
 
 Argm::Argm(const Argm& src) : Base(src), argc_v(src.argc()),
-  argfunction_v(src.argfunction()->copy_pointer()), 
+  argfunction_v(src.argfunction()->copy_pointer()),
   input(src.input), output(src.output), error(src.error),
   parent_map_v(src.parent_map()) {}
 
 Argm& Argm::operator=(const Argm& src) {
-  Base::clear(); 
+  Base::clear();
   std::copy(src.begin(), src.end(), std::back_inserter(*this));
   argc_v = src.argc_v;
   delete argfunction_v;
@@ -72,20 +73,20 @@ std::string Argm::get_var(const std::string& key) const {
       int n = std::atoi(key.c_str());
       if (size() > n) return (*this)[n];
       else return std::string();}
-        //throw Signal_argm(Argm::Undefined_variable, key);}
+        //throw Exception(Argm::Undefined_variable, key);}
     default: return parent_map()->get(key);}}
 
 int Argm::set_var(const std::string& key, const std::string& value) const {
   switch (key[0]) {
-    case '#': case '1': case '2': case '3': case '4': case '5': case '6': 
+    case '#': case '1': case '2': case '3': case '4': case '5': case '6':
               case '7': case '8': case '9': case '0': return 2;
     default: parent_map()->set(key, value);
     return 0;}}
 
 bool Argm::var_exists(const std::string& key) const {
   switch (key[0]) {
-    case '#': case '*': return true; 
-    case '1': case '2': case '3': case '4': case '5': case '6': 
+    case '#': case '*': return true;
+    case '1': case '2': case '3': case '4': case '5': case '6':
               case '7': case '8': case '9': case '0': {
       int n = std::atoi(key.c_str());
       return size() > n;}
@@ -93,13 +94,13 @@ bool Argm::var_exists(const std::string& key) const {
 
 int Argm::global(const std::string& key, const std::string& value) const {
   switch (key[0]) {
-    case '#': case '*': case '1': case '2': case '3': case '4': case '5': 
+    case '#': case '*': case '1': case '2': case '3': case '4': case '5':
               case '6': case '7': case '8': case '9': case '0': return 2;
     default: return parent_map()->global(key, value);}}
 
 int Argm::local(const std::string& key, const std::string& value) const {
   switch (key[0]) {
-    case '#': case '*': case '1': case '2': case '3': case '4': case '5': 
+    case '#': case '*': case '1': case '2': case '3': case '4': case '5':
               case '6': case '7': case '8': case '9': case '0': return 2;
     default: return parent_map()->local(key, value);}}
 
@@ -111,11 +112,9 @@ Variable_map::iterator Argm::local_end(void) const {
 
 int Argm::unset_var(const std::string& key) const {
   switch (key[0]) {
-    case '#': case '*': case '1': case '2': case '3': case '4': case '5': 
+    case '#': case '*': case '1': case '2': case '3': case '4': case '5':
               case '6': case '7': case '8': case '9': case '0': return 3;
     default: return parent_map()->unset(key);}}
-
-unsigned Argm::max_nesting(void) const {return parent_map()->max_nesting();}
 
 char** Argm::export_env(void) const {return parent_map()->export_env();}
 
@@ -127,40 +126,58 @@ template<class In>char** copy_to_cstr(In first, In last, char** res) {
   *res = 0;
   return res;}
 
-Signal_argm::Signal_argm(Sig_type signal_i) :
+Exception::Exception(Exception_t exception_i) :
     Argm(Variable_map::global_map, default_input,default_output,default_error),
-    signal(signal_i) {
-  push_back(signal_names[signal]);}
+    exception(exception_i) {
+  push_back(exception_names[exception]);}
 
-Signal_argm::Signal_argm(Sig_type signal_i, const std::string& value) : 
+Exception::Exception(Exception_t exception_i, const std::string& value) :
     Argm(Variable_map::global_map, default_input,default_output,default_error),
-    signal(signal_i) {
-  push_back(signal_names[signal]);
+    exception(exception_i) {
+  push_back(exception_names[exception]);
   push_back(value);}
 
-Signal_argm::Signal_argm(Sig_type signal_i, const std::string& x,
+Exception::Exception(Exception_t exception_i, const std::string& value,
+                         int errno_v) :
+    Argm(Variable_map::global_map, default_input,default_output,default_error),
+    exception(exception_i) {
+  push_back(exception_names[exception]);
+  push_back(value);
+  std::ostringstream errno_str;
+  errno_str <<errno_v;
+  push_back(errno_str.str());}
+
+Exception::Exception(Exception_t exception_i, const std::string& x,
                          const std::string& y) :
     Argm(Variable_map::global_map, default_input,default_output,default_error),
-    signal(signal_i) {
-  push_back(signal_names[signal]);
+    exception(exception_i) {
+  push_back(exception_names[exception]);
   push_back(x);
   push_back(y);}
 
-Signal_argm::Signal_argm(Sig_type signal_i, const std::string& w,
+Exception::Exception(Exception_t exception_i, const std::string& w,
                          const std::string& x, const std::string& y,
                          const std::string& z) :
     Argm(Variable_map::global_map, default_input,default_output,default_error),
-    signal(signal_i) {
-  push_back(signal_names[signal]);
+    exception(exception_i) {
+  push_back(exception_names[exception]);
   push_back(w);
   push_back(x);
   push_back(y);
   push_back(z);}
 
-Signal_argm::Signal_argm(Sig_type signal_i, int x, int y, int z) :
+Exception::Exception(Exception_t exception_i, int x) :
     Argm(Variable_map::global_map, default_input,default_output,default_error),
-    signal(signal_i) {
-  push_back(signal_names[signal]);
+    exception(exception_i) {
+  push_back(exception_names[exception]);
+  std::ostringstream x_str;
+  x_str <<x;
+  push_back(x_str.str());}
+
+Exception::Exception(Exception_t exception_i, int x, int y, int z) :
+    Argm(Variable_map::global_map, default_input,default_output,default_error),
+    exception(exception_i) {
+  push_back(exception_names[exception]);
   std::ostringstream x_str, y_str, z_str;
   x_str <<x;
   push_back(x_str.str());
@@ -169,10 +186,10 @@ Signal_argm::Signal_argm(Sig_type signal_i, int x, int y, int z) :
   z_str <<z;
   push_back(z_str.str());}
 
-Signal_argm::Signal_argm(Sig_type signal_i, const Argm& src) :
+Exception::Exception(Exception_t exception_i, const Argm& src) :
     Argm(Variable_map::global_map, default_input,default_output,default_error),
-    signal(signal_i) {
-  push_back(signal_names[signal]);
+    exception(exception_i) {
+  push_back(exception_names[exception]);
   std::copy(src.begin(), src.end(), std::back_inserter(*this));}
 
 Old_argv::Old_argv(const Argm& src) : argc_v(src.argc()) {

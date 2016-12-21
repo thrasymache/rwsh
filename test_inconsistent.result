@@ -1,0 +1,84 @@
+signal triggered: rwsh.raw_command ( .function rwsh.raw_command {.echo $1; .echo $nl} ) 
+.global last_command_return -10
+.global A \
+.global N \
+
+.nop tests multi-line commands within a sourced script
+.nop .function rwsh.run_logic {
+  .return $last_command_return
+  .signal_handler &{.internal_functions}$ {&&* {rwsh.argfunction}}
+  rwsh.mapped_argfunction {&&* {rwsh.argfunction}}
+  &&* {rwsh.argfunction}
+  .set last_command_return $?
+  .echo $nl
+  .echo $last_command_return
+  .echo $nl}
+.function rwsh.before_command {.return $last_command_return}
+.function rwsh.after_command {
+  .set last_command_return $?
+  .echo $nl; .echo $last_command_return; .echo $nl}
+.function rwsh.prompt {.echo \$}
+.function rwsh.shutdown {.echo $nl; .echo now terminating normally; .echo $nl}
+.function rwsh.vars {.internal_vars}
+.else_if .test_string_equal $2 -c {
+  .function rwsh.autofunction {
+    .function $1 {&&&{.which_path &&&1 $PATH} $*}}
+  .function rwsh.if_before_else {}
+  .function rwsh.shutdown {.echo $nl}
+  .source /etc/rwshrc-basic
+  .importenv_preserve;
+  rwsh.mapped_argfunction &3 {$1$}
+  .exit}
+.else {
+  .echo unexpected command line: &* (
+)
+  .source /etc/rwshrc-default}
+rwsh.help not defined 
+$.getpid
+22405
+0
+$.getppid
+21899
+0
+$.function_all_flags timings focus {
+  .combine $focus (:	last\() ${.which_last_execution_time $focus} \) \	
+  .combine (total\() ${.which_total_execution_time $focus} \) \	
+  .combine (count\() ${.which_execution_count $focus} \) $nl}
+
+0
+$.function_all_flags clock-watch {
+  .usleep 600
+  /bin/true
+  timings timings
+  timings clock-watch
+  .combine (usleep overhead:	) ${.usleep_overhead} $nl
+  timings .usleep
+  timings /bin/true}
+
+0
+$clock-watch
+timings:	last(0.000000)	total(0.000000)	count(0)
+clock-watch:	last(0.000000)	total(0.000000)	count(0)
+usleep overhead:	7.5e-05
+.usleep:	last(0.000675)	total(0.000675)	count(1)
+/bin/true:	last(0.000729)	total(0.000729)	count(1)
+
+0
+$clock-watch
+timings:	last(0.000056)	total(0.000308)	count(4)
+clock-watch:	last(0.001845)	total(0.001845)	count(1)
+usleep overhead:	6.65e-05
+.usleep:	last(0.000658)	total(0.001333)	count(2)
+/bin/true:	last(0.000722)	total(0.001451)	count(2)
+
+0
+$rwsh.mapped_argfunction {timings timings; timings clock-watch}
+timings:	last(0.000035)	total(0.000496)	count(8)
+clock-watch:	last(0.001625)	total(0.003470)	count(2)
+
+0
+$
+
+0
+$
+now terminating normally

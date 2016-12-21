@@ -1,4 +1,4 @@
-.set MAX_NESTING 20
+.set_max_nesting 20
 .function () {.nop}
 .echo $*0 >/tmp/lcl (
 )

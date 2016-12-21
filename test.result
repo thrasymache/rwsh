@@ -52,6 +52,8 @@ $.source /etc/rwshrc-basic
 .global nl (
 )
 
+# internal functions
+
 # ability of functions to act as builtin wrappers
 .function_all_flags af -- [argv ...] {rwsh.argfunction}
 .function_all_flags c -- text ... {.combine $text$}
@@ -173,6 +175,7 @@ $.echo a \
 a 
 0
 $line continuation
+signal triggered: rwsh.executable_not_found ( rwsh.autofunction line continuation ) 
 signal triggered: rwsh.executable_not_found ( line continuation ) 
 
 -1
@@ -181,6 +184,9 @@ ignore leading space
 0
 $	.echo ignore leading tab
 ignore leading tab
+0
+$rwsh.mapped_argfunction {	   .echo ignore leading tab in argfunction}
+ignore leading tab in argfunction
 0
 $.which_executable rwsh.mapped_argfunction {.nop}
 {.nop}
@@ -356,12 +362,19 @@ $.else {}
 $
 
 0
-$# selection_read
+$# selection_read read_dir()
 
 0
 $e @/etc
 /etc
 0
+$e @test_files/i*xx
+test_files/ixxx
+0
+$e @test_files/i*xx/f*
+signal triggered: rwsh.unreadable_dir ( test_files/ixxx// 20 ) 
+
+-1
 $e @/*selection_not_found*
 signal triggered: rwsh.selection_not_found ( /*selection_not_found* /*selection_not_found* ) 
 
@@ -594,17 +607,16 @@ $m {e &&{.return 1}; e after}
 signal triggered: rwsh.failed_substitution ( &{.return 1} rwsh.mapped_argfunction m ) 
 
 -1
-$f rwsh.failed_substitution {e &&{.return 1}}
+$f rwsh.failed_substitution {e $Z}
 
 0
 $m {e &&{.return 1}; e after}
-signal handler itself triggered signal
-rwsh.failed_substitution &{.return 1} rwsh.failed_substitution
-original call stack:
-&{.return 1} rwsh.mapped_argfunction m
+Exception for failed handler. Original exception with call stack:
+rwsh.failed_substitution &{.return 1} rwsh.mapped_argfunction m
+signal triggered: rwsh.undefined_variable ( Z rwsh.failed_substitution ) 
 
 -1
-$f rwsh.failed_substitution
+$f rwsh.failed_substitution {.echo signal triggered: $0 \( $* \) $nl; .return -1}
 
 0
 $e x{e bad argfunction style}
@@ -805,10 +817,10 @@ $# soon level promotion
 $.global A 0
 
 0
-$.global OLD_NESTING $MAX_NESTING
+$.global OLD_NESTING ${.get_max_nesting}
 
 0
-$.set MAX_NESTING 46
+$.set_max_nesting 46
 
 0
 $f x {.var_add A 1
@@ -842,7 +854,7 @@ $x {x {x {x {
 $f x
 
 0
-$.set MAX_NESTING $OLD_NESTING
+$.set_max_nesting $OLD_NESTING
 
 0
 $.unset A
@@ -958,6 +970,61 @@ signal triggered: rwsh.excess_argfunction ( .exec )
 -1
 $.fork m {.exec /bin/echo something; /bin/echo else}
 something
+
+0
+$
+
+0
+$# .fallback_handler .get_fallback_message .set_fallback_message
+
+0
+$.fallback_handler
+signal triggered: rwsh.bad_argc ( 0 1 0 .fallback_handler ) 
+
+-1
+$.fallback_handler something {excess argfunc}
+signal triggered: rwsh.excess_argfunction ( .fallback_handler ) 
+
+-1
+$.get_fallback_message something 
+signal triggered: rwsh.bad_argc ( 1 0 0 .get_fallback_message ) 
+
+-1
+$.get_fallback_message {excess argfunc}
+signal triggered: rwsh.excess_argfunction ( .get_fallback_message ) 
+
+-1
+$.set_fallback_message
+signal triggered: rwsh.bad_argc ( 0 1 0 .set_fallback_message ) 
+
+-1
+$.set_fallback_message something {excess argfunc}
+signal triggered: rwsh.excess_argfunction ( .set_fallback_message ) 
+
+-1
+$.fallback_handler pretend_error
+Exception for failed handler. Original exception with call stack:
+pretend_error
+
+0
+$.local original_message &{.get_fallback_message}
+
+0
+$.set_fallback_message spaceless fallback message
+
+0
+$.fallback_handler second pretend error
+spaceless fallback messagesecond pretend error
+
+0
+$.set_fallback_message (alternate fallback message: )
+
+0
+$.fallback_handler a third
+alternate fallback message: a third
+
+0
+$.set_fallback_message $original_message
 
 0
 $
@@ -1152,21 +1219,21 @@ $.function_all_flags nonsense
 $w test_var_greater
 .function_all_flags test_var_greater -- var value {.test_greater $$var $value}
 0
-$test_var_greater MAX_NESTING
+$.scope 5 n {test_var_greater n}
 unacceptable arguments: for prototype -- var value,
- assigned var=MAX_NESTING ,
+ assigned var=n ,
  but needed (value),
- call stack: test_var_greater 
+ call stack: test_var_greater .scope 
 
 -1
-$test_var_greater MAX_NESTING 3 12
+$.scope 5 n {test_var_greater n 3 12}
 unacceptable arguments: for prototype -- var value,
- assigned value=3 var=MAX_NESTING ,
+ assigned value=3 var=n ,
  but found (12) excess
- call stack: test_var_greater 
+ call stack: test_var_greater .scope 
 
 -1
-$test_var_greater MAX_NESTING 3
+$.scope 5 n {test_var_greater n 3}
 
 0
 $w ntimes
@@ -2152,7 +2219,7 @@ $.unset 1
 3
 $.unset MAX_NESTING
 
-2
+1
 $.var_exists #
 
 0
@@ -2301,57 +2368,9 @@ $.unset x
 $
 
 0
-$# .if .else_if .else_if_not .else
+$# if_core
 
 0
-$.if
-signal triggered: rwsh.bad_argc ( 0 1 0 .if ) 
-
--1
-$.else_if
-signal triggered: rwsh.bad_argc ( 0 1 0 .else_if ) 
-
--1
-$.else_if_not
-signal triggered: rwsh.bad_argc ( 0 1 0 .else_if_not ) 
-
--1
-$.else
-signal triggered: rwsh.missing_argfunction ( .else ) 
-
--1
-$.if missing argfunction
-signal triggered: rwsh.missing_argfunction ( .if ) 
-
--1
-$.else_if missing argfunction
-signal triggered: rwsh.missing_argfunction ( .else_if ) 
-
--1
-$.else_if_not missing argfunction
-signal triggered: rwsh.missing_argfunction ( .else_if_not ) 
-
--1
-$.if .return 0 {e if true; .return 1}
-if true
-1
-$.else {e else true; .return 3}
-
-1
-$.if .return 1 {e if false; .return 4}
-
-0
-$.else {e else false; .return 5}
-else false
-5
-$.else_if .return 0 {e not this one; .return 6}
-signal triggered: rwsh.else_without_if ( .else_if ) 
-
--1
-$.else_if_not .return 1 {e not this one; .return 7}
-signal triggered: rwsh.else_without_if ( .else_if_not ) 
-
--1
 $.if .return 1 {e nor this; .return 8}
 
 0
@@ -2388,17 +2407,6 @@ $.else_if_not .return 0 {e and certainly this; .return 18}
 $.else {e nor this; .return 19}
 
 16
-$.if .return 0 {.if .return 1 {
-	   not to be printed; .return 20}
-       .else_if .return 0 {
-	   e nested else_if; .return 21}}
-signal triggered: rwsh.bad_if_nest ( .if ) 
-
--1
-$.else {e else_if failed to appropriately set IF_TEST on exit; .return 22}
-signal triggered: rwsh.else_without_if ( .else ) 
-
--1
 $.if .nop {e set up}
 
 0
@@ -2406,20 +2414,140 @@ $.if .nop {e if before else}
 signal triggered: rwsh.if_before_else ( .if ) 
 
 -1
-$.if .return 0 {.else_if .return 0 {e nested syntax; .return 23}}
+$.if .return 0 {.else_if .return 0 {e nested syntax; .return 20}}
 signal triggered: rwsh.else_without_if ( .else_if rwsh.mapped_argfunction .if ) 
 
 -1
-$.else {e already tested; .return 24}
-signal triggered: rwsh.else_without_if ( .else ) 
+$.else {e already tested; .return 21}
+
+0
+$.if .return 0 {.if .return 1 {
+	   not to be printed; .return 22}
+       .else_if .return 0 {
+	   e nested else_if; .return 23}
+       .else {
+	   e nested else not printed; .return 24}}
+nested else_if
+23
+$.else {e still not printed; .return 25}
+
+23
+$.if .return 0 {.if .return 1 {
+	   not to be printed; .return 22}
+       .else_if .return 0 {
+	   e about to trigger bad_if_nest $nl; .return 23}}
+about to trigger bad_if_nest 
+signal triggered: rwsh.bad_if_nest ( .if ) 
+
+-1
+$.else {e else_if failed to appropriately set IF_TEST on exit; .return 24}
+
+0
+$.if .return 1 {}
+
+0
+$.else {
+  .if .return 1 {e about to trigger bad_if_nest $nl}}
+signal triggered: rwsh.bad_if_nest ( .else ) 
+
+-1
+$.if .return 0 {.if .return 0 {
+	   /bin/false should nest properly; .return 22}
+       .else {
+	   e nested else not printed; .return 24}}
+signal triggered: rwsh.return_code ( 256 /bin/false rwsh.mapped_argfunction .if rwsh.mapped_argfunction .if ) 
 
 -1
 $
 
 -1
-$# .internal_features .internal_functions .internal_vars
+$# .if .else_if .else_if_not .else
 
 -1
+$.if
+signal triggered: rwsh.bad_argc ( 0 1 0 .if ) 
+
+-1
+$.else_if .return 0 {e do not run after an exception}
+
+0
+$.else_if_not .return 1 {e do not run after an exception}
+
+0
+$.else_if
+signal triggered: rwsh.bad_argc ( 0 1 0 .else_if ) 
+
+-1
+$.else_if_not
+signal triggered: rwsh.bad_argc ( 0 1 0 .else_if_not ) 
+
+-1
+$.else {e do not run after an exception}
+
+0
+$.if missing argfunction
+signal triggered: rwsh.missing_argfunction ( .if ) 
+
+-1
+$.else_if missing argfunction
+signal triggered: rwsh.missing_argfunction ( .else_if ) 
+
+-1
+$.else_if_not missing argfunction
+signal triggered: rwsh.missing_argfunction ( .else_if_not ) 
+
+-1
+$.else
+signal triggered: rwsh.missing_argfunction ( .else ) 
+
+-1
+$.if .return 1 {}
+
+0
+$.else
+signal triggered: rwsh.missing_argfunction ( .else ) 
+
+-1
+$.else {e second else for if}
+signal triggered: rwsh.else_without_if ( .else ) 
+
+-1
+$.if .return 0 {e if true; .return 1}
+if true
+1
+$.else {e else true; .return 3}
+
+1
+$.if .return 1 {e if false; .return 4}
+
+0
+$.else {e else false; .return 5}
+else false
+5
+$.else {}
+signal triggered: rwsh.else_without_if ( .else ) 
+
+-1
+$.else_if .return 0 {e not this one; .return 6}
+signal triggered: rwsh.else_without_if ( .else_if ) 
+
+-1
+$.else {}
+
+0
+$.else_if_not .return 1 {e not this one; .return 7}
+signal triggered: rwsh.else_without_if ( .else_if_not ) 
+
+-1
+$.else {}
+
+0
+$
+
+0
+$# .internal_features .internal_functions .internal_vars
+
+0
 $.internal_features 1
 wrong argument count
 -1
@@ -2454,6 +2582,8 @@ rwsh.elipsis_first_arg
 rwsh.elipsis_out_of_option_group
 rwsh.else_without_if
 rwsh.excess_argfunction
+rwsh.excessive_exceptions_collected
+rwsh.excessive_exceptions_in_catch
 rwsh.excessive_nesting
 rwsh.executable_not_found
 rwsh.failed_substitution
@@ -2471,6 +2601,7 @@ rwsh.not_a_number
 rwsh.not_executable
 rwsh.not_soon_enough
 rwsh.raw_command
+rwsh.return_code
 rwsh.result_range
 rwsh.post_elipsis_option
 rwsh.post_dash_dash_flag
@@ -2496,7 +2627,7 @@ rwsh.vars
 rwsh.version_incompatible
 0
 $.internal_vars
-FIGNORE IF_TEST MAX_NESTING
+FIGNORE ?
 0
 $
 
@@ -2578,6 +2709,52 @@ $.nop {optional argfunc}
 
 0
 $.nop 1 2 3 4 5
+
+0
+$
+
+0
+$# .getpid .getppid
+
+0
+$.getpid excess
+signal triggered: rwsh.bad_argc ( 1 0 0 .getpid ) 
+
+-1
+$.getpid {excess argfunc}
+signal triggered: rwsh.excess_argfunction ( .getpid ) 
+
+-1
+$.getppid excess
+signal triggered: rwsh.bad_argc ( 1 0 0 .getppid ) 
+
+-1
+$.getppid {excess argfunc}
+signal triggered: rwsh.excess_argfunction ( .getppid ) 
+
+-1
+$.fork m {/bin/kill ${.getppid}}
+signal triggered: rwsh.sigterm ( ) 
+
+-1
+$.fork m {/bin/kill ${.getpid}}
+signal triggered: rwsh.sigterm ( ) 
+
+0
+$m {.fork m {/bin/kill ${.getppid}
+            echo after the signal in subshell}
+   echo after the signal in parent}
+after the signal in subshell 
+signal triggered: rwsh.sigterm ( ) 
+after the signal in parent 
+
+0
+$m {.fork m {/bin/kill ${.getpid}
+            echo after the signal in subshell}
+   echo after the signal in parent}
+signal triggered: rwsh.sigterm ( ) 
+after the signal in subshell 
+after the signal in parent 
 
 0
 $
@@ -2958,9 +3135,6 @@ $.set B x {excess argfunc}
 signal triggered: rwsh.excess_argfunction ( .set ) 
 
 -1
-$.set IF_TEST x
-
-2
 $.set A x
 
 0
@@ -2970,26 +3144,272 @@ x
 $
 
 0
-$# .signal_handler
+$# .get_max_collectible_exceptions .set_max_collectible_exceptions
 
 0
-$.signal_handler {.return A}
-signal triggered: rwsh.bad_argc ( 0 1 0 .signal_handler ) 
+$.get_max_collectible_exceptions excess
+signal triggered: rwsh.bad_argc ( 1 0 0 .get_max_collectible_exceptions ) 
 
 -1
-$m {.signal_handler rwsh.not_a_number rwsh.executable_not_found {.return A}}
-signal triggered: rwsh.not_a_number ( A .return ) 
+$.set_max_collectible_exceptions
+signal triggered: rwsh.bad_argc ( 0 0 0 .set_max_collectible_exceptions ) 
 
 -1
-$m {.signal_handler rwsh.not_a_number rwsh.executable_not_found {.eturn A}}
-signal triggered: rwsh.executable_not_found ( .eturn A ) 
+$.get_max_collectible_exceptions {excess}
+signal triggered: rwsh.excess_argfunction ( .get_max_collectible_exceptions ) 
 
 -1
-$m {.signal_handler rwsh.not_a_number rwsh.executable_not_found {.echo A}}
-A
+$.set_max_collectible_exceptions 1 {excess}
+signal triggered: rwsh.excess_argfunction ( .set_max_collectible_exceptions ) 
+
+-1
+$.set_max_collectible_exceptions NaN
+signal triggered: rwsh.not_a_number ( NaN .set_max_collectible_exceptions ) 
+
+-1
+$.set_max_collectible_exceptions 0
+signal triggered: rwsh.input_range ( 0 .set_max_collectible_exceptions ) 
+
+-1
+$.get_max_collectible_exceptions
+1
 0
-$m .echo hi {.signal_handler ${.internal_functions}$ {&&*}}
-hi
+$.set_max_collectible_exceptions 7
+
+0
+$m {.collect_errors_except .nop {
+     m {echo before exception
+        .throw rwsh.not_a_number 7
+        echo after exception}
+     echo between exceptions
+     .scope () {.throw rwsh.executable_not_found foo}
+     echo inside collect}
+   echo outside collect}
+before exception 
+between exceptions 
+inside collect 
+signal triggered: rwsh.not_a_number ( 7 .throw rwsh.mapped_argfunction m .collect_errors_except rwsh.mapped_argfunction m ) 
+signal triggered: rwsh.executable_not_found ( foo .throw .scope .collect_errors_except rwsh.mapped_argfunction m ) 
+
+-1
+$m {.collect_errors_except echo {
+     .throw rwsh.executable_not_found foo
+     echo between exceptions
+     .throw echo 7
+     echo inside collect}
+   echo outside collect}
+between exceptions 
+signal triggered: rwsh.executable_not_found ( foo .throw .collect_errors_except rwsh.mapped_argfunction m ) 
+7 .throw .collect_errors_except rwsh.mapped_argfunction m 
+
+-1
+$m {.collect_errors_only rwsh.executable_not_found {
+     .throw rwsh.executable_not_found foo
+     echo between exceptions
+     .throw echo 7
+     echo inside collect}
+   echo outside collect}
+between exceptions 
+signal triggered: rwsh.executable_not_found ( foo .throw .collect_errors_only rwsh.mapped_argfunction m ) 
+7 .throw .collect_errors_only rwsh.mapped_argfunction m 
+
+-1
+$.collect_errors_except echo {
+ .collect_errors_except echo {
+  .collect_errors_except echo {
+   .collect_errors_except echo {
+    .collect_errors_except .echo {
+     echo inside 5
+     .throw echo inside 5
+     .collect_errors_except echo {
+      .collect_errors_except echo {
+       .collect_errors_except echo {
+        .collect_errors_except echo {
+         .collect_errors_except .echo {
+          echo inside 10
+          .throw echo inside 10
+          .collect_errors_except echo {
+           .collect_errors_except echo {
+            .collect_errors_except echo {
+             .collect_errors_except echo {
+              .collect_errors_except .echo {
+               echo inside 15
+               .throw echo inside 15
+               .collect_errors_except echo {
+                .collect_errors_except echo {
+                 .collect_errors_except echo {
+                  .collect_errors_except echo {
+                   .collect_errors_except .echo {
+                    echo inside 20
+                    .throw echo inside 20
+                   .collect_errors_except .echo {echo inside 21}
+}}}}}}}}}}}}}}}}}}}}
+inside 5 
+inside 10 
+inside 15 
+inside 20 
+inside 5 .throw .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except 
+inside 10 .throw .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except 
+inside 15 .throw .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except 
+inside 20 .throw .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except 
+signal triggered: rwsh.excessive_nesting ( echo .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except ) 
+
+-1
+$.set_max_collectible_exceptions 1
+
+0
+$.function_all_flags collecting_handler args ... {
+  echo $args$
+}
+
+0
+$.set_max_extra_exceptions 1
+
+0
+$.try_catch_recursive collecting_handler {
+  .collect_errors_except .echo {
+    .throw collecting_handler 1
+    .throw collecting_handler 2}}
+1 .throw .collect_errors_except rwsh.mapped_argfunction 
+2 .throw .collect_errors_except rwsh.mapped_argfunction 
+
+-1
+$.try_catch_recursive collecting_handler {
+  .collect_errors_except .echo {
+    .throw collecting_handler 1
+    .throw collecting_handler 2
+    echo almost nothing}}
+1 .throw .collect_errors_except rwsh.mapped_argfunction 
+2 .throw .collect_errors_except rwsh.mapped_argfunction 
+signal triggered: rwsh.excessive_exceptions_collected ( 1 .collect_errors_except rwsh.mapped_argfunction .try_catch_recursive ) 
+
+-1
+$.set_max_extra_exceptions 0
+
+0
+$.try_catch_recursive collecting_handler {
+  .collect_errors_except .echo {
+    .throw collecting_handler 1
+    .throw collecting_handler 2}}
+1 .throw .collect_errors_except rwsh.mapped_argfunction .try_catch_recursive 
+2 .throw .collect_errors_except rwsh.mapped_argfunction .try_catch_recursive 
+signal triggered: rwsh.excessive_exceptions_in_catch ( 0 .try_catch_recursive ) 
+
+-1
+$.try_catch_recursive collecting_handler {
+  .collect_errors_except .echo {
+    .throw collecting_handler 1
+    .throw collecting_handler 2
+    echo almost nothing}}
+1 .throw .collect_errors_except rwsh.mapped_argfunction .try_catch_recursive 
+2 .throw .collect_errors_except rwsh.mapped_argfunction .try_catch_recursive 
+signal triggered: rwsh.excessive_exceptions_collected ( 1 .collect_errors_except rwsh.mapped_argfunction .try_catch_recursive ) 
+signal triggered: rwsh.excessive_exceptions_in_catch ( 0 .try_catch_recursive ) 
+
+-1
+$.set_max_extra_exceptions 1
+
+0
+$.get_max_collectible_exceptions
+1
+0
+$
+
+0
+$# .try_catch_recursive .get_max_extra_exceptions .set_max_extra_exceptions
+
+0
+$.try_catch_recursive rwsh.executable_not_found 
+signal triggered: rwsh.missing_argfunction ( .try_catch_recursive ) 
+
+-1
+$.try_catch_recursive {.return A}
+signal triggered: rwsh.bad_argc ( 0 1 0 .try_catch_recursive ) 
+
+-1
+$f e_after {m {rwsh.argfunction}; echo after}
+
+0
+$e_after {.try_catch_recursive rwsh.not_a_number rwsh.executable_not_found {
+  .return A}}
+signal triggered: rwsh.not_a_number ( A .return rwsh.mapped_argfunction ) 
+after 
+
+0
+$f rwsh.autofunction {.nop}
+
+0
+$e_after {.try_catch_recursive rwsh.executable_not_found {.eturn A}}
+signal triggered: rwsh.executable_not_found ( .eturn A rwsh.mapped_argfunction ) 
+after 
+
+0
+$e_after {.try_catch_recursive rwsh.not_a_number {.return A}}
+signal triggered: rwsh.not_a_number ( A .return rwsh.mapped_argfunction ) 
+after 
+
+0
+$e_after {.try_catch_recursive rwsh.not_a_number {.cho A}}
+signal triggered: rwsh.executable_not_found ( .cho A rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction m e_after ) 
+
+-1
+$e_after {.try_catch_recursive rwsh.not_a_number rwsh.executable_not_found {echo A}}
+A 
+after 
+
+0
+$e_after {m echo hi {.try_catch_recursive ${.internal_functions}$ {&&&*}}}
+hi 
+after 
+
+0
+$.get_max_extra_exceptions excess
+signal triggered: rwsh.bad_argc ( 1 0 0 .get_max_extra_exceptions ) 
+
+-1
+$.set_max_extra_exceptions
+signal triggered: rwsh.bad_argc ( 0 0 0 .set_max_extra_exceptions ) 
+
+-1
+$.get_max_extra_exceptions {excess}
+signal triggered: rwsh.excess_argfunction ( .get_max_extra_exceptions ) 
+
+-1
+$.set_max_extra_exceptions 1 {excess}
+signal triggered: rwsh.excess_argfunction ( .set_max_extra_exceptions ) 
+
+-1
+$.set_max_extra_exceptions NaN
+signal triggered: rwsh.not_a_number ( NaN .set_max_extra_exceptions ) 
+
+-1
+$.set_max_extra_exceptions -1
+signal triggered: rwsh.input_range ( -1 .set_max_extra_exceptions ) 
+
+-1
+$.get_max_extra_exceptions
+1
+0
+$.set_max_extra_exceptions 0
+
+0
+$.get_max_extra_exceptions
+0
+0
+$e_after {.try_catch_recursive rwsh.not_a_number {.try_catch_recursive rwsh.not_a_number {.return A}}}
+signal triggered: rwsh.not_a_number ( A .return rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction m e_after ) 
+signal triggered: rwsh.excessive_exceptions_in_catch ( 0 .try_catch_recursive rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction m e_after ) 
+
+-1
+$e_after {.try_catch_recursive rwsh.not_a_number {.try_catch_recursive rwsh.not_a_number {.return A}}}
+signal triggered: rwsh.not_a_number ( A .return rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction m e_after ) 
+signal triggered: rwsh.excessive_exceptions_in_catch ( 0 .try_catch_recursive rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction m e_after ) 
+
+-1
+$e_after {m echo hi {.try_catch_recursive ${.internal_functions}$ {&&&*}}}
+hi 
+after 
+
 0
 $
 
@@ -3017,7 +3437,7 @@ $# .source is tested by having test_init.sh define #
 
 -1
 $w .init
-.function .init {.set MAX_NESTING 10
+.function .init {.set_max_nesting 10
 .function rwsh.file_open_failure {.echo init file $1 does not exist \(call stack $*2 \) (
 )}
 .function rwsh.raw_command {.nop $*}
@@ -3515,16 +3935,60 @@ $.which_return rwsh.mapped_argfunction
 
 1
 $.which_return rwsh.mapped_argfunction {echo not tracked}
-
-2
-$.which_return .which_return
-2
+0
 0
 $.which_return j
 
 1
-$.which_return .waiting_for_binary
+$.which_return .which_return
+1
 0
+$.which_return .waiting_for_binary
+-1
+0
+$
+
+0
+$# .which_last_exception
+
+0
+$.which_last_exception .which_last_exception
+
+0
+$.which_last_exception
+signal triggered: rwsh.bad_argc ( 0 1 0 .which_last_exception ) 
+
+-1
+$.which_last_exception .try_catch_recursive {excess argfunc}
+signal triggered: rwsh.excess_argfunction ( .which_last_exception ) 
+
+-1
+$.which_last_exception .which_last_exception
+rwsh.excess_argfunction .which_last_exception .try_catch_recursive {excess argfunc}
+0
+$.which_last_exception .which_last_return
+
+1
+$.which_last_exception .try_catch_recursive
+rwsh.not_a_number A .return rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction .try_catch_recursive rwsh.not_a_number {.try_catch_recursive rwsh.not_a_number {.return A}}; rwsh.excessive_exceptions_in_catch 0 .try_catch_recursive rwsh.mapped_argfunction .try_catch_recursive rwsh.not_a_number {.try_catch_recursive rwsh.not_a_number {.return A}}
+0
+$.which_last_exception .which_last_execution_time
+
+0
+$.which_last_exception /bin/which
+
+1
+$.which_last_exception /bin/cat
+rwsh.file_open_failure dummy_file /bin/cat <dummy_file
+0
+$.which_last_exception /bin/echo
+
+0
+$.which_last_exception e
+
+0
+$.which_last_exception test_var_greater
+rwsh.bad_args -- var value (value 3) (var n)  12 test_var_greater n 3 12
 0
 $
 
@@ -3535,11 +3999,22 @@ $# .usleep .which_execution_count .which_last_execution_time
 $# .which_total_execution_time
 
 0
+$.usleep_overhead excess
+signal triggered: rwsh.bad_argc ( 1 0 0 .usleep_overhead ) 
+
+-1
+$.usleep_overhead {excess argfunc}
+signal triggered: rwsh.excess_argfunction ( .usleep_overhead ) 
+
+-1
+$.usleep_overhead 
+
+1
 $.usleep
 signal triggered: rwsh.bad_argc ( 0 1 0 .usleep ) 
 
 -1
-$.usleep 8000 {excess argfunc}
+$.usleep 800 {excess argfunc}
 signal triggered: rwsh.excess_argfunction ( .usleep ) 
 
 -1
@@ -3551,7 +4026,10 @@ $.usleep 5i
 signal triggered: rwsh.not_a_number ( 5i .usleep ) 
 
 -1
-$.usleep 8000
+$.usleep 800
+
+0
+$# .usleep_overhead 
 
 0
 $.which_execution_count
@@ -3562,8 +4040,8 @@ $.which_execution_count j
 
 1
 $.which_execution_count rwsh.mapped_argfunction {echo not tracked}
-
-2
+0
+0
 $.which_execution_count .usleep
 5
 0
@@ -3575,18 +4053,18 @@ $.which_last_execution_time j
 
 1
 $.which_last_execution_time rwsh.mapped_argfunction {echo not tracked}
-
-2
+0.000000
+0
 $# .which_last_execution_time .usleep
 
-2
+0
 $.which_total_execution_time
 signal triggered: rwsh.bad_argc ( 0 1 0 .which_total_execution_time ) 
 
 -1
 $.which_total_execution_time rwsh.mapped_argfunction {echo not tracked}
-
-2
+0.000000
+0
 $.which_total_execution_time j
 
 1
@@ -3952,8 +4430,12 @@ $# binary test implicitly tests Old_argv_t
 0
 $/bn/echo 1 2 3
 signal triggered: rwsh.binary_not_found ( /bn/echo ) 
+signal triggered: rwsh.return_code ( 65280 /bn/echo ) 
 
+-1
+$.which_return /bn/echo
 65280
+0
 $/bin/echo 1 2 3
 1 2 3
 
@@ -4000,8 +4482,13 @@ $f rwsh.before_command {.echo $*0; .echo $nl}
 $/bn
 rwsh.before_command /bn
 signal triggered: rwsh.binary_not_found ( /bn ) 
+signal triggered: rwsh.return_code ( 65280 /bn ) 
 
+-1
+$.which_return /bn
+rwsh.before_command .which_return /bn
 65280
+0
 $f rwsh.before_command
 rwsh.before_command f rwsh.before_command
 
@@ -4072,6 +4559,7 @@ $# rwsh.executable_not_found
 
 0
 $m {m {x; e should not be printed}}
+signal triggered: rwsh.executable_not_found ( rwsh.autofunction x rwsh.mapped_argfunction m rwsh.mapped_argfunction m ) 
 signal triggered: rwsh.executable_not_found ( x rwsh.mapped_argfunction m rwsh.mapped_argfunction m ) 
 
 -1
@@ -4085,6 +4573,7 @@ $w x
 
 1
 $x
+rwsh.autofunction : command not found ( rwsh.autofunction x ) 
 x : command not found ( x ) 
 
 -1
@@ -4122,7 +4611,7 @@ $g {}
 $
 
 0
-$# rwsh.excessive_nesting
+$# rwsh.excessive_nesting Base_executable::exception_handler
 
 0
 $f g {h}
@@ -4137,19 +4626,153 @@ signal triggered: rwsh.excessive_nesting ( h g h g h g h g h g h g h g h g h g h
 -1
 $.stepwise g {e $* $nl; $*}
 h 
-signal triggered: rwsh.excessive_nesting ( h g h g h g h g h g h g h g h g h g h rwsh.mapped_argfunction g .stepwise ) 
+signal triggered: rwsh.excessive_nesting ( g h g h g h g h g h g h g h g h g h g h rwsh.mapped_argfunction .stepwise ) 
 
 -1
 $f rwsh.excessive_nesting {h}
 
 0
 $g
-signal handler itself triggered signal
+Exception for failed handler. Original exception with call stack:
+rwsh.excessive_nesting h g h g h g h g h g h g h g h g h g h g h g
+Exception for failed handler. Original exception with call stack:
 rwsh.excessive_nesting h g h g h g h g h g h g h g h g h g h g h rwsh.excessive_nesting
-original call stack:
-h g h g h g h g h g h g h g h g h g h g h g
 
 -1
+$f rwsh.excessive_nesting {e &&{.return 1}}
+
+0
+$f rwsh.failed_substitution {e $Z}
+
+0
+$g
+Exception for failed handler. Original exception with call stack:
+rwsh.excessive_nesting h g h g h g h g h g h g h g h g h g h g h g
+Exception for failed handler. Original exception with call stack:
+rwsh.failed_substitution &{.return 1} rwsh.excessive_nesting
+signal triggered: rwsh.undefined_variable ( Z rwsh.failed_substitution ) 
+
+-1
+$e_after {.try_catch_recursive rwsh.undefined_variable rwsh.excessive_nesting rwsh.failed_substitution {g}}
+Exception for failed handler. Original exception with call stack:
+rwsh.excessive_nesting g h g h g h g h g h g h g h g h g rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction m e_after
+Exception for failed handler. Original exception with call stack:
+rwsh.failed_substitution &{.return 1} rwsh.excessive_nesting
+signal triggered: rwsh.undefined_variable ( Z rwsh.failed_substitution ) 
+signal triggered: rwsh.excessive_exceptions_in_catch ( 0 .try_catch_recursive rwsh.mapped_argfunction m e_after ) 
+
+-1
+$.set_max_extra_exceptions 5
+
+0
+$e_after {.try_catch_recursive rwsh.undefined_variable rwsh.excessive_nesting rwsh.failed_substitution {g}}
+signal triggered: rwsh.undefined_variable ( Z rwsh.failed_substitution ) 
+Exception for failed handler. Original exception with call stack:
+rwsh.excessive_nesting g h g h g h g h g h g h g h g h g rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction m e_after
+Exception for failed handler. Original exception with call stack:
+rwsh.failed_substitution &{.return 1} rwsh.excessive_nesting
+signal triggered: rwsh.undefined_variable ( Z rwsh.failed_substitution ) 
+Exception for failed handler. Original exception with call stack:
+rwsh.failed_substitution &{.return 1} rwsh.excessive_nesting .try_catch_recursive rwsh.mapped_argfunction m e_after
+
+-1
+$e_after {.try_catch_recursive rwsh.undefined_variable rwsh.failed_substitution {
+  e ${.return 1}}}
+signal triggered: rwsh.undefined_variable ( Z rwsh.failed_substitution ) 
+Exception for failed handler. Original exception with call stack:
+rwsh.failed_substitution ${.return 1} rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction m e_after
+signal triggered: rwsh.undefined_variable ( Z rwsh.failed_substitution ) 
+
+-1
+$f rwsh.else_without_if {e ${.return 1}}
+
+0
+$e_after {.try_catch_recursive rwsh.undefined_variable rwsh.else_without_if {
+  .else {}}}
+Exception for failed handler. Original exception with call stack:
+rwsh.else_without_if .else rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction m e_after
+Exception for failed handler. Original exception with call stack:
+rwsh.failed_substitution ${.return 1} rwsh.else_without_if
+signal triggered: rwsh.undefined_variable ( Z rwsh.failed_substitution ) 
+Exception for failed handler. Original exception with call stack:
+rwsh.failed_substitution ${.return 1} rwsh.else_without_if .try_catch_recursive rwsh.mapped_argfunction m e_after
+
+-1
+$f rwsh.failed_substitution {e ${.return 2}}
+
+0
+$e_after {.try_catch_recursive rwsh.undefined_variable rwsh.failed_substitution {
+  e ${.return 1}}}
+Exception for failed handler. Original exception with call stack:
+rwsh.failed_substitution ${.return 1} rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction m e_after
+Exception for failed handler. Original exception with call stack:
+rwsh.failed_substitution ${.return 2} rwsh.failed_substitution
+Exception for failed handler. Original exception with call stack:
+rwsh.failed_substitution ${.return 2} rwsh.failed_substitution .try_catch_recursive rwsh.mapped_argfunction m e_after
+Exception for failed handler. Original exception with call stack:
+rwsh.failed_substitution ${.return 2} rwsh.failed_substitution .try_catch_recursive rwsh.mapped_argfunction m e_after
+Exception for failed handler. Original exception with call stack:
+rwsh.failed_substitution ${.return 2} rwsh.failed_substitution .try_catch_recursive rwsh.mapped_argfunction m e_after
+Exception for failed handler. Original exception with call stack:
+rwsh.failed_substitution ${.return 2} rwsh.failed_substitution .try_catch_recursive rwsh.mapped_argfunction m e_after
+Exception for failed handler. Original exception with call stack:
+rwsh.failed_substitution ${.return 2} rwsh.failed_substitution .try_catch_recursive rwsh.mapped_argfunction m e_after
+signal triggered: rwsh.excessive_exceptions_in_catch ( 5 .try_catch_recursive rwsh.mapped_argfunction m e_after ) 
+
+-1
+$f rwsh.else_without_if {e $Z}
+
+0
+$e_after {.try_catch_recursive rwsh.undefined_variable rwsh.else_without_if {
+  .else {}}}
+signal triggered: rwsh.undefined_variable ( Z rwsh.else_without_if ) 
+Exception for failed handler. Original exception with call stack:
+rwsh.else_without_if .else rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction m e_after
+signal triggered: rwsh.undefined_variable ( Z rwsh.else_without_if ) 
+
+-1
+$f rwsh.failed_substitution {.return Z}
+
+0
+$e_after {.try_catch_recursive rwsh.not_a_number rwsh.failed_substitution {
+  e ${.return 1}}}
+signal triggered: rwsh.not_a_number ( Z .return rwsh.failed_substitution ) 
+Exception for failed handler. Original exception with call stack:
+rwsh.failed_substitution ${.return 1} rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction m e_after
+signal triggered: rwsh.not_a_number ( Z .return rwsh.failed_substitution ) 
+
+-1
+$
+
+0
+$# .throw
+
+0
+$.throw
+signal triggered: rwsh.bad_argc ( 0 1 0 .throw ) 
+
+-1
+$.throw .nop
+
+-1
+$.throw rwsh.not_a_number 7
+signal triggered: rwsh.not_a_number ( 7 .throw ) 
+
+-1
+$m {if_only .return 0 {.throw m {echo even from $* 7 is a number}}}
+even from .throw rwsh.mapped_argfunction .if if_only rwsh.mapped_argfunction m 7 is a number 
+
+-1
+$m {.try_catch_recursive echo {
+      echo first
+      .throw echo failing successfully
+      echo second}
+   echo third}
+first 
+failing successfully .throw rwsh.mapped_argfunction 
+third 
+
+0
 $
 
 0
@@ -4169,6 +4792,7 @@ $1 f rwsh.run_logic
 
 0
 $1 e executable not found
+rwsh.autofunction : command not found ( rwsh.autofunction 1 e executable not found ) 
 1 : command not found ( 1 e executable not found ) 
 
 -1
@@ -4193,7 +4817,7 @@ $# rwsh.vars
 
 0
 $rwsh.vars
-FIGNORE IF_TEST MAX_NESTING
+FIGNORE ?
 0
 $
 
@@ -4206,10 +4830,11 @@ $/usr/bin/printenv
 A=-7.29496e+09
 FIGNORE=*de*
 LC_ALL=C
-MAX_NESTING=20
 N=4
 last_command_return=0
 nl=
+
+original_message=Exception for failed handler. Original exception with call stack:
 
 
 0

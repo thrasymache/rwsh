@@ -1,10 +1,11 @@
-// The definition of the Command_stream class. It is constructed from a 
+// The definition of the Command_stream class. It is constructed from a
 // standard stream and defines an input operator for Argm objects. It also
 // handles the calling of rwsh.prompt.
 //
 // Copyright (C) 2005-2016 Samuel Newbold
 
 #include <iostream>
+#include <list>
 #include <map>
 #include <string>
 #include <set>
@@ -50,11 +51,11 @@ Command_stream& Command_stream::operator>> (Arg_script& dest) {
     catch (Unclosed_brace exception) {
       cmd += '\n';}
     catch (...) {
-      Signal_argm raw_command(Argm::Raw_command, cmd);
-      executable_map.run(raw_command);
+      Exception raw_command(Argm::Raw_command, cmd);
+      executable_map.base_run(raw_command);
       throw;}}
-  Signal_argm raw_command(Argm::Raw_command, cmd);
-  executable_map.run(raw_command);
+  Exception raw_command(Argm::Raw_command, cmd);
+  executable_map.base_run(raw_command);
   if (Named_executable::unwind_stack()) return *this;
   return *this;}
 
@@ -65,5 +66,5 @@ Command_stream::operator void* () const {
 
 // returns true if the last command could not be read
 bool Command_stream::operator! () const {
-  return Variable_map::exit_requested || src.fail();} 
+  return Variable_map::exit_requested || src.fail();}
 

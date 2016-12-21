@@ -32,18 +32,25 @@
 #include "argm_star_var.cc"
 
 // static initializers of basic types
+const char* WSPACE = " \t";
+bool Base_executable::collect_excess_thrown = false;
+unsigned Base_executable::max_collect = 1;
+unsigned Base_executable::max_extra = 1;
+bool Base_executable::execution_handler_excess_thrown = false;
 struct timezone Clock::no_timezone_v = {0, 0};
 int Base_executable::global_nesting(0);
-Argm::Sig_type Base_executable::caught_signal(Argm::No_signal);
-bool Base_executable::in_signal_handler(false);
-std::string Argm::signal_names[Argm::Signal_count] = {
-  "no signal",
+bool Base_executable::unwind_stack_v(false);
+bool Base_executable::in_exception_handler(false);
+unsigned Base_executable::current_exception_count(0);
+unsigned Base_executable::dropped_catches(0);
+std::string Argm::exception_names[Argm::Exception_count] = {
+  "no exception",
   "rwsh.ambiguous_prototype_dash_dash",
   "rwsh.arguments_for_argfunction",
   "rwsh.bad_argc",
   "rwsh.bad_argfunction_style",
   "rwsh.bad_args",
-  "rwsh.bad_if_nest", 
+  "rwsh.bad_if_nest",
   "rwsh.binary_not_found",
   "rwsh.dash_dash_argument",
   "rwsh.dash_star_argument",
@@ -54,6 +61,8 @@ std::string Argm::signal_names[Argm::Signal_count] = {
   "rwsh.elipsis_out_of_option_group",
   "rwsh.else_without_if",
   "rwsh.excess_argfunction",
+  "rwsh.excessive_exceptions_collected",
+  "rwsh.excessive_exceptions_in_catch",
   "rwsh.excessive_nesting",
   "rwsh.executable_not_found",
   "rwsh.failed_substitution",
@@ -72,6 +81,7 @@ std::string Argm::signal_names[Argm::Signal_count] = {
   "rwsh.not_executable",
   "rwsh.not_soon_enough",
   "rwsh.raw_command",
+  "rwsh.return_code",
   "rwsh.result_range",
   "rwsh.post_elipsis_option",
   "rwsh.post_dash_dash_flag",
@@ -95,24 +105,22 @@ std::string Argm::signal_names[Argm::Signal_count] = {
   "rwsh.unrecognized_flag",
   "rwsh.vars",
   "rwsh.version_incompatible"};
+Variable_map root_variable_map(NULL);
+unsigned Base_executable::max_nesting = 0;
+int Variable_map::dollar_question = -1;
+bool Variable_map::exit_requested = false;
 
 // static initializers without dependancies
-const char* WSPACE = " \t";
 Clock rwsh_clock;
 Executable_map executable_map;
 Plumber plumber;
 Rwsh_istream_p default_input(new Default_istream(0), true, true);
 Rwsh_ostream_p default_output(new Default_ostream(1), true, true),
   default_error(new Default_ostream(2), true, true);
-Variable_map root_variable_map(NULL);
 Variable_map* Variable_map::global_map = &root_variable_map;
-unsigned Variable_map::max_nesting_v = 0;
-int Variable_map::dollar_question = -1;
-bool Variable_map::exit_requested = false;
 
 // static initializers with cross-component dependancies
-Argm Base_executable::call_stack(Variable_map::global_map,
-                            default_input, default_output, default_error);
+Argm::Exception_t Base_executable::caught_signal = Argm::No_exception;
 
 namespace {
 void register_signals(void) {
@@ -127,30 +135,31 @@ void register_signals(void) {
 } // end unnamed namespace
 
 int main(int argc, char *argv[]) {
-  try {internal_init();}
+  try {internal_init();}                             // catch blocks untestable
   catch (std::string& error) {default_error <<error;}
-  catch (Signal_argm& exception) {executable_map.run(exception);}
+  catch (Exception& exception) {
+    executable_map.base_run(exception);}
   Command_stream command_stream(std::cin, true);
   Argm init_command(".init", &argv[0], &argv[argc], 0, Variable_map::global_map,
                              default_input, default_output, default_error);
-  executable_map.run(init_command);
+  executable_map.base_run(init_command);
   register_signals();
   Arg_script script("", 0);
-  Signal_argm prompt(Argm::Prompt);
+  Exception prompt(Argm::Prompt);
   while (command_stream) {
-    executable_map.run(prompt);
+    executable_map.base_run(prompt);
     Argm command(Variable_map::global_map,
                  default_input, default_output, default_error);
     try {
       if (!(command_stream >> script)) break;
-      command = script.interpret(script.argm());}
-    catch (Signal_argm exception) {command = exception;}
+      command = script.base_interpret(script.argm());}
+    catch (Exception exception) {command = exception;}
     executable_map.run_if_exists("rwsh.before_command", command);
     if (!executable_map.run_if_exists("rwsh.run_logic", command))
-       executable_map.run(command);
+       executable_map.base_run(command);
     executable_map.run_if_exists("rwsh.after_command", command);}
-  Argm shutdown_command(Argm::signal_names[Argm::Shutdown],
+  Argm shutdown_command(Argm::exception_names[Argm::Shutdown],
                         &argv[0], &argv[argc], 0, Variable_map::global_map,
                         default_input, default_output, default_error);
-  executable_map.run(shutdown_command);
+  executable_map.base_run(shutdown_command);
   return Variable_map::dollar_question;}

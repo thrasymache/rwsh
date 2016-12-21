@@ -1,10 +1,10 @@
-//Copyright (C) 2008 Samuel Newbold
+//Copyright (C) 2008-2016 Samuel Newbold
 
 class Clock {
   struct timeval last_shell_start, waiting_for_binary_v, waiting_for_shell_v,
     waiting_for_user_v;
   static struct timezone no_timezone_v;
-  
+
  public:
   struct timezone* no_timezone;
 

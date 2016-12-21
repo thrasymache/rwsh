@@ -12,8 +12,9 @@ class Executable_map : private std::map<std::string, Base_executable*> {
   Executable_map(void);
   size_type erase (const std::string& key);
   Base_executable* find(const Argm& key);
-  int run(Argm& argm);                          // doesn't catch unwind_stack
-  bool run_if_exists(const std::string& key, Argm& argm); // catches unwind
+  int run(Argm& argm, std::list<Argm>& exceptions);     // doesn't catch unwind
+  int base_run(Argm& argm);                                   // catches unwind
+  bool run_if_exists(const std::string& key, Argm& argm);     // catches unwind
 
   // insert executable if not present, replace if executable already exists
   void set(Named_executable* target); };

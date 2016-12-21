@@ -1,9 +1,10 @@
-//Copyright (C) 2008-2015 Samuel Newbold
+//Copyright (C) 2008-2016 Samuel Newbold
 
 #include <algorithm>
 #include <errno.h>
 #include <functional>
 #include <iostream>
+#include <list>
 #include <map>
 #include <sys/time.h>
 #include <sys/wait.h>
@@ -19,7 +20,7 @@
 #include "executable.h"
 #include "plumber.h"
 
-class fd_handler : 
+class fd_handler :
       public std::unary_function<std::pair<int, Rwsh_ostream*>, bool> {
   char* buffer;
   size_t buffer_size;
@@ -31,7 +32,7 @@ class fd_handler :
     int n = read(focus.first, buffer, buffer_size);
     if (n <= 0 || Named_executable::unwind_stack()) {
       int ret = close(focus.first);
-      if (ret) std::cerr <<"failing close " <<focus.first <<"returned " <<ret 
+      if (ret) std::cerr <<"failing close " <<focus.first <<"returned " <<ret
                          <<std::endl;
       return true;}
     else {
@@ -56,7 +57,7 @@ void Plumber::wait(int *ret) {
     if (ret) std::cerr <<"failing close " <<*i <<"returned " <<ret <<std::endl;}
   fds_to_close_on_wait.clear();
   fds_to_close_on_fork.clear();
-  for (std::vector<std::pair<int, Rwsh_ostream*> >::iterator 
+  for (std::vector<std::pair<int, Rwsh_ostream*> >::iterator
        output_handlers_end = output_handlers.end();
        output_handlers_end != output_handlers.begin();
        output_handlers_end = std::remove_if(output_handlers.begin(),

@@ -35,8 +35,7 @@ class Prototype {
   bool non_prototype;
   Prototype(bool non_prototype);
   Prototype(Argm::const_iterator first_parameter,
-            Argm::const_iterator parameter_end,
-            bool non_prototype_i, Flag_type flags_i);
+            Argm::const_iterator parameter_end, bool non_prototype_i);
   Variable_map arg_to_param(const Argm& invoking_argm) const;
   Argm bad_args(std::string& missing, const Variable_map& locals,
                 Argm::const_iterator f_arg, Argm::const_iterator end,

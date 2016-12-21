@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2015 Samuel Newbold
+// Copyright (C) 2007-2016 Samuel Newbold
 
 #include <errno.h>
 #include <stdio.h>
@@ -21,7 +21,7 @@ void File_istream::open(void) {
   file_descriptor = ::open(name.c_str(), O_RDONLY, S_IWUSR|S_IRUSR);
   dest = fdopen(file_descriptor, "r");
   if (file_descriptor == -1 || !dest)
-    throw Signal_argm(Argm::File_open_failure, name);}
+    throw Exception(Argm::File_open_failure, name);}
 
 File_istream::~File_istream() {
   if(dest) if (fclose(dest))
@@ -47,11 +47,11 @@ File_ostream::File_ostream(const std::string& name_i) : name(name_i),
     file_descriptor(-1), dest(NULL) {}
 
 void File_ostream::open(void) {
-  file_descriptor = ::open(name.c_str(), O_WRONLY|O_CREAT|O_TRUNC, 
+  file_descriptor = ::open(name.c_str(), O_WRONLY|O_CREAT|O_TRUNC,
                          S_IWUSR|S_IRUSR);
   dest = fdopen(file_descriptor, "w");
   if (file_descriptor == -1 || !dest)
-    throw Signal_argm(Argm::File_open_failure, name);}
+    throw Exception(Argm::File_open_failure, name);}
 
 File_ostream::~File_ostream() {
   if(dest) if (fclose(dest))
@@ -86,7 +86,7 @@ Rwsh_ostream& File_ostream::operator<<(struct timeval r) {
   if (fprintf(dest, "%ld.%06ld", (long) r.tv_sec, (long) r.tv_usec) < 0)
     std::cerr <<"failed fprintf with errno " <<errno <<std::endl;
   return *this;}
-  
+
 bool File_ostream::fail(void) {
   if (!dest) open();
   int ret = ferror(dest);

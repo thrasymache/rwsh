@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2015 Samuel Newbold
+// Copyright (C) 2007-2016 Samuel Newbold
 
 #include <cstdlib>
 #include <errno.h>
@@ -18,19 +18,19 @@ Rwsh_ostream* Substitution_stream::copy_pointer(void) {
   std::abort();} // substitution streams are not used in this way
 
 Rwsh_ostream& Substitution_stream::operator<<(const std::string& r) {
-  buffer <<r; 
+  buffer <<r;
   return *this;}
 
 Rwsh_ostream& Substitution_stream::operator<<(int r) {
-  buffer <<r; 
+  buffer <<r;
   return *this;}
 
 Rwsh_ostream& Substitution_stream::operator<<(unsigned int r) {
-  buffer <<r; 
+  buffer <<r;
   return *this;}
 
 Rwsh_ostream& Substitution_stream::operator<<(double r) {
-  buffer <<r; 
+  buffer <<r;
   return *this;}
 
 Rwsh_ostream& Substitution_stream::operator<<(struct timeval r) {

@@ -19,11 +19,17 @@ class Command_block : public Base_executable, public std::vector<Arg_script> {
     else {
       Command_block* result = new Command_block(*this);
       return result;}};
-  Command_block* apply(const Argm& argm, unsigned nesting) const;
-  int internal_execute(const Argm& src_argm) const;
-  int prototype_execute(const Argm& argm, const Prototype& prototype) const;
-  int operator() (const Argm& src_argm);
+  Command_block* apply(const Argm& argm, unsigned nesting,
+                       std::list<Argm>& exceptions) const;
+
+  int collect_errors_core(const Argm& src_argm,
+                          const std::vector<std::string>& exceptional,
+                          bool logic,
+                          std::list<Argm>& exceptions);
+  virtual int execute(const Argm& argm, std::list<Argm>& exceptions) const;
   void promote_soons(unsigned nesting);
+  int prototype_execute(const Argm& argm, const Prototype& prototype,
+                        std::list<Argm>& exceptions) const;
   std::string str() const; };
 
 class Function : public Named_executable {
@@ -43,11 +49,11 @@ class Function : public Named_executable {
     name_v(src.name_v), prototype(src.prototype), body(src.body) {};
   Function(const std::string& name_i, Argm::const_iterator first_parameter,
            Argm::const_iterator parameter_end, bool non_prototype_i,
-           Flag_type flags_i, const Command_block& src);
+           const Command_block& src);
   Function* copy_pointer(void) const {
     if (!this) return 0;
     else return new Function(*this);};
-  int operator() (const Argm& src_argm);
+  virtual int execute(const Argm& argm, std::list<Argm>& exceptions) const;
   const std::string& name(void) const {return name_v;};
   void promote_soons(unsigned nesting);
   std::string str() const;};

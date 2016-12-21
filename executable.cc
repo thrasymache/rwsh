@@ -2,10 +2,13 @@
 // external programs, the latter executes commands that are implemented by
 // functions in builtin.cc.
 //
-// Copyright (C) 2005-2015 Samuel Newbold
+// Copyright (C) 2005-2016 Samuel Newbold
 
+#include <algorithm>
 #include <cstdlib>
+#include <list>
 #include <map>
+#include <set>
 #include <string>
 #include <signal.h>
 #include <sys/time.h>
@@ -23,7 +26,7 @@
 #include "plumber.h"
 
 namespace {
-Argm::Sig_type unix2rwsh(int sig) {
+Argm::Exception_t unix2rwsh(int sig) {
   switch (sig) {
     case SIGHUP: return Argm::Sighup;
     case SIGINT: return Argm::Sigint;
@@ -35,133 +38,140 @@ Argm::Sig_type unix2rwsh(int sig) {
     case SIGCHLD: return Argm::Sigchld;
     case SIGUSR1: return Argm::Sigusr1;
     case SIGUSR2: return Argm::Sigusr2;
-    default: return Argm::Sigunknown;}}}
+    default: return Argm::Sigunknown;}}
+} // end unnamed namespace
 
-bool Base_executable::increment_nesting(const Argm& argm) {
-  if (global_nesting > argm.max_nesting()+1) {
-    //throw Signal_argm(Argm::Excessive_nesting);}
-    caught_signal = Argm::Excessive_nesting;
-    call_stack.push_back(Argm::signal_names[Argm::Excessive_nesting]);}
-  if (unwind_stack()) return true;
-  else {
-    ++executable_nesting;
-    ++global_nesting;
-    return false;}}
-
-bool Base_executable::decrement_nesting(const Argm& argm) {
+int Base_executable::operator() (const Argm& argm,
+                                 std::list<Argm>& parent_exceptions) {
+  if (global_nesting > max_nesting+1)
+    add_error(parent_exceptions, Exception(Argm::Excessive_nesting));
+  if (unwind_stack()) return Variable_map::dollar_question;
+  else ++executable_nesting, ++global_nesting;
+  std::list<Argm> children;
+  struct timeval start_time;
+  gettimeofday(&start_time, rwsh_clock.no_timezone);
+  int ret;
+  try {ret = execute(argm, children);}
+  catch (Exception error) {
+    add_error(children, error);
+    ret = -1;}
+  struct timeval end_time;
+  gettimeofday(&end_time, rwsh_clock.no_timezone);
+  last_execution_time_v = Clock::timeval_sub(end_time, start_time);
+  Clock::timeval_add(total_execution_time_v, last_execution_time_v);
+  ++execution_count_v;
+  Variable_map::dollar_question = last_return = ret;
   --global_nesting;
-  if (unwind_stack()) {
-    call_stack.push_back(argm[0]);
-    if (!global_nesting && !in_signal_handler) signal_handler();}
+  if (caught_signal) {
+    Exception focus(caught_signal);
+    caught_signal = Argm::No_exception;
+    executable_map.run(focus, children);}
+  if (children.size()) {
+    last_exception_v = "";
+    for (std::list<Argm>::iterator i = children.begin(); i != children.end();) {
+      last_exception_v += i->str() + " " + argm.str();
+      i->push_back(argm[0]);
+      parent_exceptions.push_back(*i);
+      if (++i != children.end()) last_exception_v += "; ";}}
   --executable_nesting;
   if (del_on_term && !executable_nesting) delete this;
-  return unwind_stack();}
+  return ret;}
+
+void Base_executable::add_error(std::list<Argm>& exceptions, const Argm& error){
+  unwind_stack_v = true;
+  exceptions.push_back(error);
+  ++current_exception_count;}
 
 void Base_executable::unix_signal_handler(int sig) {
-  caught_signal = unix2rwsh(sig);
-  call_stack.push_back(Argm::signal_names[caught_signal]);}
+  caught_signal = unix2rwsh(sig);}
 
-// code to call rwsh.excessive_nesting, separated out of operator() for clarity.
-// The requirements for stack unwinding to work properly are as 
-// follows: All things derived from Base_executable must call increment_nesting
-// on start and decrement_nesting before terminating.  If they run more 
-// than one other executable, then they must call unwind_stack() in 
-// between each executable, which must be of an Executable rather than a
-// direct call to the function that implements a builtin (the code below to 
-// handle recursively excessive nesting is the only exception to this rule).
-// main does not need to do this handling, because anything 
-// that it calls directly will have an initial nesting of 0.
-void Base_executable::signal_handler(void) {
-  Argm call_stack_copy(call_stack);                          //need for a copy:
-  call_stack = Argm(Variable_map::global_map,
-                    default_input, default_output, default_error);
-  in_signal_handler = true;
-  caught_signal = Argm::No_signal;
-  Variable_map::global_map->unset("IF_TEST");
-  executable_map.run(call_stack_copy);
-  if (unwind_stack()) {
-    default_output <<"signal handler itself triggered signal\n";
-    Argm temp_call_stack(".echo", call_stack.begin(), call_stack.end(),
-                         call_stack.argfunction(), Variable_map::global_map,
-                         call_stack.input, call_stack.output, call_stack.error);
-    call_stack = Argm(Variable_map::global_map,
-                      default_input, default_output, default_error);
-    b_echo(temp_call_stack);
-    default_output <<"\noriginal call stack:\n";
-    call_stack_copy[0] = ".echo";
-    b_echo(call_stack_copy);
-    default_output <<"\n";
-    default_output.flush();
-    Variable_map::dollar_question = -1;
-    caught_signal = Argm::No_signal;
-    Variable_map::global_map->unset("IF_TEST");}
-  in_signal_handler = false;}
-// need for a copy: if the internal function that runs for this signal itself
-//     triggers a signal then it will unwind the stack and write to call_stack. 
-//     To preserve the original call stack, we need a copy of call_stack to be 
-//     the argument.
+/* code to call exception handlers, separated out of operator() for clarity.
+   The requirements for stack unwinding to work properly are as
+   follows: any code that runs more than one other executable must test
+   unwind_stack() in between each executable, which must be of an Executable
+   rather than a direct call to the function that implements a builtin (the
+   code below to run the fallback_handler is the only exception to this rule).
+   main does not need to do this handling, because anything that it calls
+   directly will have an initial nesting of 0.*/
+void Base_executable::exception_handler(std::list<Argm>& exceptions) {
+  in_exception_handler = true;
+  unwind_stack_v = false;
+  std::set<std::string> failed_handlers;
+  for(;exceptions.size(); exceptions.pop_front(), --current_exception_count){
+    Argm& focus(exceptions.front());
+    if (failed_handlers.find(focus[0]) == failed_handlers.end()) {
+      executable_map.run(focus, exceptions);
+      if (unwind_stack()) {
+        failed_handlers.insert(focus[0]);
+        exceptions.insert(++exceptions.begin(), exceptions.back());
+        exceptions.pop_back();
+        unwind_stack_v = false;}}
+    if (failed_handlers.find(focus[0]) != failed_handlers.end())
+      b_fallback_handler(Argm(".fallback_handler", focus.begin(), focus.end(),
+                              focus.argfunction(), Variable_map::global_map,
+                              focus.input, focus.output, focus.error),
+                         exceptions);}
+  Variable_map::dollar_question = -1;
+  dropped_catches = 0;
+  collect_excess_thrown = execution_handler_excess_thrown = false;
+  in_exception_handler = false;}
+
+// code to call exception handlers when requested within a function
+void Base_executable::catch_blocks(const Argm& argm,
+                                   std::list<Argm>& exceptions) {
+  for (std::list<Argm>::iterator focus = exceptions.begin();
+       focus != exceptions.end();)
+    if (find(argm.begin() + 1, argm.end(), (*focus)[0]) != argm.end()) {
+      if (dropped_catches >= max_extra) {
+         if (!execution_handler_excess_thrown)
+           add_error(exceptions,
+                     Exception(Argm::Excessive_exceptions_in_catch, max_extra));
+         execution_handler_excess_thrown = true;
+         return;}
+      in_exception_handler = true;
+      unwind_stack_v = false;
+      unsigned previous_count = current_exception_count;
+      //std::list<Argm> current_exceptions;
+      executable_map.run(*focus, exceptions);
+      dropped_catches += current_exception_count - previous_count;
+      if (!unwind_stack()) {
+        focus = exceptions.erase(focus);
+        --current_exception_count;}
+      else focus++;}
+    else focus++;
+  if (current_exception_count) unwind_stack_v = true;
+  else unwind_stack_v = false;
+  Variable_map::dollar_question = -1;
+  in_exception_handler = false;}
 
 Binary::Binary(const std::string& impl) : implementation(impl) {}
 
 #include <iostream>
 // run the given binary
-int Binary::operator() (const Argm& argm_i) {
-  try {
-    if (increment_nesting(argm_i)) return Variable_map::dollar_question;
-    struct timeval start_time;
-    gettimeofday(&start_time, rwsh_clock.no_timezone);
-    ++execution_count_v;
-    int ret,
-        input = argm_i.input.fd(),
-        output = argm_i.output.fd(),
-        error = argm_i.error.fd();
-    if (!fork()) {  
-      plumber.after_fork();
-      if (dup2(input, 0) < 0) std::cerr <<"dup2 didn't like changing input\n";
-      if (dup2(output, 1) < 0) std::cerr <<"dup2 didn't like changing output\n";
-      if (dup2(error, 2) < 0) std::cerr <<"dup2 didn't like changing error\n";
-      Old_argv argv(argm_i);
-      char **env = argm_i.export_env();
-      int ret = execve(implementation.c_str(), argv.argv(), env);
-      Signal_argm error_argm(Argm::Binary_not_found, argm_i[0]); 
-      executable_map.run(error_argm);
-      exit(ret);}
-    else plumber.wait(&ret);
-    Variable_map::dollar_question = last_return = ret;
-    struct timeval end_time;
-    gettimeofday(&end_time, rwsh_clock.no_timezone);
-    last_execution_time_v = Clock::timeval_sub(end_time, start_time);
-    Clock::timeval_add(total_execution_time_v, last_execution_time_v);
-    if (decrement_nesting(argm_i)) ret = Variable_map::dollar_question;
-    return ret;}
-  catch (Signal_argm error) {
-    caught_signal = error.signal;
-    std::copy(error.begin(), error.end(), std::back_inserter(call_stack));
-    decrement_nesting(argm_i);
-    return -1;}}
+int Binary::execute(const Argm& argm_i, std::list<Argm>& exceptions) const {
+  int ret,
+      input = argm_i.input.fd(),
+      output = argm_i.output.fd(),
+      error = argm_i.error.fd();
+  if (!fork()) {
+    plumber.after_fork();
+    if (dup2(input, 0) < 0) std::cerr <<"dup2 didn't like changing input\n";
+    if (dup2(output, 1) < 0) std::cerr <<"dup2 didn't like changing output\n";
+    if (dup2(error, 2) < 0) std::cerr <<"dup2 didn't like changing error\n";
+    Old_argv argv(argm_i);
+    char **env = argm_i.export_env();
+    int ret = execve(implementation.c_str(), argv.argv(), env);
+    Exception error_argm(Argm::Binary_not_found, argm_i[0]);
+    executable_map.run(error_argm, exceptions);
+    exit(ret);}
+  else plumber.wait(&ret);
+  if (ret) add_error(exceptions, Exception(Argm::Return_code, ret));
+  return ret;}
 
-Builtin::Builtin(const std::string& name_i, 
-                       int (*impl)(const Argm& argm)) : 
+Builtin::Builtin(const std::string& name_i,
+                 int (*impl)(const Argm& argm, std::list<Argm>& exceptions)) :
   implementation(impl), name_v(name_i) {}
 
 // run the given builtin
-int Builtin::operator() (const Argm& argm) {
-  try {
-    if (increment_nesting(argm)) return Variable_map::dollar_question;
-    struct timeval start_time;
-    gettimeofday(&start_time, rwsh_clock.no_timezone);
-    ++execution_count_v;
-    int ret = Variable_map::dollar_question = last_return =
-                                                       (*implementation)(argm);
-    struct timeval end_time;
-    gettimeofday(&end_time, rwsh_clock.no_timezone);
-    last_execution_time_v = Clock::timeval_sub(end_time, start_time);
-    Clock::timeval_add(total_execution_time_v, last_execution_time_v);
-    if (decrement_nesting(argm)) ret = Variable_map::dollar_question;
-    return ret;}
-  catch (Signal_argm error) {
-    caught_signal = error.signal;
-    std::copy(error.begin(), error.end(), std::back_inserter(call_stack));
-    decrement_nesting(argm);
-    return -1;}}
-
+int Builtin::execute(const Argm& argm, std::list<Argm>& exceptions) const {
+  return (*implementation)(argm, exceptions);}

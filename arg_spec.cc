@@ -5,6 +5,7 @@
 
 #include <cstdlib>
 #include <dirent.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <list>
 #include <map>
@@ -54,7 +55,7 @@ Arg_spec::Arg_spec(const std::string& script, unsigned max_soon) :
     if (i < script.length())
       try {word_selection = my_strtoi(script.substr(i));}
       catch(...) {
-        throw Signal_argm(Argm::Invalid_word_selection,
+        throw Exception(Argm::Invalid_word_selection,
                           script.substr(key_end));}}
   if (!script.length()) type=FIXED;
   else if (script[0] == '$')
@@ -70,7 +71,7 @@ Arg_spec::Arg_spec(const std::string& script, unsigned max_soon) :
     if (script.length() < 2) type=SOON;
     else
       if (soon_level > max_soon)
-        throw Signal_argm(Argm::Not_soon_enough, script);
+        throw Exception(Argm::Not_soon_enough, script);
       else if (script[key_start] == '*') {
         type=STAR_SOON;
         if (script.length() - key_start > 1)
@@ -102,12 +103,12 @@ Arg_spec::Arg_spec(const std::string& src, std::string::size_type style_start,
     type = SUBSTITUTION;
     ++tpoint, soon_level = max_soon;}
   if (src[tpoint] != '{')
-    throw Signal_argm(Argm::Bad_argfunction_style,
+    throw Exception(Argm::Bad_argfunction_style,
                       src.substr(style_start, point-style_start));
   substitution = new Command_block(src, tpoint, soon_level);
   if (soon_level > max_soon) {
     delete substitution;    // needed to construct substitution to find its end
-    throw Signal_argm(Argm::Not_soon_enough,
+    throw Exception(Argm::Not_soon_enough,
                       src.substr(style_start, tpoint-style_start));}
   if (tpoint >= src.length() || sub_term_char(src[tpoint])) point = tpoint;
   else {
@@ -124,7 +125,7 @@ Arg_spec::Arg_spec(const std::string& src, std::string::size_type style_start,
           point = tpoint = token_end;
           return;}
         catch(...) {}} // fall through
-    throw Signal_argm(Argm::Invalid_word_selection,
+    throw Exception(Argm::Invalid_word_selection,
                       src.substr(tpoint, token_end-tpoint));}}
 
 Arg_spec::Arg_spec(Arg_type type_i, unsigned soon_level_i,
@@ -148,7 +149,8 @@ Arg_spec::Arg_spec(const std::string& src) :
 Arg_spec::~Arg_spec() {delete substitution;}
 
 void Arg_spec::apply(const Argm& src, unsigned nesting,
-                 std::back_insert_iterator<std::vector<Arg_spec> > res) const {
+                     std::back_insert_iterator<std::vector<Arg_spec> > res,
+                     std::list<Argm>& exceptions) const {
   switch(type) {
     case SOON:
       if (soon_level)
@@ -164,10 +166,11 @@ void Arg_spec::apply(const Argm& src, unsigned nesting,
       break;
     case SUBSTITUTION: case SOON_SUBSTITUTION:
       if (soon_level) {
-        Command_block* new_substitution = substitution->apply(src, nesting+1);
+        Command_block* new_substitution = substitution->apply(src, nesting+1,
+                                                              exceptions);
         *res++ = Arg_spec(type, soon_level-1, ref_level, expand_count,
                           word_selection, new_substitution, text, trailing);}
-      else evaluate_substitution(src, res);
+      else evaluate_substitution(src, res, exceptions);
       break;
     default: *res++ = *this;}}  // most types are not affected by apply
 
@@ -186,17 +189,18 @@ Out Arg_spec::evaluate_expansion(const std::string& value, Out res)
        for (unsigned j=0; j<intermediate.size(); ++j)
          tokenize_words(intermediate[j], res);
      else if (word_selection >= intermediate.size())
-       throw Signal_argm(Argm::Undefined_variable, str());
+       throw Exception(Argm::Undefined_variable, str());
      else *res++ = intermediate[word_selection];}
   return res;}
 
 template<class Out>
-Out Arg_spec::evaluate_substitution(const Argm& src, Out res) const {
+Out Arg_spec::evaluate_substitution(const Argm& src, Out res,
+                                    std::list<Argm>& exceptions) const {
   Substitution_stream override_stream;
   Argm temp_argm(src);
   temp_argm.output = override_stream.child_stream();
-  if ((*substitution)(temp_argm))
-    throw Signal_argm(Argm::Failed_substitution, str());
+  if ((*substitution)(temp_argm, exceptions))
+    throw Exception(Argm::Failed_substitution, str());
   return evaluate_expansion(override_stream.value(), res);}
 
 template<class Out> Out Arg_spec::evaluate_var(const Argm& src, Out res) const {
@@ -207,7 +211,8 @@ template<class Out> Out Arg_spec::evaluate_var(const Argm& src, Out res) const {
 // produce one or more strings for destination Argm from Arg_spec and source
 // Argm
 void Arg_spec::interpret(const Argm& src,
-                           std::back_insert_iterator<Argm> res) const {
+                         std::back_insert_iterator<Argm> res,
+                         std::list<Argm>& exceptions) const {
   if (soon_level) std::abort();    // constructor guarantees SOONs already done
   switch(type) {
     case FIXED: *res++ = text; break;
@@ -218,7 +223,7 @@ void Arg_spec::interpret(const Argm& src,
     case SELECT_VAR: selection_read(src.get_var(text), res); break;
     case SELECT_STAR_VAR: default_output <<"@$* not implemented yet\n"; break;
     case SUBSTITUTION: case SOON_SUBSTITUTION:
-      evaluate_substitution(src, res); break;
+      evaluate_substitution(src, res, exceptions); break;
     default: std::abort();}}
 
 void Arg_spec::promote_soons(unsigned nesting) {

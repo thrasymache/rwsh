@@ -37,9 +37,11 @@ class Arg_script {
                               std::string::size_type point, unsigned max_soon);
   Argm argm(void) const;
   void apply(const Argm& src, unsigned nesting,
-             std::back_insert_iterator<std::vector<Arg_script> > res) const;
+             std::back_insert_iterator<std::vector<Arg_script> > res,
+             std::list<Argm>& current_exceptions) const;
   std::string str(void) const;
-  Argm interpret(const Argm& src) const;
+  Argm base_interpret(const Argm& src) const;
+  Argm interpret(const Argm& src, std::list<Argm>& exceptions) const;
   void promote_soons(unsigned);
   bool is_argfunction(void) const {return argfunction_level == 1;}; };
 

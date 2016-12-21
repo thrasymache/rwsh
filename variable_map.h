@@ -7,9 +7,7 @@ class Variable_map : private std::map<std::string, std::string> {
   typedef std::map<std::string, std::string> Base;
   Variable_map* parent;
 
-  static unsigned max_nesting_v;
 public:
-
   typedef Base::iterator iterator;
   typedef Base::const_iterator const_iterator;
   static Variable_map *global_map;
@@ -17,7 +15,6 @@ public:
   Variable_map(Variable_map* parent);
   static int dollar_question;
   static bool exit_requested;
-  unsigned max_nesting(void) {return max_nesting_v;};
 
   const_iterator begin(void) const {return Base::begin();};
   const_iterator end(void) const {return Base::end();};
@@ -39,7 +36,7 @@ public:
 
 inline bool isargvar(const std::string& focus) {
   switch(focus[0]) {
-    case '*': case '#': case '0': case '1': case '2': case '3': case '4': 
+    case '*': case '#': case '0': case '1': case '2': case '3': case '4':
               case '5': case '6': case '7': case '8': case '9': return true;
     default: return false;}}
 

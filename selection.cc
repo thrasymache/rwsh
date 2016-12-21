@@ -1,7 +1,7 @@
-// The definition of selection_write and the Entry_pattern class which is 
+// The definition of selection_write and the Entry_pattern class which is
 // used to implement selections.
 //
-// Copyright (C) 2005-2015 Samuel Newbold
+// Copyright (C) 2005-2016 Samuel Newbold
 
 #include <dirent.h>
 #include <fcntl.h>
@@ -34,7 +34,7 @@ Simple_pattern::Simple_pattern(const std::string& src) {
     unterminated = (*src.rbegin() == '*');
     do {
       std::string::size_type k = src.find_first_of('*', j+1);
-      if (k > j+1 && j+1 != src.length()) 
+      if (k > j+1 && j+1 != src.length())
         terms.push_back(src.substr(j+1, k-j-1));
       j = k;}
     while (j < std::string::npos);}}
@@ -42,7 +42,7 @@ Simple_pattern::Simple_pattern(const std::string& src) {
 // recursive function to determine matches after initial text. recursivity deals
 // with keeping track of current attempted string position in case current
 // position fails to match, but subsequent position will succeed.
-bool Simple_pattern::find_terms(size_type cur_term, const std::string& s) 
+bool Simple_pattern::find_terms(size_type cur_term, const std::string& s)
         const {
   if (cur_term == terms.size())
     if (unterminated || !s.length()) return true;
@@ -61,7 +61,7 @@ bool Simple_pattern::match(const std::string& s) const {
 // convert to a string. inverse of constructor.
 std::string Simple_pattern::str(void) const {
   std::string result = initial;
-  for (std::vector<std::string>::const_iterator i=terms.begin(); 
+  for (std::vector<std::string>::const_iterator i=terms.begin();
        i != terms.end(); ++i)
     result += '*' + *i;
   if (unterminated) result += '*';
@@ -69,7 +69,7 @@ std::string Simple_pattern::str(void) const {
 
 Entry_pattern::Entry_pattern(const std::string& src) {
   std::vector<std::string> temp;
-  tokenize_strict(src, std::back_inserter(temp), 
+  tokenize_strict(src, std::back_inserter(temp),
                   std::bind2nd(std::equal_to<char>(), ' '));
   for (std::vector<std::string>::const_iterator i = temp.begin();
        i != temp.end(); ++i) options.push_back(Simple_pattern(*i));
@@ -86,11 +86,11 @@ std::string Entry_pattern::str(void) const {
        i != options.end(); ++i) result += ' ' + i->str();
   return result;}
 
-void str_to_entry_pattern_list(const std::string& src, 
+void str_to_entry_pattern_list(const std::string& src,
                                std::list<Entry_pattern>& res) {
   unsigned updir = 0;
   std::vector<std::string> temp;
-  tokenize_strict(src, std::back_inserter(temp), 
+  tokenize_strict(src, std::back_inserter(temp),
                   std::bind2nd(std::equal_to<char>(), '/'));
   std::vector<std::string>::iterator i = temp.begin();
   if (src.empty());

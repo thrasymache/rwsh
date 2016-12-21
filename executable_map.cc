@@ -5,6 +5,7 @@
 //
 // Copyright (C) 2005-2016 Samuel Newbold
 
+#include <list>
 #include <map>
 #include <set>
 #include <string>
@@ -45,7 +46,7 @@ Executable_map::size_type Executable_map::erase (const std::string& key) {
 Base_executable* Executable_map::find(const Argm& key) {
   iterator i = Base::find(key[0]);
   if (i != end()) return i->second;
-  else if (key[0] == "rwsh.mapped_argfunction") return key.argfunction(); 
+  else if (key[0] == "rwsh.mapped_argfunction") return key.argfunction();
   else return NULL;}
 
 bool Executable_map::run_if_exists(const std::string& key, Argm& argm_i) {
@@ -53,42 +54,50 @@ bool Executable_map::run_if_exists(const std::string& key, Argm& argm_i) {
                  argm_i.parent_map(), argm_i.input,argm_i.output, argm_i.error);
   Base_executable* i = find(temp_argm);
   if (i) {
-    (*i)(temp_argm);
-    if (Named_executable::unwind_stack()) Base_executable::signal_handler();
+    std::list<Argm> exceptions;
+    (*i)(temp_argm, exceptions);
+    if (exceptions.size()) Base_executable::exception_handler(exceptions);
     return true;}
   else {
     return false;}}
 
-int Executable_map::run(Argm& argm) {
+int Executable_map::base_run(Argm& argm) {
+  std::list<Argm> exceptions;
+  int ret = run(argm, exceptions);
+  if (exceptions.size()) {
+    Base_executable::exception_handler(exceptions);
+    return -1;}
+  else return ret;}
+
+int Executable_map::run(Argm& argm, std::list<Argm>& exceptions) {
   try {
     Base_executable* i = find(argm);                    // first check for key
-    if (i) return (*i)(argm);
+    if (i) return (*i)(argm, exceptions);
     else if (argm[0][0] == '/') {                       // insert a binary
       set(new Binary(argm[0]));
-      return (*find(argm))(argm);}
+      return (*find(argm))(argm, exceptions);}
     if (is_function_name(argm[0])) {                    // try autofunction
       if (in_autofunction) return not_found(argm);        // nested autofunction
       in_autofunction = true;
-      run_if_exists("rwsh.autofunction", argm);
+      Argm auto_argm("rwsh.autofunction", argm.begin(), argm.end(),
+                     argm.argfunction(), argm.parent_map(),
+                     argm.input, argm.output, argm.error);
+      run(auto_argm, exceptions);
       in_autofunction = false;
       i = find(argm);                                   // second check for key
-      if (i) return (*i)(argm);}
+      if (i) return (*i)(argm, exceptions);}
     return not_found(argm);}
-  catch (Signal_argm error) {
-    Base_executable::caught_signal = error.signal;
-    std::copy(error.begin(), error.end(),
-              std::back_inserter(Base_executable::call_stack));
-    if (!Base_executable::global_nesting && !Base_executable::in_signal_handler)
-      Base_executable::signal_handler();
+  catch (Exception error) {
+    Base_executable::add_error(exceptions, error);
     return -1;}}
 
 int Executable_map::not_found(Argm& argm_i) {
-  Signal_argm temp_argm(Argm::Executable_not_found, argm_i[0]);
+  Exception temp_argm(Argm::Executable_not_found, argm_i[0]);
   Base_executable* i = find(temp_argm);
   if (!i) {
     std::string::size_type point = 0;
-    set(new Function(Argm::signal_names[Argm::Executable_not_found],
+    set(new Function(Argm::exception_names[Argm::Executable_not_found],
                      "{.echo $1 (: command not found) \\( $* \\) (\n)\n"
                      ".return -1}", point, 0));}   // reset executable_not_found
-  throw Signal_argm(Argm::Executable_not_found, argm_i);}
+  throw Exception(Argm::Executable_not_found, argm_i);}
 
