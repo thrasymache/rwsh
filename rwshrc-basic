@@ -1,7 +1,9 @@
 .function_all_flags # -- [ignored ...] {
   .local ret $?
-  .if .var_exists argv {.nop $ignored}
+  .if .var_exists ignored {.nop $ignored}
   .else {.nop}
+  .nop $ret $?
+  .return 0
   .return $ret}
 
 # set up environment
@@ -9,6 +11,8 @@
 )
 
 # internal functions
+.function rwsh.unused_variable {echo $1 was unused with call stack $*2}
+.function rwsh.unchecked_variable {echo $1 was not checked with call stack $*2}
 
 # ability of functions to act as builtin wrappers
 .function_all_flags af -- [argv ...] {rwsh.argfunction}
@@ -41,6 +45,12 @@
   .else_if .test_number_equal $ret 3 {echo cannot set argfunctions in executable map}
   .else_if .test_number_equal $ret 4 {echo function &&1 did not exist to be erased}
   .else {.return $ret}}
+.function_all_flags iee var {
+  .if .var_exists $var {.echo $$var}
+  .else {.nop}}
+.function_all_flags ien var {
+  .if .var_exists $var {.nop $$var}
+  .else {.nop}}
 .function if {.if $* {rwsh.argfunction}}
 .function_all_flags if_only -- args ... {
   .if $args$ {rwsh.argfunction}; .else {.nop}}
@@ -54,7 +64,7 @@
   .if .var_exists $1 {.set &&1 &&2}
   .else {.global &&1 &&2}}
 .function_all_flags set_if_undefined -- var [value] {
-  .if .var_exists $var {.nop}
+  .if .var_exists $var {ien value}
   .else_if .var_exists value {.global $var $value}
   .else {.global $var ()}}
 fn test_var_not_equal var value {.test_string_unequal $$var $value}
@@ -66,9 +76,8 @@ fn ntimes n {
 fn mark {ntimes 4 {.echo ####################}}
 .function unset {.unset $1}
 fn which command {
-  .local body ()
-  .store_output body {.which_executable $command {rwsh.argfunction}}
-  .if .test_number_equal $? 0 {.echo $body $nl}
+  .if .which_test $command {
+    .combine ${.which_executable $command {rwsh.argfunction}} $nl}
   .else {echo no $command}}
 fn whichp binary {
   .which_path $binary $PATH
@@ -76,6 +85,9 @@ fn whichp binary {
   .else {echo &&binary not found in $PATH; .return 1}}
 .function while {.while $* {rwsh.argfunction}}
 .function_all_flags var_exists -- var {.var_exists $var}
+.function_all_flags var_val -- [var ...] {
+  .if .var_exists var {.for $var$ {.combine $1 \( $$1 \) \ }}
+  .else {.nop}}
 .function_all_flags paren_if_words -- value {
   .if .test_number_equal ${.argc $value$} 1 {.combine $value}
   .else {.combine \( $value \)}}

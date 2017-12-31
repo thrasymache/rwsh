@@ -2,6 +2,7 @@ signal triggered: rwsh.raw_command ( .function rwsh.raw_command {.echo $1; .echo
 .global last_command_return -10
 .global A \
 .global N \
+.nop $N
 
 .nop tests multi-line commands within a sourced script
 .nop .function rwsh.run_logic {
@@ -24,9 +25,12 @@ signal triggered: rwsh.raw_command ( .function rwsh.raw_command {.echo $1; .echo
   .function rwsh.autofunction {
     .function $1 {&&&{.which_path &&&1 $PATH} $*}}
   .function rwsh.if_before_else {}
-  .function rwsh.shutdown {.echo $nl}
+  .function rwsh.shutdown {.nop}
+  .for ${.list_environment}$ {
+    .scope $1$ (var val) {
+      .global $var $val
+      .nop $$var}}
   .source /etc/rwshrc-basic
-  .importenv_preserve;
   rwsh.mapped_argfunction &3 {$1$}
   .exit}
 .else {
@@ -35,10 +39,10 @@ signal triggered: rwsh.raw_command ( .function rwsh.raw_command {.echo $1; .echo
   .source /etc/rwshrc-default}
 rwsh.help not defined 
 $.getpid
-22405
+2283
 0
 $.getppid
-21899
+1549
 0
 $.function_all_flags timings focus {
   .combine $focus (:	last\() ${.which_last_execution_time $focus} \) \	
@@ -59,22 +63,25 @@ $.function_all_flags clock-watch {
 $clock-watch
 timings:	last(0.000000)	total(0.000000)	count(0)
 clock-watch:	last(0.000000)	total(0.000000)	count(0)
-usleep overhead:	7.5e-05
-.usleep:	last(0.000675)	total(0.000675)	count(1)
-/bin/true:	last(0.000729)	total(0.000729)	count(1)
+usleep overhead:	8.7e-05
+.usleep:	last(0.000687)	total(0.000687)	count(1)
+/bin/true:	last(0.000751)	total(0.000751)	count(1)
 
 0
 $clock-watch
-timings:	last(0.000056)	total(0.000308)	count(4)
-clock-watch:	last(0.001845)	total(0.001845)	count(1)
-usleep overhead:	6.65e-05
-.usleep:	last(0.000658)	total(0.001333)	count(2)
-/bin/true:	last(0.000722)	total(0.001451)	count(2)
+timings:	last(0.000040)	total(0.000220)	count(4)
+clock-watch:	last(0.001719)	total(0.001719)	count(1)
+usleep overhead:	8.9e-05
+.usleep:	last(0.000691)	total(0.001378)	count(2)
+/bin/true:	last(0.000611)	total(0.001362)	count(2)
 
 0
 $rwsh.mapped_argfunction {timings timings; timings clock-watch}
-timings:	last(0.000035)	total(0.000496)	count(8)
-clock-watch:	last(0.001625)	total(0.003470)	count(2)
+timings:	last(0.000040)	total(0.000428)	count(8)
+clock-watch:	last(0.001559)	total(0.003278)	count(2)
+
+0
+$.nop $A $FIGNORE
 
 0
 $

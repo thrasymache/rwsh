@@ -2,7 +2,7 @@
 // arguments passed to an executable and/or tie several other executables into
 // a single executable.
 //
-// Copyright (C) 2006-2016 Samuel Newbold
+// Copyright (C) 2006-2017 Samuel Newbold
 
 #include <algorithm>
 #include <iterator>
@@ -29,7 +29,7 @@
 // generate a new Command_block by unescaping argument functions and replacing
 // unescaped_argfunction with the argument function in argm
 Command_block* Command_block::apply(const Argm& argm, unsigned nesting,
-                                    std::list<Argm>& exceptions) const {
+                                    Error_list& exceptions) const {
   if ((*this)[0].is_argfunction())
     if (argm.argfunction()) {
       Command_block* result = new Command_block(*argm.argfunction());
@@ -46,22 +46,21 @@ Command_block* Command_block::apply(const Argm& argm, unsigned nesting,
 
 int Command_block::collect_errors_core(const Argm& src_argm,
                                    const std::vector<std::string>& exceptional,
-                                   bool logic,
-                                   std::list<Argm>& parent_exceptions) {
+                                   bool logic, Error_list& parent_exceptions) {
   int ret;
   for (const_iterator i = begin(); i != end() && !unwind_stack_v; ++i) {
     if (current_exception_count > max_collect) {
       if (!collect_excess_thrown)
-        add_error(parent_exceptions,
+        parent_exceptions.add_error(
                   Exception(Argm::Excessive_exceptions_collected, max_collect));
       unwind_stack_v = collect_excess_thrown = true;
       return ret;}
-    std::list<Argm> children;
+    Error_list children;
     Argm statement_argm = i->interpret(src_argm, children);
     ret = executable_map.run(statement_argm, children);
     if (children.size()) {
       unwind_stack_v = false;
-      for (std::list<Argm>::iterator i = children.begin();
+      for (Error_list::iterator i = children.begin();
            i != children.end();) {
         if (logic == (find(exceptional.begin(), exceptional.end(),
                           (*i)[0]) != exceptional.end()))
@@ -71,7 +70,7 @@ int Command_block::collect_errors_core(const Argm& src_argm,
   return ret;}
 
 int Command_block::execute(const Argm& src_argm,
-                           std::list<Argm>& exceptions) const {
+                           Error_list& exceptions) const {
   int ret;
   for (const_iterator i = begin(); i != end(); ++i) {
     Argm statement_argm = i->interpret(src_argm, exceptions);
@@ -81,11 +80,17 @@ int Command_block::execute(const Argm& src_argm,
 
 int Command_block::prototype_execute(const Argm& argm,
                                      const Prototype& prototype,
-                                     std::list<Argm>& exceptions) const {
+                                     Error_list& exceptions) const {
   Variable_map locals(prototype.arg_to_param(argm));
   Argm params(argm.begin(), argm.end(), argm.argfunction(), &locals,
               argm.input, argm.output, argm.error);
-  return execute(params, exceptions);}
+  try {
+    int ret = execute(params, exceptions);
+    prototype.unused_var_check(&locals, exceptions);
+    return ret;}
+  catch (Exception error) {
+    prototype.unused_var_check(&locals, exceptions);
+    throw error;}}
 
 void Command_block::promote_soons(unsigned nesting) {
   if (this)
@@ -119,15 +124,17 @@ Function::Function(const std::string& name_i, const std::string& src) :
   std::string::size_type point = 0;
   try {
     body = Command_block(src, point, 0);
+    // this error handling is not simply testable because it requires bad
+    // functions in rwsh_init.cc
     if (point != src.length())
       throw "function with text following closing brace " + name_i + "\n" +
           src.substr(point) + "\n";}
   catch (Unclosed_brace error) {
     throw "unclosed brace on construction of function " + name_i + "\n" +
-      error.prefix + "\n";}
+      error[1] + "\n";}
   catch (Unclosed_parenthesis error) {
     throw "unclosed parenthesis on construction of function " + name_i + "\n" +
-      error.prefix + "\n";}}
+      error[1] + "\n";}}
 
 Function::Function(const std::string& name_i,
                    Argm::const_iterator first_parameter,
@@ -138,7 +145,7 @@ Function::Function(const std::string& name_i,
     name_v(name_i), body(src) {}
 
 // run the given function
-int Function::execute(const Argm& argm, std::list<Argm>& exceptions) const {
+int Function::execute(const Argm& argm, Error_list& exceptions) const {
   return body.prototype_execute(argm, prototype, exceptions);}
 
 void Function::promote_soons(unsigned nesting) {

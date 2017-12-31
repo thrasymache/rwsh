@@ -34,12 +34,12 @@ executable.o: rwsh_stream.h argm.h builtin.h clock.o executable.h \
 	executable_map.h plumber.h variable_map.h
 executable_map.o: arg_spec.h rwsh_stream.h argm.h arg_script.h executable.h \
 	executable_map.h function.h prototype.h
-file_stream.o: rwsh_stream.h argm.h file_stream.h
+file_stream.o: rwsh_stream.h argm.h file_stream.h variable_map.h
 function.o: arg_spec.h rwsh_stream.h argm.h arg_script.h clock.h executable.h \
 	executable_map.h function.h prototype.h variable_map.h
-plumber.o: rwsh_stream.h argm.h clock.h executable.h plumber.h
-prototype.o: arg_spec.h rwsh_stream.h argm.h arg_script.h prototype.h \
-	variable_map.h
+plumber.o: rwsh_stream.h argm.h clock.h executable.h plumber.h variable_map.h
+prototype.o: arg_spec.h rwsh_stream.h argm.h arg_script.h executable.h \
+	prototype.h variable_map.h
 rwsh.o: arg_spec.h rwsh_stream.h argm.h argm_star_var.cc arg_script.h \
 	clock.o command_stream.h default_stream.h executable.h \
 	executable_map.h function.h plumber.h prototype.h rwsh_init.h \
@@ -48,7 +48,7 @@ rwsh_init.o: arg_spec.h rwsh_stream.h arg_script.h argm.h rwsh_init.h \
 	builtin.h executable.h executable_map.h function.h prototype.h
 rwsh_stream.o: rwsh_stream.h
 rwshlib.o: rwshlib.h
-selection.o: rwsh_stream.h argm.h selection.h tokenize.cc
+selection.o: rwsh_stream.h argm.h selection.h tokenize.cc variable_map.h
 substitution_stream.o: rwsh_stream.h plumber.h substitution_stream.h
 variable_map.o: arg_spec.h rwsh_stream.h argm.h arg_script.h executable.h \
 	variable_map.h

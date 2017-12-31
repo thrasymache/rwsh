@@ -1,4 +1,4 @@
-//Copyright (C) 2008-2016 Samuel Newbold
+//Copyright (C) 2008-2017 Samuel Newbold
 
 #include <algorithm>
 #include <errno.h>
@@ -6,6 +6,7 @@
 #include <iostream>
 #include <list>
 #include <map>
+#include <set>
 #include <sys/time.h>
 #include <sys/wait.h>
 #include <string>

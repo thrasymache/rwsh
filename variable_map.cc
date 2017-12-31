@@ -1,11 +1,12 @@
 // Functions to implement a variable map, and permit it to be exported as the
 // environment for child processes.
 //
-// Copyright (C) 2006-2016 Samuel Newbold
+// Copyright (C) 2006-2017 Samuel Newbold
 
 #include <cstring>
 #include <list>
 #include <map>
+#include <set>
 #include <stdlib.h>
 #include <sstream>
 #include <string>
@@ -25,10 +26,24 @@ std::string word_from_value(const std::string& value) {
     return "(" + value + ")";
   else return value;}
 
-Variable_map::Variable_map(Variable_map* parent_i) : parent(parent_i) {
+Variable_map::Variable_map(Variable_map* parent_i) :
+    parent(parent_i), locals_listed(false), usage_checked(false) {
   if (parent_i == NULL) {
-    local("?", "");
+    param("?", "");               // ? does not need to be used (in subshells)
     local("FIGNORE", "");}}
+
+void Variable_map::bless_unused_vars() {
+  if (!usage_checked) usage_checked = true;
+  else throw Exception(Argm::Internal_error,
+                       "variable map usage checked multiple times");
+  for (Variable_map::iterator i=begin(); i != end(); ++i)
+    if (used_vars.find(i->first) == used_vars.end())
+      used_vars.insert(i->first);}
+
+Variable_map::~Variable_map() {
+  if (!usage_checked)
+    throw Exception(Argm::Internal_error,
+                    "variable map usage not checked");}
 
 void Variable_map::append_word_locally(const std::string& key,
                                        const std::string& value) {
@@ -43,11 +58,18 @@ void Variable_map::append_word_if_exists(const std::string& key,
   else if (i->second == "") i->second = word_from_value(value);
   else i->second += " " + word_from_value(value);}
 
-void Variable_map::local_or_append_word(const std::string& key,
+void Variable_map::param_or_append_word(const std::string& key,
                                         const std::string& value) {
   std::map<std::string, std::string>::iterator i = find(key);
-  if (i == end()) local(key, word_from_value(value));
+  if (i == end()) param(key, word_from_value(value));
   else i->second += " " + word_from_value(value);}
+
+bool Variable_map::check(const std::string& key) {
+  checked_vars.insert(key);
+  std::map<std::string, std::string>::iterator i = find(key);
+  if (i != end()) return true;
+  else if(parent) return parent->check(key);
+  else return false;}
 
 bool Variable_map::exists(const std::string& key) const {
   std::map<std::string, std::string>::const_iterator i = find(key);
@@ -61,20 +83,37 @@ const std::string& Variable_map::get(const std::string& key) {
     tmp <<dollar_question;
     (*this)["?"] = tmp.str();}
   std::map<std::string, std::string>::const_iterator i = find(key);
-  if (i != end()) return i->second;
+  if (i != end()) {
+    used_vars.insert(key);
+    return i->second;
+  }
   else if (parent) return parent->get(key);
   else throw Exception(Argm::Undefined_variable, key);}
 
 int Variable_map::global(const std::string& key, const std::string& value) {
   if (parent)
     if (find(key) != end()) return 3;
+    else if (usage_checked)
+      throw Exception(Argm::Internal_error,
+                      "variable map added to after usage checked");
     else return parent->global(key, value);
   else return local(key, value);}
 
-int Variable_map::local(const std::string& key, const std::string& value) {
+// params have their usage checked by the prototype (to properly handle -* etc)
+int Variable_map::param(const std::string& key, const std::string& value) {
   std::pair<std::string, std::string> entry(key, value);
   std::pair<iterator, bool> ret = insert(entry);
   return !ret.second;}
+
+// locals have their usage checked directly
+int Variable_map::local(const std::string& key, const std::string& value) {
+  if (usage_checked)
+    throw Exception(Argm::Internal_error,
+                    "variable map added to after usage checked");
+  local_vars.insert(key);
+  std::pair<std::string, std::string> entry(key, value);
+  std::pair<iterator, bool> ret = insert(entry);
+  return !ret.second;}  // yeah, you need to do this
 
 void Variable_map::set(const std::string& key, const std::string& value) {
   std::map<std::string, std::string>::iterator i = find(key);
@@ -93,6 +132,7 @@ template <class In>
 char** Variable_map::copy_to_char_star_star(In first, In last, char** res) {
   for (; first != last; ++first, ++res) {
     std::string key = first->first;
+    used_vars.insert(key);
     std::string value = get(key);
     *res = new char[key.length() + value.length() + 2];
     std::strcpy(*res, key.c_str());

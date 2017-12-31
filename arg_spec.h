@@ -1,7 +1,8 @@
-// Copyright (C) 2006-2016 Samuel Newbold
+// Copyright (C) 2006-2017 Samuel Newbold
 
 class Argm;
 class Command_block;
+class Error_list;
 
 enum Arg_type {FIXED, REFERENCE, SOON, STAR_REF, STAR_SOON, SELECTION,
                  SELECT_VAR, SELECT_STAR_VAR, SOON_SUBSTITUTION, SUBSTITUTION};
@@ -20,7 +21,7 @@ class Arg_spec {
   template<class Out> Out evaluate_expansion(const std::string& value,
                                              Out res) const;
   template<class Out> Out evaluate_substitution(const Argm& src, Out res,
-                                             std::list<Argm>& exceptions) const;
+                                             Error_list& exceptions) const;
   template<class Out> Out evaluate_var(const Argm& src, Out res) const;
  public:
   Arg_spec(const std::string& script, unsigned max_soon);
@@ -35,10 +36,10 @@ class Arg_spec {
   ~Arg_spec();
   void apply(const Argm& src, unsigned nesting,
              std::back_insert_iterator<std::vector<Arg_spec> > res,
-             std::list<Argm>& exceptions) const;
+             Error_list& exceptions) const;
   void interpret(const Argm& src,
                  std::back_insert_iterator<Argm> res,
-                 std::list<Argm>& exceptions) const;
+                 Error_list& exceptions) const;
   void promote_soons(unsigned nesting);
   std::string str(void) const; };
 

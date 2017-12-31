@@ -1,5 +1,5 @@
 // the registering of builtins
-// Copyright Samuel Newbold 2005-2016
+// Copyright Samuel Newbold 2005-2017
 
 #include <list>
 #include <map>
@@ -53,9 +53,6 @@ void internal_init(void) {
                                  b_function_all_flags));
   executable_map.set(new Builtin(".global", b_global));
   executable_map.set(new Builtin(".if", b_if));
-  executable_map.set(new Builtin(".importenv_overwrite",
-                                 b_importenv_overwrite));
-  executable_map.set(new Builtin(".importenv_preserve", b_importenv_preserve));
   executable_map.set(new Function(".init",
       "{.set_max_nesting 10\n"
           ".function rwsh.file_open_failure {.echo init file $1 does not exist "
@@ -81,6 +78,8 @@ void internal_init(void) {
   executable_map.set(new Builtin(".is_default_input", b_is_default_input));
   executable_map.set(new Builtin(".is_default_output", b_is_default_output));
   executable_map.set(new Builtin(".is_default_error", b_is_default_error));
+  executable_map.set(new Builtin(".list_environment", b_list_environment));
+  executable_map.set(new Builtin(".list_executables", b_list_executables));
   executable_map.set(new Builtin(".list_locals", b_list_locals));
   executable_map.set(new Builtin(".local", b_local));
   executable_map.set(new Builtin(".ls", b_ls));

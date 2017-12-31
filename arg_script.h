@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2016 Samuel Newbold
+// Copyright (C) 2006-2017 Samuel Newbold
 
 class Command_block;
 
@@ -38,16 +38,12 @@ class Arg_script {
   Argm argm(void) const;
   void apply(const Argm& src, unsigned nesting,
              std::back_insert_iterator<std::vector<Arg_script> > res,
-             std::list<Argm>& current_exceptions) const;
+             Error_list& current_exceptions) const;
   std::string str(void) const;
   Argm base_interpret(const Argm& src) const;
-  Argm interpret(const Argm& src, std::list<Argm>& exceptions) const;
+  Argm interpret(const Argm& src, Error_list& exceptions) const;
   void promote_soons(unsigned);
   bool is_argfunction(void) const {return argfunction_level == 1;}; };
-
-struct Unclosed_parenthesis {
-  std::string prefix;
-  Unclosed_parenthesis(const std::string& prefix_i) : prefix(prefix_i) {}};
 
 bool is_argfunction_name(const std::string& focus);
 bool is_binary_name(const std::string& focus);

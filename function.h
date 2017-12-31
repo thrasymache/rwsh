@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2016 Samuel Newbold
+// Copyright (C) 2005-2017 Samuel Newbold
 
 class Command_block : public Base_executable, public std::vector<Arg_script> {
   typedef std::vector<Arg_script> Base;
@@ -20,16 +20,15 @@ class Command_block : public Base_executable, public std::vector<Arg_script> {
       Command_block* result = new Command_block(*this);
       return result;}};
   Command_block* apply(const Argm& argm, unsigned nesting,
-                       std::list<Argm>& exceptions) const;
+                       Error_list& exceptions) const;
 
   int collect_errors_core(const Argm& src_argm,
                           const std::vector<std::string>& exceptional,
-                          bool logic,
-                          std::list<Argm>& exceptions);
-  virtual int execute(const Argm& argm, std::list<Argm>& exceptions) const;
+                          bool logic, Error_list& exceptions);
+  virtual int execute(const Argm& argm, Error_list& exceptions) const;
   void promote_soons(unsigned nesting);
   int prototype_execute(const Argm& argm, const Prototype& prototype,
-                        std::list<Argm>& exceptions) const;
+                        Error_list& exceptions) const;
   std::string str() const; };
 
 class Function : public Named_executable {
@@ -53,12 +52,7 @@ class Function : public Named_executable {
   Function* copy_pointer(void) const {
     if (!this) return 0;
     else return new Function(*this);};
-  virtual int execute(const Argm& argm, std::list<Argm>& exceptions) const;
+  virtual int execute(const Argm& argm, Error_list& exceptions) const;
   const std::string& name(void) const {return name_v;};
   void promote_soons(unsigned nesting);
-  std::string str() const;};
-
-struct Unclosed_brace {
-  std::string prefix;
-  Unclosed_brace(const std::string& prefix_i) : prefix(prefix_i) {}};
-
+  std::string str() const; };

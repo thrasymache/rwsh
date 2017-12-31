@@ -61,3 +61,4 @@ a \( (sec ond) third fourth
 #  if (nesting) throw Signal_argm (Argm::Mismatched_parenthesis, in);
 # and that line is what thows the earlier parenthesis. i don't know why the
 # semicolon causes a mismatched brace error
+.nop $A $FIGNORE

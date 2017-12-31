@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2016 Samuel Newbold
+// Copyright (C) 2005-2017 Samuel Newbold
 
 class Command_block;
 
@@ -58,6 +58,7 @@ class Argm : private std::vector<std::string> {
     Flag_in_elipsis,
     If_before_else,
     Input_range,
+    Internal_error,
     Invalid_word_selection,
     // Line_continuation,
     Mismatched_brace,
@@ -88,9 +89,11 @@ class Argm : private std::vector<std::string> {
     Sigusr2,
     Sigunknown,
     Tardy_flag,
+    Unchecked_variable,
     Undefined_variable,
     Unreadable_dir,
     Unrecognized_flag,
+    Unused_variable,
     Vars,
     Version_incompatible,
     Exception_count};
@@ -104,6 +107,7 @@ class Argm : private std::vector<std::string> {
   int local(const std::string& key, const std::string& value) const;
   Variable_map::iterator local_begin(void) const;
   Variable_map::iterator local_end(void) const;
+  void locals_listed(void) const;
   int set_var(const std::string& key, const std::string& value) const;
   template<class Out>
   Out star_var(const std::string& key, unsigned reference_level, Out res) const;
@@ -130,6 +134,9 @@ class Argm : private std::vector<std::string> {
   reference operator[] (int i) {return Base::operator[](i);};
   const_reference operator[] (int i) const {return Base::operator[](i);}; };
 
+struct Error_list : public std::list<Argm> {
+  void add_error(const Argm& error); };
+
 struct Exception : public Argm {
   Argm::Exception_t exception;
   Exception(Exception_t exception);
@@ -141,6 +148,14 @@ struct Exception : public Argm {
   Exception(Exception_t exception_i, int x);
   Exception(Exception_t exception, int x, int y, int z);
   Exception(Exception_t exception, const Argm& src);};
+
+struct Unclosed_brace : public Exception {
+  Unclosed_brace(const std::string& prefix) :
+    Exception(Argm::Mismatched_brace, prefix) {}};
+
+struct Unclosed_parenthesis : public Exception {
+  Unclosed_parenthesis(const std::string& prefix_i) :
+    Exception(Argm::Mismatched_parenthesis, prefix_i) {}};
 
 class Old_argv {
   char** focus;

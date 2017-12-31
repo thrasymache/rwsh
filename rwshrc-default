@@ -1,6 +1,10 @@
-.importenv_preserve
+.for ${.list_environment}$ {
+  .scope $1$ (var val) {.global $var $val; .nop $$var}}
 .source /etc/rwshrc-basic
 
+.try_catch_recursive rwsh.unused_variable {
+.collect_errors_except .nop {
+.set_max_collectible_exceptions 7
 # set up environment
 set_if_undefined PATH &{c $HOME /bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/git/bin}
 set_if_undefined BUILT_EXECUTABLE /bin/rwsh
@@ -9,6 +13,7 @@ set_if_undefined grep-sel ()
 set_if_undefined s ()
 set_if_undefined s2 ()
 set_if_undefined FIGNORE .*
+}}
 
 # selection commands
 fn sfn command {
@@ -79,7 +84,7 @@ fns grep [-l] [regex] [file ...] {
   if_only .var_exists regex {.set REGEX $regex}
   if_only .var_exists file {.selection_set s $file}
   .try_catch_recursive rwsh.return_code {
-    .if .var_exists -l {
+    .if var_exists -l {
       .local result ()
       .store_output result {&{whichp grep} $-*$ $REGEX @$s}
       .echo $result
@@ -184,8 +189,13 @@ fn unselect {.set s ()}
 .function rwsh.else_without_if {
   .echo else without if with call stack: $* $nl
   .return -1}
-.function rwsh.excessive_exceptions {
-  .echo exceeded maximum number of exceptions \( $1 \). call stack: $*2 $nl
+.function rwsh.excessive_exceptions_collected {
+  .echo exceeded maximum number of exceptions \( $1 \) in collect_errors. $nl
+  .echo call stack: $*2 $nl
+  .return -1}
+.function rwsh.excessive_exceptions_in_catch {
+  .echo exceeded maximum number of exceptions \( $1 \) in try_catch. $nl
+  .echo call stack: $*2 $nl
   .return -1}
 .function rwsh.excessive_nesting {
   .echo $nl function exceeded max nesting \( ${.get_max_nesting} \). call stack: $* $nl
@@ -209,6 +219,9 @@ fn unselect {.set s ()}
   .return -1}
 .function rwsh.input_range {
   .echo value $1 is out of usable numeric range $nl
+  .return -1}
+.function rwsh.internal_error {
+  .echo internal error: $* $nl
   .return -1}
 .function rwsh.invalid_word_selection {
   .echo $* is not a valid word selection $nl
@@ -314,8 +327,10 @@ fn unselect {.set s ()}
 .function or {
   .if .return 1 {.nop}; .stepwise $* {.else_if $* {.nop}}; .else {.nop}}
 .global TESTABILITY (an external variable)
-fn st {/bin/rwsh -to <test_main.sh >last.test.result
-  &{whichp diff} -c test.result last.test.result}
+fn st {
+  .collect_errors_except .nop {
+    /bin/rwsh -to <test_main.sh >last.test.result
+    &{whichp diff} -c test.result last.test.result}}
 fn bless-t {/bin/cp last.test.result test.result}
 fn to {/bin/rwsh -to}
 fn mst {make; st}

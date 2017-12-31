@@ -1,7 +1,7 @@
 // The definition of the Argm class, which contains the arguments that may
 // be passed to an executable.
 //
-// Copyright (C) 2005-2016 Samuel Newbold
+// Copyright (C) 2005-2017 Samuel Newbold
 
 #include <cstring>
 #include <cstdlib>
@@ -90,7 +90,7 @@ bool Argm::var_exists(const std::string& key) const {
               case '7': case '8': case '9': case '0': {
       int n = std::atoi(key.c_str());
       return size() > n;}
-    default: return parent_map()->exists(key);}}
+    default: return parent_map()->check(key);}}
 
 int Argm::global(const std::string& key, const std::string& value) const {
   switch (key[0]) {
@@ -109,6 +109,9 @@ Variable_map::iterator Argm::local_begin(void) const {
 
 Variable_map::iterator Argm::local_end(void) const {
   return parent_map()->end();}
+
+void Argm::locals_listed(void) const {
+  parent_map()->locals_listed = true;}
 
 int Argm::unset_var(const std::string& key) const {
   switch (key[0]) {

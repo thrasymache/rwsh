@@ -1,7 +1,7 @@
 // The definition of the Arg_spec class which contains a single argument
 // specifier (e.g. a fixed string, a variable read, a selection read or $*).
 //
-// Copyright (C) 2006-2016 Samuel Newbold
+// Copyright (C) 2006-2017 Samuel Newbold
 
 #include <cstdlib>
 #include <dirent.h>
@@ -150,7 +150,7 @@ Arg_spec::~Arg_spec() {delete substitution;}
 
 void Arg_spec::apply(const Argm& src, unsigned nesting,
                      std::back_insert_iterator<std::vector<Arg_spec> > res,
-                     std::list<Argm>& exceptions) const {
+                     Error_list& exceptions) const {
   switch(type) {
     case SOON:
       if (soon_level)
@@ -195,7 +195,7 @@ Out Arg_spec::evaluate_expansion(const std::string& value, Out res)
 
 template<class Out>
 Out Arg_spec::evaluate_substitution(const Argm& src, Out res,
-                                    std::list<Argm>& exceptions) const {
+                                    Error_list& exceptions) const {
   Substitution_stream override_stream;
   Argm temp_argm(src);
   temp_argm.output = override_stream.child_stream();
@@ -212,7 +212,7 @@ template<class Out> Out Arg_spec::evaluate_var(const Argm& src, Out res) const {
 // Argm
 void Arg_spec::interpret(const Argm& src,
                          std::back_insert_iterator<Argm> res,
-                         std::list<Argm>& exceptions) const {
+                         Error_list& exceptions) const {
   if (soon_level) std::abort();    // constructor guarantees SOONs already done
   switch(type) {
     case FIXED: *res++ = text; break;

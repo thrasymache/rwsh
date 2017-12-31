@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2016 Samuel Newbold
+// Copyright (C) 2005-2017 Samuel Newbold
 
 // Executable_map must be able to lookup rwsh.argfunction, which is
 // part of an Argm. Thus Argm must be the key_type so as to specify which
@@ -9,11 +9,16 @@ class Executable_map : private std::map<std::string, Base_executable*> {
   bool in_autofunction;
   int not_found(Argm& argm);                    // doesn't catch unwind_stack
  public:
+  typedef Base::const_iterator const_iterator;
+
   Executable_map(void);
+  const_iterator begin(void) const {return Base::begin();};
+  const_iterator end(void) const {return Base::end();};
   size_type erase (const std::string& key);
   Base_executable* find(const Argm& key);
-  int run(Argm& argm, std::list<Argm>& exceptions);     // doesn't catch unwind
+  int run(Argm& argm, Error_list& exceptions);          // doesn't catch unwind
   int base_run(Argm& argm);                                   // catches unwind
+  void unused_var_check_at_exit(void);                        // catches unwind
   bool run_if_exists(const std::string& key, Argm& argm);     // catches unwind
 
   // insert executable if not present, replace if executable already exists

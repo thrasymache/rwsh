@@ -3,7 +3,7 @@
 // between the Argm that was passed to the function and the Argm that will
 // be used to run a given executable.
 //
-// Copyright (C) 2006-2016 Samuel Newbold
+// Copyright (C) 2006-2017 Samuel Newbold
 
 #include <cstdlib>
 #include <exception>
@@ -217,13 +217,13 @@ std::string Arg_script::str(void) const {
   else {abort(); return "";}} // unhandled argfunction_level
 
 Argm Arg_script::base_interpret(const Argm& src) const {
-  std::list<Argm> exceptions;
+  Error_list exceptions;
   Argm ret = interpret(src, exceptions);
   if (exceptions.size()) Base_executable::exception_handler(exceptions);
   return ret;}
 
 // produce a destination Argm from the source Argm according to this script
-Argm Arg_script::interpret(const Argm& src, std::list<Argm>& exceptions) const {
+Argm Arg_script::interpret(const Argm& src, Error_list& exceptions) const {
   Argm result(src.parent_map(),
               !input.is_default()?  input:  src.input.child_stream(),
               !output.is_default()? output: src.output.child_stream(),
@@ -249,7 +249,7 @@ Argm Arg_script::interpret(const Argm& src, std::list<Argm>& exceptions) const {
 // unescaped_argfunction with argm.argfunction
 void Arg_script::apply(const Argm& src, unsigned nesting,
              std::back_insert_iterator<std::vector<Arg_script> > res,
-             std::list<Argm>& exceptions) const {
+             Error_list& exceptions) const {
   if (this->argfunction_level) {
     Arg_script result(*this);
     --result.argfunction_level;

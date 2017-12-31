@@ -2,7 +2,7 @@
 // standard stream and defines an input operator for Argm objects. It also
 // handles the calling of rwsh.prompt.
 //
-// Copyright (C) 2005-2016 Samuel Newbold
+// Copyright (C) 2005-2017 Samuel Newbold
 
 #include <iostream>
 #include <list>
@@ -41,7 +41,12 @@ Command_stream& Command_stream::operator>> (Arg_script& dest) {
     getline(src, line);
     gettimeofday(&after_input, rwsh_clock.no_timezone);
     rwsh_clock.user_wait(before_input, after_input);
-    if (operator!()) return *this;
+    if (operator!())
+      if (cmd.size())  {                 // EOF without a complete command
+        Exception raw_command(Argm::Raw_command, cmd);
+        executable_map.base_run(raw_command);
+        Arg_script(cmd, 0);}             // this will throw the right exception
+      else return *this;
     cmd += line;
     try {
       dest = Arg_script(cmd, 0);
@@ -56,7 +61,6 @@ Command_stream& Command_stream::operator>> (Arg_script& dest) {
       throw;}}
   Exception raw_command(Argm::Raw_command, cmd);
   executable_map.base_run(raw_command);
-  if (Named_executable::unwind_stack()) return *this;
   return *this;}
 
 // returns non-zero if the last command was read successfully

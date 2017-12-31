@@ -15,4 +15,5 @@
 clock-watch
 clock-watch
 rwsh.mapped_argfunction {timings timings; timings clock-watch}
+.nop $A $FIGNORE
 

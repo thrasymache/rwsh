@@ -2,7 +2,7 @@
 // external programs, the latter executes commands that are implemented by
 // functions in builtin.cc.
 //
-// Copyright (C) 2005-2016 Samuel Newbold
+// Copyright (C) 2005-2017 Samuel Newbold
 
 #include <algorithm>
 #include <cstdlib>
@@ -42,18 +42,18 @@ Argm::Exception_t unix2rwsh(int sig) {
 } // end unnamed namespace
 
 int Base_executable::operator() (const Argm& argm,
-                                 std::list<Argm>& parent_exceptions) {
+                                 Error_list& parent_exceptions) {
   if (global_nesting > max_nesting+1)
-    add_error(parent_exceptions, Exception(Argm::Excessive_nesting));
+    parent_exceptions.add_error(Exception(Argm::Excessive_nesting));
   if (unwind_stack()) return Variable_map::dollar_question;
   else ++executable_nesting, ++global_nesting;
-  std::list<Argm> children;
+  Error_list children;
   struct timeval start_time;
   gettimeofday(&start_time, rwsh_clock.no_timezone);
   int ret;
   try {ret = execute(argm, children);}
   catch (Exception error) {
-    add_error(children, error);
+    children.add_error(error);
     ret = -1;}
   struct timeval end_time;
   gettimeofday(&end_time, rwsh_clock.no_timezone);
@@ -68,7 +68,7 @@ int Base_executable::operator() (const Argm& argm,
     executable_map.run(focus, children);}
   if (children.size()) {
     last_exception_v = "";
-    for (std::list<Argm>::iterator i = children.begin(); i != children.end();) {
+    for (Error_list::iterator i = children.begin(); i != children.end();) {
       last_exception_v += i->str() + " " + argm.str();
       i->push_back(argm[0]);
       parent_exceptions.push_back(*i);
@@ -77,10 +77,13 @@ int Base_executable::operator() (const Argm& argm,
   if (del_on_term && !executable_nesting) delete this;
   return ret;}
 
-void Base_executable::add_error(std::list<Argm>& exceptions, const Argm& error){
+void Base_executable::add_error(void) {
   unwind_stack_v = true;
-  exceptions.push_back(error);
   ++current_exception_count;}
+
+void Error_list::add_error(const Argm& error){
+  push_back(error);
+  Base_executable::add_error();}
 
 void Base_executable::unix_signal_handler(int sig) {
   caught_signal = unix2rwsh(sig);}
@@ -93,7 +96,7 @@ void Base_executable::unix_signal_handler(int sig) {
    code below to run the fallback_handler is the only exception to this rule).
    main does not need to do this handling, because anything that it calls
    directly will have an initial nesting of 0.*/
-void Base_executable::exception_handler(std::list<Argm>& exceptions) {
+void Base_executable::exception_handler(Error_list& exceptions) {
   in_exception_handler = true;
   unwind_stack_v = false;
   std::set<std::string> failed_handlers;
@@ -118,20 +121,20 @@ void Base_executable::exception_handler(std::list<Argm>& exceptions) {
 
 // code to call exception handlers when requested within a function
 void Base_executable::catch_blocks(const Argm& argm,
-                                   std::list<Argm>& exceptions) {
-  for (std::list<Argm>::iterator focus = exceptions.begin();
+                                   Error_list& exceptions) {
+  for (Error_list::iterator focus = exceptions.begin();
        focus != exceptions.end();)
     if (find(argm.begin() + 1, argm.end(), (*focus)[0]) != argm.end()) {
       if (dropped_catches >= max_extra) {
          if (!execution_handler_excess_thrown)
-           add_error(exceptions,
+           exceptions.add_error(
                      Exception(Argm::Excessive_exceptions_in_catch, max_extra));
          execution_handler_excess_thrown = true;
          return;}
       in_exception_handler = true;
       unwind_stack_v = false;
       unsigned previous_count = current_exception_count;
-      //std::list<Argm> current_exceptions;
+      //Error_list current_exceptions;
       executable_map.run(*focus, exceptions);
       dropped_catches += current_exception_count - previous_count;
       if (!unwind_stack()) {
@@ -148,7 +151,7 @@ Binary::Binary(const std::string& impl) : implementation(impl) {}
 
 #include <iostream>
 // run the given binary
-int Binary::execute(const Argm& argm_i, std::list<Argm>& exceptions) const {
+int Binary::execute(const Argm& argm_i, Error_list& exceptions) const {
   int ret,
       input = argm_i.input.fd(),
       output = argm_i.output.fd(),
@@ -163,15 +166,16 @@ int Binary::execute(const Argm& argm_i, std::list<Argm>& exceptions) const {
     int ret = execve(implementation.c_str(), argv.argv(), env);
     Exception error_argm(Argm::Binary_not_found, argm_i[0]);
     executable_map.run(error_argm, exceptions);
+    executable_map.unused_var_check_at_exit();
     exit(ret);}
   else plumber.wait(&ret);
-  if (ret) add_error(exceptions, Exception(Argm::Return_code, ret));
+  if (ret) exceptions.add_error(Exception(Argm::Return_code, ret));
   return ret;}
 
 Builtin::Builtin(const std::string& name_i,
-                 int (*impl)(const Argm& argm, std::list<Argm>& exceptions)) :
+                 int (*impl)(const Argm& argm, Error_list& exceptions)) :
   implementation(impl), name_v(name_i) {}
 
 // run the given builtin
-int Builtin::execute(const Argm& argm, std::list<Argm>& exceptions) const {
+int Builtin::execute(const Argm& argm, Error_list& exceptions) const {
   return (*implementation)(argm, exceptions);}

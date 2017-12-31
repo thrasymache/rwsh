@@ -1,8 +1,9 @@
 /bin/cat /tmp/lcl
 .nop .init is tested by having test_init.sh define rwsh.before_command etc.
 .source /etc/rwshrc-basic
+.function_all_flags ## [args ...] {.nop $args}
 
-# argv tests
+## argm
 .nop
      .nop
 .nop 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
@@ -21,6 +22,10 @@ rwsh.mapped_argfunction {	   .echo ignore leading tab in argfunction}
 .which_executable rwsh.argfunction {
   multiple line argfunction }
 .nop rwsh.argfunction rwsh.mismatched_brace } 
+.source test_files/unclosed_brace_newline.rwsh
+.source test_files/unclosed_brace.rwsh
+.source test_files/unclosed_parenthesis_newline.rwsh
+.source test_files/unclosed_parenthesis.rwsh
 .nop multiple statements \; on a line
 .which_executable rwsh.argfunction {rwsh.multiple_argfunctions} {}
 .which_executable rwsh.argfunction {rwsh.argfunction with text args}
@@ -29,7 +34,8 @@ rwsh.mapped_argfunction {	   .echo ignore leading tab in argfunction}
 .which_executable rwsh.argfunction {
   .function  x  { ${ .which_path  echo  $PATH }  something } }
 
-# ability of functions to immitate built-ins
+## ability of functions to perform custom control flow
+# rwshrc-basic
 .function f {.function $1 {rwsh.argfunction}}
 fni w command {.which_executable $command {rwsh.argfunction}}
 f e {.echo $*}
@@ -38,18 +44,19 @@ f m {rwsh.argfunction}
 .which_executable w
 .which_executable e
 .which_executable m
-w e
-w () {}
+which e
+which ee
+which () {}
 e text that does not have a prompt appended
 m {e again}
 if_only .return 1 {e not printed}
 if_only .return 0 {e printed without error}
 .function for {
-  .if .var_exists $1 {.for &&*1$ {rwsh.argfunction}}; .else {.nop}}
+  .if .test_greater $# 1 {.for &&*1$ {rwsh.argfunction}}; .else {.nop}}
 for {e skipped without error}
 for 1 2 3 {e loop $* $nl}
 
-# arg_script.cc and arg_spec.cc
+## arg_script.cc and arg_spec.cc
 # Arg_spec::FIXED, Arg_script::add_quote
 e 5 4 3 2 1
 e a (tight string created by parentheses $#) $#
@@ -64,7 +71,7 @@ e a (multi-line parenthesis
   mismatch))
 e (internal \)parenthesis \\ escape ( \))) $#
 
-# star_var
+# star_var (argm_star_var)
 e 1 2 $* 3 4
 e $*2 1 2
 
@@ -82,6 +89,7 @@ e @/*selection_not_found*
 e @test_main.cc
 m {m {.for @e*c {e $1 $nl}} >test_files/tmp}
 .global LC_ALL C
+.nop $LC_ALL
 f sort {&{.which_path sort /bin:/usr/bin} $*}
 sort test_files/tmp
 e @test_files/*xx
@@ -149,6 +157,9 @@ m ${.return 1} {}
 m {e &{.return 1}}
 m {e &&{.return 1}; e after}
 f rwsh.failed_substitution {e $Z}
+.throw m {echo even from $* 7 is a number}
+.fallback_handler m {echo even from $* 7 is a number}
+.throw rwsh.failed_substitution m {echo even from $* 7 is a number}
 m {e &&{.return 1}; e after}
 f rwsh.failed_substitution {.echo signal triggered: $0 \( $* \) $nl; .return -1}
 e x{e bad argfunction style}
@@ -233,7 +244,7 @@ f x
 .unset A
 .unset OLD_NESTING
 
-# builtin tests
+## builtin tests
 # .argc
 .argc {excess argfunc}
 .argc
@@ -343,9 +354,9 @@ ntimes -- 3 {e $n remaining $nl}
 ntimes 2 {ntimes 3 {e &&n and $n remaining $nl}}
 .function_all_flags a [-x] [-] [--long-opt y second {
   e mismatched bracket (i.e. missing close brakcet)}
-.function_all_flags a [-*] [--] {.list_locals}
+.function_all_flags a [-?] [--] {.list_locals}
 .function_all_flags a [-x] [--] foo {.list_locals}
-.function_all_flags a [-*] -- foo {.list_locals}
+.function_all_flags a [-?] -- foo {.list_locals}
 .function_all_flags a [-x] -- {.list_locals}
 .function_all_flags a [--] {.list_locals}
 w a
@@ -438,7 +449,7 @@ a -first --
 a -first excess
 a -to -- -first -- stops flag parsing rather than being a flag
 a -to -first
-.function_all_flags a [-*] [-first] {
+.function_all_flags a [-?] [-first] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   e nothing_required}
 w a
@@ -449,7 +460,14 @@ a -first --
 a -first excess
 a -to -- -first
 a -to -first
-.function_all_flags a [-*] {
+.function_all_flags a [-*] [-first] {
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
+  e nothing_required}
+w a
+a
+a -to -- -first
+a -to -first
+.function_all_flags a [-?] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   e nothing_required}
 w a
@@ -471,12 +489,17 @@ w a
 .function_all_flags a [x ... a ...] {}
 .function_all_flags a [x ... a ... b] {}
 .function_all_flags a [-x ...] b [c] {}
+.function_all_flags a -? x ... y {
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
+w a
+a -c -a -b first second third
+a -c first -a second -b third
 .function_all_flags a -* x ... y {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a -c -a -b first second third
 a -c first -a second -b third
-.function_all_flags a [-*] x ... y {
+.function_all_flags a [-?] x ... y {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a 
@@ -484,12 +507,12 @@ a first
 a first (se cond)
 a first (se cond) third
 a first (se cond) third fourth (fi fth)
-.function_all_flags a [-*] x [...] {
+.function_all_flags a [-?] x [...] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a
 a first second third fourth fifth
-.function_all_flags a [-*] x [--] [y ...] {
+.function_all_flags a [-?] x [--] [y ...] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a
@@ -497,7 +520,7 @@ a first
 a first second
 a first second third
 a first second third fourth fifth
-.function_all_flags a [-*] a [b ... c] d {
+.function_all_flags a [-?] a [b ... c] d {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a first
@@ -539,7 +562,7 @@ a -x (fi rst) second
 a -x () (fi rst) second
 a -x first (sec ond) third
 a -x (fi rst) (sec ond) third fourth
-.function_all_flags a x [-*] [... y z] {
+.function_all_flags a x [-?] [... y z] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   .combine $nl
   if_only .var_exists x {c (x: ) $x$ $nl}}
@@ -551,7 +574,7 @@ a first (sec ond) third
 a (fi rst) (sec ond) third fourth
 a () (sec ond) third fourth
 a (fi rst) (sec ond) (thi rd) (fou rth) (fi fth)
-.function_all_flags a [-*] [x] [... y] {
+.function_all_flags a [-?] [x] [... y] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
 a
@@ -560,7 +583,7 @@ a (fi rst) second
 a first (sec ond) third
 a (fi rst) (sec ond) third fourth
 a (fi rst) (sec ond) (thi rd) (fou rth) (fi fth)
-.function_all_flags a [-*] [x y] [... z] {
+.function_all_flags a [-?] [x y] [... z] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   .combine $nl
   if_only .var_exists x {c (x: ) $x $nl}
@@ -594,7 +617,6 @@ a -x second -
 .unset x y
 .var_exists
 .var_exists x {excess argfunc}
-.var_exists x y
 .global 100 nihilism
 .unset #
 .unset *
@@ -605,9 +627,13 @@ a -x second -
 .var_exists 0
 .var_exists 2
 .var_exists x
+.var_exists x y
+.var_exists # y
+.var_exists y x
 .unset x
 .global x nihilism
 .var_exists x
+.var_exists x y
 e $x
 .global x nihilism
 .function a {if_only .var_exists x {e in a x \( $x \) $nl}
@@ -739,6 +765,11 @@ m {.is_default_output}
 .is_default_error {excess argfunc}
 m {.is_default_error}
 
+# .list_executables
+.list_executables excess
+.list_executables {excess argfunc}
+.for ${.list_executables}$ {.combine $1 $nl}
+
 # .ls
 .ls
 .ls /bin {excess argfunc}
@@ -791,13 +822,14 @@ m {.fork m {/bin/kill ${.getpid}
 .scope a ([--] --) {e -- and [--] cannot both be parameters}
 .scope a ([-- arg]) {e -- cannot take arguments}
 .scope a ([arg -- foo]) {e -- cannot be an argument}
-.scope -x -y a b ([-*] args ...) {for ${.list_locals}$ {.combine $1 = $$1 \ }}
-.scope a ([-* bad] arg) {e -* cannot currently take arguments}
-.scope -a -* -b a ([-*] a) {for ${.list_locals}$ {.combine $1 = $$1 \ }}
+.scope -x -y a b ([-?] args ...) {for ${.list_locals}$ {.combine $1 = $$1 \ }}
+.scope a ([-? bad] arg) {e -? cannot currently take arguments}
+.scope a ([-* bad] arg) {e -* (aka -?) cannot currently take arguments}
+.scope -a -* -b a ([-?] a) {for ${.list_locals}$ {.combine $1 = $$1 \ }}
 .scope bar foo {e aa $foo bb}
 .scope baz bax (foo bar) {for ${.list_locals}$ {.combine $1 = $$1 \ }}
 .scope foo bar baz bax (args ...) {e aa $args$2 bb $args$1 cc}
-.scope single ([-x] [--long-opt y] second) {.list_locals}
+.scope single ([-x] [--long-opt y] second) {var_val ${.list_locals}$}
 .function_all_flags a [-x] [--long-opt y] second {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 w a
@@ -805,7 +837,7 @@ w a
   .scope $args$ ([-x] [--long-opt y] second) {
     for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
   .combine $nl
-  .scope $args$ ( [-*] [--long-opt y] second) {
+  .scope $args$ ( [-?] [--long-opt y] second) {
     for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}}
 w pt
 a
@@ -819,16 +851,16 @@ a --long-opt single
 pt --long-opt single
 a --long-opt first -x --long-opt second single
 pt --long-opt first -x --long-opt second single
-.function_all_flags a [-*] [-first] {
+.function_all_flags a [-?] [-first] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   e nothing_required}
 w a
 .function_all_flags pts -- [args ...] {
   .if var_exists args {
-    .scope $args$ ([-first] [-*]) {
+    .scope $args$ ([-first] [-?]) {
       .for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
       e nothing_required}
-  else {.scope ([-first] [-*]) {
+  else {.scope ([-first] [-?]) {
       .for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
       e nothing_required}}
 w pts
@@ -896,6 +928,7 @@ m {.collect_errors_except echo {
      .throw echo 7
      echo inside collect}
    echo outside collect}
+# .collect_errors_except .echo {${.throw .echo exception thrown directly}}
 m {.collect_errors_only rwsh.executable_not_found {
      .throw rwsh.executable_not_found foo
      echo between exceptions
@@ -1179,6 +1212,7 @@ w rwsh.mapped_argfunction {>dummy_file}
 .while tf
 .while tf {e printed; .set A 4}
 .while tf {e skipped}
+.while .return 0 {.throw .echo exception within while}
 .set A 0
 .while tf {e in .while argfunction $A $nl; .var_add A 1}
 .set A 0
@@ -1378,21 +1412,91 @@ rwsh.vars
 # check for extraneous variables
 /usr/bin/printenv
 
-# .importenv_preserve .importenv_overwrite
+# .list_environment
 .global SHELL unmodified
-.importenv_preserve x
-.importenv_preserve {excess argfunc}
-.importenv_preserve
+/usr/bin/printenv
+.list_environment x
+.list_environment {excess argfunc}
+for ${.list_environment}$ {
+  .scope $1$ (var val) {
+    .global $var $val}}
 e $TESTABILITY
 e $SHELL
 .unset TESTABILITY
-.importenv_overwrite x
-.importenv_overwrite {excess argfunc}
-.importenv_overwrite
+for ${.list_environment}$ {
+  .scope $1$ (var val) {setf $var $val; .nop $$var}}
 e $TESTABILITY
 e $SHELL
+.set_max_collectible_exceptions 7
+.collect_errors_except .nop {${.throw echo exception from inside substitution}}
+.collect_errors_only .nop {${.throw echo exception from inside substitution}}
 
-# exiting rwsh.shutdown
+## unused variables
+# bless_unused_variables
+.scope () {}
+.scope -- () {}
+.scope -- () {echo $--}
+.scope -- (-- [a]) {}
+.scope () {.local a n; .local b o; .local c p}
+.scope () {
+  .local a n; .local b o; .local c p
+  echo $a $b $c $d
+  .local d too_late}
+.scope () {
+  .local a n; .local b o; .local c p
+  echo $d $a $b $c
+  .local d too_late}
+.scope n o p q (a b c d) {echo $a $b $c $d}
+.scope n o p q (a b c d) {echo a b c d}
+.scope n o (a [b] c [d]) {echo $a $c }
+.scope n o ([a] b [c] d) {echo $b $d; .var_exists a}
+.scope n o ([a] b [c] d) {echo $b; .var_exists c}
+.scope n ([a1 a2 a3 a4] b [c] [d1 d2] [e ...]) {echo $b}
+.scope n ([a1 a2 a3 a4] b [c] [d1 d2] [e ...]) {echo $b; .var_exists a4 d2 e c}
+.scope n ([a1 a2 a3 a4] b [c] [d1 d2] [e ...]) {echo $b; .var_exists a3 d1}
+.scope n ([a1 a2 a3 a4] b [c] [d1 d2] [e ...]) {echo ${.list_locals} $b}
+.scope n o p q r s ([a1 a2 a3 a4] b [c] [d1 d2] [e ...]) {echo ${.list_locals} $b}
+.scope n o p q r s t u ([a1 a2 a3 a4] b [c] [d1 d2]) {echo $a1 $d2}
+.scope n o p q r s t u ([a1 a2 a3 a4] b [c] [d1 d2]) {
+  echo $a1 $a2 $a3 $a4 $c $d1 $d2}
+.scope ([-a a1 a2 a3] [-b] [-c] [-d d1]) {}
+.scope ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {}
+.scope ([-a a1 a2 a3] [-b] [-c] [-d d1]) {.var_exists -a -b -c -d}
+.scope ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {echo $-?; .var_exists -a -b -c -d}
+.scope ([-a a1 a2 a3] [-b] [-c] [-d d1]) {.list_locals}
+.scope -b -d darg ([-a a1 a2 a3] [-b] [-c] [-d d1]) {.list_locals; echo ()}
+.scope ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {echo ${.list_locals} $-?}
+.scope -b -d darg -v ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {echo ${.list_locals} $-?}
+.scope ([-a a1 a2 a3] [-d d1 d2]) {.var_exists a2 d2}
+.scope ([-?] [-a a1 a2 a3] [-d d1 d2]) {.var_exists -? a3 d1}
+.scope ([-a a1 a2 a3] [-b] [-c] [-d d1]) {echo $-*}
+.scope ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {echo $-*}
+.scope n ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1] [e] f) {.local loc lval; echo $-*}
+.scope -c ([-a a1 a2 a3] [-b] [-c] [-d d1]) {echo $-c}
+.scope -b -c ([-a a1 a2 a3] [-b] [-c] [-d d1]) {echo $-c; .var_exists -a -b -d}
+.scope -b -c ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {
+  echo $-c; .var_exists -a -b -d -?}
+.scope -b -c ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {
+  echo $-c $-?; .var_exists -a -b -d}
+.scope -b -c ([-a a1 a2 a3] [-b] [-c] [-d d1]) {echo $-b; .var_exists a2 d1}
+.scope -a n o p -b -c -d q ([-a a1 a2 a3] [-b] [-c] [-d d1]) {
+  echo $-c; .var_exists -a -b -d}
+.scope -a n o p -b -c -d q ([-a a1 a2 a3] [-b] [-c] [-d d1]) {
+  echo $-b; .var_exists a2 d1}
+.scope -a n o p -b -c -d q ([-a a1 a2 a3] [-b] [-c] [-d d1]) {
+  echo $-a $-b $-c $-d}
+.scope -a n o p -b -c -d q ([-a a1 a2 a3] [-b] [-c] [-d d1]) {
+  echo $a1 $a2 $a3 $d1; .var_exists -b -c}
+.scope -a n o p -b -c -d q ([-a a1 a2 a3] [-b] [-c] [-d d1]) {
+  echo $-*}
+.scope -v -a n o p -b -c -d q ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {
+  echo $a1 $a2 $a3 $d1; .var_exists -b -c}
+.scope -v -a n o p -b -c -d q ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {echo $-?}
+.scope -v -a n o p -b -c -d q ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {echo $-*}
+.scope -a n o p ([-a a1 a2 a3]) {echo $a1 $a3}
+
+# exiting
+# rwsh.shutdown .exit
 .exit excess_argument
 .exit {excess argfunction}
 .exit

@@ -1,10 +1,12 @@
-// Copyright (C) 2007-2016 Samuel Newbold
+// Copyright (C) 2007-2017 Samuel Newbold
 
 #include <errno.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <iostream>
+#include <list>
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 

@@ -5,6 +5,7 @@
 .global last_command_return -10
 .global A \
 .global N \
+.nop $N
 
 .nop tests multi-line commands within a sourced script
 .nop .function rwsh.run_logic {

@@ -1,6 +1,6 @@
 // The functions that implement each of the builtin executables
 //
-// Copyright (C) 2006-2016 Samuel Newbold
+// Copyright (C) 2006-2017 Samuel Newbold
 
 #include <climits>
 #include <cfloat>
@@ -51,14 +51,14 @@ std::string fallback_message = "Exception for failed handler. "
 } // end unnamed namespace
 
 // print the number of arguments passed
-int b_argc(const Argm& argm, std::list<Argm>& exceptions) {
+int b_argc(const Argm& argm, Error_list& exceptions) {
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   argm.output <<argm.argc()-1;
   return 0;}
 
 // change the current directory to the one given
 // returns the error returned from chdir
-int b_cd(const Argm& argm, std::list<Argm>& exceptions) {
+int b_cd(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   errno = 0;
@@ -73,11 +73,12 @@ int b_cd(const Argm& argm, std::list<Argm>& exceptions) {
 // run the argument function, collecting exceptions to be thrown as a group
 // at the end, but terminating immediately if one of the specified exceptions
 // are thrown
-int b_collect_errors_except(const Argm& argm, std::list<Argm>& exceptions) {
+int b_collect_errors_except(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (!argm.argfunction()) throw Exception(Argm::Missing_argfunction);
   Argm blank(argm.parent_map(), argm.input, argm.output.child_stream(),
              argm.error);
+  blank.push_back("rwsh.mapped_argfunction");
   std::vector<std::string> exceptional(argm.begin()+1, argm.end());
   return argm.argfunction()->collect_errors_core(blank, exceptional, true,
                                                  exceptions);}
@@ -85,17 +86,18 @@ int b_collect_errors_except(const Argm& argm, std::list<Argm>& exceptions) {
 // run the argument function, collecting exceptions to be thrown as a group
 // at the end, but only until an exception is not one of the specified
 // exceptions
-int b_collect_errors_only(const Argm& argm, std::list<Argm>& exceptions) {
+int b_collect_errors_only(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (!argm.argfunction()) throw Exception(Argm::Missing_argfunction);
   Argm blank(argm.parent_map(), argm.input, argm.output.child_stream(),
              argm.error);
+  blank.push_back("rwsh.mapped_argfunction");
   std::vector<std::string> exceptional(argm.begin()+1, argm.end());
   return argm.argfunction()->collect_errors_core(blank, exceptional, false,
                                                  exceptions);}
 
 // echo arguments to standard output without space separation
-int b_combine(const Argm& argm, std::list<Argm>& exceptions) {
+int b_combine(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   for (Argm::const_iterator i = argm.begin()+1; i != argm.end(); ++i)
@@ -104,7 +106,7 @@ int b_combine(const Argm& argm, std::list<Argm>& exceptions) {
   return 0;}
 
 // echo arguments to standard output separated by space
-int b_echo(const Argm& argm, std::list<Argm>& exceptions) {
+int b_echo(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   for (Argm::const_iterator i = argm.begin()+1; i != argm.end()-1; ++i)
@@ -115,7 +117,7 @@ int b_echo(const Argm& argm, std::list<Argm>& exceptions) {
 
 #include <iostream>
 // replace the shell with the given binary
-int b_exec(const Argm& argm, std::list<Argm>& exceptions) {
+int b_exec(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   int input = argm.input.fd(),
@@ -134,7 +136,7 @@ int b_exec(const Argm& argm, std::list<Argm>& exceptions) {
   return ret;}
 
 // exit the shell
-int b_exit(const Argm& argm, std::list<Argm>& exceptions) {
+int b_exit(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   Variable_map::exit_requested = true;
@@ -143,9 +145,8 @@ int b_exit(const Argm& argm, std::list<Argm>& exceptions) {
 /* Exception handler for exceptions that trigger exceptions in their exception
    handler, without possibly itself triggering exceptions. This prints its
    arguments prefixed by a configurable message.*/
-int b_fallback_handler(const Argm& argm, std::list<Argm>& exceptions) {
+int b_fallback_handler(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
-  if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   argm.output <<fallback_message;
   for (Argm::const_iterator i = argm.begin()+1; i != argm.end()-1; ++i)
     argm.output <<*i <<" ";
@@ -160,7 +161,7 @@ int b_fallback_handler(const Argm& argm, std::list<Argm>& exceptions) {
 
 // run the argfunction for each argument, passing that value as the argument
 // returns the value returned by the argfunction
-int b_for(const Argm& argm, std::list<Argm>& exceptions) {
+int b_for(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (!argm.argfunction()) throw Exception(Argm::Missing_argfunction);
   int ret = -1;
@@ -177,7 +178,7 @@ int b_for(const Argm& argm, std::list<Argm>& exceptions) {
 
 // run the argfunction for line of input, passing that line as the argm
 // returns the value returned by the argfunction
-int b_for_each_line(const Argm& argm, std::list<Argm>& exceptions) {
+int b_for_each_line(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (!argm.argfunction()) throw Exception(Argm::Missing_argfunction);
   int ret = -1;
@@ -194,7 +195,7 @@ int b_for_each_line(const Argm& argm, std::list<Argm>& exceptions) {
   return ret;}
 
 #include "plumber.h"
-int b_fork(const Argm& argm, std::list<Argm>& exceptions) {
+int b_fork(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   // argfunction optional
   int ret = 0;
@@ -204,12 +205,13 @@ int b_fork(const Argm& argm, std::list<Argm>& exceptions) {
                 argm.parent_map(),
                 argm.input, argm.output.child_stream(), argm.error);
     ret = executable_map.run(lookup, exceptions);
+    executable_map.unused_var_check_at_exit();
     std::exit(ret);}
   else plumber.wait(&ret);
   return ret;}
 
 // add argfunction to executable map with name $1
-int b_function(const Argm& argm, std::list<Argm>& exceptions) {
+int b_function(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   else if (is_binary_name(argm[1])) return 1;
   Argm lookup(argm.begin()+1, argm.end(), NULL, argm.parent_map(),
@@ -226,7 +228,7 @@ int b_function(const Argm& argm, std::list<Argm>& exceptions) {
 
 // add argfunction to executable map with name $1 and arguments $*2
 // the arguments must include all flags that can be passed to this function
-int b_function_all_flags(const Argm& argm, std::list<Argm>& exceptions) {
+int b_function_all_flags(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   else if (is_binary_name(argm[1])) return 1;
   else if (is_argfunction_name(argm[1])) return 3;
@@ -243,7 +245,7 @@ int b_function_all_flags(const Argm& argm, std::list<Argm>& exceptions) {
     return 0;}}
 
 // Get the configurable message for fallback_handler
-int b_get_fallback_message(const Argm& argm, std::list<Argm>& exceptions) {
+int b_get_fallback_message(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   argm.output <<fallback_message;
@@ -251,8 +253,7 @@ int b_get_fallback_message(const Argm& argm, std::list<Argm>& exceptions) {
 
 // Get the number of exceptions that can be thrown inside .collect_errors_*
 // before they exit early
-int b_get_max_collectible_exceptions(const Argm& argm,
-                                     std::list<Argm>& exceptions) {
+int b_get_max_collectible_exceptions(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   argm.output <<Base_executable::max_collect;
@@ -260,7 +261,7 @@ int b_get_max_collectible_exceptions(const Argm& argm,
 
 // Get the number of exceptions that can be thrown by catch blocks after
 // max_collectible_exceptions have already been thrown
-int b_get_max_extra_exceptions(const Argm& argm, std::list<Argm>& exceptions) {
+int b_get_max_extra_exceptions(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   argm.output <<Base_executable::max_extra;
@@ -268,7 +269,7 @@ int b_get_max_extra_exceptions(const Argm& argm, std::list<Argm>& exceptions) {
 
 // Get the maximum number of nesting levels where functions call functions
 // before completing.
-int b_get_max_nesting(const Argm& argm, std::list<Argm>& exceptions) {
+int b_get_max_nesting(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   argm.output <<Base_executable::max_nesting;
@@ -276,7 +277,7 @@ int b_get_max_nesting(const Argm& argm, std::list<Argm>& exceptions) {
 
 // add a variable to the variable map that will remain after the enclosing
 // function terminates
-int b_global(const Argm& argm, std::list<Argm>& exceptions) {
+int b_global(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 3) throw Exception(Argm::Bad_argc, argm.argc()-1, 2, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   else return argm.global(argm[1], argm[2]);}
@@ -285,8 +286,7 @@ namespace {
 bool in_if_block = false, successful_condition = false,
   conditional_block_exception = false;
 
-int if_core(const Argm& argm, std::list<Argm>& exceptions, bool logic,
-            bool els) {
+int if_core(const Argm& argm, Error_list& exceptions, bool logic, bool els) {
   if (!in_if_block) throw Exception(Argm::Else_without_if);
   else if (successful_condition) return Variable_map::dollar_question;
   else {
@@ -313,7 +313,7 @@ int if_core(const Argm& argm, std::list<Argm>& exceptions, bool logic,
 
 // run argfunction if $* returns true
 // returns the value returned by the argfunction
-int b_if(const Argm& argm, std::list<Argm>& exceptions) {
+int b_if(const Argm& argm, Error_list& exceptions) {
   try {
     if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
     else if (!argm.argfunction()) throw Exception(Argm::Missing_argfunction);
@@ -329,7 +329,7 @@ int b_if(const Argm& argm, std::list<Argm>& exceptions) {
 
 // run argfunction if successful_condition is false and $* returns true
 // returns the value returned by the argfunction
-int b_else_if(const Argm& argm, std::list<Argm>& exceptions) {
+int b_else_if(const Argm& argm, Error_list& exceptions) {
   try {
     if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
     else if (!argm.argfunction()) throw Exception(Argm::Missing_argfunction);
@@ -341,7 +341,7 @@ int b_else_if(const Argm& argm, std::list<Argm>& exceptions) {
 
 // run argfunction if successful_condition is false and $* returns false
 // returns the value returned by the argfunction
-int b_else_if_not(const Argm& argm, std::list<Argm>& exceptions) {
+int b_else_if_not(const Argm& argm, Error_list& exceptions) {
   try {
     if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
     else if (!argm.argfunction()) throw Exception(Argm::Missing_argfunction);
@@ -353,7 +353,7 @@ int b_else_if_not(const Argm& argm, std::list<Argm>& exceptions) {
 
 // run argfunction if successful_condition is false
 // returns the value returned by the argfunction
-int b_else(const Argm& argm, std::list<Argm>& exceptions) {
+int b_else(const Argm& argm, Error_list& exceptions) {
   try {
     int ret = 0;
     if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
@@ -366,34 +366,8 @@ int b_else(const Argm& argm, std::list<Argm>& exceptions) {
     in_if_block = false;
     throw exception;}}
 
-// import the external environment into the variable map, overwriting variables
-// that already exist
-int b_importenv_overwrite(const Argm& argm, std::list<Argm>& exceptions) {
-  if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
-  if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
-  for (char** i=environ; *i; ++i) {
-    std::string src(*i);
-    std::string::size_type div = src.find("=");
-    if (div != std::string::npos)
-      if (argm.var_exists(src.substr(0, div)))
-        argm.set_var(src.substr(0, div), src.substr(div+1));
-      else argm.global(src.substr(0, div), src.substr(div+1));}
-  return 0;}
-
-// import the external environment into the variable map, preserving variables
-// that already exist
-int b_importenv_preserve(const Argm& argm, std::list<Argm>& exceptions) {
-  if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
-  if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
-  for (char** i=environ; *i; ++i) {
-    std::string src(*i);
-    std::string::size_type div = src.find("=");
-    if (div != std::string::npos && !argm.var_exists(src.substr(0, div)))
-      argm.global(src.substr(0, div), src.substr(div+1));}
-  return 0;}
-
 // prints a list of all internal functions
-int b_internal_functions(const Argm& argm, std::list<Argm>& exceptions) {
+int b_internal_functions(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   argm.output <<Argm::exception_names[1];
@@ -402,39 +376,63 @@ int b_internal_functions(const Argm& argm, std::list<Argm>& exceptions) {
   return 0;}
 
 // returns one if the input stream is not the default_stream
-int b_is_default_input(const Argm& argm, std::list<Argm>& exceptions) {
+int b_is_default_input(const Argm& argm, Error_list& exceptions) {
   if(argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   return !argm.input.is_default();}
 
 // returns one if the output stream is not the default_stream
-int b_is_default_output(const Argm& argm, std::list<Argm>& exceptions) {
+int b_is_default_output(const Argm& argm, Error_list& exceptions) {
   if(argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   return !argm.output.is_default();}
 
 // returns one if the error stream is not the default_stream
-int b_is_default_error(const Argm& argm, std::list<Argm>& exceptions) {
+int b_is_default_error(const Argm& argm, Error_list& exceptions) {
   if(argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   return !argm.error.is_default();}
 
+// print the environment that the shell started in
+int b_list_environment(const Argm& argm, Error_list& exceptions) {
+  if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
+  if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
+  for (char** i=environ; *i; ++i) {
+    std::string src(*i);
+    std::string::size_type div = src.find("=");
+    if (div != std::string::npos) {
+      if (i != environ) argm.output <<" ";
+      argm.output <<word_from_value(
+        word_from_value(src.substr(0, div)) + " " +
+        word_from_value(src.substr(div+1)));}}
+  return 0;}
+
+// prints the binaries that have been called, and all builtins and functions
+int b_list_executables(const Argm& argm, Error_list& exceptions) {
+  if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
+  if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
+  for (Executable_map::const_iterator i=executable_map.begin();
+       i != executable_map.end(); ++i)
+    argm.output <<(i == executable_map.begin()? "": " ") <<i->first;
+  return 0;}
+
 // prints all variables in the local variable map
-int b_list_locals(const Argm& argm, std::list<Argm>& exceptions) {
+int b_list_locals(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   for (Variable_map::iterator i=argm.local_begin(); i != argm.local_end(); ++i)
     argm.output <<(i == argm.local_begin()? "": " ") <<i->first;
-  return argm.local_begin() == argm.local_end();}
+  argm.locals_listed();
+  return 0;}
 
 // add a variable to the variable map until the enclosing function terminates
-int b_local(const Argm& argm, std::list<Argm>& exceptions) {
+int b_local(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 3) throw Exception(Argm::Bad_argc, argm.argc()-1, 2, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   else return argm.local(argm[1], argm[2]);}
 
 // list the files specified by the arguments if they exist
-int b_ls(const Argm& argm, std::list<Argm>& exceptions) {
+int b_ls(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   struct stat sb;
@@ -447,25 +445,25 @@ int b_ls(const Argm& argm, std::list<Argm>& exceptions) {
   return ret;}
 
 // ignore arguments, argfunctions, and then do nothing
-int b_nop(const Argm& argm, std::list<Argm>& exceptions) {
+int b_nop(const Argm& argm, Error_list& exceptions) {
   return Variable_map::dollar_question;}
 
 // print the process id of the shell
-int b_getpid(const Argm& argm, std::list<Argm>& exceptions) {
+int b_getpid(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   argm.output <<(unsigned) getpid();
   return 0;}
 
 // print the parent process id of the shell
-int b_getppid(const Argm& argm, std::list<Argm>& exceptions) {
+int b_getppid(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   argm.output <<(unsigned) getppid();
   return 0;}
 
 // return the value given by the argument
-int b_return(const Argm& argm, std::list<Argm>& exceptions) {
+int b_return(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   try {return my_strtoi(argm[1]);}
@@ -475,7 +473,7 @@ int b_return(const Argm& argm, std::list<Argm>& exceptions) {
 
 // run the argfunction having set local variables according to the given
 // prototype
-int b_scope(const Argm& argm, std::list<Argm>& exceptions) {
+int b_scope(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 2, 0);
   else if (!argm.argfunction()) throw Exception(Argm::Missing_argfunction);
   Argm prototype_argm(argm.parent_map(),
@@ -490,7 +488,7 @@ int b_scope(const Argm& argm, std::list<Argm>& exceptions) {
   else return ret;}
 
 // modify variable $1 as a selection according to $2
-int b_selection_set(const Argm& argm, std::list<Argm>& exceptions) {
+int b_selection_set(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 3) throw Exception(Argm::Bad_argc, argm.argc()-1, 2, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   std::list<Entry_pattern> focus;
@@ -504,7 +502,7 @@ int b_selection_set(const Argm& argm, std::list<Argm>& exceptions) {
 
 // set variable $1 to $*2
 // returns 1 if the variable does not exist
-int b_set(const Argm& argm, std::list<Argm>& exceptions) {
+int b_set(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 3) throw Exception(Argm::Bad_argc, argm.argc()-1, 2, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   if (isargvar(argm[1])) return 2;
@@ -516,7 +514,7 @@ int b_set(const Argm& argm, std::list<Argm>& exceptions) {
 
 // Set the configurable message for fallback_handler
 // When this is given a prototype, just use the collected args directly
-int b_set_fallback_message(const Argm& argm, std::list<Argm>& exceptions) {
+int b_set_fallback_message(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   fallback_message = "";
@@ -527,8 +525,7 @@ int b_set_fallback_message(const Argm& argm, std::list<Argm>& exceptions) {
 
 // Set the number of exceptions that can be thrown inside .collect_errors_*
 // before they exit early
-int b_set_max_collectible_exceptions(const Argm& argm,
-                                     std::list<Argm>& exceptions) {
+int b_set_max_collectible_exceptions(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   try {
@@ -540,7 +537,7 @@ int b_set_max_collectible_exceptions(const Argm& argm,
 
 // Set the number of exceptions that can be thrown by catch blocks after
 // max_collectible_exceptions have already been thrown
-int b_set_max_extra_exceptions(const Argm& argm, std::list<Argm>& exceptions) {
+int b_set_max_extra_exceptions(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   try {
@@ -552,7 +549,7 @@ int b_set_max_extra_exceptions(const Argm& argm, std::list<Argm>& exceptions) {
 
 // Set the maximum number of nesting levels where functions call functions
 // before completing.
-int b_set_max_nesting(const Argm& argm, std::list<Argm>& exceptions) {
+int b_set_max_nesting(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   try {
@@ -565,7 +562,7 @@ int b_set_max_nesting(const Argm& argm, std::list<Argm>& exceptions) {
 // run the first argument as if it was a script, passing additional arguments
 // to that script
 // returns last return value from script, -1 if empty
-int b_source(const Argm& argm, std::list<Argm>& exceptions) {
+int b_source(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   struct stat sb;
@@ -589,7 +586,7 @@ int b_source(const Argm& argm, std::list<Argm>& exceptions) {
 
 // run the argument function once with each command in the specified function
 // invocation
-int b_stepwise(const Argm& argm, std::list<Argm>& exceptions) {
+int b_stepwise(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (!argm.argfunction()) throw Exception(Argm::Missing_argfunction);
   Argm lookup(argm.begin()+1, argm.end(), 0, argm.parent_map(),
@@ -612,7 +609,7 @@ int b_stepwise(const Argm& argm, std::list<Argm>& exceptions) {
 
 // run the argfunction and store its output in the variable $1
 // returns the last return from the argfunction
-int b_store_output(const Argm& argm, std::list<Argm>& exceptions) {
+int b_store_output(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (!argm.argfunction()) throw Exception(Argm::Missing_argfunction);
   if (isargvar(argm[1])) return 2;
@@ -627,13 +624,13 @@ int b_store_output(const Argm& argm, std::list<Argm>& exceptions) {
   return 0;}
 
 // return true if the two strings are the same
-int b_test_string_equal(const Argm& argm, std::list<Argm>& exceptions) {
+int b_test_string_equal(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 3) throw Exception(Argm::Bad_argc, argm.argc()-1, 2, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   else return argm[1] != argm[2];} // C++ and shell have inverted logic
 
 // return true if two strings convert to a doubles and first is greater
-int b_test_greater(const Argm& argm, std::list<Argm>& exceptions) {
+int b_test_greater(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 3) throw Exception(Argm::Bad_argc, argm.argc()-1, 2, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   double lhs, rhs;
@@ -648,7 +645,7 @@ int b_test_greater(const Argm& argm, std::list<Argm>& exceptions) {
   return lhs <= rhs;} // C++ and shell have inverted logic
 
 // return true if the string converts to a number
-int b_test_is_number(const Argm& argm, std::list<Argm>& exceptions) {
+int b_test_is_number(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   try {
@@ -659,7 +656,7 @@ int b_test_is_number(const Argm& argm, std::list<Argm>& exceptions) {
   catch (E_range) {return 2;}}
 
 // return true if two strings convert to a doubles and first is less
-int b_test_less(const Argm& argm, std::list<Argm>& exceptions) {
+int b_test_less(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 3) throw Exception(Argm::Bad_argc, argm.argc()-1, 2, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   double lhs, rhs;
@@ -674,19 +671,19 @@ int b_test_less(const Argm& argm, std::list<Argm>& exceptions) {
   return lhs >= rhs;} // C++ and shell have inverted logic
 
 // return true if the string is not empty
-int b_test_not_empty(const Argm& argm, std::list<Argm>& exceptions) {
+int b_test_not_empty(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   else return !argm[1].length();} // C++ and shell have inverted logic
 
 // return true if the two strings are different
-int b_test_string_unequal(const Argm& argm, std::list<Argm>& exceptions) {
+int b_test_string_unequal(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 3) throw Exception(Argm::Bad_argc, argm.argc()-1, 2, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   else return argm[1] == argm[2];} // C++ and shell have inverted logic
 
 // returns true if the two strings
-int b_test_number_equal(const Argm& argm, std::list<Argm>& exceptions) {
+int b_test_number_equal(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 3) throw Exception(Argm::Bad_argc, argm.argc()-1, 2, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   double lhs, rhs;
@@ -701,16 +698,16 @@ int b_test_number_equal(const Argm& argm, std::list<Argm>& exceptions) {
   return lhs != rhs;} // C++ and shell have inverted logic
 
 // throw the remaining arguments as an exception
-int b_throw(const Argm& argm, std::list<Argm>& exceptions) {
+int b_throw(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   Argm new_exception(argm.begin()+1, argm.end(), argm.argfunction(),
                      Variable_map::global_map,
                      argm.input, argm.output.child_stream(), argm.error);
-  Base_executable::add_error(exceptions, new_exception);
+  exceptions.add_error(new_exception);
   return -1;}
 
 // run the handler for specified exceptions
-int b_try_catch_recursive(const Argm& argm, std::list<Argm>& exceptions) {
+int b_try_catch_recursive(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (!argm.argfunction()) throw Exception(Argm::Missing_argfunction);
   Argm mapped_argm(argm.parent_map(),
@@ -726,7 +723,7 @@ int b_try_catch_recursive(const Argm& argm, std::list<Argm>& exceptions) {
 // pedantic and throw an rwsh.undefined_variable if it doesn't exist, but the
 // fact is that the requested state (one where this variable isn't set) is
 // already the case, so it's hard to say what you're protecting people from.
-int b_unset(const Argm& argm, std::list<Argm>& exceptions) {
+int b_unset(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   else return argm.unset_var(argm[1]);}
@@ -734,7 +731,7 @@ int b_unset(const Argm& argm, std::list<Argm>& exceptions) {
 namespace {double sleep_requested = 0.0;}
 
 // sleep for the specified number of microseconds
-int b_usleep(const Argm& argm, std::list<Argm>& exceptions) {
+int b_usleep(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   try {
@@ -747,7 +744,7 @@ int b_usleep(const Argm& argm, std::list<Argm>& exceptions) {
 
 // print the average number of microseconds longer that .usleep takes than it
 // is requested to take.
-int b_usleep_overhead(const Argm& argm, std::list<Argm>& exceptions) {
+int b_usleep_overhead(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   Argm usleep_argm(".usleep", argm.end(), argm.end(), NULL,
@@ -761,7 +758,7 @@ int b_usleep_overhead(const Argm& argm, std::list<Argm>& exceptions) {
   argm.output <<(total/count);
   return 0;}
 
-int b_var_add(const Argm& argm, std::list<Argm>& exceptions) {
+int b_var_add(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 3) throw Exception(Argm::Bad_argc, argm.argc()-1, 2, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   const std::string& var_str = argm.get_var(argm[1]);
@@ -784,7 +781,7 @@ int b_var_add(const Argm& argm, std::list<Argm>& exceptions) {
   argm.set_var(argm[1], tmp.str());
   return 0;}
 
-int b_var_subtract(const Argm& argm, std::list<Argm>& exceptions) {
+int b_var_subtract(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 3) throw Exception(Argm::Bad_argc, argm.argc()-1, 2, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   const std::string& var_str = argm.get_var(argm[1]);
@@ -806,7 +803,7 @@ int b_var_subtract(const Argm& argm, std::list<Argm>& exceptions) {
   argm.set_var(argm[1], tmp.str());
   return 0;}
 
-int b_var_divide(const Argm& argm, std::list<Argm>& exceptions) {
+int b_var_divide(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 3) throw Exception(Argm::Bad_argc, argm.argc()-1, 2, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   const std::string& var_str = argm.get_var(argm[1]);
@@ -829,15 +826,18 @@ int b_var_divide(const Argm& argm, std::list<Argm>& exceptions) {
   argm.set_var(argm[1], tmp.str());
   return 0;}
 
-int b_var_exists(const Argm& argm, std::list<Argm>& exceptions) {
-  if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
+int b_var_exists(const Argm& argm, Error_list& exceptions) {
+  if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
-  else return !argm.var_exists(argm[1]);}
+  bool any_exist = false;
+  for (Argm::const_iterator i=argm.begin()+1; i != argm.end(); ++i)
+    if (argm.var_exists(*i)) any_exist = true;
+  return !any_exist;}
 
 static const std::string version_str("0.3+");
 
 // write to standard output the version of rwsh
-int b_version(const Argm& argm, std::list<Argm>& exceptions) {
+int b_version(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   argm.output <<version_str;
@@ -845,14 +845,14 @@ int b_version(const Argm& argm, std::list<Argm>& exceptions) {
 
 // return true if the given version string is compatible with the version
 // of this shell
-int b_version_compatible(const Argm& argm, std::list<Argm>& exceptions) {
+int b_version_compatible(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   else if (argm[1] == version_str) return 0;
   else throw Exception(Argm::Version_incompatible, argm[1]);}
 
 // prints the total amount of time the shell has not been waiting for user input
-int b_waiting_for_binary(const Argm& argm, std::list<Argm>& exceptions) {
+int b_waiting_for_binary(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   argm.output <<rwsh_clock.waiting_for_binary();
@@ -861,7 +861,7 @@ int b_waiting_for_binary(const Argm& argm, std::list<Argm>& exceptions) {
 
 // prints the total amount of time that has passed and the shell has not been
 // waiting for other processes or the user
-int b_waiting_for_shell(const Argm& argm, std::list<Argm>& exceptions) {
+int b_waiting_for_shell(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   argm.output <<rwsh_clock.waiting_for_shell();
@@ -869,7 +869,7 @@ int b_waiting_for_shell(const Argm& argm, std::list<Argm>& exceptions) {
   return 0;}
 
 // prints the total amount of time the shell has been waiting for user input
-int b_waiting_for_user(const Argm& argm, std::list<Argm>& exceptions) {
+int b_waiting_for_user(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   argm.output <<rwsh_clock.waiting_for_user();
@@ -878,7 +878,7 @@ int b_waiting_for_user(const Argm& argm, std::list<Argm>& exceptions) {
 
 // print the string corresponding to the executable in the executable map with
 // key $1
-int b_which_executable(const Argm& argm, std::list<Argm>& exceptions) {
+int b_which_executable(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   Argm lookup(argm.begin()+1, argm.end(), argm.argfunction(), argm.parent_map(),
                 default_input, default_output, default_error);
@@ -892,7 +892,7 @@ int b_which_executable(const Argm& argm, std::list<Argm>& exceptions) {
 
 // print the number of times that the executable in the executable map with
 // key $1 has been run
-int b_which_execution_count(const Argm& argm, std::list<Argm>& exceptions) {
+int b_which_execution_count(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   Argm lookup(argm.begin()+1, argm.end(), argm.argfunction(), argm.parent_map(),
                 default_input, default_output, default_error);
@@ -904,7 +904,7 @@ int b_which_execution_count(const Argm& argm, std::list<Argm>& exceptions) {
   else return 1;}          // executable does not exist
 
 // print the last exception that was thrown by this function
-int b_which_last_exception(const Argm& argm, std::list<Argm>& exceptions) {
+int b_which_last_exception(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   Argm lookup(argm.begin()+1, argm.end(), argm.argfunction(), argm.parent_map(),
@@ -918,7 +918,7 @@ int b_which_last_exception(const Argm& argm, std::list<Argm>& exceptions) {
 
 // print the number of times that the executable in the executable map with
 // key $1 has been run
-int b_which_last_execution_time(const Argm& argm, std::list<Argm>& exceptions) {
+int b_which_last_execution_time(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   Argm lookup(argm.begin()+1, argm.end(), argm.argfunction(), argm.parent_map(),
                 default_input, default_output, default_error);
@@ -931,8 +931,7 @@ int b_which_last_execution_time(const Argm& argm, std::list<Argm>& exceptions) {
 
 // print the number of times that the executable in the executable map with
 // key $1 has been run
-int b_which_total_execution_time(const Argm& argm,
-                                 std::list<Argm>& exceptions) {
+int b_which_total_execution_time(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   Argm lookup(argm.begin()+1, argm.end(), argm.argfunction(), argm.parent_map(),
                 default_input, default_output, default_error);
@@ -945,7 +944,7 @@ int b_which_total_execution_time(const Argm& argm,
   else return 1;}          // executable does not exist
 
 // find the binary in $2 with filename $1
-int b_which_path(const Argm& argm, std::list<Argm>& exceptions) {
+int b_which_path(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 3) throw Exception(Argm::Bad_argc, argm.argc()-1, 2, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   std::vector<std::string> path;
@@ -961,7 +960,7 @@ int b_which_path(const Argm& argm, std::list<Argm>& exceptions) {
   return 1;} // executable does not exist
 
 // prints the last return value of the executable with named $1
-int b_which_return(const Argm& argm, std::list<Argm>& exceptions) {
+int b_which_return(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   Argm lookup(argm.begin()+1, argm.end(), argm.argfunction(), argm.parent_map(),
                 default_input, default_output, default_error);
@@ -973,7 +972,7 @@ int b_which_return(const Argm& argm, std::list<Argm>& exceptions) {
   else return 1;} // executable does not exist
 
 // return true if there is an executable in the executable map with key $1
-int b_which_test(const Argm& argm, std::list<Argm>& exceptions) {
+int b_which_test(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   Argm lookup(argm.begin()+1, argm.end(), argm.argfunction(), argm.parent_map(),
               default_input, default_output, default_error);
@@ -982,15 +981,16 @@ int b_which_test(const Argm& argm, std::list<Argm>& exceptions) {
 
 // for each time that the arguments return true, run the argfunction
 // returns the last return from the argfunction
-int b_while(const Argm& argm, std::list<Argm>& exceptions) {
+int b_while(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (!argm.argfunction()) throw Exception(Argm::Missing_argfunction);
   int ret = -1;
   Argm lookup(argm.begin()+1, argm.end(), 0, argm.parent_map(),
-                argm.input, argm.output.child_stream(), argm.error);
+              argm.input, argm.output.child_stream(), argm.error);
   while (!executable_map.run(lookup, exceptions)) {
     if (Named_executable::unwind_stack()) return -1;
-    Argm mapped_argm(argm.parent_map(), argm.input, argm.output.child_stream(), argm.error);
+    Argm mapped_argm(argm.parent_map(), argm.input, argm.output.child_stream(),
+                     argm.error);
     mapped_argm.push_back("rwsh.mapped_argfunction");
     ret = (*argm.argfunction())(mapped_argm, exceptions);
     if (Named_executable::unwind_stack()) return -1;}

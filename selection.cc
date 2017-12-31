@@ -1,7 +1,7 @@
 // The definition of selection_write and the Entry_pattern class which is
 // used to implement selections.
 //
-// Copyright (C) 2005-2016 Samuel Newbold
+// Copyright (C) 2005-2017 Samuel Newbold
 
 #include <dirent.h>
 #include <fcntl.h>
@@ -9,6 +9,7 @@
 #include <iterator>
 #include <list>
 #include <map>
+#include <set>
 #include <stdio.h>
 #include <string>
 #include <sys/stat.h>

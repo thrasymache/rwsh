@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2016 Samuel Newbold
+// Copyright (C) 2015-2017 Samuel Newbold
 
 enum Flag_type {ALL, SOME};
 enum Dash_dash_type {UNSEEN, BRACKET, BARE};
@@ -6,9 +6,10 @@ enum Dash_dash_type {UNSEEN, BRACKET, BARE};
 std::string escape(const std::string& src);
 
 struct Parameter_group {
+  typedef std::vector<std::string> Base;
   bool required;
-  std::vector<std::string>::difference_type elipsis;
-  std::vector<std::string> names;
+  Base::difference_type elipsis;
+  Base names;
   Parameter_group() : required(true), elipsis(-2), names() {};
   Parameter_group(bool required_i): required(required_i),elipsis(-2),names() {};
   Parameter_group(Argm::const_iterator& fp, Argm::const_iterator end,
@@ -20,7 +21,11 @@ struct Parameter_group {
                     const std::string* flag,
                     const std::string& elipsis_var,
                     enum Dash_dash_type dash_dash) const;
-  std::string str() const; };
+  std::string str() const;
+  void bless_unused_vars(Variable_map* vars) const;
+  char unused_flag_var_check(Variable_map* vars, Error_list& exceptions) const;
+  void unused_pos_var_check(Variable_map* vars,
+                            Error_list& exceptions) const; };
 
 class Prototype {
   bool bare_dash_dash;
@@ -40,4 +45,5 @@ class Prototype {
   Argm bad_args(std::string& missing, const Variable_map& locals,
                 Argm::const_iterator f_arg, Argm::const_iterator end,
                 std::vector<Parameter_group>::const_iterator param) const;
-  std::string str() const;};
+  std::string str() const;
+  void unused_var_check(Variable_map* vars, Error_list& exceptions) const; };

@@ -4,7 +4,9 @@
 )
 .if .test_number_equal $# 2 {.source /etc/rwshrc-default}
 .else_if .test_string_equal $2 -to {
-  .importenv_preserve;
+  .for ${.list_environment}$ {
+    .scope $1$ (var val) {
+      .global $var $val}}
   .exec ./rwsh test_init.sh
   .exit}
 .else_if .test_number_equal $# 3 {.source &2}
@@ -12,9 +14,12 @@
   .function rwsh.autofunction {
     .function $1 {&&&{.which_path &&&1 $PATH} $*}}
   .function rwsh.if_before_else {}
-  .function rwsh.shutdown {.echo $nl}
+  .function rwsh.shutdown {.nop}
+  .for ${.list_environment}$ {
+    .scope $1$ (var val) {
+      .global $var $val
+      .nop $$var}}
   .source /etc/rwshrc-basic
-  .importenv_preserve;
   rwsh.mapped_argfunction &3 {$1$}
   .exit}
 .else {

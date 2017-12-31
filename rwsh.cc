@@ -1,6 +1,6 @@
 // The main function for rwsh
 //
-// Copyright (C) 2005-2016 Samuel Newbold
+// Copyright (C) 2005-2017 Samuel Newbold
 
 #include <cstdlib>
 #include <iostream>
@@ -70,6 +70,7 @@ std::string Argm::exception_names[Argm::Exception_count] = {
   "rwsh.flag_in_elipsis",
   "rwsh.if_before_else",
   "rwsh.input_range",
+  "rwsh.internal_error",
   "rwsh.invalid_word_selection",
   // "rwsh.line_continuation",
   "rwsh.mismatched_brace",
@@ -100,9 +101,11 @@ std::string Argm::exception_names[Argm::Exception_count] = {
   "rwsh.sigusr2",
   "rwsh.sigunknown",
   "rwsh.tardy_flag",
+  "rwsh.unchecked_variable",
   "rwsh.undefined_variable",
   "rwsh.unreadable_dir",
   "rwsh.unrecognized_flag",
+  "rwsh.unused_variable",
   "rwsh.vars",
   "rwsh.version_incompatible"};
 Variable_map root_variable_map(NULL);
@@ -162,4 +165,5 @@ int main(int argc, char *argv[]) {
                         &argv[0], &argv[argc], 0, Variable_map::global_map,
                         default_input, default_output, default_error);
   executable_map.base_run(shutdown_command);
+  executable_map.unused_var_check_at_exit();
   return Variable_map::dollar_question;}
