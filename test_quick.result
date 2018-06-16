@@ -2,6 +2,7 @@ signal triggered: rwsh.raw_command ( .function rwsh.raw_command {.echo $1; .echo
 .global last_command_return -10
 .global A \
 .global N \
+.nop $N
 
 .nop tests multi-line commands within a sourced script
 .nop .function rwsh.run_logic {
@@ -21,19 +22,29 @@ signal triggered: rwsh.raw_command ( .function rwsh.raw_command {.echo $1; .echo
 .function rwsh.shutdown {.echo $nl; .echo now terminating normally; .echo $nl}
 .function rwsh.vars {.internal_vars}
 .else_if .test_string_equal $2 -c {
-  rwsh.mapped_argfunction &3 {.source /etc/rwshrc-basic; $1$; .exit}}
+  .function rwsh.autofunction {
+    .function $1 {&&&{.which_path &&&1 $PATH} $*}}
+  .function rwsh.if_before_else {}
+  .function rwsh.shutdown {.nop}
+  .for ${.list_environment}$ {
+    .scope $1$ (var val) {
+      .global $var $val
+      .nop $$var}}
+  .source /etc/rwshrc-basic
+  rwsh.mapped_argfunction &3 {$1$}
+  .exit}
 .else {
   .echo unexpected command line: &* (
 )
   .source /etc/rwshrc-default}
 rwsh.help not defined 
-$.function_flag_ignorant # args ... {.nop $args}
+$.function_all_flags # -- args ... {.nop $args}
 
 0
 $.function if_only {.if $* {rwsh.argfunction}; .else {.nop}}
 
 0
-$.function_flag_ignorant c args ... {.combine $args$}
+$.function_all_flags c -- args ... {.combine $args$}
 
 0
 $.function_all_flags a [-*] [-x b ...] c {
@@ -41,24 +52,24 @@ $.function_all_flags a [-*] [-x b ...] c {
 
 0
 $.which_executable a
-.function_all_flags a [-*] [-x b ...] c {
-  .for &{.list_locals}$ {.combine $1 ( $$1 ) \ }}
+.function_all_flags a [-?] [-x b ...] c {
+  .for &{.list_locals}$ {.combine $1 \( $$1 \) ( )}}
 0
 $a first
--*() c(first) 
+-*() -?() c(first) 
 0
 $a -x first
-signal triggered: rwsh.bad_argc ( 0 1 2 a ) 
+signal triggered: rwsh.bad_args ( [-?] [-x b ...] c (-* (-x first)) (-? ()) (-x (-x first)) (b first) c  a ) 
 
 -1
 $a -x (fi rst) second
--*(-x (fi rst)) -x(-x (fi rst)) b((fi rst)) c(second) 
+-*(-x (fi rst)) -?() -x(-x (fi rst)) b((fi rst)) c(second) 
 0
 $a -x first (sec ond) third
--*(-x first (sec ond)) -x(-x first sec ond) b(first sec ond) c(third) 
+-*(-x first (sec ond)) -?() -x(-x first (sec ond)) b(first (sec ond)) c(third) 
 0
 $a -x (fi rst) (sec ond) third fourth
--*(-x (fi rst) (sec ond) third) -x(-x (fi rst) sec ond third) b((fi rst) sec ond third) c(fourth) 
+-*(-x (fi rst) (sec ond) third) -?() -x(-x (fi rst) (sec ond) third) b((fi rst) (sec ond) third) c(fourth) 
 0
 $.function_all_flags a [-*] [-x ... b] c {
   .for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
@@ -71,37 +82,40 @@ $.function_all_flags a [-*] [-x ... b] c {
 
 0
 $.which_executable a
-.function_all_flags a [-*] [-x ... b] c {
-  .for &{.list_locals}$ {.combine $1 ( $$1 ) \ }
+.function_all_flags a [-?] [-x ... b] c {
+  .for &{.list_locals}$ {.combine $1 \( $$1 \) ( )}
   .combine $nl
-  # if_only .test_not_empty $-* {c -*:  $-*$ $nl}
-  # if_only .var_exists -x {c -x:  $-x$ $nl}
-  # if_only .var_exists b {c b:  $b$ $nl}
-  # if_only .var_exists c {c c:  $c$ $nl}
+  # if_only .test_not_empty $-* {c (-*: ) $-*$ $nl}
+  # if_only .var_exists -x {c (-x: ) $-x$ $nl}
+  # if_only .var_exists b {c (b: ) $b$ $nl}
+  # if_only .var_exists c {c (c: ) $c$ $nl}
 }
 0
 $a first
--*() c(first) 
+-*() -?() c(first) 
 
 0
 $a -x first
-signal triggered: rwsh.bad_argc ( 0 1 2 a ) 
+signal triggered: rwsh.bad_args ( [-?] [-x ... b] c (-* (-x first)) (-? ()) (-x (-x first)) (b first) c  a ) 
 
 -1
 $a -x (fi rst) second
--*(-x (fi rst)) -x(-x (fi rst)) b((fi rst)) c(second) 
+-*(-x (fi rst)) -?() -x(-x (fi rst)) b((fi rst)) c(second) 
 
 0
 $a -x first (sec ond) third
--*(-x first (sec ond)) -x(-x first (sec ond)) b((sec ond)) c(third) 
+-*(-x first (sec ond)) -?() -x(-x first (sec ond)) b((sec ond)) c(third) 
 
 0
 $a -x (fi rst) (sec ond) third fourth
--*(-x (fi rst) (sec ond) third) -x(-x fi rst sec ond third) b(third) c(fourth) 
+-*(-x (fi rst) (sec ond) third) -?() -x(-x (fi rst) (sec ond) third) b(third) c(fourth) 
 
 0
 $.which_executable if_only
 .function if_only {.if $* {rwsh.argfunction}; .else {.nop}}
+0
+$.nop $A $FIGNORE
+
 0
 $
 now terminating normally
