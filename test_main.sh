@@ -1097,6 +1097,13 @@ wrapper 1 2
 .test_less 6.022e23 .6022e24
 .test_less 6.022e2 6.022e23
 
+# .toggle_readline
+.toggle_readline excess
+.toggle_readline {excess}
+.return 0
+.nop .toggle_readline
+.nop .toggle_readline
+
 # .which_executable .which_test .which_return
 # Arg_script::str() but only an unknown fraction of the lines
 # Arg_spec::str() (except trailing whitespace) only through SOON case

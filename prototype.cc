@@ -203,10 +203,6 @@ Argm Prototype::bad_args(std::string& missing, const Variable_map& locals,
     unassigned += (unassigned.length()?" ":"") + *f_arg++;
   throw Exception(Argm::Bad_args, str(), assigned, missing, unassigned);}
 
-std::string escape(const std::string& src) {
-  if (!src.length()) return "()";
-  else return src;}
-
 std::string Prototype::str() const {
   std::string result;
   if (flags == SOME) result = "[-?] ";

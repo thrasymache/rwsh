@@ -1,17 +1,17 @@
-// Copyright (C) 2007-2016 Samuel Newbold
+// Copyright (C) 2007-2018 Samuel Newbold
 
 #include <cstdlib>
 #include <errno.h>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
-#include <string>
 #include <unistd.h>
 #include <vector>
 
 #include "rwsh_stream.h"
-
 #include "plumber.h"
+
+#include "pipe_stream.h"
 #include "substitution_stream.h"
 
 Rwsh_ostream* Substitution_stream::copy_pointer(void) {
@@ -37,15 +37,16 @@ Rwsh_ostream& Substitution_stream::operator<<(struct timeval r) {
   buffer <<r.tv_sec <<"." <<std::setw(6) <<std::setfill('0') <<r.tv_usec;
   return *this;}
 
-bool Substitution_stream::fail(void) {return false;}
-
 int Substitution_stream::fd(void) {
-  int fds[2];
-  if (pipe(fds)) std::cerr <<"failed pipe with errno " <<errno <<std::endl;
-  plumber.proxy_output(fds[0], this);
-  plumber.close_on_fork(fds[0]);
-  plumber.close_on_wait(fds[1]);
-  return fds[1];}
+  if (fd_v < 3) {
+    int fds[2];
+    if (pipe(fds)) {
+      std::cerr <<"failed pipe with errno " <<errno <<std::endl;
+      return -1;}
+    in_pipe.late_init(fds[0]);
+    fd_v = fds[1];
+    plumber.proxy_output(&in_pipe, this);}
+  return fd_v;}
 
 std::string Substitution_stream::str(void) const {
   return ">&{}";}

@@ -1,11 +1,31 @@
-// Copyright (C) 2007 Samuel Newbold
+// Copyright (C) 2007-2018 Samuel Newbold
 
-struct Rwsh_istream {
+extern bool readline_enabled;
+
+class Rwsh_istream {
+  char read_buffer[512];
+  char *pos;
+  char *unread_end;
+
+ protected:
+  int fd_v;
+  FILE* c_style;  // usage is ultimately incompatible with fd
+  bool fail_v;
+
+ public:
+  Rwsh_istream(int fd_i) : fd_v(fd_i), fail_v(false), c_style(NULL),
+    pos(read_buffer), unread_end(read_buffer) {};
   virtual ~Rwsh_istream(void) {};
   virtual Rwsh_istream* copy_pointer(void) = 0;
-  virtual bool fail(void) = 0;
-  virtual Rwsh_istream& getline(std::string& dest) = 0;
+  void close(void);
+  bool fail(void) {return fail_v;}
   virtual int fd(void) = 0;
+  int read(char *buffer, size_t buffer_size);
+  char *fgets(char *buffer, size_t buffer_size);
+  Rwsh_istream& read_getline(std::string& dest);
+  Rwsh_istream& getc_getline(std::string& dest);
+  Rwsh_istream& cstyle_getline(std::string& dest);
+  virtual Rwsh_istream& getline(std::string& dest) = 0;
   virtual std::string str(void) const = 0;};
 
 class Rwsh_istream_p {
@@ -27,7 +47,14 @@ class Rwsh_istream_p {
   std::string str(void) const {return implementation->str();};
   bool is_default(void) const {return is_default_v;}; };
 
-struct Rwsh_ostream {
+class Rwsh_ostream {
+ protected:
+  int fd_v;
+  FILE* c_style;  // usage is ultimately incompatible with fd
+  bool fail_v;
+
+ public:
+  Rwsh_ostream(int fd_i) : fd_v(fd_i), fail_v(false), c_style(NULL) {};
   virtual ~Rwsh_ostream(void) {};
   virtual Rwsh_ostream* copy_pointer(void) = 0;
   virtual Rwsh_ostream& operator<<(const std::string& r) = 0;
@@ -35,7 +62,8 @@ struct Rwsh_ostream {
   virtual Rwsh_ostream& operator<<(unsigned int r) = 0;
   virtual Rwsh_ostream& operator<<(double r) = 0;
   virtual Rwsh_ostream& operator<<(struct timeval r) = 0;
-  virtual bool fail(void) = 0;
+  void close(void);
+  bool fail(void) {return fail_v;}
   virtual int fd(void) = 0;
   virtual void flush(void) = 0;
   virtual std::string str(void) const = 0;};

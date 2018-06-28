@@ -107,6 +107,7 @@ void internal_init(void) {
   executable_map.set(new Builtin(".test_string_unequal",
                                  b_test_string_unequal));
   executable_map.set(new Builtin(".throw", b_throw));
+  executable_map.set(new Builtin(".toggle_readline", b_toggle_readline));
   executable_map.set(new Builtin(".try_catch_recursive",
                                  b_try_catch_recursive));
   executable_map.set(new Builtin(".unset", b_unset));

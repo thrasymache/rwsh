@@ -9,7 +9,9 @@
       .global $var $val}}
   .exec ./rwsh test_init.sh
   .exit}
-.else_if .test_number_equal $# 3 {.source &2}
+.else_if .test_number_equal $# 3 {
+  .nop .source /etc/rwshrc-default
+  .source &2}
 .else_if .test_string_equal $2 -c {
   .function rwsh.autofunction {
     .function $1 {&&&{.which_path &&&1 $PATH} $*}}

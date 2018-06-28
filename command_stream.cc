@@ -2,7 +2,7 @@
 // standard stream and defines an input operator for Argm objects. It also
 // handles the calling of rwsh.prompt.
 //
-// Copyright (C) 2005-2017 Samuel Newbold
+// Copyright (C) 2005-2018 Samuel Newbold
 
 #include <iostream>
 #include <list>
@@ -27,27 +27,27 @@
 
 #include "function.h"
 
-Command_stream::Command_stream(std::istream& s, bool subprompt_i) :
+Command_stream::Command_stream(Rwsh_istream_p& s, bool subprompt_i) :
     src(s), subprompt(subprompt_i) {}
 
 // write the next command to dest. run rwsh.prompt as appropriate
 Command_stream& Command_stream::operator>> (Arg_script& dest) {
-  if (operator!()) return *this;
+  if (this->fail()) return *this;
   std::string cmd;
   for (bool cmd_is_incomplete=true; cmd_is_incomplete;) {
     std::string line;
     struct timeval before_input, after_input;
     gettimeofday(&before_input, rwsh_clock.no_timezone);
-    getline(src, line);
+    src.getline(line);
     gettimeofday(&after_input, rwsh_clock.no_timezone);
     rwsh_clock.user_wait(before_input, after_input);
-    if (operator!())
+    if (fail())
       if (cmd.size())  {                 // EOF without a complete command
         Exception raw_command(Argm::Raw_command, cmd);
         executable_map.base_run(raw_command);
         Arg_script(cmd, 0);}             // this will throw the right exception
       else return *this;
-    cmd += line;
+    else cmd += line;
     try {
       dest = Arg_script(cmd, 0);
       cmd_is_incomplete = false;}
@@ -63,12 +63,6 @@ Command_stream& Command_stream::operator>> (Arg_script& dest) {
   executable_map.base_run(raw_command);
   return *this;}
 
-// returns non-zero if the last command was read successfully
-Command_stream::operator void* () const {
-  if (Variable_map::exit_requested) return 0;
-  else return src.operator void*();}
-
 // returns true if the last command could not be read
-bool Command_stream::operator! () const {
+bool Command_stream::fail() const {
   return Variable_map::exit_requested || src.fail();}
-

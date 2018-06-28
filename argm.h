@@ -145,7 +145,8 @@ struct Exception : public Argm {
   Exception(Exception_t exception, const std::string& x, const std::string& y);
   Exception(Exception_t exception, const std::string& w, const std::string& x,
               const std::string& y, const std::string& z);
-  Exception(Exception_t exception_i, int x);
+  Exception(Exception_t exception, int x);
+  Exception(Exception_t exception, int x, int y);
   Exception(Exception_t exception, int x, int y, int z);
   Exception(Exception_t exception, const Argm& src);};
 

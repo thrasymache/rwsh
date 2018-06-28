@@ -177,6 +177,16 @@ Exception::Exception(Exception_t exception_i, int x) :
   x_str <<x;
   push_back(x_str.str());}
 
+Exception::Exception(Exception_t exception_i, int x, int y) :
+    Argm(Variable_map::global_map, default_input,default_output,default_error),
+    exception(exception_i) {
+  push_back(exception_names[exception]);
+  std::ostringstream x_str, y_str;
+  x_str <<x;
+  push_back(x_str.str());
+  y_str <<y;
+  push_back(y_str.str());}
+
 Exception::Exception(Exception_t exception_i, int x, int y, int z) :
     Argm(Variable_map::global_map, default_input,default_output,default_error),
     exception(exception_i) {

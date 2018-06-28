@@ -1,6 +1,6 @@
 // The main function for rwsh
 //
-// Copyright (C) 2005-2017 Samuel Newbold
+// Copyright (C) 2005-2018 Samuel Newbold
 
 #include <cstdlib>
 #include <iostream>
@@ -108,6 +108,7 @@ std::string Argm::exception_names[Argm::Exception_count] = {
   "rwsh.unused_variable",
   "rwsh.vars",
   "rwsh.version_incompatible"};
+bool readline_enabled = false;
 Variable_map root_variable_map(NULL);
 unsigned Base_executable::max_nesting = 0;
 int Variable_map::dollar_question = -1;
@@ -142,19 +143,20 @@ int main(int argc, char *argv[]) {
   catch (std::string& error) {default_error <<error;}
   catch (Exception& exception) {
     executable_map.base_run(exception);}
-  Command_stream command_stream(std::cin, true);
+  Command_stream command_stream(default_input, true);
   Argm init_command(".init", &argv[0], &argv[argc], 0, Variable_map::global_map,
                              default_input, default_output, default_error);
   executable_map.base_run(init_command);
   register_signals();
   Arg_script script("", 0);
   Exception prompt(Argm::Prompt);
-  while (command_stream) {
+  while (!command_stream.fail()) {
     executable_map.base_run(prompt);
     Argm command(Variable_map::global_map,
                  default_input, default_output, default_error);
     try {
-      if (!(command_stream >> script)) break;
+      command_stream >> script;
+      if (command_stream.fail()) break;
       command = script.base_interpret(script.argm());}
     catch (Exception exception) {command = exception;}
     executable_map.run_if_exists("rwsh.before_command", command);

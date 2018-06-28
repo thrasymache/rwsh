@@ -53,6 +53,7 @@ $.source /etc/rwshrc-basic
   .nop $ret $?
   .return 0
   .return $ret}
+.function_all_flags #! -- [ignored ...] {# $ignored}
 
 # set up environment
 .global nl (
@@ -2815,6 +2816,7 @@ signal triggered: rwsh.excess_argfunction ( .list_executables )
 -1
 $.for ${.list_executables}$ {.combine $1 $nl}
 #
+#!
 ##
 .a
 .argc
@@ -2874,6 +2876,7 @@ $.for ${.list_executables}$ {.combine $1 $nl}
 .test_string_equal
 .test_string_unequal
 .throw
+.toggle_readline
 .try_catch_recursive
 .unset
 .usleep
@@ -4086,6 +4089,29 @@ $.test_less 6.022e23 .6022e24
 
 1
 $.test_less 6.022e2 6.022e23
+
+0
+$
+
+0
+$# .toggle_readline
+
+0
+$.toggle_readline excess
+signal triggered: rwsh.bad_argc ( 1 0 0 .toggle_readline ) 
+
+-1
+$.toggle_readline {excess}
+signal triggered: rwsh.excess_argfunction ( .toggle_readline ) 
+
+-1
+$.return 0
+
+0
+$.nop .toggle_readline
+
+0
+$.nop .toggle_readline
 
 0
 $

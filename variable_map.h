@@ -1,6 +1,7 @@
 // Copyright (C) 2006-2017 Samuel Newbold
 
 extern const char* WSPACE;
+std::string escape(const std::string& src);
 std::string word_from_value(const std::string& value);
 
 class Variable_map : private std::map<std::string, std::string> {

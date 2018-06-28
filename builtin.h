@@ -54,6 +54,7 @@ int b_test_not_empty(const Argm& argm, Error_list& exceptions);
 int b_test_string_unequal(const Argm& argm, Error_list& exceptions);
 int b_test_number_equal(const Argm& argm, Error_list& exceptions);
 int b_throw(const Argm& argm, Error_list& exceptions);
+int b_toggle_readline(const Argm& argm, Error_list& exceptions);
 int b_try_catch_recursive(const Argm& argm, Error_list& exceptions);
 int b_unset(const Argm& argm, Error_list& exceptions);
 int b_usleep(const Argm& argm, Error_list& exceptions);

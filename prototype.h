@@ -3,8 +3,6 @@
 enum Flag_type {ALL, SOME};
 enum Dash_dash_type {UNSEEN, BRACKET, BARE};
 
-std::string escape(const std::string& src);
-
 struct Parameter_group {
   typedef std::vector<std::string> Base;
   bool required;

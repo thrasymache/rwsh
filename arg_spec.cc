@@ -23,6 +23,7 @@
 #include "arg_script.h"
 #include "executable.h"
 #include "executable_map.h"
+#include "pipe_stream.h"
 #include "prototype.h"
 #include "read_dir.cc"
 #include "rwshlib.h"

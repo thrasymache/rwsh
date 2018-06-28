@@ -20,11 +20,15 @@
 
 char** env;
 
+std::string escape(const std::string& src) {
+  if (!src.length()) return "()";
+  else return src;}
+
 std::string word_from_value(const std::string& value) {
   if (value == "") return std::string("()");
   else if (value.find_first_of(" \t\n") != std::string::npos)
-    return "(" + value + ")";
-  else return value;}
+    return "(" + escape(value) + ")";
+  else return escape(value);}
 
 Variable_map::Variable_map(Variable_map* parent_i) :
     parent(parent_i), locals_listed(false), usage_checked(false) {

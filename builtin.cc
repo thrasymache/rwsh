@@ -1,6 +1,6 @@
 // The functions that implement each of the builtin executables
 //
-// Copyright (C) 2006-2017 Samuel Newbold
+// Copyright (C) 2006-2018 Samuel Newbold
 
 #include <climits>
 #include <cfloat>
@@ -35,6 +35,8 @@ extern char** environ;
 #include "command_stream.h"
 #include "executable.h"
 #include "executable_map.h"
+#include "file_stream.h"
+#include "pipe_stream.h"
 #include "prototype.h"
 #include "read_dir.cc"
 #include "rwshlib.h"
@@ -399,6 +401,7 @@ int b_list_environment(const Argm& argm, Error_list& exceptions) {
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   for (char** i=environ; *i; ++i) {
     std::string src(*i);
+    if (src.find_first_of("()") != std::string::npos) continue;
     std::string::size_type div = src.find("=");
     if (div != std::string::npos) {
       if (i != environ) argm.output <<" ";
@@ -569,15 +572,16 @@ int b_source(const Argm& argm, Error_list& exceptions) {
   if (stat(argm[1].c_str(), &sb))
     throw Exception(Argm::File_open_failure, argm[1]);
   if (!(sb.st_mode & S_IXUSR)) throw Exception(Argm::Not_executable, argm[1]);
-  std::ifstream src(argm[1].c_str(), std::ios_base::in);
+  Rwsh_istream_p src(new File_istream(argm[1]), false, false);
   Argm script_arg(argm.begin()+1, argm.end(), 0, argm.parent_map(),
                   argm.input, argm.output.child_stream(), argm.error);
   Command_stream command_stream(src, false);
   Arg_script script("", 0);
   int ret = -1;
-  while (command_stream && !Named_executable::unwind_stack()) {
+  while (!command_stream.fail() && !Named_executable::unwind_stack()) {
     try {
-      if (!(command_stream >> script)) break;
+      command_stream >> script;
+      if (command_stream.fail()) break;
       Argm command(script.interpret(script_arg, exceptions));
       ret = executable_map.run(command, exceptions);}
     catch (Exception exception) {
@@ -705,6 +709,13 @@ int b_throw(const Argm& argm, Error_list& exceptions) {
                      argm.input, argm.output.child_stream(), argm.error);
   exceptions.add_error(new_exception);
   return -1;}
+
+// enable readline if disabled, disable if enabled
+int b_toggle_readline(const Argm& argm, Error_list& exceptions) {
+  if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
+  if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
+  readline_enabled = ! readline_enabled;
+  return 0;}
 
 // run the handler for specified exceptions
 int b_try_catch_recursive(const Argm& argm, Error_list& exceptions) {

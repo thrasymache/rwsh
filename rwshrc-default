@@ -2,6 +2,7 @@
   .scope $1$ (var val) {.global $var $val; .nop $$var}}
 .source /etc/rwshrc-basic
 
+.toggle_readline
 .try_catch_recursive rwsh.unused_variable {
 .collect_errors_except .nop {
 .set_max_collectible_exceptions 7
@@ -314,6 +315,8 @@ fn unselect {.set s ()}
 .function_all_flags exec -- command ... {.exec $command$ }
 .function_all_flags exit {.exit}
 .function last_time {.which_last_execution_time $*; c $nl}
+fn local {. &{c $HOME /.rwshrc}}
+fn ret {.return $*}
 .function total_time {.which_total_execution_time $*; c $nl}
 .function user_shell_ratio {
   .local time &&{.waiting_for_user}
@@ -337,6 +340,13 @@ fn mst {make; st}
 fn ti {/bin/rwsh -to <test_inconsistent.sh >last.test_inconsistent.result
   &{whichp diff} -c test_inconsistent.result last.test_inconsistent.result}
 fn ti-bless {/bin/cp last.test_inconsistent.result test_inconsistent.result}
+fn mqt {make; qt}
+fn qt {/bin/rwsh -to <test_quick.sh >last.test_quick.result
+  &{whichp diff} -c test_quick.result last.test_quick.result}
+fn bless-qt {/bin/cp last.test_quick.result test_quick.result}
+fn arg-out {/bin/rwsh -to <argfunction.sh}
+fn arg-diff {/bin/rwsh -to <argfunction.sh >argfunction.result.last
+  &{whichp diff} -c argfunction.basic-result argfunction.result.last}
 
 # final setup and individual configuration
 .source &{c $HOME /.rwshrc}

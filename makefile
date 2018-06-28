@@ -2,12 +2,13 @@
 
 objects = argm.o arg_script.o arg_spec.o builtin.o clock.o command_stream.o \
 	default_stream.o executable.o executable_map.o file_stream.o \
-	function.o plumber.o rwsh.o rwsh_stream.o rwshlib.o prototype.o \
-	selection.o substitution_stream.o variable_map.o
+	function.o plumber.o rwsh.o rwsh_stream.o rwshlib.o pipe_stream.o \
+	prototype.o selection.o substitution_stream.o variable_map.o
 local_objects = rwsh_init.o 
 	
-CXXFLAGS = -g
+CXXFLAGS += -g
 CC = g++
+LDLIBS = -lreadline
 
 rwsh: $(objects) $(local_objects)
 librwsh.a: $(objects)
@@ -16,15 +17,15 @@ librwsh.a: $(objects)
 arg_script.o: arg_spec.h rwsh_stream.h argm.h arg_script.h executable.h \
 	file_stream.h function.h prototype.h variable_map.h
 arg_spec.o: arg_spec.h rwsh_stream.h argm.h argm_star_var.cc arg_script.h \
-	executable.h executable_map.h function.h prototype.h read_dir.cc \
-	selection.h selection_read.cc substitution_stream.h tokenize.cc \
-	prototype.h variable_map.h
+	executable.h executable_map.h function.h pipe_stream.h prototype.h \
+	read_dir.cc selection.h selection_read.cc substitution_stream.h \
+	tokenize.cc prototype.h variable_map.h
 argm.o: arg_spec.h rwsh_stream.h argm.h arg_script.h executable.h function.h \
 	prototype.h variable_map.h
 builtin.o: arg_spec.h rwsh_stream.h argm.h argm_star_var.cc arg_script.h \
 	builtin.h clock.h command_stream.h executable.h executable_map.h \
-	function.h plumber.cc prototype.h read_dir.cc selection.h tokenize.cc \
-	variable_map.h
+	file_stream.h function.h plumber.cc pipe_stream.h prototype.h read_dir.cc \
+	selection.h substitution_stream.h tokenize.cc variable_map.h
 clock.o: clock.h
 command_stream.o: arg_spec.h rwsh_stream.h argm.h arg_script.h clock.h \
 	command_stream.h executable.h executable_map.h function.h prototype.h \
@@ -49,7 +50,9 @@ rwsh_init.o: arg_spec.h rwsh_stream.h arg_script.h argm.h rwsh_init.h \
 rwsh_stream.o: rwsh_stream.h
 rwshlib.o: rwshlib.h
 selection.o: rwsh_stream.h argm.h selection.h tokenize.cc variable_map.h
-substitution_stream.o: rwsh_stream.h plumber.h substitution_stream.h
+substitution_stream.o: argm.h rwsh_stream.h pipe_stream.h plumber.h \
+    substitution_stream.h variable_map.h
+pipe_stream.o: argm.h rwsh_stream.h variable_map.h
 variable_map.o: arg_spec.h rwsh_stream.h argm.h arg_script.h executable.h \
 	variable_map.h
 
