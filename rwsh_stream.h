@@ -13,7 +13,7 @@ class Rwsh_istream {
   bool fail_v;
 
  public:
-  Rwsh_istream(int fd_i) : fd_v(fd_i), fail_v(false), c_style(NULL),
+  Rwsh_istream(int fd_i) : fd_v(fd_i), fail_v(false), c_style(nullptr),
     pos(read_buffer), unread_end(read_buffer) {};
   virtual ~Rwsh_istream(void) {};
   virtual Rwsh_istream* copy_pointer(void) = 0;
@@ -54,7 +54,7 @@ class Rwsh_ostream {
   bool fail_v;
 
  public:
-  Rwsh_ostream(int fd_i) : fd_v(fd_i), fail_v(false), c_style(NULL) {};
+  Rwsh_ostream(int fd_i) : fd_v(fd_i), fail_v(false), c_style(nullptr) {};
   virtual ~Rwsh_ostream(void) {};
   virtual Rwsh_ostream* copy_pointer(void) = 0;
   virtual Rwsh_ostream& operator<<(const std::string& r) = 0;

@@ -191,8 +191,7 @@ Arg_script::~Arg_script(void) {
 Argm Arg_script::argm(void) const {
   Argm result(Variable_map::global_map, input, output, error);
   if (!argfunction_level) {
-    for(std::vector<Arg_spec>::const_iterator i=args.begin();
-      i != args.end(); ++i) result.push_back(i->str());
+    for(auto i=args.begin(); i != args.end(); ++i) result.push_back(i->str());
     result.set_argfunction(argfunction->copy_pointer());}
   else if (argfunction_level == 1) result.push_back("rwsh.argfunction");
   else if (argfunction_level == 2) result.push_back("rwsh.escaped_argfunction");
@@ -204,8 +203,7 @@ std::string Arg_script::str(void) const {
   if (!argfunction_level) {
     std::string result = indent + args[0].str();
     if (args.size() == 1 && result == "()") result.clear();
-    for(std::vector<Arg_spec>::const_iterator i=args.begin()+1;
-        i != args.end(); ++i) result += ' ' + i->str();
+    for(auto i=args.begin()+1; i != args.end(); ++i) result += ' ' + i->str();
     if (!input.is_default()) result += (result.size()?" ":"") + input.str();
     if (!output.is_default()) result += (result.size()?" ":"") + output.str();
     if (!error.is_default()) result += (result.size()?" ":"") + error.str();
@@ -229,8 +227,7 @@ Argm Arg_script::interpret(const Argm& src, Error_list& exceptions) const {
               !output.is_default()? output: src.output.child_stream(),
               !error.is_default()?  error:  src.error.child_stream());
   if (!argfunction_level) {
-    for (std::vector<Arg_spec>::const_iterator i = args.begin();
-      i != args.end(); ++i)
+    for (auto i = args.begin(); i != args.end(); ++i)
       i->interpret(src, std::back_inserter(result), exceptions);
     if (!result.argc()) result.push_back("");
     if (argfunction)
@@ -256,16 +253,14 @@ void Arg_script::apply(const Argm& src, unsigned nesting,
     *res++ = result;}
   else {
     Arg_script result(input, output, error, indent, terminator);
-    for (std::vector<Arg_spec>::const_iterator i = args.begin();
-         i != args.end(); ++i)
+    for (auto i = args.begin(); i != args.end(); ++i)
       i->apply(src, nesting, std::back_inserter(result.args), exceptions);
     if (argfunction)
       result.argfunction = argfunction->apply(src, nesting+1, exceptions);
     *res++ = result;}}
 
 void Arg_script::promote_soons(unsigned nesting) {
-  for (std::vector<Arg_spec>::iterator i = args.begin(); i != args.end();
-       ++i) i->promote_soons(nesting);
+  for (auto i = args.begin(); i != args.end(); ++i) i->promote_soons(nesting);
   argfunction->promote_soons(nesting);}
 
 // test whether an executable name corresponds to one of those used for

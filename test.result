@@ -62,6 +62,9 @@ $.source /etc/rwshrc-basic
 # internal functions
 .function rwsh.unused_variable {echo $1 was unused with call stack $*2}
 .function rwsh.unchecked_variable {echo $1 was not checked with call stack $*2}
+.function rwsh.illegal_variable_name {
+  .combine \$ $1 ( cannot be set) $nl
+  echo call stack $*2}
 
 # ability of functions to act as builtin wrappers
 .function_all_flags af -- [argv ...] {rwsh.argfunction}
@@ -2316,6 +2319,15 @@ signal triggered: rwsh.excess_argfunction ( .var_exists )
 $.global 100 nihilism
 
 2
+$.global .var_exists (must be requested to be checked)
+
+0
+$e $.var_exists
+must be requested to be checked
+0
+$.unset #
+
+3
 $.unset #
 
 3
@@ -2710,6 +2722,7 @@ rwsh.failed_substitution
 rwsh.file_open_failure
 rwsh.flag_in_elipsis
 rwsh.if_before_else
+rwsh.illegal_variable_name
 rwsh.input_range
 rwsh.internal_error
 rwsh.invalid_word_selection
@@ -2746,7 +2759,6 @@ rwsh.undefined_variable
 rwsh.unreadable_dir
 rwsh.unrecognized_flag
 rwsh.unused_variable
-rwsh.vars
 rwsh.version_incompatible
 0
 $.internal_vars
@@ -2955,6 +2967,7 @@ rwsh.failed_substitution
 rwsh.file_open_failure
 rwsh.flag_in_elipsis
 rwsh.if_before_else
+rwsh.illegal_variable_name
 rwsh.input_range
 rwsh.internal_error
 rwsh.invalid_word_selection
@@ -3463,6 +3476,11 @@ $.set A
 signal triggered: rwsh.bad_argc ( 1 2 0 .set ) 
 
 -1
+$.set 1 x
+$1 cannot be set
+call stack .set 
+
+-1
 $.set B x
 signal triggered: rwsh.undefined_variable ( B .set ) 
 
@@ -3513,6 +3531,16 @@ $.get_max_collectible_exceptions
 $.set_max_collectible_exceptions 7
 
 0
+$.collect_errors_except
+signal triggered: rwsh.bad_argc ( 0 1 0 .collect_errors_except ) 
+signal triggered: rwsh.missing_argfunction ( .collect_errors_except ) 
+
+-1
+$.collect_errors_only
+signal triggered: rwsh.bad_argc ( 0 1 0 .collect_errors_only ) 
+signal triggered: rwsh.missing_argfunction ( .collect_errors_only ) 
+
+-1
 $m {.collect_errors_except .nop {
      m {echo before exception
         .throw rwsh.not_a_number 7
@@ -5193,6 +5221,7 @@ $# check for extraneous variables
 
 0
 $/usr/bin/printenv
+.var_exists=must be requested to be checked
 ?=0
 A=-7.29496e+09
 FIGNORE=*de*
@@ -5215,6 +5244,7 @@ $.global SHELL unmodified
 
 0
 $/usr/bin/printenv
+.var_exists=must be requested to be checked
 ?=0
 A=-7.29496e+09
 FIGNORE=*de*

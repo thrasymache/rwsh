@@ -14,6 +14,9 @@
 # internal functions
 .function rwsh.unused_variable {echo $1 was unused with call stack $*2}
 .function rwsh.unchecked_variable {echo $1 was not checked with call stack $*2}
+.function rwsh.illegal_variable_name {
+  .combine \$ $1 ( cannot be set) $nl
+  echo call stack $*2}
 
 # ability of functions to act as builtin wrappers
 .function_all_flags af -- [argv ...] {rwsh.argfunction}

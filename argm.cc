@@ -50,7 +50,7 @@ Argm::~Argm(void) {
 // convert to a string. inverse of constructor.
 std::string Argm::str(void) const {
   std::string result;
-  for (const_iterator i=begin(); i != end()-1; ++i) result += *i + ' ';
+  for (auto i: subrange(0, 1)) result += i + ' ';
   result += back();
   if (!input.is_default()) result += " " + input.str();
   if (!output.is_default()) result += " " + output.str();
@@ -76,12 +76,8 @@ std::string Argm::get_var(const std::string& key) const {
         //throw Exception(Argm::Undefined_variable, key);}
     default: return parent_map()->get(key);}}
 
-int Argm::set_var(const std::string& key, const std::string& value) const {
-  switch (key[0]) {
-    case '#': case '1': case '2': case '3': case '4': case '5': case '6':
-              case '7': case '8': case '9': case '0': return 2;
-    default: parent_map()->set(key, value);
-    return 0;}}
+void Argm::set_var(const std::string& key, const std::string& value) const {
+  parent_map()->set(key, value);}
 
 bool Argm::var_exists(const std::string& key) const {
   switch (key[0]) {
@@ -103,12 +99,6 @@ int Argm::local(const std::string& key, const std::string& value) const {
     case '#': case '*': case '1': case '2': case '3': case '4': case '5':
               case '6': case '7': case '8': case '9': case '0': return 2;
     default: return parent_map()->local(key, value);}}
-
-Variable_map::iterator Argm::local_begin(void) const {
-  return parent_map()->begin();}
-
-Variable_map::iterator Argm::local_end(void) const {
-  return parent_map()->end();}
 
 void Argm::locals_listed(void) const {
   parent_map()->locals_listed = true;}

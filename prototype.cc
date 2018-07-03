@@ -54,14 +54,13 @@ Parameter_group::Parameter_group(Argm::const_iterator& focus,
   if (!required && !group_end) {
     std::string gs(str());
     throw Exception(Argm::Mismatched_bracket, gs.substr(0, gs.length()-1));}
-  for (std::vector<std::string>::const_iterator i = names.begin();
-       i != names.end(); ++i)
-    if (!parameter_names.insert(*i).second)
-      throw Exception(Argm::Duplicate_parameter, *i);
+  for (auto i: names)
+    if (!parameter_names.insert(i).second)
+      throw Exception(Argm::Duplicate_parameter, i);
     else if (names.size() > 1)
-      if (*i == "-*")      throw Exception(Argm::Dash_star_argument, str());
-      else if (*i == "-?") throw Exception(Argm::Dash_star_argument, str());
-      else if (*i == "--") throw Exception(Argm::Dash_dash_argument, str());}
+      if (i == "-*")      throw Exception(Argm::Dash_star_argument, str());
+      else if (i == "-?") throw Exception(Argm::Dash_star_argument, str());
+      else if (i == "--") throw Exception(Argm::Dash_dash_argument, str());}
 
 void Parameter_group::arg_to_param(Variable_map& locals,
                                    int& available, int& needed,
@@ -152,12 +151,11 @@ Variable_map Prototype::arg_to_param(const Argm& argm) const {
   else if (flag_options.size()) locals.param("-*", "");
   int needed = required_argc;
   std::string missing;
-  Argm::const_iterator f_arg = argm.begin()+1;
-  std::vector<Parameter_group>::const_iterator param = positional.begin();
+  auto f_arg = argm.begin()+1;
+  auto param = positional.begin();
   for (int available = argm.argc()-1; f_arg != argm.end();)
     if ((*f_arg)[0] == '-' && f_arg->length() > 1 && dash_dash != BARE) {
-      std::map<std::string, Parameter_group>::const_iterator h =
-                                                     flag_options.find(*f_arg);
+      auto h = flag_options.find(*f_arg);
       if (dash_dash == BRACKET && *f_arg != "--") {
         locals.bless_unused_vars();
         throw Exception(Argm::Tardy_flag, *f_arg);}
@@ -178,7 +176,7 @@ Variable_map Prototype::arg_to_param(const Argm& argm) const {
     else {
       if (param->required || available > needed)
         param->arg_to_param(locals, available, needed, missing, f_arg,
-                            argm.end(), NULL, elipsis_var, dash_dash);
+                            argm.end(), nullptr, elipsis_var, dash_dash);
       if (++param - positional.begin() == dash_dash_position)
         dash_dash = bare_dash_dash? BARE: BRACKET;}
   if (f_arg != argm.end() || needed || missing.length()) {
@@ -193,9 +191,9 @@ Argm Prototype::bad_args(std::string& missing, const Variable_map& locals,
                     Argm::const_iterator f_arg, Argm::const_iterator end,
                     std::vector<Parameter_group>::const_iterator param) const {
   std::string assigned;
-  for (Variable_map::const_iterator k =locals.begin(); k!=locals.end(); ++k)
-    assigned += (assigned.length()? " (": "(") + k->first + " " +
-                 word_from_value(k->second) + ")";
+  for (auto k: locals)
+    assigned += (assigned.length()? " (": "(") + k.first + " " +
+                 word_from_value(k.second) + ")";
   for (;param != positional.end(); ++param) if (param->required)
     missing += (missing.length()?" ":"") + param->names[0];
   std::string unassigned;
@@ -206,9 +204,8 @@ Argm Prototype::bad_args(std::string& missing, const Variable_map& locals,
 std::string Prototype::str() const {
   std::string result;
   if (flags == SOME) result = "[-?] ";
-  for (std::map<std::string, Parameter_group>::const_iterator i =
-           flag_options.begin(); i != flag_options.end(); ++i)
-    result.append(i->second.str() + " ");
+  for (auto i: flag_options)
+    result.append(i.second.str() + " ");
   for (int i=0; i <= positional.size(); ++i) {
     if (dash_dash_position == i)
       if (bare_dash_dash) result.append("-- ");
@@ -217,8 +214,8 @@ std::string Prototype::str() const {
   return result.substr(0, result.length()-1);}
 
 void Parameter_group::bless_unused_vars(Variable_map* vars) const {
-  for (Base::const_iterator j=names.begin(); j != names.end(); ++j)
-    vars->used_vars_insert(*j);}
+  // this is not thoroughly tested in the test suite
+  for (auto j: names) vars->used_vars_insert(j);}
 
 char Parameter_group::unused_flag_var_check(Variable_map* vars,
                                             Error_list& errors) const {
@@ -232,7 +229,7 @@ char Parameter_group::unused_flag_var_check(Variable_map* vars,
                 unused_flag? Argm::Unused_variable: Argm::Unchecked_variable,
                 names[0]));}
   else if (vars->exists(names[0])) {
-    for (Base::const_iterator j=names.begin()+1; j != names.end(); ++j)
+    for (auto j=names.begin()+1; j != names.end(); ++j)
       if (!vars->used_vars_contains(*j)) {
         unused_flag = true;
         errors.add_error(Exception(Argm::Unused_variable, *j));
@@ -241,11 +238,10 @@ char Parameter_group::unused_flag_var_check(Variable_map* vars,
       errors.add_error(Exception(Argm::Unused_variable, names[0]));}
   else if (!vars->locals_listed) {
     bool checked = false;
-    for (Base::const_iterator j=names.begin(); j != names.end(); ++j)
-      if (vars->checked_vars_contains(*j)) checked = true;
+    for (auto j: names) if (vars->checked_vars_contains(j)) checked = true;
     if (!checked) {
-      for (Base::const_iterator j=names.begin(); j != names.end(); ++j)
-        errors.add_error(Exception(Argm::Unchecked_variable, *j));
+      for (auto j: names)
+        errors.add_error(Exception(Argm::Unchecked_variable, j));
       return true;}}
   vars->used_vars_insert(names[0]);
   return unused_flag;}
@@ -253,44 +249,34 @@ char Parameter_group::unused_flag_var_check(Variable_map* vars,
 void Parameter_group::unused_pos_var_check(Variable_map* vars,
                                            Error_list& errors) const {
   if (vars->exists(names[0]))
-    for (Base::const_iterator j=names.begin(); j != names.end(); ++j) {
-      if (!vars->used_vars_contains(*j)) {
-        errors.add_error(Exception(Argm::Unused_variable, *j));
-        vars->used_vars_insert(*j);}}
+    for (auto j: names) {
+      if (!vars->used_vars_contains(j)) {
+        errors.add_error(Exception(Argm::Unused_variable, j));
+        vars->used_vars_insert(j);}}
   else if (!vars->locals_listed) {
     bool checked = false;
-    for (Base::const_iterator j=names.begin(); j != names.end(); ++j)
-      if (vars->checked_vars_contains(*j)) checked = true;
-    if (!checked)
-      for (Base::const_iterator j=names.begin(); j != names.end(); ++j)
-        errors.add_error(Exception(Argm::Unchecked_variable, *j));}}
+    for (auto j: names) if (vars->checked_vars_contains(j)) checked = true;
+    if (!checked) for (auto j: names)
+      errors.add_error(Exception(Argm::Unchecked_variable, j));}}
 
 void Prototype::unused_var_check(Variable_map* vars, Error_list& errors) const {
   if (!vars->usage_checked) vars->usage_checked = true;
   else errors.add_error(Exception(Argm::Internal_error,
                         "variable map usage checked multiple times"));
   bool unused_flag = false;
-  if (vars->used_vars_contains("-*"))
-    for (std::map<std::string, Parameter_group>::const_iterator
-         i=flag_options.begin(); i != flag_options.end(); ++i)
-      i->second.bless_unused_vars(vars);
+  if (vars->used_vars_contains("-*")) for (auto i: flag_options)
+    i.second.bless_unused_vars(vars);
   else {
-    for (std::map<std::string, Parameter_group>::const_iterator
-         i=flag_options.begin(); i != flag_options.end(); ++i)
-      unused_flag |= i->second.unused_flag_var_check(vars, errors);
+    for (auto i: flag_options)
+      unused_flag |= i.second.unused_flag_var_check(vars, errors);
     if (flags == SOME && !vars->used_vars_contains("-?")) {
       unused_flag = true;
       errors.add_error(Exception(Argm::Unused_variable, "-?"));}}
-  if (unused_flag)
-    errors.add_error(Exception(Argm::Unused_variable, "-*"));
+  if (unused_flag) errors.add_error(Exception(Argm::Unused_variable, "-*"));
   vars->used_vars_insert("-*");  // in the absent else case $-* is not defined
   vars->used_vars_insert("-?");  // in the absent else case $-? is not defined
-  for (std::vector<Parameter_group>::const_iterator i=positional.begin();
-       i != positional.end(); ++i)
-    i->unused_pos_var_check(vars, errors);
-  for (Variable_map::const_set_iterator i=vars->local_begin();
-       i != vars->local_end(); ++i)
-    if (!vars->used_vars_contains(*i)) {
-      if (*i == "?");  // ? does not need to be used (in subshells)
-      else errors.add_error(Exception(Argm::Unused_variable, *i));
-      vars->used_vars_insert(*i);}}
+  for (auto i: positional) i.unused_pos_var_check(vars, errors);
+  for (auto j: vars->locals()) if (!vars->used_vars_contains(j)) {
+    if (j == "?");  // $? does not need to be used (in subshells)
+    else errors.add_error(Exception(Argm::Unused_variable, j));
+    vars->used_vars_insert(j);}}

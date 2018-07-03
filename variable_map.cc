@@ -3,6 +3,7 @@
 //
 // Copyright (C) 2006-2017 Samuel Newbold
 
+#include <cstdlib>
 #include <cstring>
 #include <list>
 #include <map>
@@ -32,7 +33,7 @@ std::string word_from_value(const std::string& value) {
 
 Variable_map::Variable_map(Variable_map* parent_i) :
     parent(parent_i), locals_listed(false), usage_checked(false) {
-  if (parent_i == NULL) {
+  if (parent_i == nullptr) {
     param("?", "");               // ? does not need to be used (in subshells)
     local("FIGNORE", "");}}
 
@@ -40,43 +41,40 @@ void Variable_map::bless_unused_vars() {
   if (!usage_checked) usage_checked = true;
   else throw Exception(Argm::Internal_error,
                        "variable map usage checked multiple times");
-  for (Variable_map::iterator i=begin(); i != end(); ++i)
-    if (used_vars.find(i->first) == used_vars.end())
-      used_vars.insert(i->first);}
+  for (auto i: *this) if (used_vars.find(i.first) == used_vars.end())
+    used_vars.insert(i.first);}
 
 Variable_map::~Variable_map() {
-  if (!usage_checked)
-    throw Exception(Argm::Internal_error,
-                    "variable map usage not checked");}
+  if (!usage_checked) std::abort();} // variable map usage not checked
 
 void Variable_map::append_word_locally(const std::string& key,
                                        const std::string& value) {
-  std::map<std::string, std::string>::iterator i = find(key);
+  auto i = find(key);
   if (i == end()) throw Exception(Argm::Undefined_variable, key);
   else i->second += " " + word_from_value(value);}
 
 void Variable_map::append_word_if_exists(const std::string& key,
                                          const std::string& value) {
-  std::map<std::string, std::string>::iterator i = find(key);
+  auto i = find(key);
   if (i == end()) return;
   else if (i->second == "") i->second = word_from_value(value);
   else i->second += " " + word_from_value(value);}
 
 void Variable_map::param_or_append_word(const std::string& key,
                                         const std::string& value) {
-  std::map<std::string, std::string>::iterator i = find(key);
+  auto i = find(key);
   if (i == end()) param(key, word_from_value(value));
   else i->second += " " + word_from_value(value);}
 
 bool Variable_map::check(const std::string& key) {
   checked_vars.insert(key);
-  std::map<std::string, std::string>::iterator i = find(key);
+  auto i = find(key);
   if (i != end()) return true;
   else if(parent) return parent->check(key);
   else return false;}
 
 bool Variable_map::exists(const std::string& key) const {
-  std::map<std::string, std::string>::const_iterator i = find(key);
+  auto i = find(key);
   if (i != end()) return true;
   else if(parent) return parent->exists(key);
   else return false;}
@@ -86,7 +84,7 @@ const std::string& Variable_map::get(const std::string& key) {
     std::ostringstream tmp;
     tmp <<dollar_question;
     (*this)["?"] = tmp.str();}
-  std::map<std::string, std::string>::const_iterator i = find(key);
+  auto i = find(key);
   if (i != end()) {
     used_vars.insert(key);
     return i->second;
@@ -107,7 +105,7 @@ int Variable_map::global(const std::string& key, const std::string& value) {
 int Variable_map::param(const std::string& key, const std::string& value) {
   std::pair<std::string, std::string> entry(key, value);
   std::pair<iterator, bool> ret = insert(entry);
-  return !ret.second;}
+  return !ret.second;}  // yeah, you need to do this
 
 // locals have their usage checked directly
 int Variable_map::local(const std::string& key, const std::string& value) {
@@ -115,19 +113,17 @@ int Variable_map::local(const std::string& key, const std::string& value) {
     throw Exception(Argm::Internal_error,
                     "variable map added to after usage checked");
   local_vars.insert(key);
-  std::pair<std::string, std::string> entry(key, value);
-  std::pair<iterator, bool> ret = insert(entry);
-  return !ret.second;}  // yeah, you need to do this
+  return param(key, value);}  // yeah, you need to do this
 
 void Variable_map::set(const std::string& key, const std::string& value) {
-  std::map<std::string, std::string>::iterator i = find(key);
+  auto i = find(key);
   if (i != end()) i->second = value;
   else if (parent) parent->set(key, value);
   else throw Exception(Argm::Undefined_variable, key);}
 
 int Variable_map::unset(const std::string& key) {
   if (key == "FIGNORE" || key == "?") return 2;
-  std::map<std::string, std::string>::iterator i = find(key);
+  auto i = find(key);
   if (i != end()) {erase(i); return 0;}
   else if (parent) return parent->unset(key);
   else return 1;}

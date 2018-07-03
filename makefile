@@ -6,8 +6,12 @@ objects = argm.o arg_script.o arg_spec.o builtin.o clock.o command_stream.o \
 	prototype.o selection.o substitution_stream.o variable_map.o
 local_objects = rwsh_init.o 
 	
-CXXFLAGS += -g
+#CC = g++-7
+#CXX = g++-7
 CC = g++
+CXX = g++
+CXXFLAGS += -g -std=c++11
+#CXXFLAGS += -g -std=c++17
 LDLIBS = -lreadline
 
 rwsh: $(objects) $(local_objects)

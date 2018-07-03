@@ -14,7 +14,6 @@ class Variable_map : private std::map<std::string, std::string> {
 public:
   typedef Base::iterator iterator;
   typedef Base::const_iterator const_iterator;
-  typedef std::set<std::string>::const_iterator const_set_iterator;
   static Variable_map *global_map;
   static int dollar_question;
   static bool exit_requested;
@@ -27,8 +26,7 @@ public:
 
   const_iterator begin(void) const {return Base::begin();};
   const_iterator end(void) const {return Base::end();};
-  const_set_iterator local_begin(void) const {return local_vars.begin();};
-  const_set_iterator local_end(void) const {return local_vars.end();};
+  const std::set<std::string>& locals(void) const {return local_vars;};
   iterator begin(void) {return Base::begin();};
   iterator end(void) {return Base::end();};
   unsigned size(void) const {return Base::size();};

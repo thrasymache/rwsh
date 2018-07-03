@@ -62,8 +62,7 @@ bool Simple_pattern::match(const std::string& s) const {
 // convert to a string. inverse of constructor.
 std::string Simple_pattern::str(void) const {
   std::string result = initial;
-  for (std::vector<std::string>::const_iterator i=terms.begin();
-       i != terms.end(); ++i)
+  for (auto i=terms.begin(); i != terms.end(); ++i)
     result += '*' + *i;
   if (unterminated) result += '*';
   return result;}
@@ -72,19 +71,19 @@ Entry_pattern::Entry_pattern(const std::string& src) {
   std::vector<std::string> temp;
   tokenize_strict(src, std::back_inserter(temp),
                   std::bind2nd(std::equal_to<char>(), ' '));
-  for (std::vector<std::string>::const_iterator i = temp.begin();
-       i != temp.end(); ++i) options.push_back(Simple_pattern(*i));
+  for (auto i = temp.begin(); i != temp.end(); ++i)
+    options.push_back(Simple_pattern(*i));
   only_text = options.size() == 1 && options[0].is_only_text();}
 
 bool Entry_pattern::match(const std::string& s) const {
-  for (std::vector<Simple_pattern>::const_iterator i = options.begin();
-       i != options.end(); ++i) if (i->match(s)) return true;
+  for (auto i = options.begin(); i != options.end(); ++i)
+    if (i->match(s)) return true;
   return false;}
 
 std::string Entry_pattern::str(void) const {
   std::string result = options.front().str();
-  for (std::vector<Simple_pattern>::const_iterator i = options.begin()+1;
-       i != options.end(); ++i) result += ' ' + i->str();
+  for (auto i = options.begin()+1; i != options.end(); ++i)
+    result += ' ' + i->str();
   return result;}
 
 void str_to_entry_pattern_list(const std::string& src,
@@ -93,7 +92,7 @@ void str_to_entry_pattern_list(const std::string& src,
   std::vector<std::string> temp;
   tokenize_strict(src, std::back_inserter(temp),
                   std::bind2nd(std::equal_to<char>(), '/'));
-  std::vector<std::string>::iterator i = temp.begin();
+  auto i = temp.begin();
   if (src.empty());
   else if (*i == "") {
     res.clear();

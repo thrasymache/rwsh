@@ -69,6 +69,7 @@ std::string Argm::exception_names[Argm::Exception_count] = {
   "rwsh.file_open_failure",
   "rwsh.flag_in_elipsis",
   "rwsh.if_before_else",
+  "rwsh.illegal_variable_name",
   "rwsh.input_range",
   "rwsh.internal_error",
   "rwsh.invalid_word_selection",
@@ -106,10 +107,9 @@ std::string Argm::exception_names[Argm::Exception_count] = {
   "rwsh.unreadable_dir",
   "rwsh.unrecognized_flag",
   "rwsh.unused_variable",
-  "rwsh.vars",
   "rwsh.version_incompatible"};
 bool readline_enabled = false;
-Variable_map root_variable_map(NULL);
+Variable_map root_variable_map(nullptr);
 unsigned Base_executable::max_nesting = 0;
 int Variable_map::dollar_question = -1;
 bool Variable_map::exit_requested = false;

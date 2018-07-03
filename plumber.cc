@@ -38,8 +38,8 @@ class read_handler :
       return false;}}; };
 
 void Plumber::after_fork() {
-  for (std::vector<Rwsh_istream*>::iterator i = to_close_on_fork.begin();
-       i != to_close_on_fork.end(); ++i) (*i)->close();
+  for (auto i = to_close_on_fork.begin(); i != to_close_on_fork.end(); ++i)
+    (*i)->close();
   to_close_on_fork.clear();}
 
 void Plumber::proxy_output(Rwsh_istream* src, Rwsh_ostream* dest) {
@@ -49,12 +49,11 @@ void Plumber::proxy_output(Rwsh_istream* src, Rwsh_ostream* dest) {
   output_handlers.push_back(focus);}
 
 void Plumber::wait(int *ret) {
-  for (std::vector<Rwsh_ostream*>::iterator i = to_close_on_wait.begin();
-       i != to_close_on_wait.end(); ++i) (*i)->close();
+  for (auto i = to_close_on_wait.begin(); i != to_close_on_wait.end(); ++i)
+    (*i)->close();
   to_close_on_wait.clear();
   to_close_on_fork.clear();
-  for (std::vector<std::pair<Rwsh_istream*, Rwsh_ostream*> >::iterator
-       output_handlers_end = output_handlers.end();
+  for (auto output_handlers_end = output_handlers.end();
        output_handlers_end != output_handlers.begin();
        output_handlers_end = std::remove_if(output_handlers.begin(),
                                         output_handlers.end(),

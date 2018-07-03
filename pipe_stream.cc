@@ -15,7 +15,7 @@
 #include "pipe_stream.h"
 
 Pipe_istream::Pipe_istream(int fd_i) : Rwsh_istream(fd_i) {
-  if(fd_v < 3) c_style = NULL;
+  if(fd_v < 3) c_style = nullptr;
   else {
     c_style = fdopen(fd_v, "r");
     if (!c_style) throw Exception(Argm::File_open_failure, fd_v);}}

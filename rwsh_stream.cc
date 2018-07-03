@@ -13,15 +13,17 @@ void Rwsh_istream::close(void) {
     int ret = ::close(fd_v);
     if (ret)
       std::cerr <<"failing close " <<fd_v <<" returned " <<ret <<std::endl;
-    c_style = NULL;
+    c_style = nullptr;
     fd_v = -1;}}
 
 Rwsh_istream& Rwsh_istream::cstyle_getline(std::string& dest) {
-  char *lineptr = NULL;
+  char *lineptr = nullptr;
   size_t n = 0;
   ssize_t count = ::getline(&lineptr, &n, c_style);
-  if (lineptr[count-1] == '\n') lineptr[count-1] = 0;
-  else if (count < 0) fail_v = true;
+  if (count <= 0) {
+    fail_v = true;
+    return *this;}
+  else if (lineptr[count-1] == '\n') lineptr[count-1] = 0;
   dest = std::string(lineptr);
   free(lineptr);
   return *this;}
@@ -46,7 +48,7 @@ Rwsh_istream& Rwsh_istream::read_getline(std::string& dest) {
     pos = unread_end = read_buffer;
     unread_end += ::read(fd(), read_buffer, sizeof(read_buffer));}
   while (unread_end != read_buffer);
-  fail_v = true;
+  if (dest.empty()) fail_v = true;
   return *this;}
 
 Rwsh_istream_p::Rwsh_istream_p(const Rwsh_istream_p& src) :
@@ -76,7 +78,7 @@ void Rwsh_ostream::close(void) {
     int ret = ::close(fd_v);
     if (ret)
       std::cerr <<"failing close " <<fd_v <<" returned " <<ret <<std::endl;
-    c_style = NULL;
+    c_style = nullptr;
     fd_v = -1;}}
 
 Rwsh_ostream_p::Rwsh_ostream_p(const Rwsh_ostream_p& src) :

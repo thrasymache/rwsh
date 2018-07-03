@@ -9,6 +9,7 @@ class Argm : private std::vector<std::string> {
   Variable_map* parent_map_v;
 
  public:
+  typedef std::vector<std::string> Public_base;
   Argm(Variable_map* parent_map_i,
        Rwsh_istream_p input_i, Rwsh_ostream_p output_i, Rwsh_ostream_p error_i);
   template <class String_it>
@@ -57,6 +58,7 @@ class Argm : private std::vector<std::string> {
     File_open_failure,
     Flag_in_elipsis,
     If_before_else,
+    Illegal_variable_name,
     Input_range,
     Internal_error,
     Invalid_word_selection,
@@ -94,7 +96,6 @@ class Argm : private std::vector<std::string> {
     Unreadable_dir,
     Unrecognized_flag,
     Unused_variable,
-    Vars,
     Version_incompatible,
     Exception_count};
 
@@ -105,10 +106,8 @@ class Argm : private std::vector<std::string> {
   std::string get_var(const std::string& key) const;
   int global(const std::string& key, const std::string& value) const;
   int local(const std::string& key, const std::string& value) const;
-  Variable_map::iterator local_begin(void) const;
-  Variable_map::iterator local_end(void) const;
   void locals_listed(void) const;
-  int set_var(const std::string& key, const std::string& value) const;
+  void set_var(const std::string& key, const std::string& value) const;
   template<class Out>
   Out star_var(const std::string& key, unsigned reference_level, Out res) const;
   int unset_var(const std::string& key) const;
@@ -116,23 +115,30 @@ class Argm : private std::vector<std::string> {
 
 // map semantics
   typedef Base::size_type size_type;
+  typedef Base::value_type value_type;
   typedef Base::iterator iterator;
   typedef Base::const_iterator const_iterator;
   typedef Base::const_reference const_reference;
 
-// vector semantics: this structure is not kept as a vector, and to the extent
-// possible should be thought of as a map, but it is also a representation of a
-// command line, and so there is an assigned order to its members, and some
-// operations should only need or want to know that much
+// vector semantics: to the extent possible this structure should be thought
+// of as a map, but it is also a representation of a command line, and so
+// there is an assigned order to its members, and some operations should only
+// need or want to know that much
   const_iterator begin(void) const {return Base::begin();};
   const_iterator end(void) const {return Base::end();};
   const_reference back(void) const {return (*this)[argc()-1];};
   //later//void push_back(const std::string& x) {(*this)[argc_v++] = x;};
   void push_back(const std::string& x) {Base::push_back(x); argc_v++;};
   void pop_back(void) {Base::pop_back(); --argc_v;};
-  unsigned argc(void) const {return argc_v;};
   reference operator[] (int i) {return Base::operator[](i);};
-  const_reference operator[] (int i) const {return Base::operator[](i);}; };
+  const_reference operator[] (int i) const {return Base::operator[](i);};
+
+// special vector semantics
+  unsigned argc(void) const {return argc_v;};
+  Public_base subrange(unsigned start) const {
+    return Public_base(begin()+start, end());};
+  Public_base subrange(unsigned start, unsigned before_end) const {
+    return Public_base(begin()+start, end()-before_end);}; };
 
 struct Error_list : public std::list<Argm> {
   void add_error(const Argm& error); };

@@ -36,13 +36,13 @@ int File_istream::fd(void) {
 
 Rwsh_istream& File_istream::getline(std::string& dest) {
   if (!c_style) open();
-  return cstyle_getline(dest);}
+  return read_getline(dest);}
 
 std::string File_istream::str(void) const {
   return "<" + name;}
 
 File_ostream::File_ostream(const std::string& name_i) : name(name_i),
-    Rwsh_ostream(-1), c_style(NULL) {}
+    Rwsh_ostream(-1), c_style(nullptr) {}
 
 void File_ostream::open(void) {
   fd_v = ::open(name.c_str(), O_WRONLY|O_CREAT|O_TRUNC,

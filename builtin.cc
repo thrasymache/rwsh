@@ -76,8 +76,11 @@ int b_cd(const Argm& argm, Error_list& exceptions) {
 // at the end, but terminating immediately if one of the specified exceptions
 // are thrown
 int b_collect_errors_except(const Argm& argm, Error_list& exceptions) {
-  if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
-  if (!argm.argfunction()) throw Exception(Argm::Missing_argfunction);
+  if (argm.argc() < 2)
+    exceptions.add_error(Exception(Argm::Bad_argc, argm.argc()-1, 1, 0));
+  if (!argm.argfunction())
+    exceptions.add_error(Exception(Argm::Missing_argfunction));
+  if (Named_executable::unwind_stack()) return 0;
   Argm blank(argm.parent_map(), argm.input, argm.output.child_stream(),
              argm.error);
   blank.push_back("rwsh.mapped_argfunction");
@@ -89,8 +92,11 @@ int b_collect_errors_except(const Argm& argm, Error_list& exceptions) {
 // at the end, but only until an exception is not one of the specified
 // exceptions
 int b_collect_errors_only(const Argm& argm, Error_list& exceptions) {
-  if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
-  if (!argm.argfunction()) throw Exception(Argm::Missing_argfunction);
+  if (argm.argc() < 2)
+    exceptions.add_error(Exception(Argm::Bad_argc, argm.argc()-1, 1, 0));
+  if (!argm.argfunction())
+    exceptions.add_error(Exception(Argm::Missing_argfunction));
+  if (Named_executable::unwind_stack()) return 0;
   Argm blank(argm.parent_map(), argm.input, argm.output.child_stream(),
              argm.error);
   blank.push_back("rwsh.mapped_argfunction");
@@ -102,8 +108,7 @@ int b_collect_errors_only(const Argm& argm, Error_list& exceptions) {
 int b_combine(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
-  for (Argm::const_iterator i = argm.begin()+1; i != argm.end(); ++i)
-    argm.output <<*i;
+  for (auto i: argm.subrange(1)) argm.output <<i;
   argm.output.flush();
   return 0;}
 
@@ -111,8 +116,7 @@ int b_combine(const Argm& argm, Error_list& exceptions) {
 int b_echo(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
-  for (Argm::const_iterator i = argm.begin()+1; i != argm.end()-1; ++i)
-    argm.output <<*i <<" ";
+  for (auto i: argm.subrange(1, 1)) argm.output <<i <<" ";
   argm.output <<argm.back();
   argm.output.flush();
   return 0;}
@@ -150,8 +154,7 @@ int b_exit(const Argm& argm, Error_list& exceptions) {
 int b_fallback_handler(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   argm.output <<fallback_message;
-  for (Argm::const_iterator i = argm.begin()+1; i != argm.end()-1; ++i)
-    argm.output <<*i <<" ";
+  for (auto i: argm.subrange(1, 1)) argm.output <<i <<" ";
   argm.output <<argm.back() <<"\n";
   argm.output.flush();
 #if 0
@@ -170,9 +173,9 @@ int b_for(const Argm& argm, Error_list& exceptions) {
   Argm body(argm.parent_map(), argm.input, argm.output, argm.error);
   body.push_back("rwsh.mapped_argfunction");
   body.push_back("");
-  for (Argm::const_iterator i = ++argm.begin(); i != argm.end(); ++i) {
+  for (auto i: argm.subrange(1)) {
     if (argm.argfunction()) {
-      body[1] = *i;
+      body[1] = i;
       ret  = (*argm.argfunction())(body, exceptions);
       if (Named_executable::unwind_stack()) return -1;}
     else ret = 0;}
@@ -216,7 +219,7 @@ int b_fork(const Argm& argm, Error_list& exceptions) {
 int b_function(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   else if (is_binary_name(argm[1])) return 1;
-  Argm lookup(argm.begin()+1, argm.end(), NULL, argm.parent_map(),
+  Argm lookup(argm.begin()+1, argm.end(), nullptr, argm.parent_map(),
                 default_input, default_output, default_error);
   Base_executable *e = executable_map.find(lookup);
   if (e && dynamic_cast<Builtin*>(e)) return 2;
@@ -234,7 +237,7 @@ int b_function_all_flags(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   else if (is_binary_name(argm[1])) return 1;
   else if (is_argfunction_name(argm[1])) return 3;
-  Argm lookup(argm.begin()+1, argm.begin()+2, NULL, argm.parent_map(),
+  Argm lookup(argm.begin()+1, argm.begin()+2, nullptr, argm.parent_map(),
                 default_input, default_output, default_error);
   Base_executable *e = executable_map.find(lookup);
   if (dynamic_cast<Builtin*>(e)) return 2;
@@ -414,17 +417,17 @@ int b_list_environment(const Argm& argm, Error_list& exceptions) {
 int b_list_executables(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
-  for (Executable_map::const_iterator i=executable_map.begin();
-       i != executable_map.end(); ++i)
-    argm.output <<(i == executable_map.begin()? "": " ") <<i->first;
+  for (auto i: executable_map)
+    argm.output <<(i == *executable_map.begin()? "": " ") <<i.first;
   return 0;}
 
 // prints all variables in the local variable map
 int b_list_locals(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
-  for (Variable_map::iterator i=argm.local_begin(); i != argm.local_end(); ++i)
-    argm.output <<(i == argm.local_begin()? "": " ") <<i->first;
+  for (auto i: *argm.parent_map())
+    argm.output <<(i.first == argm.parent_map()->begin()->first? "": " ")
+                <<i.first;
   argm.locals_listed();
   return 0;}
 
@@ -440,10 +443,9 @@ int b_ls(const Argm& argm, Error_list& exceptions) {
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   struct stat sb;
   int ret = 1;
-  for (Argm::const_iterator i=argm.begin(); i != argm.end(); ++i)
-    if (!stat(i->c_str(), &sb)) {
-      argm.output <<*i <<"\n";
-      ret = 0;}
+  for (auto i: argm) if (!stat(i.c_str(), &sb)) {
+    argm.output <<i <<"\n";
+    ret = 0;}
   argm.output.flush();
   return ret;}
 
@@ -483,7 +485,7 @@ int b_scope(const Argm& argm, Error_list& exceptions) {
                       default_input, default_output, default_error);
   tokenize_words(argm[argm.argc()-1], std::back_inserter(prototype_argm));
   Prototype prototype(prototype_argm.begin(), prototype_argm.end(), false);
-  Argm invoking_argm(argm.begin(), argm.end()-1, NULL, argm.parent_map(),
+  Argm invoking_argm(argm.begin(), argm.end()-1, nullptr, argm.parent_map(),
                      default_input, default_output, default_error);
   int ret = (*argm.argfunction()).prototype_execute(invoking_argm, prototype,
                                                     exceptions);
@@ -497,8 +499,7 @@ int b_selection_set(const Argm& argm, Error_list& exceptions) {
   std::list<Entry_pattern> focus;
   str_to_entry_pattern_list(argm.get_var(argm[1]), focus);
   std::string change = *(argm.begin()+2);
-  for (Argm::const_iterator i = argm.begin()+3; i != argm.end(); ++i)
-    change += ' ' + *i;
+  for (auto i: argm.subrange(3)) change += ' ' + i;
   str_to_entry_pattern_list(change, focus);
   argm.set_var(argm[1], entry_pattern_list_to_str(focus.begin(), focus.end()));
   return 0;}
@@ -508,12 +509,12 @@ int b_selection_set(const Argm& argm, Error_list& exceptions) {
 int b_set(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 3) throw Exception(Argm::Bad_argc, argm.argc()-1, 2, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
-  if (isargvar(argm[1])) return 2;
+  if (isargvar(argm[1])) throw Exception(Argm::Illegal_variable_name, argm[1]);
   std::string dest("");
-  for (Argm::const_iterator i = argm.begin()+2; i != argm.end()-1; ++i)
-    dest += *i + ' ';
+  for (auto i: argm.subrange(2, 1)) dest += i + ' ';
   dest += argm.back();
-  return argm.set_var(argm[1], dest);}
+  argm.set_var(argm[1], dest);
+  return 0;}
 
 // Set the configurable message for fallback_handler
 // When this is given a prototype, just use the collected args directly
@@ -521,8 +522,7 @@ int b_set_fallback_message(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   fallback_message = "";
-  for (Argm::const_iterator i = argm.begin()+1; i != argm.end()-1; ++i)
-    fallback_message += *i + " ";
+  for (auto i: argm.subrange(1, 1)) fallback_message += i + " ";
   fallback_message += argm.back();
   return 0;}
 
@@ -600,9 +600,8 @@ int b_stepwise(const Argm& argm, Error_list& exceptions) {
   Function* f = dynamic_cast<Function*>(e);
   if (!f) return 2; // the named executable is not a function
   int ret = -1;
-  for (Command_block::const_iterator i = f->body.begin();
-       i != f->body.end(); ++i) {
-    Argm body_i(i->interpret(lookup, exceptions));
+  for (auto i: f->body) {
+    Argm body_i(i.interpret(lookup, exceptions));
     Argm body("rwsh.mapped_argfunction", body_i.begin(), body_i.end(), 0,
               argm.parent_map(), body_i.input, body_i.output, body_i.error);
     ret  = (*argm.argfunction())(body, exceptions);
@@ -758,7 +757,7 @@ int b_usleep(const Argm& argm, Error_list& exceptions) {
 int b_usleep_overhead(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
-  Argm usleep_argm(".usleep", argm.end(), argm.end(), NULL,
+  Argm usleep_argm(".usleep", argm.end(), argm.end(), nullptr,
                    Variable_map::global_map, default_input, default_output,
                    default_error);
   Base_executable* focus = executable_map.find(Argm(usleep_argm));
@@ -841,8 +840,7 @@ int b_var_exists(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   bool any_exist = false;
-  for (Argm::const_iterator i=argm.begin()+1; i != argm.end(); ++i)
-    if (argm.var_exists(*i)) any_exist = true;
+  for (auto i: argm.subrange(1)) if (argm.var_exists(i)) any_exist = true;
   return !any_exist;}
 
 static const std::string version_str("0.3+");
@@ -961,9 +959,8 @@ int b_which_path(const Argm& argm, Error_list& exceptions) {
   std::vector<std::string> path;
   tokenize_strict(argm[2], std::back_inserter(path),
                   std::bind2nd(std::equal_to<char>(), ':'));
-  for (std::vector<std::string>::iterator i = path.begin(); i != path.end();
-       ++i) {
-    std::string test = *i + '/' + argm[1];
+  for (auto i: path) {
+    std::string test = i + '/' + argm[1];
     struct stat sb;
     if (!stat(test.c_str(), &sb)) {
       argm.output <<test;

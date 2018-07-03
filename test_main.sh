@@ -618,6 +618,9 @@ a -x second -
 .var_exists
 .var_exists x {excess argfunc}
 .global 100 nihilism
+.global .var_exists (must be requested to be checked)
+e $.var_exists
+.unset #
 .unset #
 .unset *
 .unset 1
@@ -900,6 +903,7 @@ e $A
 
 # .set
 .set A
+.set 1 x
 .set B x
 .set B x {excess argfunc}
 .set A x
@@ -914,6 +918,8 @@ e $A
 .set_max_collectible_exceptions 0
 .get_max_collectible_exceptions
 .set_max_collectible_exceptions 7
+.collect_errors_except
+.collect_errors_only
 m {.collect_errors_except .nop {
      m {echo before exception
         .throw rwsh.not_a_number 7

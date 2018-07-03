@@ -47,7 +47,7 @@ Base_executable* Executable_map::find(const Argm& key) {
   iterator i = Base::find(key[0]);
   if (i != end()) return i->second;
   else if (key[0] == "rwsh.mapped_argfunction") return key.argfunction();
-  else return NULL;}
+  else return nullptr;}
 
 bool Executable_map::run_if_exists(const std::string& key, Argm& argm_i) {
   Argm temp_argm(key, argm_i.begin(), argm_i.end(), argm_i.argfunction(),
