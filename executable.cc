@@ -68,11 +68,11 @@ int Base_executable::operator() (const Argm& argm,
     executable_map.run(focus, children);}
   if (children.size()) {
     last_exception_v = "";
-    for (Error_list::iterator i = children.begin(); i != children.end();) {
-      last_exception_v += i->str() + " " + argm.str();
-      i->push_back(argm[0]);
-      parent_exceptions.push_back(*i);
-      if (++i != children.end()) last_exception_v += "; ";}}
+    for (auto j = children.begin(); j != children.end();) {
+      last_exception_v += j->str() + " " + argm.str();
+      j->push_back(argm[0]);
+      parent_exceptions.push_back(*j);
+      if (++j != children.end()) last_exception_v += "; ";}}
   --executable_nesting;
   if (del_on_term && !executable_nesting) delete this;
   return ret;}
@@ -122,7 +122,7 @@ void Base_executable::exception_handler(Error_list& exceptions) {
 // code to call exception handlers when requested within a function
 void Base_executable::catch_blocks(const Argm& argm,
                                    Error_list& exceptions) {
-  for (Error_list::iterator focus = exceptions.begin();
+  for (auto focus = exceptions.begin();
        focus != exceptions.end();)
     if (find(argm.begin() + 1, argm.end(), (*focus)[0]) != argm.end()) {
       if (dropped_catches >= max_extra) {

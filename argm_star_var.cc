@@ -2,7 +2,7 @@
 // won't export templates, so it must be included directly in each file where
 // it is used.
 //
-// Copyright (C) 2006-2016 Samuel Newbold
+// Copyright (C) 2006-2018 Samuel Newbold
 
 // constructor of Argm from a pair of iterators
 template <class String_it>
@@ -43,23 +43,30 @@ inline Out Argm::star_var(const std::string& key, unsigned reference_level,
     *res++ = next;}
   return res;}
 
+namespace {
+std::string substr_word(const std::string& in, unsigned start, unsigned end) {
+  if (in[start] == '(' && in[end-1] == ')')
+    return in.substr(start+1, end-start-2);
+  else return in.substr(start, end-start);}
+} // end unnamed namespace
+
 template<class Out>
 Out tokenize_words(const std::string& in, Out res) {
-  unsigned token_start=0, i=0, nesting=0;
-  while (i<in.length() && isspace(in[i])) ++i;
-  token_start = i;                                       // drop leading space
-  for (; i<in.length(); ++i)
-    if (in[i] == '(') {if (!nesting++) ++token_start;}
-    else if (in[i] == ')') {if (!nesting--)
-      throw Exception(Argm::Mismatched_parenthesis, in.substr(0, i+1));}
-    else if (!nesting && isspace(in[i])) {
-      unsigned end = i;
-      while (i<in.length() && isspace(in[i])) ++i;       // drop leading space
-      if (in[end-1] == ')') *res++ = in.substr(token_start, end-token_start-1);
-      else *res++ = in.substr(token_start, end-token_start);
-      token_start = i--;}
+  unsigned j=0, nesting=0;
+  while (j < in.length() && isspace(in[j])) ++j;
+  unsigned token_start = j;                              // drop leading space
+  for (; j<in.length(); ++j)
+    if (isspace(in[j])) {
+      *res++ = substr_word(in, token_start, j);
+      while (j < in.length() && isspace(in[j])) ++j;
+      token_start = j--;}                                // drop leading space
+    else if (in[j] == ')')
+      throw Exception(Argm::Mismatched_parenthesis, in.substr(0, j+1));
+    else if (in[j] == '(') for (nesting++; nesting && ++j<in.length();)
+      if (in[j] == '(') nesting++;
+      else if (in[j] == ')') nesting--;
+      else; // step through nested non-parentheses
+    else;   // step through non-nested printing non-parentheses
   if (nesting) throw Exception(Argm::Mismatched_parenthesis, in);
-  if (token_start != i)
-    if (in[i-1] == ')') *res = in.substr(token_start, i-token_start-1);
-    else *res = in.substr(token_start, i-token_start);
+  if (token_start != j) *res++ = substr_word(in, token_start, j);
   return res;}

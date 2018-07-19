@@ -404,7 +404,6 @@ int b_list_environment(const Argm& argm, Error_list& exceptions) {
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   for (char** i=environ; *i; ++i) {
     std::string src(*i);
-    if (src.find_first_of("()") != std::string::npos) continue;
     std::string::size_type div = src.find("=");
     if (div != std::string::npos) {
       if (i != environ) argm.output <<" ";

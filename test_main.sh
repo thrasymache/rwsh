@@ -112,7 +112,9 @@ sort test_files/tmp
 
 # Arg_spec::REFERENCE, interpret(), evaluate_expansion(), evaluate_var()
 .set A /bin
-.global B ((zero zero) ((one one) one) two three)
+.global B ( (zero   zero) ((one one  ) one   ) two three)
+.global C ((external) () ( ) internal(parenthesis))
+.global broken (extra_close\) \(extra_open)
 e $A $0 @$A
 e A $1 1 $$3 $$$3
 e A 1 2 3 4 5 6 7 $$$$$$$$$8
@@ -128,6 +130,12 @@ m {m $B$$$$ {e $# $*}}
 m $B$10 {e $# $*}
 m $B$1 {e $# $*}
 m $B$$1 {e $# $*}
+m $broken {e $# $*}
+m $broken$ {e $# $*}
+m $broken$$ {e $# $*}
+m $C {e $# $*}
+m $C$ {e $# $*}
+m $C$$ {e $# $*}
 
 # Arg_spec::SOON, apply()
 e A &1 1 &$3 &$$3
@@ -1427,7 +1435,6 @@ rwsh.vars
 
 # .list_environment
 .global SHELL unmodified
-/usr/bin/printenv
 .list_environment x
 .list_environment {excess argfunc}
 for ${.list_environment}$ {
@@ -1440,6 +1447,7 @@ for ${.list_environment}$ {
   .scope $1$ (var val) {setf $var $val; .nop $$var}}
 e $TESTABILITY
 e $SHELL
+/usr/bin/printenv
 .set_max_collectible_exceptions 7
 .collect_errors_except .nop {${.throw echo exception from inside substitution}}
 .collect_errors_only .nop {${.throw echo exception from inside substitution}}

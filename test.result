@@ -524,7 +524,13 @@ $# Arg_spec::REFERENCE, interpret(), evaluate_expansion(), evaluate_var()
 $.set A /bin
 
 0
-$.global B ((zero zero) ((one one) one) two three)
+$.global B ( (zero   zero) ((one one  ) one   ) two three)
+
+0
+$.global C ((external) () ( ) internal(parenthesis))
+
+0
+$.global broken (extra_close\) \(extra_open)
 
 0
 $e $A $0 @$A
@@ -553,13 +559,13 @@ signal triggered: rwsh.invalid_word_selection ( $$1$ )
 
 -1
 $m $B {e $# $*}
-2 (zero zero) ((one one) one) two three
+2  (zero   zero) ((one one  ) one   ) two three
 0
 $m $B$ {e $# $*}
-5 zero zero (one one) one two three
+5 zero   zero (one one  ) one    two three
 0
 $m $B$$ {e $# $*}
-7 zero zero one one one two three
+7 zero zero one one   one two three
 0
 $m $B$$$$ {e $# $*}
 8 zero zero one one one two three
@@ -572,10 +578,30 @@ signal triggered: rwsh.undefined_variable ( $B$10 )
 
 -1
 $m $B$1 {e $# $*}
-2 (one one) one
+2 (one one  ) one   
 0
 $m $B$$1 {e $# $*}
 2 zero
+0
+$m $broken {e $# $*}
+2 extra_close) (extra_open
+0
+$m $broken$ {e $# $*}
+signal triggered: rwsh.mismatched_parenthesis ( extra_close) ) 
+
+-1
+$m $broken$$ {e $# $*}
+signal triggered: rwsh.mismatched_parenthesis ( extra_close) ) 
+
+-1
+$m $C {e $# $*}
+2 (external) () ( ) internal(parenthesis)
+0
+$m $C$ {e $# $*}
+5 external    internal(parenthesis)
+0
+$m $C$$ {e $# $*}
+3 external internal(parenthesis)
 0
 $
 
@@ -617,7 +643,7 @@ $m {m &B$$$$ {e $# $*}}
 8 zero zero one one one two three
 0
 $m {m &B$1 {e $# $*}}
-2 (one one) one
+2 (one one  ) one   
 0
 $m {m &B$$1 {e $# $*}}
 2 zero
@@ -734,34 +760,34 @@ signal triggered: rwsh.invalid_word_selection ( @ )
 
 -1
 $m ${e $B} {e $# $*}
-2 (zero zero) ((one one) one) two three
+2  (zero   zero) ((one one  ) one   ) two three
 0
 $m &{e $B} {e $# $*}
-2 (zero zero) ((one one) one) two three
+2  (zero   zero) ((one one  ) one   ) two three
 0
 $m ${e $B}$ {e $# $*}
-5 zero zero (one one) one two three
+5 zero   zero (one one  ) one    two three
 0
 $m &{e $B}$ {e $# $*}
-5 zero zero (one one) one two three
+5 zero   zero (one one  ) one    two three
 0
 $e $# &{e $B}$
-3 zero zero (one one) one two three
+3 zero   zero (one one  ) one    two three
 0
 $m {e $# &{e $B}$}
-1 zero zero (one one) one two three
+1 zero   zero (one one  ) one    two three
 0
 $m &{e $B}$$ {e $# $*}
-7 zero zero one one one two three
+7 zero zero one one   one two three
 0
 $m ${e $B}$$ {e $# $*}
-7 zero zero one one one two three
+7 zero zero one one   one two three
 0
 $m {m ${e $B}$1 {e $# $*}}
-2 (one one) one
+2 (one one  ) one   
 0
 $m {m &{e $B}$1 {e $# $*}}
-2 (one one) one
+2 (one one  ) one   
 0
 $m {m ${e $B}$$$1 {e $# $*}}
 2 zero
@@ -5224,9 +5250,11 @@ $/usr/bin/printenv
 .var_exists=must be requested to be checked
 ?=0
 A=-7.29496e+09
+C=(external) () ( ) internal(parenthesis)
 FIGNORE=*de*
 LC_ALL=C
 N=4
+broken=extra_close) (extra_open
 last_command_return=0
 nl=
 
@@ -5243,21 +5271,6 @@ $# .list_environment
 $.global SHELL unmodified
 
 0
-$/usr/bin/printenv
-.var_exists=must be requested to be checked
-?=0
-A=-7.29496e+09
-FIGNORE=*de*
-LC_ALL=C
-N=4
-SHELL=unmodified
-last_command_return=0
-nl=
-
-original_message=Exception for failed handler. Original exception with call stack:
-
-
-0
 $.list_environment x
 signal triggered: rwsh.bad_argc ( 1 0 0 .list_environment ) 
 
@@ -5272,7 +5285,7 @@ $for ${.list_environment}$ {
 
 0
 $e $TESTABILITY
-an external variable
+an=external var(iable)
 0
 $e $SHELL
 unmodified
@@ -5285,10 +5298,29 @@ $for ${.list_environment}$ {
 
 0
 $e $TESTABILITY
-an external variable
+an=external var(iable)
 0
 $e $SHELL
 /bin/rwsh
+0
+$/usr/bin/printenv
+.var_exists=must be requested to be checked
+?=0
+A=-7.29496e+09
+C=(external) () ( ) internal(parenthesis)
+EMPTY=
+FIGNORE=
+LC_ALL=C
+N=4
+SHELL=/bin/rwsh
+TESTABILITY=an=external var(iable)
+broken=extra_close) (extra_open
+last_command_return=0
+nl=
+
+original_message=Exception for failed handler. Original exception with call stack:
+
+
 0
 $.set_max_collectible_exceptions 7
 

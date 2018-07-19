@@ -2,7 +2,7 @@
 // arguments passed to an executable and/or tie several other executables into
 // a single executable.
 //
-// Copyright (C) 2006-2017 Samuel Newbold
+// Copyright (C) 2006-2018 Samuel Newbold
 
 #include <algorithm>
 #include <iterator>
@@ -39,16 +39,16 @@ Command_block* Command_block::apply(const Argm& argm, unsigned nesting,
   else {
     Command_block* result = new Command_block();
     std::back_insert_iterator<std::vector<Arg_script> > ins(*result);
-    for (Command_block::const_iterator i = begin(); i != end(); ++i) {
-      i->apply(argm, nesting, ins, exceptions);}
+    for (auto i: *this) i.apply(argm, nesting, ins, exceptions);
     result->trailing = trailing;
     return result;}}
 
+#include <iostream>
 int Command_block::collect_errors_core(const Argm& src_argm,
                                    const std::vector<std::string>& exceptional,
                                    bool logic, Error_list& parent_exceptions) {
   int ret;
-  for (const_iterator i = begin(); i != end() && !unwind_stack_v; ++i) {
+  for (auto j: *this) {
     if (current_exception_count > max_collect) {
       if (!collect_excess_thrown)
         parent_exceptions.add_error(
@@ -56,24 +56,23 @@ int Command_block::collect_errors_core(const Argm& src_argm,
       unwind_stack_v = collect_excess_thrown = true;
       return ret;}
     Error_list children;
-    Argm statement_argm = i->interpret(src_argm, children);
+    Argm statement_argm = j.interpret(src_argm, children);
     ret = executable_map.run(statement_argm, children);
     if (children.size()) {
       unwind_stack_v = false;
-      for (Error_list::iterator i = children.begin();
-           i != children.end();) {
+      for (auto k: children) {
+        parent_exceptions.push_back(k);
         if (logic == (find(exceptional.begin(), exceptional.end(),
-                          (*i)[0]) != exceptional.end()))
-          unwind_stack_v = true;
-        parent_exceptions.push_back(*i++);}}}
+                          (k)[0]) != exceptional.end()))
+          unwind_stack_v = true;}}} // will cause subsequent j to not run
   if (parent_exceptions.size()) unwind_stack_v = true;
   return ret;}
 
 int Command_block::execute(const Argm& src_argm,
                            Error_list& exceptions) const {
   int ret;
-  for (const_iterator i = begin(); i != end(); ++i) {
-    Argm statement_argm = i->interpret(src_argm, exceptions);
+  for (auto j: *this) {
+    Argm statement_argm = j.interpret(src_argm, exceptions);
     ret = executable_map.run(statement_argm, exceptions);
     if (unwind_stack()) break;}
   return ret;}
@@ -93,12 +92,11 @@ int Command_block::prototype_execute(const Argm& argm,
     throw error;}}
 
 void Command_block::promote_soons(unsigned nesting) {
-  if (this)
-    for (iterator i = begin(); i != end(); ++i) i->promote_soons(nesting);}
+  if (this) for (auto j = begin(); j != end(); ++j) j->promote_soons(nesting);}
 
 std::string Command_block::str() const {
   std::string body;
-  for (const_iterator i = begin(); i != end()-1; ++i) body += i->str() + "";
+  for (auto i = begin(); i != end()-1; ++i) body += i->str() + "";
   return "{" + body + back().str() + "}";}  //+ trailing + ",";}
 
 Command_block::Command_block(const std::string& src,

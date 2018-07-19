@@ -62,8 +62,7 @@ bool Simple_pattern::match(const std::string& s) const {
 // convert to a string. inverse of constructor.
 std::string Simple_pattern::str(void) const {
   std::string result = initial;
-  for (auto i=terms.begin(); i != terms.end(); ++i)
-    result += '*' + *i;
+  for (auto j: terms) result += '*' + j;
   if (unterminated) result += '*';
   return result;}
 
@@ -71,13 +70,11 @@ Entry_pattern::Entry_pattern(const std::string& src) {
   std::vector<std::string> temp;
   tokenize_strict(src, std::back_inserter(temp),
                   std::bind2nd(std::equal_to<char>(), ' '));
-  for (auto i = temp.begin(); i != temp.end(); ++i)
-    options.push_back(Simple_pattern(*i));
+  for (auto j: temp) options.push_back(Simple_pattern(j));
   only_text = options.size() == 1 && options[0].is_only_text();}
 
 bool Entry_pattern::match(const std::string& s) const {
-  for (auto i = options.begin(); i != options.end(); ++i)
-    if (i->match(s)) return true;
+  for (auto j: options) if (j.match(s)) return true;
   return false;}
 
 std::string Entry_pattern::str(void) const {

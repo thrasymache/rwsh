@@ -1,5 +1,5 @@
 // the registering of builtins
-// Copyright Samuel Newbold 2005-2017
+// Copyright Samuel Newbold 2005-2018
 
 #include <list>
 #include <map>

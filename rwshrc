@@ -4,9 +4,9 @@
 )
 .if .test_number_equal $# 2 {.source /etc/rwshrc-default}
 .else_if .test_string_equal $2 -to {
-  .for ${.list_environment}$ {
-    .scope $1$ (var val) {
-      .global $var $val}}
+  .global EMPTY ()
+  .global SHELL /bin/rwsh
+  .global TESTABILITY (an=external var(iable))
   .exec ./rwsh test_init.sh
   .exit}
 .else_if .test_number_equal $# 3 {

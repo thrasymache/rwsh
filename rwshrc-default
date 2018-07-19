@@ -329,7 +329,6 @@ fn ret {.return $*}
   .if .return 1 {.nop}; .stepwise $* {.else_if_not $* {.nop}}; .else {.nop}}
 .function or {
   .if .return 1 {.nop}; .stepwise $* {.else_if $* {.nop}}; .else {.nop}}
-.global TESTABILITY (an external variable)
 fn st {
   .collect_errors_except .nop {
     /bin/rwsh -to <test_main.sh >last.test.result
