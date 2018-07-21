@@ -132,8 +132,7 @@ int b_exec(const Argm& argm, Error_list& exceptions) {
   if (dup2(input, 0) < 0) std::cerr <<"dup2 didn't like changing input\n";
   if (dup2(output, 1) < 0) std::cerr <<"dup2 didn't like changing output\n";
   if (dup2(error, 2) < 0) std::cerr <<"dup2 didn't like changing error\n";
-  Argm lookup(argm.begin()+1, argm.end(), argm.argfunction(), argm.parent_map(),
-                default_input, default_output, default_error);
+  Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
   Old_argv old_argv(lookup);
   char **env = argm.export_env();
   int ret = execve(lookup[0].c_str(), old_argv.argv(), env);
@@ -206,7 +205,7 @@ int b_fork(const Argm& argm, Error_list& exceptions) {
   int ret = 0;
   if (!fork()) {
     plumber.after_fork();
-    Argm lookup(argm.begin()+1, argm.end(), argm.argfunction(),
+    Argm lookup(argm.subrange(1), argm.argfunction(),
                 argm.parent_map(),
                 argm.input, argm.output.child_stream(), argm.error);
     ret = executable_map.run(lookup, exceptions);
@@ -219,8 +218,7 @@ int b_fork(const Argm& argm, Error_list& exceptions) {
 int b_function(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   else if (is_binary_name(argm[1])) return 1;
-  Argm lookup(argm.begin()+1, argm.end(), nullptr, argm.parent_map(),
-                default_input, default_output, default_error);
+  Argm lookup(argm.subrange(1), nullptr, argm.parent_map());
   Base_executable *e = executable_map.find(lookup);
   if (e && dynamic_cast<Builtin*>(e)) return 2;
   else if (is_argfunction_name(argm[1])) return 3;
@@ -237,8 +235,7 @@ int b_function_all_flags(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   else if (is_binary_name(argm[1])) return 1;
   else if (is_argfunction_name(argm[1])) return 3;
-  Argm lookup(argm.begin()+1, argm.begin()+2, nullptr, argm.parent_map(),
-                default_input, default_output, default_error);
+  Argm lookup(argm.subrange(1, argm.argc()-2), nullptr, argm.parent_map());
   Base_executable *e = executable_map.find(lookup);
   if (dynamic_cast<Builtin*>(e)) return 2;
   else if (!argm.argfunction()) {
@@ -295,7 +292,7 @@ int if_core(const Argm& argm, Error_list& exceptions, bool logic, bool els) {
   if (!in_if_block) throw Exception(Argm::Else_without_if);
   else if (successful_condition) return Variable_map::dollar_question;
   else {
-    Argm lookup(argm.begin()+1, argm.end(), 0, argm.parent_map(),
+    Argm lookup(argm.subrange(1), nullptr, argm.parent_map(),
                   argm.input, argm.output.child_stream(), argm.error);
     if (els || logic == !executable_map.run(lookup, exceptions)) {
       if (Named_executable::unwind_stack()) return -1;
@@ -484,8 +481,7 @@ int b_scope(const Argm& argm, Error_list& exceptions) {
                       default_input, default_output, default_error);
   tokenize_words(argm[argm.argc()-1], std::back_inserter(prototype_argm));
   Prototype prototype(prototype_argm.begin(), prototype_argm.end(), false);
-  Argm invoking_argm(argm.begin(), argm.end()-1, nullptr, argm.parent_map(),
-                     default_input, default_output, default_error);
+  Argm invoking_argm(argm.subrange(0, 1), nullptr, argm.parent_map());
   int ret = (*argm.argfunction()).prototype_execute(invoking_argm, prototype,
                                                     exceptions);
   if (Named_executable::unwind_stack()) return -1;
@@ -572,7 +568,7 @@ int b_source(const Argm& argm, Error_list& exceptions) {
     throw Exception(Argm::File_open_failure, argm[1]);
   if (!(sb.st_mode & S_IXUSR)) throw Exception(Argm::Not_executable, argm[1]);
   Rwsh_istream_p src(new File_istream(argm[1]), false, false);
-  Argm script_arg(argm.begin()+1, argm.end(), 0, argm.parent_map(),
+  Argm script_arg(argm.subrange(1), nullptr, argm.parent_map(),
                   argm.input, argm.output.child_stream(), argm.error);
   Command_stream command_stream(src, false);
   Arg_script script("", 0);
@@ -592,7 +588,7 @@ int b_source(const Argm& argm, Error_list& exceptions) {
 int b_stepwise(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (!argm.argfunction()) throw Exception(Argm::Missing_argfunction);
-  Argm lookup(argm.begin()+1, argm.end(), 0, argm.parent_map(),
+  Argm lookup(argm.subrange(1), nullptr, argm.parent_map(),
                 argm.input, argm.output.child_stream(), argm.error);
   Base_executable* e = executable_map.find(lookup);
   if (!e) return 1;  // executable not found
@@ -601,7 +597,7 @@ int b_stepwise(const Argm& argm, Error_list& exceptions) {
   int ret = -1;
   for (auto i: f->body) {
     Argm body_i(i.interpret(lookup, exceptions));
-    Argm body("rwsh.mapped_argfunction", body_i.begin(), body_i.end(), 0,
+    Argm body("rwsh.mapped_argfunction", body_i.argv(), nullptr,
               argm.parent_map(), body_i.input, body_i.output, body_i.error);
     ret  = (*argm.argfunction())(body, exceptions);
     if (Named_executable::unwind_stack()) {
@@ -702,7 +698,7 @@ int b_test_number_equal(const Argm& argm, Error_list& exceptions) {
 // throw the remaining arguments as an exception
 int b_throw(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
-  Argm new_exception(argm.begin()+1, argm.end(), argm.argfunction(),
+  Argm new_exception(argm.subrange(1), argm.argfunction(),
                      Variable_map::global_map,
                      argm.input, argm.output.child_stream(), argm.error);
   exceptions.add_error(new_exception);
@@ -756,7 +752,7 @@ int b_usleep(const Argm& argm, Error_list& exceptions) {
 int b_usleep_overhead(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
-  Argm usleep_argm(".usleep", argm.end(), argm.end(), nullptr,
+  Argm usleep_argm(".usleep", Argm::Argv(), nullptr,
                    Variable_map::global_map, default_input, default_output,
                    default_error);
   Base_executable* focus = executable_map.find(Argm(usleep_argm));
@@ -888,8 +884,7 @@ int b_waiting_for_user(const Argm& argm, Error_list& exceptions) {
 // key $1
 int b_which_executable(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
-  Argm lookup(argm.begin()+1, argm.end(), argm.argfunction(), argm.parent_map(),
-                default_input, default_output, default_error);
+  Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
   if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
   Base_executable* focus = executable_map.find(lookup);
   if (focus) {
@@ -902,8 +897,7 @@ int b_which_executable(const Argm& argm, Error_list& exceptions) {
 // key $1 has been run
 int b_which_execution_count(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
-  Argm lookup(argm.begin()+1, argm.end(), argm.argfunction(), argm.parent_map(),
-                default_input, default_output, default_error);
+  Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
   Base_executable* focus = executable_map.find(lookup);
   if (focus) {
     argm.output <<focus->execution_count();
@@ -915,8 +909,7 @@ int b_which_execution_count(const Argm& argm, Error_list& exceptions) {
 int b_which_last_exception(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
-  Argm lookup(argm.begin()+1, argm.end(), argm.argfunction(), argm.parent_map(),
-                default_input, default_output, default_error);
+  Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
   Base_executable* focus = executable_map.find(lookup);
   if (focus) {
     argm.output <<focus->last_exception();
@@ -928,8 +921,7 @@ int b_which_last_exception(const Argm& argm, Error_list& exceptions) {
 // key $1 has been run
 int b_which_last_execution_time(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
-  Argm lookup(argm.begin()+1, argm.end(), argm.argfunction(), argm.parent_map(),
-                default_input, default_output, default_error);
+  Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
   Base_executable* focus = executable_map.find(lookup);
   if (focus) {
     argm.output <<focus->last_execution_time();
@@ -941,8 +933,7 @@ int b_which_last_execution_time(const Argm& argm, Error_list& exceptions) {
 // key $1 has been run
 int b_which_total_execution_time(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
-  Argm lookup(argm.begin()+1, argm.end(), argm.argfunction(), argm.parent_map(),
-                default_input, default_output, default_error);
+  Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
   Base_executable* focus = executable_map.find(lookup);
   if (focus) {
     struct timeval val = focus->total_execution_time();
@@ -969,8 +960,7 @@ int b_which_path(const Argm& argm, Error_list& exceptions) {
 // prints the last return value of the executable with named $1
 int b_which_return(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
-  Argm lookup(argm.begin()+1, argm.end(), argm.argfunction(), argm.parent_map(),
-                default_input, default_output, default_error);
+  Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
   Base_executable* focus = executable_map.find(lookup);
   if (focus) {
     argm.output <<focus->last_ret();
@@ -981,8 +971,7 @@ int b_which_return(const Argm& argm, Error_list& exceptions) {
 // return true if there is an executable in the executable map with key $1
 int b_which_test(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
-  Argm lookup(argm.begin()+1, argm.end(), argm.argfunction(), argm.parent_map(),
-              default_input, default_output, default_error);
+  Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
   if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
   return !executable_map.find(lookup);}
 
@@ -992,7 +981,7 @@ int b_while(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (!argm.argfunction()) throw Exception(Argm::Missing_argfunction);
   int ret = -1;
-  Argm lookup(argm.begin()+1, argm.end(), 0, argm.parent_map(),
+  Argm lookup(argm.subrange(1), nullptr, argm.parent_map(),
               argm.input, argm.output.child_stream(), argm.error);
   while (!executable_map.run(lookup, exceptions)) {
     if (Named_executable::unwind_stack()) return -1;

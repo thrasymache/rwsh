@@ -1,24 +1,18 @@
-// Copyright (C) 2005-2017 Samuel Newbold
+// Copyright (C) 2005-2018 Samuel Newbold
 
 class Command_block;
 
-class Argm : private std::vector<std::string> {
-  typedef std::vector<std::string> Base;
-  unsigned argc_v;
-  Command_block* argfunction_v;
-  Variable_map* parent_map_v;
-
+class Argm {
  public:
-  typedef std::vector<std::string> Public_base;
+  typedef std::vector<std::string> Argv;
   Argm(Variable_map* parent_map_i,
        Rwsh_istream_p input_i, Rwsh_ostream_p output_i, Rwsh_ostream_p error_i);
-  template <class String_it>
-  Argm(String_it first_string, String_it last_string,
+  Argm(const Argv& args,
        Command_block* argfunction_i, Variable_map* parent_map_i,
        Rwsh_istream_p input_i, Rwsh_ostream_p output_i, Rwsh_ostream_p error_i);
-  template <class String_it>
-  Argm(const std::string& first_string,
-       String_it second_string, String_it last_string,
+  Argm(const Argv& args, Command_block* argfunction_i,
+       Variable_map* parent_map_i);
+  Argm(const std::string& first_string, const Argv& subsequent_args,
        Command_block* argfunction_i, Variable_map* parent_map_i,
        Rwsh_istream_p input_i, Rwsh_ostream_p output_i, Rwsh_ostream_p error_i);
   Argm(const Argm& src);
@@ -114,31 +108,37 @@ class Argm : private std::vector<std::string> {
   bool var_exists(const std::string& key) const;
 
 // map semantics
-  typedef Base::size_type size_type;
-  typedef Base::value_type value_type;
-  typedef Base::iterator iterator;
-  typedef Base::const_iterator const_iterator;
-  typedef Base::const_reference const_reference;
+  typedef Argv::size_type size_type;
+  typedef Argv::value_type value_type;
+  typedef Argv::iterator iterator;
+  typedef Argv::reference reference;
+  typedef Argv::const_iterator const_iterator;
+  typedef Argv::const_reference const_reference;
 
 // vector semantics: to the extent possible this structure should be thought
 // of as a map, but it is also a representation of a command line, and so
 // there is an assigned order to its members, and some operations should only
 // need or want to know that much
-  const_iterator begin(void) const {return Base::begin();};
-  const_iterator end(void) const {return Base::end();};
-  const_reference back(void) const {return (*this)[argc()-1];};
-  //later//void push_back(const std::string& x) {(*this)[argc_v++] = x;};
-  void push_back(const std::string& x) {Base::push_back(x); argc_v++;};
-  void pop_back(void) {Base::pop_back(); --argc_v;};
-  reference operator[] (int i) {return Base::operator[](i);};
-  const_reference operator[] (int i) const {return Base::operator[](i);};
+  const_iterator begin(void) const {return argv_v.begin();};
+  const_iterator end(void) const {return argv_v.end();};
+  const_reference back(void) const {return argv_v.back();};
+  void push_back(const std::string& x) {argv_v.push_back(x);};
+  void pop_back(void) {argv_v.pop_back();};
+  reference operator[] (int i) {return argv_v[i];};
+  const_reference operator[] (int i) const {return argv_v[i];};
 
 // special vector semantics
-  unsigned argc(void) const {return argc_v;};
-  Public_base subrange(unsigned start) const {
-    return Public_base(begin()+start, end());};
-  Public_base subrange(unsigned start, unsigned before_end) const {
-    return Public_base(begin()+start, end()-before_end);}; };
+  const Argv& argv(void) const {return argv_v;};
+  unsigned argc(void) const {return argv_v.size();};
+  Argv subrange(unsigned start) const {
+    return Argv(begin()+start, end());};
+  Argv subrange(unsigned start, unsigned before_end) const {
+    return Argv(begin()+start, end()-before_end);};
+
+ private:
+  Argv argv_v;
+  Command_block* argfunction_v;
+  Variable_map* parent_map_v; };
 
 struct Error_list : public std::list<Argm> {
   void add_error(const Argm& error); };

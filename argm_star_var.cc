@@ -4,39 +4,13 @@
 //
 // Copyright (C) 2006-2018 Samuel Newbold
 
-// constructor of Argm from a pair of iterators
-template <class String_it>
-inline Argm::Argm(String_it first_string, String_it last_string,
-       Command_block* argfunction_i, Variable_map* parent_map_i,
-       Rwsh_istream_p input_i, Rwsh_ostream_p output_i,
-       Rwsh_ostream_p error_i) :
-  Base(first_string, last_string),
-  argfunction_v(argfunction_i->copy_pointer()),
-  input(input_i), output(output_i), error(error_i),
-  parent_map_v(parent_map_i) {
-    argc_v = Base::size();};
-
-// constructor of Argm from an initial argument and a  pair of iterators
-template <class String_it>
-inline Argm::Argm(const std::string& first_string,
-       String_it second_string, String_it last_string,
-       Command_block* argfunction_i, Variable_map* parent_map_i,
-       Rwsh_istream_p input_i, Rwsh_ostream_p output_i,
-       Rwsh_ostream_p error_i) :
-  Base(second_string, last_string),
-  argfunction_v(argfunction_i->copy_pointer()),
-  input(input_i), output(output_i), error(error_i),
-  parent_map_v(parent_map_i) {
-    Base::insert(Base::begin(), first_string);
-    argc_v = Base::size();};
-
 // write the strings corresponding to $*
 template<class Out>
 inline Out Argm::star_var(const std::string& key, unsigned reference_level,
                      Out res) const {
   int n = std::atoi(key.c_str());
   if (n < 0) n = 0;
-  else if (n >= size()) n = size();
+  else if (n >= argv_v.size()) n = argv_v.size();
   for (const_iterator i = begin()+n; i != end(); ++i) {
     std::string next = *i;
     for (unsigned i = 0; i < reference_level; ++i) next = get_var(next);

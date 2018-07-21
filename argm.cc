@@ -24,19 +24,47 @@
 
 Argm::Argm(Variable_map* parent_map_i, Rwsh_istream_p input_i,
            Rwsh_ostream_p output_i, Rwsh_ostream_p error_i) :
-  argc_v(0), argfunction_v(0),
-  input(input_i), output(output_i), error(error_i),
+  argfunction_v(0), input(input_i), output(output_i), error(error_i),
   parent_map_v(parent_map_i) {}
 
-Argm::Argm(const Argm& src) : Base(src), argc_v(src.argc()),
+Argm::Argm(const Argm& src) : argv_v(src.argv_v),
   argfunction_v(src.argfunction()->copy_pointer()),
   input(src.input), output(src.output), error(src.error),
   parent_map_v(src.parent_map()) {}
 
+// constructor of Argm from a subrange with streams
+Argm::Argm(const Argv& args,
+       Command_block* argfunction_i, Variable_map* parent_map_i,
+       Rwsh_istream_p input_i, Rwsh_ostream_p output_i,
+       Rwsh_ostream_p error_i) :
+  argv_v(args.begin(), args.end()),
+  argfunction_v(argfunction_i->copy_pointer()),
+  input(input_i), output(output_i), error(error_i),
+  parent_map_v(parent_map_i) {}
+
+// constructor of Argm from a subrange with default streams
+Argm::Argm(const Argv& args,
+       Command_block* argfunction_i, Variable_map* parent_map_i) :
+  argv_v(args.begin(), args.end()),
+  argfunction_v(argfunction_i->copy_pointer()),
+  input(default_input), output(default_output), error(default_error),
+  parent_map_v(parent_map_i) {}
+
+// constructor of Argm from an initial argument and a  pair of iterators
+Argm::Argm(const std::string& first_string,
+       const Argv& subsequent_args,
+       Command_block* argfunction_i, Variable_map* parent_map_i,
+       Rwsh_istream_p input_i, Rwsh_ostream_p output_i,
+       Rwsh_ostream_p error_i) :
+  argv_v(subsequent_args.begin(), subsequent_args.end()),
+  argfunction_v(argfunction_i->copy_pointer()),
+  input(input_i), output(output_i), error(error_i),
+  parent_map_v(parent_map_i) {
+    argv_v.insert(argv_v.begin(), first_string);}
+
 Argm& Argm::operator=(const Argm& src) {
-  Base::clear();
-  std::copy(src.begin(), src.end(), std::back_inserter(*this));
-  argc_v = src.argc_v;
+  argv_v.clear();
+  std::copy(src.begin(), src.end(), std::back_inserter(argv_v));
   delete argfunction_v;
   argfunction_v = src.argfunction()->copy_pointer();
   parent_map_v = src.parent_map();
@@ -66,12 +94,12 @@ std::string Argm::get_var(const std::string& key) const {
   switch (key[0]) {
     case '#': {
       std::ostringstream str;
-      str <<size();
+      str <<argv_v.size();
       return str.str();}
     case '1': case '2': case '3': case '4': case '5': case '6': case '7':
               case '8': case '9': case '0': {
       int n = std::atoi(key.c_str());
-      if (size() > n) return (*this)[n];
+      if (argv_v.size() > n) return argv_v[n];
       else return std::string();}
         //throw Exception(Argm::Undefined_variable, key);}
     default: return parent_map()->get(key);}}
@@ -85,7 +113,7 @@ bool Argm::var_exists(const std::string& key) const {
     case '1': case '2': case '3': case '4': case '5': case '6':
               case '7': case '8': case '9': case '0': {
       int n = std::atoi(key.c_str());
-      return size() > n;}
+      return argv_v.size() > n;}
     default: return parent_map()->check(key);}}
 
 int Argm::global(const std::string& key, const std::string& value) const {

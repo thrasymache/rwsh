@@ -110,7 +110,7 @@ void Base_executable::exception_handler(Error_list& exceptions) {
         exceptions.pop_back();
         unwind_stack_v = false;}}
     if (failed_handlers.find(focus[0]) != failed_handlers.end())
-      b_fallback_handler(Argm(".fallback_handler", focus.begin(), focus.end(),
+      b_fallback_handler(Argm(".fallback_handler", focus.argv(),
                               focus.argfunction(), Variable_map::global_map,
                               focus.input, focus.output, focus.error),
                          exceptions);}

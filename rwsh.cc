@@ -144,8 +144,10 @@ int main(int argc, char *argv[]) {
   catch (Exception& exception) {
     executable_map.base_run(exception);}
   Command_stream command_stream(default_input, true);
-  Argm init_command(".init", &argv[0], &argv[argc], 0, Variable_map::global_map,
-                             default_input, default_output, default_error);
+  Argm::Argv std_argv(&argv[0], &argv[argc]);
+  Argm init_command(".init", std_argv,
+                    nullptr, Variable_map::global_map,
+                    default_input, default_output, default_error);
   executable_map.base_run(init_command);
   register_signals();
   Arg_script script("", 0);
@@ -164,7 +166,7 @@ int main(int argc, char *argv[]) {
        executable_map.base_run(command);
     executable_map.run_if_exists("rwsh.after_command", command);}
   Argm shutdown_command(Argm::exception_names[Argm::Shutdown],
-                        &argv[0], &argv[argc], 0, Variable_map::global_map,
+                        std_argv, nullptr, Variable_map::global_map,
                         default_input, default_output, default_error);
   executable_map.base_run(shutdown_command);
   executable_map.unused_var_check_at_exit();

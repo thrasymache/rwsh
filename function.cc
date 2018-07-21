@@ -81,7 +81,7 @@ int Command_block::prototype_execute(const Argm& argm,
                                      const Prototype& prototype,
                                      Error_list& exceptions) const {
   Variable_map locals(prototype.arg_to_param(argm));
-  Argm params(argm.begin(), argm.end(), argm.argfunction(), &locals,
+  Argm params(argm.argv(), argm.argfunction(), &locals,
               argm.input, argm.output, argm.error);
   try {
     int ret = execute(params, exceptions);

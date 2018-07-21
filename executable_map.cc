@@ -50,7 +50,7 @@ Base_executable* Executable_map::find(const Argm& key) {
   else return nullptr;}
 
 bool Executable_map::run_if_exists(const std::string& key, Argm& argm_i) {
-  Argm temp_argm(key, argm_i.begin(), argm_i.end(), argm_i.argfunction(),
+  Argm temp_argm(key, argm_i.argv(), argm_i.argfunction(),
                  argm_i.parent_map(), argm_i.input,argm_i.output, argm_i.error);
   Base_executable* i = find(temp_argm);
   if (i) {
@@ -85,7 +85,7 @@ int Executable_map::run(Argm& argm, Error_list& exceptions) {
     if (is_function_name(argm[0])) {                    // try autofunction
       if (in_autofunction) return not_found(argm);        // nested autofunction
       in_autofunction = true;
-      Argm auto_argm("rwsh.autofunction", argm.begin(), argm.end(),
+      Argm auto_argm("rwsh.autofunction", argm.argv(),
                      argm.argfunction(), argm.parent_map(),
                      argm.input, argm.output, argm.error);
       run(auto_argm, exceptions);
