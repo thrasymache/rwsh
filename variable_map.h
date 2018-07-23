@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2017 Samuel Newbold
+// Copyright (C) 2006-2018 Samuel Newbold
 
 extern const char* WSPACE;
 std::string escape(const std::string& src);
@@ -11,6 +11,8 @@ class Variable_map : private std::map<std::string, std::string> {
   std::set<std::string> local_vars;
   Variable_map* parent;
 
+  const Variable_map* parent_with(const std::string& key) const;
+  void export_env(std::vector<char*>& env, const Variable_map* descendant);
 public:
   typedef Base::iterator iterator;
   typedef Base::const_iterator const_iterator;
@@ -47,9 +49,10 @@ public:
     return checked_vars.find(key) !=  checked_vars.end();};
   void used_vars_insert(const std::string& key) {
     used_vars.insert(key);};
-  template <class In>
-      char** copy_to_char_star_star(In first, In last, char** res);
-  char** export_env(void);};
+  template <class In, class Out>
+      Out copy_to_char_star_star(
+              In first, In last, Out res, const Variable_map* descendant);
+  void export_env(std::vector<char*>& env);};
 
 inline bool isargvar(const std::string& focus) {
   switch(focus[0]) {

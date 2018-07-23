@@ -137,8 +137,6 @@ int Argm::unset_var(const std::string& key) const {
               case '6': case '7': case '8': case '9': case '0': return 3;
     default: return parent_map()->unset(key);}}
 
-char** Argm::export_env(void) const {return parent_map()->export_env();}
-
 // algorithm that is the meat of Old_argv constructor
 template<class In>char** copy_to_cstr(In first, In last, char** res) {
   while (first != last) {

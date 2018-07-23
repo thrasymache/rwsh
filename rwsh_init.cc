@@ -29,7 +29,9 @@ void internal_init(void) {
   executable_map.set(new Builtin(".collect_errors_only",
                                  b_collect_errors_only));
   executable_map.set(new Builtin(".combine", b_combine));
+  executable_map.set(new Builtin(".enable_readline", b_enable_readline));
   executable_map.set(new Builtin(".echo", b_echo));
+  executable_map.set(new Builtin(".disable_readline", b_disable_readline));
   executable_map.set(new Builtin(".else", b_else));
   executable_map.set(new Builtin(".else_if", b_else_if));
   executable_map.set(new Builtin(".else_if_not", b_else_if_not));

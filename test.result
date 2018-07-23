@@ -27,7 +27,7 @@ signal triggered: rwsh.raw_command ( .function rwsh.raw_command {.echo $1; .echo
   .function rwsh.if_before_else {}
   .function rwsh.shutdown {.nop}
   .for ${.list_environment}$ {
-    .scope $1$ (var val) {
+    .scope $1$ (-- var val) {
       .global $var $val
       .nop $$var}}
   .source /etc/rwshrc-basic
@@ -71,6 +71,7 @@ $.source /etc/rwshrc-basic
 .function_all_flags c -- text ... {.combine $text$}
 .function_all_flags e -- text ... {.echo $text}
 .function_all_flags echo -- text ... {.echo $text $nl}
+.function_all_flags exec -- argv ... {.exec $argv$}
 .function_all_flags elif command ... {.else_if $command$ {rwsh.argfunction}}
 .function_all_flags else {.else {rwsh.argfunction}}
 .function_all_flags fn -- prototype ... {
@@ -2862,10 +2863,12 @@ $.for ${.list_executables}$ {.combine $1 $nl}
 .collect_errors_except
 .collect_errors_only
 .combine
+.disable_readline
 .echo
 .else
 .else_if
 .else_if_not
+.enable_readline
 .exec
 .exit
 .fallback_handler
@@ -2951,6 +2954,7 @@ e
 echo
 elif
 else
+exec
 f
 fn
 fni
@@ -4148,7 +4152,7 @@ $.test_less 6.022e2 6.022e23
 $
 
 0
-$# .toggle_readline
+$# .enable_readline .disable_readline .toggle_readline
 
 0
 $.toggle_readline excess
@@ -4159,7 +4163,29 @@ $.toggle_readline {excess}
 signal triggered: rwsh.excess_argfunction ( .toggle_readline ) 
 
 -1
+$.enable_readline excess
+signal triggered: rwsh.bad_argc ( 1 0 0 .enable_readline ) 
+
+-1
+$.enable_readline {excess}
+signal triggered: rwsh.excess_argfunction ( .enable_readline ) 
+
+-1
+$.disable_readline excess
+signal triggered: rwsh.bad_argc ( 1 0 0 .disable_readline ) 
+
+-1
+$.disable_readline {excess}
+signal triggered: rwsh.excess_argfunction ( .disable_readline ) 
+
+-1
 $.return 0
+
+0
+$.nop .enable_readline
+
+0
+$.nop .disable_readline
 
 0
 $.nop .toggle_readline
@@ -5243,25 +5269,27 @@ FIGNORE ?
 $
 
 0
-$# check for extraneous variables
+$# check for extraneous variables and that export_env doesn't bless
 
 0
-$/usr/bin/printenv
+$.scope M val (N necessary) {/usr/bin/printenv; .nop $necessary}
 .var_exists=must be requested to be checked
 ?=0
 A=-7.29496e+09
 C=(external) () ( ) internal(parenthesis)
 FIGNORE=*de*
 LC_ALL=C
-N=4
 broken=extra_close) (extra_open
 last_command_return=0
 nl=
 
 original_message=Exception for failed handler. Original exception with call stack:
 
+N=M
+necessary=val
+N was unused with call stack .scope 
 
-0
+-1
 $
 
 0

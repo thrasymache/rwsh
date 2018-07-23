@@ -162,8 +162,9 @@ int Binary::execute(const Argm& argm_i, Error_list& exceptions) const {
     if (dup2(output, 1) < 0) std::cerr <<"dup2 didn't like changing output\n";
     if (dup2(error, 2) < 0) std::cerr <<"dup2 didn't like changing error\n";
     Old_argv argv(argm_i);
-    char **env = argm_i.export_env();
-    ret = execve(implementation.c_str(), argv.argv(), env);
+    std::vector<char *>env;
+    argm_i.export_env(env);
+    ret = execve(implementation.c_str(), argv.argv(), &env[0]);
     Exception error_argm(Argm::Binary_not_found, argm_i[0]);
     executable_map.run(error_argm, exceptions);
     executable_map.unused_var_check_at_exit();

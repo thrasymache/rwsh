@@ -112,6 +112,13 @@ int b_combine(const Argm& argm, Error_list& exceptions) {
   argm.output.flush();
   return 0;}
 
+// disable readline regardless of status
+int b_disable_readline(const Argm& argm, Error_list& exceptions) {
+  if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
+  if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
+  readline_enabled = false;
+  return 0;}
+
 // echo arguments to standard output separated by space
 int b_echo(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
@@ -119,6 +126,13 @@ int b_echo(const Argm& argm, Error_list& exceptions) {
   for (auto i: argm.subrange(1, 1)) argm.output <<i <<" ";
   argm.output <<argm.back();
   argm.output.flush();
+  return 0;}
+
+// enable readline regardless of status
+int b_enable_readline(const Argm& argm, Error_list& exceptions) {
+  if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
+  if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
+  readline_enabled = true;
   return 0;}
 
 #include <iostream>
@@ -134,8 +148,9 @@ int b_exec(const Argm& argm, Error_list& exceptions) {
   if (dup2(error, 2) < 0) std::cerr <<"dup2 didn't like changing error\n";
   Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
   Old_argv old_argv(lookup);
-  char **env = argm.export_env();
-  int ret = execve(lookup[0].c_str(), old_argv.argv(), env);
+  std::vector<char *>env;
+  argm.export_env(env);
+  int ret = execve(lookup[0].c_str(), old_argv.argv(), &env[0]);
   Exception error_argm(Argm::Binary_not_found, argm[0]);
   executable_map.run(error_argm, exceptions);
   return ret;}

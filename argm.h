@@ -96,7 +96,9 @@ class Argm {
   static std::string exception_names[Exception_count];
 
 // variables
-  char** export_env(void) const;
+  void export_env(std::vector<char*>& env) const {
+    parent_map()->export_env(env);}
+
   std::string get_var(const std::string& key) const;
   int global(const std::string& key, const std::string& value) const;
   int local(const std::string& key, const std::string& value) const;

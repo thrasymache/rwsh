@@ -1,7 +1,7 @@
 // Functions to implement a variable map, and permit it to be exported as the
 // environment for child processes.
 //
-// Copyright (C) 2006-2017 Samuel Newbold
+// Copyright (C) 2006-2018 Samuel Newbold
 
 #include <cstdlib>
 #include <cstring>
@@ -18,8 +18,6 @@
 
 #include "argm.h"
 #include "executable.h"
-
-char** env;
 
 std::string escape(const std::string& src) {
   if (!src.length()) return "()";
@@ -128,24 +126,33 @@ int Variable_map::unset(const std::string& key) {
   else if (parent) return parent->unset(key);
   else return 1;}
 
-template <class In>
-char** Variable_map::copy_to_char_star_star(In first, In last, char** res) {
-  for (; first != last; ++first, ++res) {
+const Variable_map* Variable_map::parent_with(const std::string& key) const {
+  auto i = find(key);
+  if (i != end()) return this;
+  else if(parent) return parent->parent_with(key);
+  else return nullptr;}
+
+template <class In, class Out>
+Out Variable_map::copy_to_char_star_star(
+        In first, In last, Out res, const Variable_map* descendant) {
+  for (; first != last; ++first) {
     std::string key = first->first;
+    if (descendant->parent_with(key) != this) continue;
     used_vars.insert(key);
     std::string value = get(key);
-    *res = new char[key.length() + value.length() + 2];
-    std::strcpy(*res, key.c_str());
-    (*res)[key.length()] = '=';
-    std::strcpy(*res + key.length() + 1, value.c_str());}
-  *res = 0;
+    auto focus = new char[key.length() + value.length() + 2];
+    std::strcpy(focus, key.c_str());
+    focus[key.length()] = '=';
+    std::strcpy(focus + key.length() + 1, value.c_str());
+    *res++ = focus;}
   return res;}
 
 // return the variable map in a way that can be passed to child processes
-char** Variable_map::export_env(void) {
-  if (parent) return parent->export_env();
-  delete env;
-  env = new char*[global_map->size() + 1];
-  copy_to_char_star_star(this->begin(), this->end(), env);
-  return env;}
+void Variable_map::export_env(std::vector<char*>& env) {
+  export_env(env, this);
+  env.push_back(nullptr);}
 
+void Variable_map::export_env(
+        std::vector<char*>& env, const Variable_map* descendant) {
+  if (parent) parent->export_env(env, descendant);
+  copy_to_char_star_star(begin(), end(), std::back_inserter(env), descendant);}

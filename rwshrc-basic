@@ -23,6 +23,7 @@
 .function_all_flags c -- text ... {.combine $text$}
 .function_all_flags e -- text ... {.echo $text}
 .function_all_flags echo -- text ... {.echo $text $nl}
+.function_all_flags exec -- argv ... {.exec $argv$}
 .function_all_flags elif command ... {.else_if $command$ {rwsh.argfunction}}
 .function_all_flags else {.else {rwsh.argfunction}}
 .function_all_flags fn -- prototype ... {

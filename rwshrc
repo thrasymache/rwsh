@@ -18,7 +18,7 @@
   .function rwsh.if_before_else {}
   .function rwsh.shutdown {.nop}
   .for ${.list_environment}$ {
-    .scope $1$ (var val) {
+    .scope $1$ (-- var val) {
       .global $var $val
       .nop $$var}}
   .source /etc/rwshrc-basic

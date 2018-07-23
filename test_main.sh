@@ -141,6 +141,8 @@ m $C$$ {e $# $*}
 e A &1 1 &$3 &$$3
 e &&A
 m {e &&&A}
+m {e &&&without_mismatched_brace
+}
 e &{e &&A}
 e &&{e &A}
 e &A
@@ -1111,10 +1113,16 @@ wrapper 1 2
 .test_less 6.022e23 .6022e24
 .test_less 6.022e2 6.022e23
 
-# .toggle_readline
+# .enable_readline .disable_readline .toggle_readline
 .toggle_readline excess
 .toggle_readline {excess}
+.enable_readline excess
+.enable_readline {excess}
+.disable_readline excess
+.disable_readline {excess}
 .return 0
+.nop .enable_readline
+.nop .disable_readline
 .nop .toggle_readline
 .nop .toggle_readline
 
@@ -1430,8 +1438,8 @@ e &WWRONG
 # rwsh.vars
 rwsh.vars
 
-# check for extraneous variables
-/usr/bin/printenv
+# check for extraneous variables and that export_env doesn't bless
+.scope M val (N necessary) {/usr/bin/printenv; .nop $necessary}
 
 # .list_environment
 .global SHELL unmodified

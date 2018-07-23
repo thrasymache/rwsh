@@ -1,8 +1,13 @@
 .for ${.list_environment}$ {
-  .scope $1$ (var val) {.global $var $val; .nop $$var}}
+  .scope $1$ (-- var val) {.global $var $val; .nop $$var}}
 .source /etc/rwshrc-basic
 
+# only the last line is actually needed, but this is the only test of these
 .toggle_readline
+.toggle_readline
+.disable_readline
+.enable_readline
+
 .try_catch_recursive rwsh.unused_variable {
 .collect_errors_except .nop {
 .set_max_collectible_exceptions 7
@@ -21,6 +26,10 @@ fn sfn command {
   .function_all_flags $command [-*] [file ...] {
     if_only .var_exists file {.selection_set s $file}
     &&{.which_path $command $PATH} $-*$ @$s}}
+fn fn-subcommand system command {
+  .function_all_flags &&{c $system - $command} -- [args ...] {
+    .if .var_exists args {&&{whichp $system} &&command $args$}
+    .else {&&{whichp $system} &&command}}}
 fn sfn-subcommand system command {
   .function_all_flags &&{c $system - $command} [-*] [file ...] {
     if_only .var_exists file {.selection_set s $file}
@@ -63,10 +72,9 @@ fns ed [-p prompt] [file] {
 fns gdb-bash [binary] {
   if_only .var_exists binary {.set BUILT_EXECUTABLE $binary}
   echo debugging $BUILT_EXECUTABLE
-  .local old_shell $SHELL
-  .set SHELL /bin/bash
-  &{whichp gdb} $-*$ $BUILT_EXECUTABLE
-  .set SHELL $old_shell}
+  .scope /bin/bash SHELL {
+    .nop $SHELL is for the environment
+    &{whichp gdb} $-*$ $BUILT_EXECUTABLE}}
 fns gdb [binary] {
   if_only .var_exists binary {.set BUILT_EXECUTABLE $binary}
   echo debugging $BUILT_EXECUTABLE
@@ -77,8 +85,16 @@ fns git command [file ...] {
   .if .test_not_empty $s {&{whichp git} $-*$ $command @$s}
   .else {&{whichp git} $-*$ $command}}
 sfn-subcommand git add
+fn-subcommand git branch
+fn-subcommand git clone
+fn-subcommand git config
 sfn-subcommand git commit
 sfn-subcommand git diff
+fn-subcommand git fetch
+fn-subcommand git help
+fn-subcommand git log
+fn-subcommand git remote
+fn-subcommand git push
 sfn-subcommand git rm
 sfn-subcommand git status
 fns grep [-l] [regex] [file ...] {
