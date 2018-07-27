@@ -220,32 +220,41 @@ $.which_executable rwsh.argfunction {
 {
   multiple line argfunction}
 0
-$.nop rwsh.argfunction rwsh.mismatched_brace } 
+$.nop rwsh.argfunction rwsh.mismatched_brace } &&&is$not$all
 signal triggered: rwsh.mismatched_brace ( .nop rwsh.argfunction rwsh.mismatched_brace } ) 
-
--1
+signal triggered: rwsh.invalid_word_selection ( $not$all ) 
+signal triggered: rwsh.not_soon_enough ( &&&is$not$all ) 
 $.source test_files/unclosed_brace_newline.rwsh
 fn bar {echo baz
 
-signal triggered: rwsh.mismatched_brace ( fn bar ) 
+signal triggered: rwsh.mismatched_brace ( fn bar .source ) 
 
 -1
 $.source test_files/unclosed_brace.rwsh
 fn bar {echo baz
 
-signal triggered: rwsh.mismatched_brace ( fn bar ) 
+signal triggered: rwsh.mismatched_brace ( fn bar .source ) 
 
 -1
 $.source test_files/unclosed_parenthesis_newline.rwsh
 echo bar (baz
 
-signal triggered: rwsh.mismatched_parenthesis ( echo bar ( ) 
+signal triggered: rwsh.mismatched_parenthesis ( echo bar ( .source ) 
 
 -1
 $.source test_files/unclosed_parenthesis.rwsh
 echo bar (baz
 
-signal triggered: rwsh.mismatched_parenthesis ( echo bar ( ) 
+signal triggered: rwsh.mismatched_parenthesis ( echo bar ( .source ) 
+
+-1
+$.source test_files/multiple_errors.rwsh
+fn bar {echo &&&baz$$bax
+  cat >something >else
+  }
+signal triggered: rwsh.invalid_word_selection ( $$bax .source ) 
+signal triggered: rwsh.not_soon_enough ( &&&baz$$bax .source ) 
+signal triggered: rwsh.double_redirection ( >something >else .source ) 
 
 -1
 $.nop multiple statements \; on a line
@@ -253,16 +262,10 @@ $.nop multiple statements \; on a line
 -1
 $.which_executable rwsh.argfunction {rwsh.multiple_argfunctions} {}
 signal triggered: rwsh.multiple_argfunctions ( ) 
-
--1
 $.which_executable rwsh.argfunction {rwsh.argfunction with text args}
-signal triggered: rwsh.arguments_for_argfunction ( rwsh.argfunction ) 
-
--1
+signal triggered: rwsh.arguments_for_argfunction ( rwsh.argfunction with text args! ) 
 $.which_executable rwsh.argfunction {rwsh.argfunction {with a function arg}}
-signal triggered: rwsh.arguments_for_argfunction ( rwsh.argfunction ) 
-
--1
+signal triggered: rwsh.arguments_for_argfunction ( rwsh.argfunction {with a function arg}! ) 
 $.which_executable rwsh.argfunction {{{{{{{{{{{}}}}}}}}}}}
 {{{{{{{{{{{}}}}}}}}}}}
 0
@@ -373,16 +376,13 @@ $e a (multi-line parenthesis
 a multi-line parenthesis
   enclosed string 4
 0
-$e a )mismatched parenthesis
+$e a )mismatched &&parenthesis
 signal triggered: rwsh.mismatched_parenthesis ( e a ) ) 
-
--1
+signal triggered: rwsh.not_soon_enough ( &&parenthesis ) 
 $e a (multi-line parenthesis
   mismatch))
 signal triggered: rwsh.mismatched_parenthesis ( e a (multi-line parenthesis
   mismatch)) ) 
-
--1
 $e (internal \)parenthesis \\ escape ( \))) $#
 internal )parenthesis \ escape ( )) 3
 0
@@ -553,12 +553,8 @@ signal triggered: rwsh.undefined_variable ( FOO rwsh.mapped_argfunction m )
 -1
 $m $B$$1x {e $# $*}
 signal triggered: rwsh.invalid_word_selection ( $$1x ) 
-
--1
 $m $B$$1$ {e $# $*}
 signal triggered: rwsh.invalid_word_selection ( $$1$ ) 
-
--1
 $m $B {e $# $*}
 2  (zero   zero) ((one one  ) one   ) two three
 0
@@ -615,20 +611,21 @@ A A 1 A /bin
 0
 $e &&A
 signal triggered: rwsh.not_soon_enough ( &&A ) 
-
--1
 $m {e &&&A}
 signal triggered: rwsh.not_soon_enough ( &&&A ) 
-
--1
+$m {e &&&without$A @{mismatched} {rwsh.argfunction brace} &&&{thrown}B
+}
+signal triggered: rwsh.invalid_word_selection ( $A ) 
+signal triggered: rwsh.not_soon_enough ( &&&without$A ) 
+signal triggered: rwsh.bad_argfunction_style ( @ ) 
+signal triggered: rwsh.arguments_for_argfunction ( rwsh.argfunction brace! ) 
+signal triggered: rwsh.not_soon_enough ( &&&{thrown} ) 
+signal triggered: rwsh.invalid_word_selection ( B
+ ) 
 $e &{e &&A}
 signal triggered: rwsh.not_soon_enough ( &&A ) 
-
--1
 $e &&{e &A}
 signal triggered: rwsh.not_soon_enough ( &&{e &A} ) 
-
--1
 $e &A
 /bin
 0
@@ -722,24 +719,15 @@ $f rwsh.failed_substitution {.echo signal triggered: $0 \( $* \) $nl; .return -1
 0
 $e x{e bad argfunction style}
 signal triggered: rwsh.bad_argfunction_style ( x ) 
-
--1
 $e x&&&{e x}
 signal triggered: rwsh.bad_argfunction_style ( x&&& ) 
-
--1
 $e $+{e x}
 signal triggered: rwsh.bad_argfunction_style ( $+ ) 
-
--1
 $e &+{e x}
 signal triggered: rwsh.bad_argfunction_style ( &+ ) 
-
--1
 $e &&${e x}
 signal triggered: rwsh.bad_argfunction_style ( &&$ ) 
-
--1
+signal triggered: rwsh.not_soon_enough ( &&${e x} ) 
 $.return &{.return 0}
 signal triggered: rwsh.not_a_number (  .return ) 
 
@@ -756,10 +744,9 @@ $e nevermore &{/bin/echo quoth the raven}
 nevermore quoth the raven
 
 0
-$m ${e $B}@ {e $# $*}
-signal triggered: rwsh.invalid_word_selection ( @ ) 
-
--1
+$m ${e $B}$@1 ${e $B}$1 ${e $B}XYZ {e $# $*}
+signal triggered: rwsh.invalid_word_selection ( @1 ) 
+signal triggered: rwsh.invalid_word_selection ( XYZ ) 
 $m ${e $B} {e $# $*}
 2  (zero   zero) ((one one  ) one   ) two three
 0
@@ -858,10 +845,11 @@ $.for_each_line <dummy_file {e line of $# \( $* \)}
 signal triggered: rwsh.file_open_failure ( dummy_file .for_each_line ) 
 
 -1
-$m {e hi >dummy_file >another}
-signal triggered: rwsh.double_redirection ( >dummy_file >another ) 
-
--1
+$m {m {e hi >one >two} {cat <three <four}
+}
+signal triggered: rwsh.double_redirection ( >one >two ) 
+signal triggered: rwsh.multiple_argfunctions ( ) 
+signal triggered: rwsh.double_redirection ( <three <four ) 
 $m {e hi >dummy_file}
 
 0
@@ -895,10 +883,9 @@ $.for_each_line <dummy_file
 signal triggered: rwsh.missing_argfunction ( .for_each_line ) 
 
 -1
-$.for_each_line <dummy_file <another {}
+$.for_each_line <dummy_file <another A{}
 signal triggered: rwsh.double_redirection ( <dummy_file <another ) 
-
--1
+signal triggered: rwsh.bad_argfunction_style ( A ) 
 $.for_each_line <dummy_file {e line of $# \( $* \) $nl}
 line of 3 ( line 1 ) 
 line of 4 ( line 2 longer ) 
@@ -4920,9 +4907,7 @@ $# rwsh.arguments_for_argfunction rwsh.before_command rwsh.binary_not_found
 
 0
 $w x {rwsh.escaped_argfunction me}
-signal triggered: rwsh.arguments_for_argfunction ( rwsh.escaped_argfunction ) 
-
--1
+signal triggered: rwsh.arguments_for_argfunction ( rwsh.escaped_argfunction me! ) 
 $f rwsh.before_command {.echo $*0; .echo $nl}
 
 0

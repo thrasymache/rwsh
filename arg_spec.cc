@@ -1,7 +1,7 @@
 // The definition of the Arg_spec class which contains a single argument
 // specifier (e.g. a fixed string, a variable read, a selection read or $*).
 //
-// Copyright (C) 2006-2017 Samuel Newbold
+// Copyright (C) 2006-2018 Samuel Newbold
 
 #include <cstdlib>
 #include <dirent.h>
@@ -42,7 +42,9 @@ bool sub_term_char(char focus) {
     default: return false;}}
 } // close unnamed namespace
 
-Arg_spec::Arg_spec(const std::string& script, unsigned max_soon) :
+// Everything except substitutions and soon substitutions
+Arg_spec::Arg_spec(const std::string& script, unsigned max_soon,
+                   Error_list& errors) :
       soon_level(0), ref_level(0), expand_count(0), word_selection(-1),
       substitution(0) {
   std::string::size_type key_start, key_end;
@@ -56,8 +58,8 @@ Arg_spec::Arg_spec(const std::string& script, unsigned max_soon) :
     if (i < script.length())
       try {word_selection = my_strtoi(script.substr(i));}
       catch(...) {
-        throw Exception(Argm::Invalid_word_selection,
-                          script.substr(key_end));}}
+        errors.add_error(Exception(Argm::Invalid_word_selection,
+                                   script.substr(key_end)));}}
   if (!script.length()) type=FIXED;
   else if (script[0] == '$')
     if (script.length() < 2) type=REFERENCE;
@@ -72,7 +74,7 @@ Arg_spec::Arg_spec(const std::string& script, unsigned max_soon) :
     if (script.length() < 2) type=SOON;
     else
       if (soon_level > max_soon)
-        throw Exception(Argm::Not_soon_enough, script);
+        errors.add_error(Exception(Argm::Not_soon_enough, script));
       else if (script[key_start] == '*') {
         type=STAR_SOON;
         if (script.length() - key_start > 1)
@@ -92,42 +94,41 @@ Arg_spec::Arg_spec(const std::string& script, unsigned max_soon) :
   else if (script[0] == '\\') {type=FIXED; text=script.substr(1);}
   else {type=FIXED; text=script;}};
 
+// Substitutions and soon substitutions
 Arg_spec::Arg_spec(const std::string& src, std::string::size_type style_start,
-                   std::string::size_type& point, unsigned max_soon) :
+        std::string::size_type& point, unsigned max_soon, Error_list& errors) :
       soon_level(0), ref_level(0), expand_count(0), word_selection(-1),
       substitution(0), text() {
-  std::string::size_type tpoint = style_start;
+  auto tpoint = style_start;
   if (src[tpoint] == '&') {
     type = SOON_SUBSTITUTION;
     while (++tpoint < src.length() && src[tpoint] == '&') ++soon_level;}
   else if (src[tpoint] == '$') {
     type = SUBSTITUTION;
     ++tpoint, soon_level = max_soon;}
-  if (src[tpoint] != '{')
-    throw Exception(Argm::Bad_argfunction_style,
-                      src.substr(style_start, point-style_start));
-  substitution = new Command_block(src, tpoint, soon_level);
-  if (soon_level > max_soon) {
-    delete substitution;    // needed to construct substitution to find its end
-    throw Exception(Argm::Not_soon_enough,
-                      src.substr(style_start, tpoint-style_start));}
+  if (src[tpoint] != '{') {
+    errors.add_error(Exception(Argm::Bad_argfunction_style,
+                      src.substr(style_start, point-style_start)));
+    tpoint = point;}
+  substitution = new Command_block(src, tpoint, soon_level, errors);
+  if (soon_level > max_soon)
+    errors.add_error(Exception(Argm::Not_soon_enough,
+                      src.substr(style_start, tpoint-style_start)));
   if (tpoint >= src.length() || sub_term_char(src[tpoint])) point = tpoint;
   else {
-    std::string::size_type token_end = src.find_first_of(" };", tpoint);
+    auto token_end = src.find_first_of(" };", tpoint);
     if (src[tpoint] == '$') {
       do ++expand_count;
       while (++tpoint < src.length() && src[tpoint] == '$');
-      if (tpoint >= src.length() || sub_term_char(src[tpoint])) {
-        point = tpoint;
-        return;}
+      if (tpoint >= src.length() || sub_term_char(src[tpoint]));
       else
-        try {
-          word_selection = my_strtoi(src.substr(tpoint, token_end-tpoint));
-          point = tpoint = token_end;
-          return;}
-        catch(...) {}} // fall through
-    throw Exception(Argm::Invalid_word_selection,
-                      src.substr(tpoint, token_end-tpoint));}}
+        try {word_selection = my_strtoi(src.substr(tpoint, token_end-tpoint));}
+        catch(...) {
+          errors.add_error(Exception(Argm::Invalid_word_selection,
+                                     src.substr(tpoint, token_end-tpoint)));}}
+    else errors.add_error(Exception(Argm::Invalid_word_selection,
+                                    src.substr(tpoint, token_end-tpoint)));
+    point = token_end;}}
 
 Arg_spec::Arg_spec(Arg_type type_i, unsigned soon_level_i,
                    unsigned ref_level_i, unsigned expand_count_i,
@@ -240,8 +241,8 @@ std::string Arg_spec::str(void) const {
   std::string base, result(text);
   if (type != SUBSTITUTION) for (unsigned i=0; i < soon_level; ++i) base += '&';
   for (unsigned i=0; i < ref_level; ++i) base += '$';
-  for (std::string::size_type pos = result.find_first_of("\\");
-       pos != std::string::npos; pos = result.find_first_of("\\", pos+2))
+  for (auto pos = result.find_first_of("\\"); pos != std::string::npos;
+       pos = result.find_first_of("\\", pos+2))
     result.replace(pos, 1, "\\\\");
   std::string tail;
   for (unsigned i=0; i < expand_count; ++i) tail += '$';

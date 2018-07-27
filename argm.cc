@@ -221,6 +221,18 @@ Exception::Exception(Exception_t exception_i, const Argm& src) :
   push_back(exception_names[exception]);
   std::copy(src.begin(), src.end(), std::back_inserter(*this));}
 
+void Error_list::reset(void) {
+  clear();
+  Base_executable::reset();}
+
+void Error_list::add_error(const Argm& error){
+  push_back(error);
+  Base_executable::add_error();}
+
+void Error_list::prepend_error(const Argm& error){
+  push_front(error);
+  Base_executable::add_error();}
+
 Old_argv::Old_argv(const Argm& src) : argc_v(src.argc()) {
   focus = new char*[src.argc()+1];
   copy_to_cstr(src.begin(), src.end(), focus);}

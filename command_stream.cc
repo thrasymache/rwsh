@@ -31,10 +31,14 @@ Command_stream::Command_stream(Rwsh_istream_p& s, bool subprompt_i) :
     src(s), subprompt(subprompt_i) {}
 
 // write the next command to dest. run rwsh.prompt as appropriate
-Command_stream& Command_stream::operator>> (Arg_script& dest) {
+Command_stream& Command_stream::getline(Arg_script& dest, Error_list& errors) {
   if (this->fail()) return *this;
   std::string cmd;
   for (bool cmd_is_incomplete=true; cmd_is_incomplete;) {
+    errors.reset(); // If this is the first execution of the loop, then errors
+    // should be empty, if a subsequent execution, then we will regenerate all
+    // the errors again. Obviously this should go away when this gets fixed to
+    // be single-pass.
     std::string line;
     struct timeval before_input, after_input;
     gettimeofday(&before_input, rwsh_clock.no_timezone);
@@ -44,23 +48,22 @@ Command_stream& Command_stream::operator>> (Arg_script& dest) {
     if (fail())
       if (cmd.size())  {                 // EOF without a complete command
         Exception raw_command(Argm::Raw_command, cmd);
-        executable_map.base_run(raw_command);
-        Arg_script(cmd, 0);}             // this will throw the right exception
+        executable_map.base_run(raw_command, errors);
+        Arg_script(cmd, 0, errors);}     // this will throw the right exception
       else return *this;
     else cmd += line;
     try {
-      dest = Arg_script(cmd, 0);
+      dest = Arg_script(cmd, 0, errors);
+      if (Named_executable::unwind_stack()) {
+        errors.prepend_error(Exception(Argm::Raw_command, cmd));
+        return *this;}
       cmd_is_incomplete = false;}
     catch (Unclosed_parenthesis exception) {
       cmd += '\n';}
     catch (Unclosed_brace exception) {
-      cmd += '\n';}
-    catch (...) {
-      Exception raw_command(Argm::Raw_command, cmd);
-      executable_map.base_run(raw_command);
-      throw;}}
+      cmd += '\n';}}
   Exception raw_command(Argm::Raw_command, cmd);
-  executable_map.base_run(raw_command);
+  executable_map.base_run(raw_command, errors);
   return *this;}
 
 // returns true if the last command could not be read

@@ -143,7 +143,9 @@ class Argm {
   Variable_map* parent_map_v; };
 
 struct Error_list : public std::list<Argm> {
-  void add_error(const Argm& error); };
+  void add_error(const Argm& error);
+  void reset(void);
+  void prepend_error(const Argm& error); };
 
 struct Exception : public Argm {
   Argm::Exception_t exception;

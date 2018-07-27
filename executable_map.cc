@@ -61,8 +61,7 @@ bool Executable_map::run_if_exists(const std::string& key, Argm& argm_i) {
   else {
     return false;}}
 
-int Executable_map::base_run(Argm& argm) {
-  Error_list exceptions;
+int Executable_map::base_run(Argm& argm, Error_list& exceptions) {
   int ret = run(argm, exceptions);
   if (exceptions.size()) {
     Base_executable::exception_handler(exceptions);
@@ -83,7 +82,8 @@ int Executable_map::run(Argm& argm, Error_list& exceptions) {
       set(new Binary(argm[0]));
       return (*find(argm))(argm, exceptions);}
     if (is_function_name(argm[0])) {                    // try autofunction
-      if (in_autofunction) return not_found(argm);        // nested autofunction
+      if (in_autofunction)                              // nested autofunction
+        return not_found(argm, exceptions);
       in_autofunction = true;
       Argm auto_argm("rwsh.autofunction", argm.argv(),
                      argm.argfunction(), argm.parent_map(),
@@ -92,18 +92,18 @@ int Executable_map::run(Argm& argm, Error_list& exceptions) {
       in_autofunction = false;
       i = find(argm);                                   // second check for key
       if (i) return (*i)(argm, exceptions);}
-    return not_found(argm);}
+    return not_found(argm, exceptions);}
   catch (Exception error) {
     exceptions.add_error(error);
     return -1;}}
 
-int Executable_map::not_found(Argm& argm_i) {
+int Executable_map::not_found(Argm& argm_i, Error_list& exceptions) {
   Exception temp_argm(Argm::Executable_not_found, argm_i[0]);
   Base_executable* i = find(temp_argm);
-  if (!i) {
+  if (!i) {                                      // reset executable_not_found
     std::string::size_type point = 0;
     set(new Function(Argm::exception_names[Argm::Executable_not_found],
                      "{.echo $1 (: command not found) \\( $* \\) (\n)\n"
-                     ".return -1}", point, 0));}   // reset executable_not_found
+                     ".return -1}", point, 0, exceptions));}
   throw Exception(Argm::Executable_not_found, argm_i);}
 

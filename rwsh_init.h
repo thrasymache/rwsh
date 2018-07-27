@@ -1,3 +1,3 @@
-// Copyright (C) 2005-2008 Samuel Newbold
+// Copyright (C) 2005-2018 Samuel Newbold
 
-void internal_init(void);
+void internal_init(Error_list& exceptions);

@@ -24,9 +24,9 @@ class Arg_spec {
                                              Error_list& exceptions) const;
   template<class Out> Out evaluate_var(const Argm& src, Out res) const;
  public:
-  Arg_spec(const std::string& script, unsigned max_soon);
+  Arg_spec(const std::string& script, unsigned max_soon, Error_list& errors);
   Arg_spec(const std::string& src, std::string::size_type style_start,
-           std::string::size_type& point, unsigned max_soon);
+         std::string::size_type& point, unsigned max_soon, Error_list& errors);
   Arg_spec(Arg_type type, unsigned soon_level, unsigned ref_level,
            unsigned expand_count, int word_selection,
            Command_block* substitution, const std::string& text,

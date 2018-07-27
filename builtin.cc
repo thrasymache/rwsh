@@ -586,16 +586,15 @@ int b_source(const Argm& argm, Error_list& exceptions) {
   Argm script_arg(argm.subrange(1), nullptr, argm.parent_map(),
                   argm.input, argm.output.child_stream(), argm.error);
   Command_stream command_stream(src, false);
-  Arg_script script("", 0);
+  Arg_script script("", 0, exceptions);
   int ret = -1;
-  while (!command_stream.fail() && !Named_executable::unwind_stack()) {
+  while (!command_stream.fail() && !Named_executable::unwind_stack())
     try {
-      command_stream >> script;
+      command_stream.getline(script, exceptions);
       if (command_stream.fail()) break;
       Argm command(script.interpret(script_arg, exceptions));
       ret = executable_map.run(command, exceptions);}
-    catch (Exception exception) {
-      ret = executable_map.run(exception, exceptions);}}
+    catch (Exception exception) {exceptions.add_error(exception);}
   return ret;}
 
 // run the argument function once with each command in the specified function
@@ -640,7 +639,9 @@ int b_store_output(const Argm& argm, Error_list& exceptions) {
 int b_test_string_equal(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 3) throw Exception(Argm::Bad_argc, argm.argc()-1, 2, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
-  else return argm[1] != argm[2];} // C++ and shell have inverted logic
+  else if (argm[1] != argm[2])     // C++ and shell have inverted logic
+    return 1;
+  else return 0;}
 
 // return true if two strings convert to a doubles and first is greater
 int b_test_greater(const Argm& argm, Error_list& exceptions) {

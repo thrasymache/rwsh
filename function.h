@@ -13,7 +13,7 @@ class Command_block : public Base_executable, public std::vector<Arg_script> {
     std::copy(src.begin(), src.end(), std::back_inserter(*this));
     trailing = src.trailing;};
   Command_block(const std::string& src, std::string::size_type& point,
-                unsigned max_soon);
+                unsigned max_soon, Error_list& errors);
   Command_block* copy_pointer(void) const {
     if (!this) return 0;
     else {
@@ -42,8 +42,8 @@ class Function : public Named_executable {
   Command_block body;
 
   Function(const std::string& name, const std::string& src,
-           std::string::size_type& point, unsigned max_soon);
-  Function(const std::string& name, const std::string& src);
+         std::string::size_type& point, unsigned max_soon, Error_list& errors);
+  Function(const std::string& name, const std::string& src, Error_list& errors);
   Function(const Function& src) :
     name_v(src.name_v), prototype(src.prototype), body(src.body) {};
   Function(const std::string& name_i, Argm::const_iterator first_parameter,

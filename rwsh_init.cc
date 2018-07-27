@@ -21,7 +21,7 @@
 
 #include "function.h"
 
-void internal_init(void) {
+void internal_init(Error_list& exceptions) {
   executable_map.set(new Builtin(".argc", b_argc));
   executable_map.set(new Builtin(".cd", b_cd));
   executable_map.set(new Builtin(".collect_errors_except",
@@ -67,16 +67,16 @@ void internal_init(void) {
           ".if .which_test rwsh.help {"
             ".if .test_not_empty &&{rwsh.help} {.nop}\n"
             ".else {.echo rwsh.help produces no output (\n)}}\n"
-          ".else {.echo rwsh.help not defined (\n)}}"));
+          ".else {.echo rwsh.help not defined (\n)}}", exceptions));
   executable_map.set(new Function(".internal_features",
       "{.if .test_number_equal $# 1 {"
           ".echo rwsh.after_command rwsh.before_command rwsh.run_logic}; "
-      ".else {.echo wrong argument count; .return -1}}"));
+      ".else {.echo wrong argument count; .return -1}}", exceptions));
   executable_map.set(new Builtin(".internal_functions", b_internal_functions));
   executable_map.set(new Function(".internal_vars",
       "{.if .test_number_equal $# 1 {"
           ".echo FIGNORE ?}; "
-      ".else {.echo wrong argument count; .return -1}}"));
+      ".else {.echo wrong argument count; .return -1}}", exceptions));
   executable_map.set(new Builtin(".is_default_input", b_is_default_input));
   executable_map.set(new Builtin(".is_default_output", b_is_default_output));
   executable_map.set(new Builtin(".is_default_error", b_is_default_error));

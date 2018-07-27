@@ -39,6 +39,7 @@ class Base_executable {
   struct timeval last_execution_time(void) const {
     return last_execution_time_v;};
   int last_ret(void) const {return last_return;};
+  static void reset(void);
   struct timeval total_execution_time(void) const {
     return total_execution_time_v;};
   static void unix_signal_handler(int sig);

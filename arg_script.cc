@@ -32,11 +32,10 @@ const char* all_separators = " \t\n\\{};";
 } // close unnamed namespace
 
 std::string::size_type Arg_script::add_quote(const std::string& src,
-                                             std::string::size_type point,
-                                             unsigned max_soon) {
+        std::string::size_type point, unsigned max_soon, Error_list& errors) {
   std::string literal;
   const char* separators = "\\()";
-  std::string::size_type split = src.find_first_of(separators, point+1);
+  auto split = src.find_first_of(separators, point+1);
   for (unsigned nesting = 0;
        split != std::string::npos && (nesting || src[split] != ')');
        split = src.find_first_of(separators, split+1)) switch(src[split]) {
@@ -53,20 +52,19 @@ std::string::size_type Arg_script::add_quote(const std::string& src,
   else {
     literal += src.substr(point+1, split-point-1);
     point = src.find_first_not_of(WSPACE, split+1);
-    if (literal[0] != '\\') add_token(literal, max_soon);
-    else add_token("\\" + literal, max_soon);
+    if (literal[0] != '\\') add_token(literal, max_soon, errors);
+    else add_token("\\" + literal, max_soon, errors);
     return point;}}
 
 std::string::size_type Arg_script::parse_token(const std::string& src,
-                                            std::string::size_type token_start,
-                                            unsigned max_soon) {
+    std::string::size_type token_start, unsigned max_soon, Error_list& errors) {
   if (src[token_start] == '(')
-    return add_quote(src, token_start, max_soon);
+    return add_quote(src, token_start, max_soon, errors);
   else if (src[token_start] == ')')
-    throw Exception(Argm::Mismatched_parenthesis,
-                      src.substr(0, token_start+1));
-  std::string::size_type split = src.find_first_of(all_separators, token_start),
-                         point = token_start;
+    errors.add_error(Exception(Argm::Mismatched_parenthesis,
+                      src.substr(0, token_start+1)));
+  auto split = src.find_first_of(all_separators, token_start),
+       point = token_start;
   std::string token;
   for (; split != std::string::npos;       // loop until an unescaped separator
        split = src.find_first_of(all_separators, split+2))
@@ -81,14 +79,14 @@ std::string::size_type Arg_script::parse_token(const std::string& src,
   token += src.substr(point, split-point);
   if (split == std::string::npos) {
     point = split;
-    add_token(token, max_soon);
+    add_token(token, max_soon, errors);
     return point;}
   else if (src[split] == '{') {
-    token_start = add_function(src, token_start, split, max_soon);
+    token_start = add_function(src, token_start, split, max_soon, errors);
     return src.find_first_not_of(WSPACE, token_start);}
   else {
     point = src.find_first_not_of(WSPACE, split);
-    add_token(token, max_soon);
+    add_token(token, max_soon, errors);
     return point;}}
 
 Arg_script::Arg_script(const Rwsh_istream_p& input_i,
@@ -97,37 +95,40 @@ Arg_script::Arg_script(const Rwsh_istream_p& input_i,
   argfunction(0), argfunction_level(0), input(input_i), output(output_i),
   error(error_i), indent(indent_i), terminator(terminator_i) {}
 
-Arg_script::Arg_script(const std::string& src, unsigned max_soon) :
+Arg_script::Arg_script(const std::string& src, unsigned max_soon,
+                       Error_list& errors) :
   argfunction(0), argfunction_level(0), input(default_input),
   output(default_output), error(default_error), terminator('!') {
-  std::string::size_type point = src.find_first_not_of(WSPACE, 0);
+  auto point = src.find_first_not_of(WSPACE, 0);
   indent = src.substr(0, point);
-  point = constructor(src, point, max_soon);
+  point = constructor(src, point, max_soon, errors);
   if (point < src.length())
-    if (src[point] == '}' || src[point] == ';')
-      throw Exception(Argm::Mismatched_brace, src.substr(0, point+1));
+    if (src[point] == '}' || src[point] == ';') {
+      errors.add_error(Exception(Argm::Mismatched_brace,src.substr(0,point+1)));
+      while (point < src.length())            // see if anything else is wrong
+        point = constructor(src, ++point, max_soon, errors);}
     else std::abort();}
 
 Arg_script::Arg_script(const std::string& src, std::string::size_type& point,
-                       unsigned max_soon) :
+                       unsigned max_soon, Error_list& errors) :
   argfunction(0), argfunction_level(0), input(default_input),
   output(default_output), error(default_error), terminator('!') {
-  std::string::size_type tpoint = src.find_first_not_of(WSPACE, point);
+  auto tpoint = src.find_first_not_of(WSPACE, point);
   indent = src.substr(point, tpoint-point);
-  point = constructor(src, tpoint, max_soon);}
+  point = constructor(src, tpoint, max_soon, errors);}
 
 std::string::size_type Arg_script::constructor(const std::string& src,
-                              std::string::size_type point, unsigned max_soon) {
+          std::string::size_type point, unsigned max_soon, Error_list& errors) {
   for (; point < src.length();
-       point = parse_token(src, point, max_soon)) switch (src[point]) {
+       point = parse_token(src, point, max_soon, errors)) switch (src[point]) {
     default: break;
     case ';': case '\n': case '}': goto after_loop;} // statement terminators
   after_loop:
-  if (!args.size()) args.push_back(Arg_spec("", max_soon));
+  if (!args.size()) args.push_back(Arg_spec("", max_soon, errors));
   if (is_argfunction_name(args.front().str()) &&  // argfunction_level handling
       args.front().str() != "rwsh.mapped_argfunction")
     if (args.size() != 1 || argfunction)
-      throw Exception(Argm::Arguments_for_argfunction, args.front().str());
+      errors.add_error(Exception(Argm::Arguments_for_argfunction, str()));
     else if (args.front().str() == "rwsh.unescaped_argfunction")
       argfunction_level = 1;
     else if (args.front().str() == "rwsh.argfunction") argfunction_level = 2;
@@ -138,32 +139,34 @@ std::string::size_type Arg_script::constructor(const std::string& src,
   else terminator = src[point];
   return point;}
 
-void Arg_script::add_token(const std::string& src, unsigned max_soon) {
+void Arg_script::add_token(const std::string& src, unsigned max_soon,
+                           Error_list& errors) {
   switch (src[0]) {
     case '<':
       if (!input.is_default())
-        throw Exception(Argm::Double_redirection, input.str(), src);
+        errors.add_error(Exception(Argm::Double_redirection, input.str(), src));
       else input = Rwsh_istream_p(new File_istream(src.substr(1)),
                                   false, false);
       break;
     case '>':
       if (!output.is_default())
-        throw Exception(Argm::Double_redirection, output.str(), src);
+        errors.add_error(Exception(Argm::Double_redirection, output.str(),src));
       else output = Rwsh_ostream_p(new File_ostream(src.substr(1)),
                                    false, false);
       break;
     default:
-      args.push_back(Arg_spec(src, max_soon));}}
+      args.push_back(Arg_spec(src, max_soon, errors));}}
 
 std::string::size_type Arg_script::add_function(const std::string& src,
-                                             std::string::size_type style_start,
-                                             std::string::size_type point,
-                                             unsigned max_soon) {
+        std::string::size_type style_start, std::string::size_type point,
+        unsigned max_soon, Error_list& errors) {
   if (style_start != point)
-    args.push_back(Arg_spec(src, style_start, point, max_soon));
-  else
-    if (argfunction) throw Exception(Argm::Multiple_argfunctions);
-    else argfunction = new Command_block(src, point, max_soon+1);
+    args.push_back(Arg_spec(src, style_start, point, max_soon, errors));
+  else if (argfunction) {
+    errors.add_error(Exception(Argm::Multiple_argfunctions));
+    delete argfunction;
+    argfunction = new Command_block(src, point, max_soon+1, errors);}
+  else argfunction = new Command_block(src, point, max_soon+1, errors);
   return point;}
 
 Arg_script::Arg_script(const Arg_script& src) :
@@ -214,10 +217,9 @@ std::string Arg_script::str(void) const {
   else if (argfunction_level == 2) return "rwsh.escaped_argfunction";
   else {abort(); return "";}} // unhandled argfunction_level
 
-Argm Arg_script::base_interpret(const Argm& src) const {
-  Error_list exceptions;
-  Argm ret = interpret(src, exceptions);
-  if (exceptions.size()) Base_executable::exception_handler(exceptions);
+Argm Arg_script::base_interpret(const Argm& src, Error_list& errors) const {
+  Argm ret = interpret(src, errors);
+  if (errors.size()) Base_executable::exception_handler(errors);
   return ret;}
 
 // produce a destination Argm from the source Argm according to this script

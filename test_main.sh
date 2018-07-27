@@ -21,11 +21,12 @@ rwsh.mapped_argfunction {	   .echo ignore leading tab in argfunction}
 .which_executable rwsh.mapped_argfunction {.nop}
 .which_executable rwsh.argfunction {
   multiple line argfunction }
-.nop rwsh.argfunction rwsh.mismatched_brace } 
+.nop rwsh.argfunction rwsh.mismatched_brace } &&&is$not$all
 .source test_files/unclosed_brace_newline.rwsh
 .source test_files/unclosed_brace.rwsh
 .source test_files/unclosed_parenthesis_newline.rwsh
 .source test_files/unclosed_parenthesis.rwsh
+.source test_files/multiple_errors.rwsh
 .nop multiple statements \; on a line
 .which_executable rwsh.argfunction {rwsh.multiple_argfunctions} {}
 .which_executable rwsh.argfunction {rwsh.argfunction with text args}
@@ -66,7 +67,7 @@ e some (nested (parentheses) $#) $#
 e some ((((((((((repeated))))) parentheses))))) $#
 e a (multi-line parenthesis
   enclosed string) $#
-e a )mismatched parenthesis
+e a )mismatched &&parenthesis
 e a (multi-line parenthesis
   mismatch))
 e (internal \)parenthesis \\ escape ( \))) $#
@@ -141,7 +142,7 @@ m $C$$ {e $# $*}
 e A &1 1 &$3 &$$3
 e &&A
 m {e &&&A}
-m {e &&&without_mismatched_brace
+m {e &&&without$A @{mismatched} {rwsh.argfunction brace} &&&{thrown}B
 }
 e &{e &&A}
 e &&{e &A}
@@ -181,7 +182,7 @@ e &&${e x}
 .return ${e 0 $nl}
 .return &{.echo 0}
 e nevermore &{/bin/echo quoth the raven} 
-m ${e $B}@ {e $# $*}
+m ${e $B}$@1 ${e $B}$1 ${e $B}XYZ {e $# $*}
 m ${e $B} {e $# $*}
 m &{e $B} {e $# $*}
 m ${e $B}$ {e $# $*}
@@ -215,7 +216,8 @@ y
 .else {}
 /bin/cat <dummy_file
 .for_each_line <dummy_file {e line of $# \( $* \)}
-m {e hi >dummy_file >another}
+m {m {e hi >one >two} {cat <three <four}
+}
 m {e hi >dummy_file}
 /bin/cat dummy_file
 .if .return 0 {>dummy_file /bin/echo there}
@@ -225,7 +227,7 @@ m {m >dummy_file {e line 1 $nl; e line 2 longer $nl; .echo $nl; e ending}}
 /bin/cat <dummy_file
 .for_each_line x {}
 .for_each_line <dummy_file
-.for_each_line <dummy_file <another {}
+.for_each_line <dummy_file <another A{}
 .for_each_line <dummy_file {e line of $# \( $* \) $nl}
 /bin/rm dummy_file
 

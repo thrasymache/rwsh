@@ -1,0 +1,4 @@
+fn bar {echo &&&baz$$bax
+  cat >something >else
+  }
+echo never reached

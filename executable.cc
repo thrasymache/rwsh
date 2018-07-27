@@ -81,9 +81,9 @@ void Base_executable::add_error(void) {
   unwind_stack_v = true;
   ++current_exception_count;}
 
-void Error_list::add_error(const Argm& error){
-  push_back(error);
-  Base_executable::add_error();}
+void Base_executable::reset(void) {
+  unwind_stack_v = false;
+  current_exception_count = 0;}
 
 void Base_executable::unix_signal_handler(int sig) {
   caught_signal = unix2rwsh(sig);}

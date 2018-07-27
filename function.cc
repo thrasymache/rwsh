@@ -101,27 +101,28 @@ std::string Command_block::str() const {
 
 Command_block::Command_block(const std::string& src,
                                   std::string::size_type& point,
-                                  unsigned max_soon) {
+                                  unsigned max_soon, Error_list& errors) {
   std::string::size_type tpoint = point;
   while (tpoint != std::string::npos && src[tpoint] != '}') {
-    push_back(Arg_script(src, ++tpoint, max_soon));
+    push_back(Arg_script(src, ++tpoint, max_soon, errors));
     if (size() != 1 && back().is_argfunction())
       default_output <<"rwsh.argfunction cannot occur as one of several "
                   "commands\n";}
   if (tpoint == std::string::npos)
     throw Unclosed_brace(src.substr(0, point-1));
-  if (!size()) push_back(Arg_script("", max_soon));
+  if (!size()) push_back(Arg_script("", max_soon, errors));
   point = tpoint + 1;}
 
 Function::Function(const std::string& name_i, const std::string& src,
-                   std::string::size_type& point, unsigned max_soon) :
-    name_v(name_i), prototype(true), body(src, point, max_soon) {}
+        std::string::size_type& point, unsigned max_soon, Error_list& errors) :
+    name_v(name_i), prototype(true), body(src, point, max_soon, errors) {}
 
-Function::Function(const std::string& name_i, const std::string& src) :
+Function::Function(const std::string& name_i, const std::string& src,
+                   Error_list& errors) :
     name_v(name_i), prototype(true) {
   std::string::size_type point = 0;
   try {
-    body = Command_block(src, point, 0);
+    body = Command_block(src, point, 0, errors);
     // this error handling is not simply testable because it requires bad
     // functions in rwsh_init.cc
     if (point != src.length())

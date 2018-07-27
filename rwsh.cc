@@ -139,35 +139,39 @@ void register_signals(void) {
 } // end unnamed namespace
 
 int main(int argc, char *argv[]) {
-  try {internal_init();}                             // catch blocks untestable
+  Error_list exceptions;
+  try {internal_init(exceptions);}                   // catch blocks untestable
   catch (std::string& error) {default_error <<error;}
   catch (Exception& exception) {
-    executable_map.base_run(exception);}
+    executable_map.base_run(exception, exceptions);}
   Command_stream command_stream(default_input, true);
   Argm::Argv std_argv(&argv[0], &argv[argc]);
   Argm init_command(".init", std_argv,
                     nullptr, Variable_map::global_map,
                     default_input, default_output, default_error);
-  executable_map.base_run(init_command);
+  executable_map.base_run(init_command, exceptions);
   register_signals();
-  Arg_script script("", 0);
+  Arg_script script("", 0, exceptions);
   Exception prompt(Argm::Prompt);
   while (!command_stream.fail()) {
-    executable_map.base_run(prompt);
+    executable_map.base_run(prompt, exceptions);
     Argm command(Variable_map::global_map,
                  default_input, default_output, default_error);
     try {
-      command_stream >> script;
-      if (command_stream.fail()) break;
-      command = script.base_interpret(script.argm());}
+      command_stream.getline(script, exceptions);
+      if (exceptions.size()) {
+        Base_executable::exception_handler(exceptions);
+        continue;}
+      else if (command_stream.fail()) break;
+      else command = script.base_interpret(script.argm(), exceptions);}
     catch (Exception exception) {command = exception;}
     executable_map.run_if_exists("rwsh.before_command", command);
     if (!executable_map.run_if_exists("rwsh.run_logic", command))
-       executable_map.base_run(command);
+       executable_map.base_run(command, exceptions);
     executable_map.run_if_exists("rwsh.after_command", command);}
   Argm shutdown_command(Argm::exception_names[Argm::Shutdown],
                         std_argv, nullptr, Variable_map::global_map,
                         default_input, default_output, default_error);
-  executable_map.base_run(shutdown_command);
+  executable_map.base_run(shutdown_command, exceptions);
   executable_map.unused_var_check_at_exit();
   return Variable_map::dollar_question;}
