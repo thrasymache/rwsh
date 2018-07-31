@@ -98,12 +98,12 @@ int Executable_map::run(Argm& argm, Error_list& exceptions) {
     return -1;}}
 
 int Executable_map::not_found(Argm& argm_i, Error_list& exceptions) {
-  Exception temp_argm(Argm::Executable_not_found, argm_i[0]);
+  Exception temp_argm(Argm::Function_not_found, argm_i[0]);
   Base_executable* i = find(temp_argm);
   if (!i) {                                      // reset executable_not_found
     std::string::size_type point = 0;
-    set(new Function(Argm::exception_names[Argm::Executable_not_found],
+    set(new Function(Argm::exception_names[Argm::Function_not_found],
                      "{.echo $1 (: command not found) \\( $* \\) (\n)\n"
                      ".return -1}", point, 0, exceptions));}
-  throw Exception(Argm::Executable_not_found, argm_i);}
+  throw Exception(Argm::Function_not_found, argm_i);}
 

@@ -12,44 +12,62 @@
 )
 
 # internal functions
-.function rwsh.unused_variable {echo $1 was unused with call stack $*2}
-.function rwsh.unchecked_variable {echo $1 was not checked with call stack $*2}
+.function_all_flags rwsh.bad_args -- proto assigned needed excess call_stack ... {
+  .combine (unacceptable arguments: for prototype ) $proto , $nl
+  if_only .test_not_empty $assigned {
+    .combine ( assigned )
+    .for $assigned$ {.combine $1$0 = ${paren_if_words $1$1} ( )}
+    .combine , $nl ( but)}
+  if_only .test_not_empty $needed {
+    .combine ( needed \() $needed \), $nl
+    if_only .test_not_empty $excess {.combine ( and)}}
+  if_only .test_not_empty $excess {
+    .combine ( found \() $excess (\) excess) $nl}
+  echo \ call stack:  $call_stack
+  .return -1}
+.function rwsh.binary_does_not_exist {
+  echo $1 : binary does not exist
+  echo call stack: $*2
+  .return -1}
+.function rwsh.binary_not_found {
+  echo $1 : binary not found in $2
+  echo call stack: $*3
+  .return -1}
+.function rwsh.directory_not_found {
+  .combine $1 ( directory does not exist) $nl
+  echo call stack $*2}
+.function rwsh.exec_failed {
+  .combine (.exec failed for ) $1 ( with errno ) $2 $nl
+  echo call stack $*3}
+.function rwsh.file_not_found {
+  echo $1 : could not find file
+  .return -1}
+.function rwsh.illegal_function_name {
+  .combine \$ $1 ( cannot be a function) $nl
+  echo call stack $*2}
 .function rwsh.illegal_variable_name {
   .combine \$ $1 ( cannot be set) $nl
   echo call stack $*2}
+.function rwsh.not_a_directory {
+  .combine $1 ( is not a directory) $nl
+  echo call stack $*2}
+.function rwsh.unused_variable {echo $1 was unused with call stack $*2}
+.function rwsh.unchecked_variable {echo $1 was not checked with call stack $*2}
 
 # ability of functions to act as builtin wrappers
 .function_all_flags af -- [argv ...] {rwsh.argfunction}
 .function_all_flags c -- text ... {.combine $text$}
 .function_all_flags e -- text ... {.echo $text}
-.function_all_flags echo -- text ... {.echo $text $nl}
+.function_all_flags echo -- text ... {.echo $text; .combine $nl}
 .function_all_flags exec -- argv ... {.exec $argv$}
 .function_all_flags elif command ... {.else_if $command$ {rwsh.argfunction}}
 .function_all_flags else {.else {rwsh.argfunction}}
 .function_all_flags fn -- prototype ... {
-  .function_all_flags $prototype$ {rwsh.argfunction}
-  .local ret $?
-  .if .test_number_equal $ret 1 {echo cannot set paths as functions}
-  .else_if .test_number_equal $ret 2 {echo cannot set builtins as functions}
-  .else_if .test_number_equal $ret 3 {echo cannot set argfunctions in executable map}
-  .else_if .test_number_equal $ret 4 {echo function &&1 did not exist to be erased}
-  .else {.return $ret}}
+  .function_all_flags $prototype$ {rwsh.argfunction}}
 .function_all_flags fni -- name args ... {
-  .function_all_flags $name -- $args$ {rwsh.argfunction}
-  .local ret $?
-  .if .test_number_equal $ret 1 {echo cannot set paths as functions}
-  .else_if .test_number_equal $ret 2 {echo cannot set builtins as functions}
-  .else_if .test_number_equal $ret 3 {echo cannot set argfunctions in executable map}
-  .else_if .test_number_equal $ret 4 {echo function &&1 did not exist to be erased}
-  .else {.return $ret}}
+  .function_all_flags $name -- $args$ {rwsh.argfunction}}
 .function_all_flags fns -- name args ... {
-  .function_all_flags $name [-*] $args$ {rwsh.argfunction}
-  .local ret $?
-  .if .test_number_equal $ret 1 {echo cannot set paths as functions}
-  .else_if .test_number_equal $ret 2 {echo cannot set builtins as functions}
-  .else_if .test_number_equal $ret 3 {echo cannot set argfunctions in executable map}
-  .else_if .test_number_equal $ret 4 {echo function &&1 did not exist to be erased}
-  .else {.return $ret}}
+  .function_all_flags $name [-*] $args$ {rwsh.argfunction}}
 .function_all_flags iee var {
   .if .var_exists $var {.echo $$var}
   .else {.nop}}
@@ -78,16 +96,12 @@ fn ntimes n {
   .while test_var_greater n 0 {
     rwsh.mapped_argfunction {rwsh.argfunction}
     .var_subtract n 1}}
-fn mark {ntimes 4 {.echo ####################}}
 .function unset {.unset $1}
 fn which command {
   .if .which_test $command {
     .combine ${.which_executable $command {rwsh.argfunction}} $nl}
   .else {echo no $command}}
-fn whichp binary {
-  .which_path $binary $PATH
-  .if .test_number_equal $? 0 {.nop}
-  .else {echo &&binary not found in $PATH; .return 1}}
+fn whichp binary {.which_path $binary $PATH}
 .function while {.while $* {rwsh.argfunction}}
 .function_all_flags var_exists -- var {.var_exists $var}
 .function_all_flags var_val -- [var ...] {
@@ -96,16 +110,3 @@ fn whichp binary {
 .function_all_flags paren_if_words -- value {
   .if .test_number_equal ${.argc $value$} 1 {.combine $value}
   .else {.combine \( $value \)}}
-.function_all_flags rwsh.bad_args -- proto assigned needed excess call_stack ... {
-  .combine (unacceptable arguments: for prototype ) $proto , $nl
-  if_only .test_not_empty $assigned {
-    .combine ( assigned )
-    .for $assigned$ {.combine $1$0 = ${paren_if_words $1$1} ( )}
-    .combine , $nl ( but)}
-  if_only .test_not_empty $needed {
-    .combine ( needed \() $needed \), $nl
-    if_only .test_not_empty $excess {.combine ( and)}}
-  if_only .test_not_empty $excess {
-    .combine ( found \() $excess (\) excess) $nl}
-  .echo \ call stack:  $call_stack $nl
-  .return -1}

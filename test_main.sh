@@ -212,7 +212,7 @@ y
 
 # file redirection (but don't overwrite files that exist)
 # .for_each_line
-.if .ls dummy_file {.exit}
+.if .test_file_exists dummy_file {.echo something went wrong}
 .else {}
 /bin/cat <dummy_file
 .for_each_line <dummy_file {e line of $# \( $* \)}
@@ -267,6 +267,8 @@ f x
 .cd
 .cd /bin {excess argfunc}
 .cd /bin /
+.cd /bn
+.cd /bin/rwsh
 .cd /bin
 /bin/pwd
 
@@ -283,9 +285,13 @@ f x
 # .exec .fork
 .fork
 .fork e text
-.fork .return 1
+.fork .return 127
 .exec
 .exec something {excess argfunc}
+.exec /bin/ech does not exist
+.exec /etc/rwshrc-default config files are not interpreters
+.exec /bin cannot exec a directory
+.exec /bin/rwsh/insanity errno is ENOTDIR
 .fork m {.exec /bin/echo something; /bin/echo else}
 
 # .fallback_handler .get_fallback_message .set_fallback_message
@@ -311,7 +317,7 @@ f x
 
 # .function
 .function
-.function /bin/echo {.echo $* $nl}
+.function /bin/echo {.echo wrong echo $* $nl}
 .function .exit {.nop}
 .function rwsh.escaped_argfunction {.nop}
 .function a
@@ -788,6 +794,7 @@ m {.is_default_error}
 # .ls
 .ls
 .ls /bin {excess argfunc}
+.ls /bin/usr/
 .ls /bin /usr/
 
 # .nop
@@ -937,18 +944,18 @@ m {.collect_errors_except .nop {
         .throw rwsh.not_a_number 7
         echo after exception}
      echo between exceptions
-     .scope () {.throw rwsh.executable_not_found foo}
+     .scope () {.throw rwsh.function_not_found foo}
      echo inside collect}
    echo outside collect}
 m {.collect_errors_except echo {
-     .throw rwsh.executable_not_found foo
+     .throw rwsh.function_not_found foo
      echo between exceptions
      .throw echo 7
      echo inside collect}
    echo outside collect}
 # .collect_errors_except .echo {${.throw .echo exception thrown directly}}
-m {.collect_errors_only rwsh.executable_not_found {
-     .throw rwsh.executable_not_found foo
+m {.collect_errors_only rwsh.function_not_found {
+     .throw rwsh.function_not_found foo
      echo between exceptions
      .throw echo 7
      echo inside collect}
@@ -1011,16 +1018,16 @@ m {.collect_errors_only rwsh.executable_not_found {
 .get_max_collectible_exceptions
 
 # .try_catch_recursive .get_max_extra_exceptions .set_max_extra_exceptions
-.try_catch_recursive rwsh.executable_not_found 
+.try_catch_recursive rwsh.function_not_found 
 .try_catch_recursive {.return A}
 f e_after {m {rwsh.argfunction}; echo after}
-e_after {.try_catch_recursive rwsh.not_a_number rwsh.executable_not_found {
+e_after {.try_catch_recursive rwsh.not_a_number rwsh.function_not_found {
   .return A}}
 f rwsh.autofunction {.nop}
-e_after {.try_catch_recursive rwsh.executable_not_found {.eturn A}}
+e_after {.try_catch_recursive rwsh.function_not_found {.eturn A}}
 e_after {.try_catch_recursive rwsh.not_a_number {.return A}}
 e_after {.try_catch_recursive rwsh.not_a_number {.cho A}}
-e_after {.try_catch_recursive rwsh.not_a_number rwsh.executable_not_found {echo A}}
+e_after {.try_catch_recursive rwsh.not_a_number rwsh.function_not_found {echo A}}
 e_after {m echo hi {.try_catch_recursive ${.internal_functions}$ {&&&*}}}
 .get_max_extra_exceptions excess
 .set_max_extra_exceptions
@@ -1056,6 +1063,12 @@ f wrapper {a $* one; a $* two; a $* three}
 wrapper 1 2
 .stepwise wrapper 1 2 {d $*}
 .stepwise wrapper 1 2 {e $* $nl}
+
+# .test_file_exists
+.test_file_exists
+.test_file_exists dummy_file {excess argfunc}
+.test_file_exists /b /in
+.test_file_exists /b /bin /in
 
 # .test_string_equal .test_string_unequal .test_not_empty
 .test_string_equal x
@@ -1370,13 +1383,13 @@ f rwsh.autofunction
 # m {e hi >dummy_file}
 # m {e &{e hi #>dummy_file}}
 
-# rwsh.executable_not_found
+# rwsh.function_not_found
 m {m {x; e should not be printed}}
-f rwsh.executable_not_found
-w rwsh.executable_not_found
+f rwsh.function_not_found
+w rwsh.function_not_found
 w x
 x
-w rwsh.executable_not_found
+w rwsh.function_not_found
 
 # rwsh.mapped_argfunction rwsh.unescaped_argfunction rwsh.argfunction
 # rwsh.escaped_argfunction

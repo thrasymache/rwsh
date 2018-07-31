@@ -149,7 +149,6 @@ void Base_executable::catch_blocks(const Argm& argm,
 
 Binary::Binary(const std::string& impl) : implementation(impl) {}
 
-#include <iostream>
 // run the given binary
 int Binary::execute(const Argm& argm_i, Error_list& exceptions) const {
   int ret,
@@ -158,14 +157,15 @@ int Binary::execute(const Argm& argm_i, Error_list& exceptions) const {
       error = argm_i.error.fd();
   if (!fork()) {
     plumber.after_fork();
-    if (dup2(input, 0) < 0) std::cerr <<"dup2 didn't like changing input\n";
-    if (dup2(output, 1) < 0) std::cerr <<"dup2 didn't like changing output\n";
-    if (dup2(error, 2) < 0) std::cerr <<"dup2 didn't like changing error\n";
+    if (dup2(input, 0) < 0) argm_i.error <<"dup2 didn't like changing input\n";
+    if (dup2(output, 1) < 0)
+      argm_i.error <<"dup2 didn't like changing output\n";
+    if (dup2(error, 2) < 0) argm_i.error <<"dup2 didn't like changing error\n";
     Old_argv argv(argm_i);
     std::vector<char *>env;
     argm_i.export_env(env);
     ret = execve(implementation.c_str(), argv.argv(), &env[0]);
-    Exception error_argm(Argm::Binary_not_found, argm_i[0]);
+    Exception error_argm(Argm::Binary_does_not_exist, argm_i[0]);
     executable_map.run(error_argm, exceptions);
     executable_map.unused_var_check_at_exit();
     exit(ret);}

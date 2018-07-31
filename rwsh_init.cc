@@ -100,6 +100,7 @@ void internal_init(Error_list& exceptions) {
   executable_map.set(new Builtin(".source", b_source));
   executable_map.set(new Builtin(".stepwise", b_stepwise));
   executable_map.set(new Builtin(".store_output", b_store_output));
+  executable_map.set(new Builtin(".test_file_exists", b_test_file_exists));
   executable_map.set(new Builtin(".test_greater", b_test_greater));
   executable_map.set(new Builtin(".test_is_number", b_test_is_number));
   executable_map.set(new Builtin(".test_less", b_test_less));

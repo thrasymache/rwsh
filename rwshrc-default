@@ -39,12 +39,8 @@ sfn cat
 fn cd [path] {
   if_only .var_exists path {.selection_set s $path}
   .cd @$s
-  .local ret $?
-  .if .test_number_equal $ret 1 {echo @$s does not exist}
-  .else_if .test_number_equal $ret 2 {echo @$s is not a directory}
-  .else {
-    &{whichp pwd}
-    .set s (); .set s2 ()}}
+  &{whichp pwd}
+  .set s (); .set s2 ()}
 fns chmod mode [file ...] {
   if_only .var_exists file {.selection_set s $file}
   &{whichp chmod} $-*$ $mode @$s}
@@ -176,9 +172,6 @@ fn unselect {.set s ()}
 .function rwsh.bad_if_nest {
   .echo nested .if without .else with call stack: $* $nl
   .return -1}
-.function rwsh.binary_not_found {
-  .echo $1 : could not run binary $nl
-  .return -1}
 .function rwsh.dash_dash_argument {
   .echo optional -- parameter cannot take arguments \( $1 \) with call stack: $*2 $nl
   .return -1}
@@ -220,7 +213,7 @@ fn unselect {.set s ()}
 .function rwsh.excess_argfunction {
   .echo $1 does not accept an argfunction with call stack: $* $nl
   .return -1}
-.function rwsh.executable_not_found {
+.function rwsh.function_not_found {
   .echo $1 : command not found \( $* \) $nl
   .return -1}
 .function rwsh.failed_substitution {
@@ -332,6 +325,7 @@ fn unselect {.set s ()}
 .function_all_flags exit {.exit}
 .function last_time {.which_last_execution_time $*; c $nl}
 fn local {. &{c $HOME /.rwshrc}}
+fn mark {ntimes 4 {.echo ####################}; c $nl}
 fn ret {.return $*}
 .function total_time {.which_total_execution_time $*; c $nl}
 .function user_shell_ratio {

@@ -48,6 +48,7 @@ int b_set_max_nesting(const Argm& argm, Error_list& exceptions);
 int b_source(const Argm& argm, Error_list& exceptions);
 int b_stepwise(const Argm& argm, Error_list& exceptions);
 int b_store_output(const Argm& argm, Error_list& exceptions);
+int b_test_file_exists(const Argm& argm, Error_list& exceptions);
 int b_test_greater(const Argm& argm, Error_list& exceptions);
 int b_test_is_number(const Argm& argm, Error_list& exceptions);
 int b_test_less(const Argm& argm, Error_list& exceptions);

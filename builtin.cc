@@ -37,6 +37,7 @@ extern char** environ;
 #include "executable_map.h"
 #include "file_stream.h"
 #include "pipe_stream.h"
+#include "plumber.h"
 #include "prototype.h"
 #include "read_dir.cc"
 #include "rwshlib.h"
@@ -59,18 +60,18 @@ int b_argc(const Argm& argm, Error_list& exceptions) {
   return 0;}
 
 // change the current directory to the one given
-// returns the error returned from chdir
 int b_cd(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   errno = 0;
-  int ret = chdir(argm[1].c_str());
-  if (!ret) return 0;
-  else if (errno == ENOENT) ret = 1;
-  else if (errno == ENOTDIR) ret = 2;
-  else ret = 3;
-  errno = 0;
-  return ret;}
+  if (!chdir(argm[1].c_str()));
+  else if (errno == ENOENT)
+    exceptions.add_error(Exception(Argm::Directory_not_found, argm[1]));
+  else if (errno == ENOTDIR)
+    exceptions.add_error(Exception(Argm::Not_a_directory, argm[1]));
+  // not tested. time for additional errors to be differentiated
+  else exceptions.add_error(Exception(Argm::Internal_error, errno));
+  return errno = 0;}
 
 // run the argument function, collecting exceptions to be thrown as a group
 // at the end, but terminating immediately if one of the specified exceptions
@@ -135,7 +136,6 @@ int b_enable_readline(const Argm& argm, Error_list& exceptions) {
   readline_enabled = true;
   return 0;}
 
-#include <iostream>
 // replace the shell with the given binary
 int b_exec(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
@@ -143,17 +143,21 @@ int b_exec(const Argm& argm, Error_list& exceptions) {
   int input = argm.input.fd(),
       output = argm.output.fd(),
       error = argm.error.fd();
-  if (dup2(input, 0) < 0) std::cerr <<"dup2 didn't like changing input\n";
-  if (dup2(output, 1) < 0) std::cerr <<"dup2 didn't like changing output\n";
-  if (dup2(error, 2) < 0) std::cerr <<"dup2 didn't like changing error\n";
+  if (dup2(input, 0) < 0) argm.error <<"dup2 didn't like changing input\n";
+  if (dup2(output, 1) < 0) argm.error <<"dup2 didn't like changing output\n";
+  if (dup2(error, 2) < 0) argm.error <<"dup2 didn't like changing error\n";
   Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
   Old_argv old_argv(lookup);
   std::vector<char *>env;
   argm.export_env(env);
-  int ret = execve(lookup[0].c_str(), old_argv.argv(), &env[0]);
-  Exception error_argm(Argm::Binary_not_found, argm[0]);
-  executable_map.run(error_argm, exceptions);
-  return ret;}
+  execve(lookup[0].c_str(), old_argv.argv(), &env[0]);
+  // execve does not return on success, so what's the error?
+  if (errno == ENOENT)
+    exceptions.add_error(Exception(Argm::Binary_does_not_exist, lookup[0]));
+  else if (errno == EACCES || errno == ENOEXEC)
+    exceptions.add_error(Exception(Argm::Not_executable, lookup[0]));
+  else exceptions.add_error(Exception(Argm::Exec_failed, lookup[0], errno));
+  return 0;}
 
 // exit the shell
 int b_exit(const Argm& argm, Error_list& exceptions) {
@@ -213,53 +217,49 @@ int b_for_each_line(const Argm& argm, Error_list& exceptions) {
     ret = (*argm.argfunction())(body, exceptions);}
   return ret;}
 
-#include "plumber.h"
 int b_fork(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   // argfunction optional
-  int ret = 0;
+  int status = 0;
   if (!fork()) {
     plumber.after_fork();
     Argm lookup(argm.subrange(1), argm.argfunction(),
                 argm.parent_map(),
                 argm.input, argm.output.child_stream(), argm.error);
-    ret = executable_map.run(lookup, exceptions);
+    status = executable_map.run(lookup, exceptions);
     executable_map.unused_var_check_at_exit();
-    std::exit(ret);}
-  else plumber.wait(&ret);
-  return ret;}
+    std::exit(status);}
+  else plumber.wait(&status);
+  return WEXITSTATUS(status);}
 
 // add argfunction to executable map with name $1
 int b_function(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
-  else if (is_binary_name(argm[1])) return 1;
   Argm lookup(argm.subrange(1), nullptr, argm.parent_map());
   Base_executable *e = executable_map.find(lookup);
-  if (e && dynamic_cast<Builtin*>(e)) return 2;
-  else if (is_argfunction_name(argm[1])) return 3;
-  else if (!argm.argfunction()) {
-    return 4 * !executable_map.erase(*(argm.begin()+1));}
-  else {
-    executable_map.set(new Function(argm[1], argm.end(), argm.end(), true,
-                                    *argm.argfunction()));
-    return 0;}}
+  if (is_binary_name(argm[1]) || is_argfunction_name(argm[1]) ||
+      dynamic_cast<Builtin*>(e))
+    exceptions.add_error(Exception(Argm::Illegal_function_name, argm[1]));
+  else if (argm.argfunction()) executable_map.set(new Function(argm[1],
+                       argm.begin()+2, argm.end(), true, *argm.argfunction()));
+  else if (!executable_map.erase(*(argm.begin()+1)))
+    exceptions.add_error(Exception(Argm::Function_not_found, argm[1]));
+  return 0;}
 
 // add argfunction to executable map with name $1 and arguments $*2
 // the arguments must include all flags that can be passed to this function
 int b_function_all_flags(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
-  else if (is_binary_name(argm[1])) return 1;
-  else if (is_argfunction_name(argm[1])) return 3;
   Argm lookup(argm.subrange(1, argm.argc()-2), nullptr, argm.parent_map());
   Base_executable *e = executable_map.find(lookup);
-  if (dynamic_cast<Builtin*>(e)) return 2;
-  else if (!argm.argfunction()) {
-    return 4 * !executable_map.erase(*(argm.begin()+1));}
-  else {
-    Function *focus = new Function(argm[1], argm.begin()+2, argm.end(), false,
-                                   *argm.argfunction());
-    executable_map.set(focus);
-    return 0;}}
+  if (is_binary_name(argm[1]) || is_argfunction_name(argm[1]) ||
+      dynamic_cast<Builtin*>(e))
+    exceptions.add_error(Exception(Argm::Illegal_function_name, argm[1]));
+  else if (argm.argfunction()) executable_map.set(new Function(argm[1],
+                      argm.begin()+2, argm.end(), false, *argm.argfunction()));
+  else if (!executable_map.erase(*(argm.begin()+1)))
+    exceptions.add_error(Exception(Argm::Function_not_found, argm[1]));
+  return 0;}
 
 // Get the configurable message for fallback_handler
 int b_get_fallback_message(const Argm& argm, Error_list& exceptions) {
@@ -453,12 +453,13 @@ int b_ls(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   struct stat sb;
-  int ret = 1;
+  bool found = false;
   for (auto i: argm) if (!stat(i.c_str(), &sb)) {
     argm.output <<i <<"\n";
-    ret = 0;}
+    found = true;}
   argm.output.flush();
-  return ret;}
+  if (!found) exceptions.add_error(Exception(Argm::File_not_found, argm));
+  return 0;}
 
 // ignore arguments, argfunctions, and then do nothing
 int b_nop(const Argm& argm, Error_list& exceptions) {
@@ -635,13 +636,13 @@ int b_store_output(const Argm& argm, Error_list& exceptions) {
   argm.set_var(argm[1], text.value());
   return 0;}
 
-// return true if the two strings are the same
-int b_test_string_equal(const Argm& argm, Error_list& exceptions) {
-  if (argm.argc() != 3) throw Exception(Argm::Bad_argc, argm.argc()-1, 2, 0);
+// list the files specified by the arguments if they exist
+int b_test_file_exists(const Argm& argm, Error_list& exceptions) {
+  if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
-  else if (argm[1] != argm[2])     // C++ and shell have inverted logic
-    return 1;
-  else return 0;}
+  struct stat sb;
+  for (auto i: argm) if (!stat(i.c_str(), &sb)) return 0;
+  return 1;}
 
 // return true if two strings convert to a doubles and first is greater
 int b_test_greater(const Argm& argm, Error_list& exceptions) {
@@ -690,12 +691,6 @@ int b_test_not_empty(const Argm& argm, Error_list& exceptions) {
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   else return !argm[1].length();} // C++ and shell have inverted logic
 
-// return true if the two strings are different
-int b_test_string_unequal(const Argm& argm, Error_list& exceptions) {
-  if (argm.argc() != 3) throw Exception(Argm::Bad_argc, argm.argc()-1, 2, 0);
-  if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
-  else return argm[1] == argm[2];} // C++ and shell have inverted logic
-
 // returns true if the two strings
 int b_test_number_equal(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 3) throw Exception(Argm::Bad_argc, argm.argc()-1, 2, 0);
@@ -710,6 +705,20 @@ int b_test_number_equal(const Argm& argm, Error_list& exceptions) {
   catch (E_nan) {throw Exception(Argm::Not_a_number, argm[2]);}
   catch (E_range) {throw Exception(Argm::Input_range, argm[2]);}
   return lhs != rhs;} // C++ and shell have inverted logic
+
+// return true if the two strings are the same
+int b_test_string_equal(const Argm& argm, Error_list& exceptions) {
+  if (argm.argc() != 3) throw Exception(Argm::Bad_argc, argm.argc()-1, 2, 0);
+  if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
+  else if (argm[1] != argm[2])     // C++ and shell have inverted logic
+    return 1;
+  else return 0;}
+
+// return true if the two strings are different
+int b_test_string_unequal(const Argm& argm, Error_list& exceptions) {
+  if (argm.argc() != 3) throw Exception(Argm::Bad_argc, argm.argc()-1, 2, 0);
+  if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
+  else return argm[1] == argm[2];} // C++ and shell have inverted logic
 
 // throw the remaining arguments as an exception
 int b_throw(const Argm& argm, Error_list& exceptions) {
@@ -971,7 +980,8 @@ int b_which_path(const Argm& argm, Error_list& exceptions) {
     if (!stat(test.c_str(), &sb)) {
       argm.output <<test;
       return 0;}}
-  return 1;} // executable does not exist
+  exceptions.add_error(Exception(Argm::Binary_not_found, argm[1], argm[2]));
+  return 0;}                                      // executable does not exist
 
 // prints the last return value of the executable with named $1
 int b_which_return(const Argm& argm, Error_list& exceptions) {

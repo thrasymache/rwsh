@@ -1,6 +1,7 @@
 .global nl (
 )
-.for &{.internal_functions}$ {.function $1 {.echo signal triggered: $0 \( $* \) $nl; .return -1}}
+.for &{.internal_functions}$ {.nop
+  .function $1 {.echo signal triggered: $0 \( $* \); .combine $nl; .return -1}}
 .function rwsh.raw_command {.echo $1; .echo $nl}
 .global last_command_return -10
 .global A \

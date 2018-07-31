@@ -1,4 +1,4 @@
-signal triggered: rwsh.raw_command ( .function rwsh.raw_command {.echo $1; .echo $nl} ) 
+signal triggered: rwsh.raw_command ( .function rwsh.raw_command {.echo $1; .echo $nl} )
 .global last_command_return -10
 .global A \
 .global N \
@@ -60,44 +60,62 @@ $.source /etc/rwshrc-basic
 )
 
 # internal functions
-.function rwsh.unused_variable {echo $1 was unused with call stack $*2}
-.function rwsh.unchecked_variable {echo $1 was not checked with call stack $*2}
+.function_all_flags rwsh.bad_args -- proto assigned needed excess call_stack ... {
+  .combine (unacceptable arguments: for prototype ) $proto , $nl
+  if_only .test_not_empty $assigned {
+    .combine ( assigned )
+    .for $assigned$ {.combine $1$0 = ${paren_if_words $1$1} ( )}
+    .combine , $nl ( but)}
+  if_only .test_not_empty $needed {
+    .combine ( needed \() $needed \), $nl
+    if_only .test_not_empty $excess {.combine ( and)}}
+  if_only .test_not_empty $excess {
+    .combine ( found \() $excess (\) excess) $nl}
+  echo \ call stack:  $call_stack
+  .return -1}
+.function rwsh.binary_does_not_exist {
+  echo $1 : binary does not exist
+  echo call stack: $*2
+  .return -1}
+.function rwsh.binary_not_found {
+  echo $1 : binary not found in $2
+  echo call stack: $*3
+  .return -1}
+.function rwsh.directory_not_found {
+  .combine $1 ( directory does not exist) $nl
+  echo call stack $*2}
+.function rwsh.exec_failed {
+  .combine (.exec failed for ) $1 ( with errno ) $2 $nl
+  echo call stack $*3}
+.function rwsh.file_not_found {
+  echo $1 : could not find file
+  .return -1}
+.function rwsh.illegal_function_name {
+  .combine \$ $1 ( cannot be a function) $nl
+  echo call stack $*2}
 .function rwsh.illegal_variable_name {
   .combine \$ $1 ( cannot be set) $nl
   echo call stack $*2}
+.function rwsh.not_a_directory {
+  .combine $1 ( is not a directory) $nl
+  echo call stack $*2}
+.function rwsh.unused_variable {echo $1 was unused with call stack $*2}
+.function rwsh.unchecked_variable {echo $1 was not checked with call stack $*2}
 
 # ability of functions to act as builtin wrappers
 .function_all_flags af -- [argv ...] {rwsh.argfunction}
 .function_all_flags c -- text ... {.combine $text$}
 .function_all_flags e -- text ... {.echo $text}
-.function_all_flags echo -- text ... {.echo $text $nl}
+.function_all_flags echo -- text ... {.echo $text; .combine $nl}
 .function_all_flags exec -- argv ... {.exec $argv$}
 .function_all_flags elif command ... {.else_if $command$ {rwsh.argfunction}}
 .function_all_flags else {.else {rwsh.argfunction}}
 .function_all_flags fn -- prototype ... {
-  .function_all_flags $prototype$ {rwsh.argfunction}
-  .local ret $?
-  .if .test_number_equal $ret 1 {echo cannot set paths as functions}
-  .else_if .test_number_equal $ret 2 {echo cannot set builtins as functions}
-  .else_if .test_number_equal $ret 3 {echo cannot set argfunctions in executable map}
-  .else_if .test_number_equal $ret 4 {echo function &&1 did not exist to be erased}
-  .else {.return $ret}}
+  .function_all_flags $prototype$ {rwsh.argfunction}}
 .function_all_flags fni -- name args ... {
-  .function_all_flags $name -- $args$ {rwsh.argfunction}
-  .local ret $?
-  .if .test_number_equal $ret 1 {echo cannot set paths as functions}
-  .else_if .test_number_equal $ret 2 {echo cannot set builtins as functions}
-  .else_if .test_number_equal $ret 3 {echo cannot set argfunctions in executable map}
-  .else_if .test_number_equal $ret 4 {echo function &&1 did not exist to be erased}
-  .else {.return $ret}}
+  .function_all_flags $name -- $args$ {rwsh.argfunction}}
 .function_all_flags fns -- name args ... {
-  .function_all_flags $name [-*] $args$ {rwsh.argfunction}
-  .local ret $?
-  .if .test_number_equal $ret 1 {echo cannot set paths as functions}
-  .else_if .test_number_equal $ret 2 {echo cannot set builtins as functions}
-  .else_if .test_number_equal $ret 3 {echo cannot set argfunctions in executable map}
-  .else_if .test_number_equal $ret 4 {echo function &&1 did not exist to be erased}
-  .else {.return $ret}}
+  .function_all_flags $name [-*] $args$ {rwsh.argfunction}}
 .function_all_flags iee var {
   .if .var_exists $var {.echo $$var}
   .else {.nop}}
@@ -126,16 +144,12 @@ fn ntimes n {
   .while test_var_greater n 0 {
     rwsh.mapped_argfunction {rwsh.argfunction}
     .var_subtract n 1}}
-fn mark {ntimes 4 {.echo ####################}}
 .function unset {.unset $1}
 fn which command {
   .if .which_test $command {
     .combine ${.which_executable $command {rwsh.argfunction}} $nl}
   .else {echo no $command}}
-fn whichp binary {
-  .which_path $binary $PATH
-  .if .test_number_equal $? 0 {.nop}
-  .else {echo &&binary not found in $PATH; .return 1}}
+fn whichp binary {.which_path $binary $PATH}
 .function while {.while $* {rwsh.argfunction}}
 .function_all_flags var_exists -- var {.var_exists $var}
 .function_all_flags var_val -- [var ...] {
@@ -144,19 +158,6 @@ fn whichp binary {
 .function_all_flags paren_if_words -- value {
   .if .test_number_equal ${.argc $value$} 1 {.combine $value}
   .else {.combine \( $value \)}}
-.function_all_flags rwsh.bad_args -- proto assigned needed excess call_stack ... {
-  .combine (unacceptable arguments: for prototype ) $proto , $nl
-  if_only .test_not_empty $assigned {
-    .combine ( assigned )
-    .for $assigned$ {.combine $1$0 = ${paren_if_words $1$1} ( )}
-    .combine , $nl ( but)}
-  if_only .test_not_empty $needed {
-    .combine ( needed \() $needed \), $nl
-    if_only .test_not_empty $excess {.combine ( and)}}
-  if_only .test_not_empty $excess {
-    .combine ( found \() $excess (\) excess) $nl}
-  .echo \ call stack:  $call_stack $nl
-  .return -1}
 
 0
 $.function_all_flags ## [args ...] {.nop $args}
@@ -199,8 +200,8 @@ $.echo a \
 a 
 0
 $line continuation
-signal triggered: rwsh.executable_not_found ( rwsh.autofunction line continuation ) 
-signal triggered: rwsh.executable_not_found ( line continuation ) 
+signal triggered: rwsh.function_not_found ( rwsh.autofunction line continuation )
+signal triggered: rwsh.function_not_found ( line continuation )
 
 -1
 $ .echo ignore leading space
@@ -221,51 +222,51 @@ $.which_executable rwsh.argfunction {
   multiple line argfunction}
 0
 $.nop rwsh.argfunction rwsh.mismatched_brace } &&&is$not$all
-signal triggered: rwsh.mismatched_brace ( .nop rwsh.argfunction rwsh.mismatched_brace } ) 
-signal triggered: rwsh.invalid_word_selection ( $not$all ) 
-signal triggered: rwsh.not_soon_enough ( &&&is$not$all ) 
+signal triggered: rwsh.mismatched_brace ( .nop rwsh.argfunction rwsh.mismatched_brace } )
+signal triggered: rwsh.invalid_word_selection ( $not$all )
+signal triggered: rwsh.not_soon_enough ( &&&is$not$all )
 $.source test_files/unclosed_brace_newline.rwsh
 fn bar {echo baz
 
-signal triggered: rwsh.mismatched_brace ( fn bar .source ) 
+signal triggered: rwsh.mismatched_brace ( fn bar .source )
 
 -1
 $.source test_files/unclosed_brace.rwsh
 fn bar {echo baz
 
-signal triggered: rwsh.mismatched_brace ( fn bar .source ) 
+signal triggered: rwsh.mismatched_brace ( fn bar .source )
 
 -1
 $.source test_files/unclosed_parenthesis_newline.rwsh
 echo bar (baz
 
-signal triggered: rwsh.mismatched_parenthesis ( echo bar ( .source ) 
+signal triggered: rwsh.mismatched_parenthesis ( echo bar ( .source )
 
 -1
 $.source test_files/unclosed_parenthesis.rwsh
 echo bar (baz
 
-signal triggered: rwsh.mismatched_parenthesis ( echo bar ( .source ) 
+signal triggered: rwsh.mismatched_parenthesis ( echo bar ( .source )
 
 -1
 $.source test_files/multiple_errors.rwsh
 fn bar {echo &&&baz$$bax
   cat >something >else
   }
-signal triggered: rwsh.invalid_word_selection ( $$bax .source ) 
-signal triggered: rwsh.not_soon_enough ( &&&baz$$bax .source ) 
-signal triggered: rwsh.double_redirection ( >something >else .source ) 
+signal triggered: rwsh.invalid_word_selection ( $$bax .source )
+signal triggered: rwsh.not_soon_enough ( &&&baz$$bax .source )
+signal triggered: rwsh.double_redirection ( >something >else .source )
 
 -1
 $.nop multiple statements \; on a line
 
 -1
 $.which_executable rwsh.argfunction {rwsh.multiple_argfunctions} {}
-signal triggered: rwsh.multiple_argfunctions ( ) 
+signal triggered: rwsh.multiple_argfunctions ( )
 $.which_executable rwsh.argfunction {rwsh.argfunction with text args}
-signal triggered: rwsh.arguments_for_argfunction ( rwsh.argfunction with text args! ) 
+signal triggered: rwsh.arguments_for_argfunction ( rwsh.argfunction with text args! )
 $.which_executable rwsh.argfunction {rwsh.argfunction {with a function arg}}
-signal triggered: rwsh.arguments_for_argfunction ( rwsh.argfunction {with a function arg}! ) 
+signal triggered: rwsh.arguments_for_argfunction ( rwsh.argfunction {with a function arg}! )
 $.which_executable rwsh.argfunction {{{{{{{{{{{}}}}}}}}}}}
 {{{{{{{{{{{}}}}}}}}}}}
 0
@@ -312,7 +313,7 @@ $which e
 
 0
 $which ee
-no ee 
+no ee
 
 0
 $which () {}
@@ -377,12 +378,12 @@ a multi-line parenthesis
   enclosed string 4
 0
 $e a )mismatched &&parenthesis
-signal triggered: rwsh.mismatched_parenthesis ( e a ) ) 
-signal triggered: rwsh.not_soon_enough ( &&parenthesis ) 
+signal triggered: rwsh.mismatched_parenthesis ( e a ) )
+signal triggered: rwsh.not_soon_enough ( &&parenthesis )
 $e a (multi-line parenthesis
   mismatch))
 signal triggered: rwsh.mismatched_parenthesis ( e a (multi-line parenthesis
-  mismatch)) ) 
+  mismatch)) )
 $e (internal \)parenthesis \\ escape ( \))) $#
 internal )parenthesis \ escape ( )) 3
 0
@@ -429,15 +430,15 @@ $e @test_files/i*xx
 test_files/ixxx
 0
 $e @test_files/i*xx/f*
-signal triggered: rwsh.unreadable_dir ( test_files/ixxx// 20 ) 
+signal triggered: rwsh.unreadable_dir ( test_files/ixxx// 20 )
 
 -1
 $e @/*selection_not_found*
-signal triggered: rwsh.selection_not_found ( /*selection_not_found* /*selection_not_found* ) 
+signal triggered: rwsh.selection_not_found ( /*selection_not_found* /*selection_not_found* )
 
 -1
 $e @test_main.cc
-signal triggered: rwsh.selection_not_found ( test_main.cc test_main.cc ) 
+signal triggered: rwsh.selection_not_found ( test_main.cc test_main.cc )
 
 -1
 $m {m {.for @e*c {e $1 $nl}} >test_files/tmp}
@@ -461,7 +462,7 @@ $e @test_files/*xx
 test_files/ixxx
 0
 $e @test_files/*x*x*x*x
-signal triggered: rwsh.selection_not_found ( test_files/*x*x*x*x test_files/*x*x*x*x ) 
+signal triggered: rwsh.selection_not_found ( test_files/*x*x*x*x test_files/*x*x*x*x )
 
 -1
 $e @test_files/*xyxy
@@ -544,17 +545,17 @@ $e A 1 2 3 4 5 6 7 $$$$$$$$$8
 A 1 2 3 4 5 6 7 /bin
 0
 $m $FOO {}
-signal triggered: rwsh.undefined_variable ( FOO ) 
+signal triggered: rwsh.undefined_variable ( FOO )
 
 -1
 $m {e $FOO}
-signal triggered: rwsh.undefined_variable ( FOO rwsh.mapped_argfunction m ) 
+signal triggered: rwsh.undefined_variable ( FOO rwsh.mapped_argfunction m )
 
 -1
 $m $B$$1x {e $# $*}
-signal triggered: rwsh.invalid_word_selection ( $$1x ) 
+signal triggered: rwsh.invalid_word_selection ( $$1x )
 $m $B$$1$ {e $# $*}
-signal triggered: rwsh.invalid_word_selection ( $$1$ ) 
+signal triggered: rwsh.invalid_word_selection ( $$1$ )
 $m $B {e $# $*}
 2  (zero   zero) ((one one  ) one   ) two three
 0
@@ -571,7 +572,7 @@ $m {m $B$$$$ {e $# $*}}
 8 zero zero one one one two three
 0
 $m $B$10 {e $# $*}
-signal triggered: rwsh.undefined_variable ( $B$10 ) 
+signal triggered: rwsh.undefined_variable ( $B$10 )
 
 -1
 $m $B$1 {e $# $*}
@@ -584,11 +585,11 @@ $m $broken {e $# $*}
 2 extra_close) (extra_open
 0
 $m $broken$ {e $# $*}
-signal triggered: rwsh.mismatched_parenthesis ( extra_close) ) 
+signal triggered: rwsh.mismatched_parenthesis ( extra_close) )
 
 -1
 $m $broken$$ {e $# $*}
-signal triggered: rwsh.mismatched_parenthesis ( extra_close) ) 
+signal triggered: rwsh.mismatched_parenthesis ( extra_close) )
 
 -1
 $m $C {e $# $*}
@@ -610,22 +611,22 @@ $e A &1 1 &$3 &$$3
 A A 1 A /bin
 0
 $e &&A
-signal triggered: rwsh.not_soon_enough ( &&A ) 
+signal triggered: rwsh.not_soon_enough ( &&A )
 $m {e &&&A}
-signal triggered: rwsh.not_soon_enough ( &&&A ) 
+signal triggered: rwsh.not_soon_enough ( &&&A )
 $m {e &&&without$A @{mismatched} {rwsh.argfunction brace} &&&{thrown}B
 }
-signal triggered: rwsh.invalid_word_selection ( $A ) 
-signal triggered: rwsh.not_soon_enough ( &&&without$A ) 
-signal triggered: rwsh.bad_argfunction_style ( @ ) 
-signal triggered: rwsh.arguments_for_argfunction ( rwsh.argfunction brace! ) 
-signal triggered: rwsh.not_soon_enough ( &&&{thrown} ) 
+signal triggered: rwsh.invalid_word_selection ( $A )
+signal triggered: rwsh.not_soon_enough ( &&&without$A )
+signal triggered: rwsh.bad_argfunction_style ( @ )
+signal triggered: rwsh.arguments_for_argfunction ( rwsh.argfunction brace! )
+signal triggered: rwsh.not_soon_enough ( &&&{thrown} )
 signal triggered: rwsh.invalid_word_selection ( B
- ) 
+ )
 $e &{e &&A}
-signal triggered: rwsh.not_soon_enough ( &&A ) 
+signal triggered: rwsh.not_soon_enough ( &&A )
 $e &&{e &A}
-signal triggered: rwsh.not_soon_enough ( &&{e &A} ) 
+signal triggered: rwsh.not_soon_enough ( &&{e &A} )
 $e &A
 /bin
 0
@@ -634,7 +635,7 @@ $.scope not_bin A {e &A &&A $A $nl; .scope otherwise A {e &A &&A &&&A $A}}
 /bin not_bin otherwise otherwise
 0
 $m {m &B$10 {e $# $*}}
-signal triggered: rwsh.undefined_variable ( &B$10 ) 
+signal triggered: rwsh.undefined_variable ( &B$10 )
 
 -1
 $m {m &B$$$$ {e $# $*}}
@@ -675,26 +676,26 @@ $m &{.echo $A} {e $1 &1}
 /bin &{.echo $A}
 0
 $m &{.return 1} {}
-signal triggered: rwsh.failed_substitution ( &{.return 1} ) 
+signal triggered: rwsh.failed_substitution ( &{.return 1} )
 
 -1
 $m ${.return 1} {}
-signal triggered: rwsh.failed_substitution ( ${.return 1} ) 
+signal triggered: rwsh.failed_substitution ( ${.return 1} )
 
 -1
 $m {e &{.return 1}}
-signal triggered: rwsh.failed_substitution ( &{.return 1} ) 
+signal triggered: rwsh.failed_substitution ( &{.return 1} )
 
 -1
 $m {e &&{.return 1}; e after}
-signal triggered: rwsh.failed_substitution ( &{.return 1} rwsh.mapped_argfunction m ) 
+signal triggered: rwsh.failed_substitution ( &{.return 1} rwsh.mapped_argfunction m )
 
 -1
 $f rwsh.failed_substitution {e $Z}
 
 0
 $.throw m {echo even from $* 7 is a number}
-even from .throw 7 is a number 
+even from .throw 7 is a number
 
 -1
 $.fallback_handler m {echo even from $* 7 is a number}
@@ -705,36 +706,36 @@ m
 $.throw rwsh.failed_substitution m {echo even from $* 7 is a number}
 Exception for failed handler. Original exception with call stack:
 rwsh.failed_substitution m .throw
-signal triggered: rwsh.undefined_variable ( Z rwsh.failed_substitution ) 
+signal triggered: rwsh.undefined_variable ( Z rwsh.failed_substitution )
 
 -1
 $m {e &&{.return 1}; e after}
 Exception for failed handler. Original exception with call stack:
 rwsh.failed_substitution &{.return 1} rwsh.mapped_argfunction m
-signal triggered: rwsh.undefined_variable ( Z rwsh.failed_substitution ) 
+signal triggered: rwsh.undefined_variable ( Z rwsh.failed_substitution )
 
 -1
 $f rwsh.failed_substitution {.echo signal triggered: $0 \( $* \) $nl; .return -1}
 
 0
 $e x{e bad argfunction style}
-signal triggered: rwsh.bad_argfunction_style ( x ) 
+signal triggered: rwsh.bad_argfunction_style ( x )
 $e x&&&{e x}
-signal triggered: rwsh.bad_argfunction_style ( x&&& ) 
+signal triggered: rwsh.bad_argfunction_style ( x&&& )
 $e $+{e x}
-signal triggered: rwsh.bad_argfunction_style ( $+ ) 
+signal triggered: rwsh.bad_argfunction_style ( $+ )
 $e &+{e x}
-signal triggered: rwsh.bad_argfunction_style ( &+ ) 
+signal triggered: rwsh.bad_argfunction_style ( &+ )
 $e &&${e x}
-signal triggered: rwsh.bad_argfunction_style ( &&$ ) 
-signal triggered: rwsh.not_soon_enough ( &&${e x} ) 
+signal triggered: rwsh.bad_argfunction_style ( &&$ )
+signal triggered: rwsh.not_soon_enough ( &&${e x} )
 $.return &{.return 0}
-signal triggered: rwsh.not_a_number (  .return ) 
+signal triggered: rwsh.not_a_number (  .return )
 
 -1
 $.return ${e 0 $nl}
 signal triggered: rwsh.not_a_number ( 0 
- .return ) 
+ .return )
 
 -1
 $.return &{.echo 0}
@@ -745,8 +746,8 @@ nevermore quoth the raven
 
 0
 $m ${e $B}$@1 ${e $B}$1 ${e $B}XYZ {e $# $*}
-signal triggered: rwsh.invalid_word_selection ( @1 ) 
-signal triggered: rwsh.invalid_word_selection ( XYZ ) 
+signal triggered: rwsh.invalid_word_selection ( @1 )
+signal triggered: rwsh.invalid_word_selection ( XYZ )
 $m ${e $B} {e $# $*}
 2  (zero   zero) ((one one  ) one   ) two three
 0
@@ -790,15 +791,15 @@ $.unset B
 
 0
 $m &{e ((zero zero) (one one) two three)}$10 {e $# $*}
-signal triggered: rwsh.undefined_variable ( &{e ((zero zero) (one one) two three)}$10 ) 
+signal triggered: rwsh.undefined_variable ( &{e ((zero zero) (one one) two three)}$10 )
 
 -1
 $m ${e (zero zero) \)one one two three}$1 {e $# $*}
-signal triggered: rwsh.mismatched_parenthesis ( zero zero ) ) 
+signal triggered: rwsh.mismatched_parenthesis ( zero zero ) )
 
 -1
 $m &{e (zero zero) \(one one two three}$1 {e $# $*}
-signal triggered: rwsh.mismatched_parenthesis ( zero zero (one one two three ) 
+signal triggered: rwsh.mismatched_parenthesis ( zero zero (one one two three )
 
 -1
 $m ${e (zero zero) \)one one two three} {e $# $*}
@@ -831,25 +832,25 @@ $# file redirection (but don't overwrite files that exist)
 $# .for_each_line
 
 0
-$.if .ls dummy_file {.exit}
+$.if .test_file_exists dummy_file {.echo something went wrong}
 
 0
 $.else {}
 
 0
 $/bin/cat <dummy_file
-signal triggered: rwsh.file_open_failure ( dummy_file /bin/cat ) 
+signal triggered: rwsh.file_open_failure ( dummy_file /bin/cat )
 
 -1
 $.for_each_line <dummy_file {e line of $# \( $* \)}
-signal triggered: rwsh.file_open_failure ( dummy_file .for_each_line ) 
+signal triggered: rwsh.file_open_failure ( dummy_file .for_each_line )
 
 -1
 $m {m {e hi >one >two} {cat <three <four}
 }
-signal triggered: rwsh.double_redirection ( >one >two ) 
-signal triggered: rwsh.multiple_argfunctions ( ) 
-signal triggered: rwsh.double_redirection ( <three <four ) 
+signal triggered: rwsh.double_redirection ( >one >two )
+signal triggered: rwsh.multiple_argfunctions ( )
+signal triggered: rwsh.double_redirection ( <three <four )
 $m {e hi >dummy_file}
 
 0
@@ -876,16 +877,16 @@ line 2 longer
 ending
 0
 $.for_each_line x {}
-signal triggered: rwsh.bad_argc ( 1 0 0 .for_each_line ) 
+signal triggered: rwsh.bad_argc ( 1 0 0 .for_each_line )
 
 -1
 $.for_each_line <dummy_file
-signal triggered: rwsh.missing_argfunction ( .for_each_line ) 
+signal triggered: rwsh.missing_argfunction ( .for_each_line )
 
 -1
 $.for_each_line <dummy_file <another A{}
-signal triggered: rwsh.double_redirection ( <dummy_file <another ) 
-signal triggered: rwsh.bad_argfunction_style ( A ) 
+signal triggered: rwsh.double_redirection ( <dummy_file <another )
+signal triggered: rwsh.bad_argfunction_style ( A )
 $.for_each_line <dummy_file {e line of $# \( $* \) $nl}
 line of 3 ( line 1 ) 
 line of 4 ( line 2 longer ) 
@@ -961,7 +962,7 @@ $# .argc
 
 0
 $.argc {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .argc ) 
+signal triggered: rwsh.excess_argfunction ( .argc )
 
 -1
 $.argc
@@ -980,15 +981,25 @@ $# .cd
 
 0
 $.cd
-signal triggered: rwsh.bad_argc ( 0 1 0 .cd ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .cd )
 
 -1
 $.cd /bin {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .cd ) 
+signal triggered: rwsh.excess_argfunction ( .cd )
 
 -1
 $.cd /bin /
-signal triggered: rwsh.bad_argc ( 2 1 0 .cd ) 
+signal triggered: rwsh.bad_argc ( 2 1 0 .cd )
+
+-1
+$.cd /bn
+/bn directory does not exist
+call stack .cd
+
+-1
+$.cd /bin/rwsh
+/bin/rwsh is not a directory
+call stack .cd
 
 -1
 $.cd /bin
@@ -1005,11 +1016,11 @@ $# .combine
 
 0
 $.combine
-signal triggered: rwsh.bad_argc ( 0 1 0 .combine ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .combine )
 
 -1
 $.combine something {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .combine ) 
+signal triggered: rwsh.excess_argfunction ( .combine )
 
 -1
 $.combine on () e \ two ( ) $#
@@ -1022,11 +1033,11 @@ $# .echo
 
 0
 $.echo
-signal triggered: rwsh.bad_argc ( 0 1 0 .echo ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .echo )
 
 -1
 $.echo something {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .echo ) 
+signal triggered: rwsh.excess_argfunction ( .echo )
 
 -1
 $.echo these are fixed strings
@@ -1039,21 +1050,39 @@ $# .exec .fork
 
 0
 $.fork
-signal triggered: rwsh.bad_argc ( 0 1 0 .fork ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .fork )
 
 -1
 $.fork e text
 text
 0
-$.fork .return 1
+$.fork .return 127
 
-256
+127
 $.exec
-signal triggered: rwsh.bad_argc ( 0 1 0 .exec ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .exec )
 
 -1
 $.exec something {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .exec ) 
+signal triggered: rwsh.excess_argfunction ( .exec )
+
+-1
+$.exec /bin/ech does not exist
+/bin/ech : binary does not exist
+call stack: .exec
+
+-1
+$.exec /etc/rwshrc-default config files are not interpreters
+signal triggered: rwsh.not_executable ( /etc/rwshrc-default .exec )
+
+-1
+$.exec /bin cannot exec a directory
+signal triggered: rwsh.not_executable ( /bin .exec )
+
+-1
+$.exec /bin/rwsh/insanity errno is ENOTDIR
+.exec failed for /bin/rwsh/insanity with errno 20
+call stack .exec
 
 -1
 $.fork m {.exec /bin/echo something; /bin/echo else}
@@ -1067,7 +1096,7 @@ $# .fallback_handler .get_fallback_message .set_fallback_message
 
 0
 $.fallback_handler
-signal triggered: rwsh.bad_argc ( 0 1 0 .fallback_handler ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .fallback_handler )
 
 -1
 $.fallback_handler something {excess argfunc}
@@ -1076,19 +1105,19 @@ something
 
 0
 $.get_fallback_message something 
-signal triggered: rwsh.bad_argc ( 1 0 0 .get_fallback_message ) 
+signal triggered: rwsh.bad_argc ( 1 0 0 .get_fallback_message )
 
 -1
 $.get_fallback_message {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .get_fallback_message ) 
+signal triggered: rwsh.excess_argfunction ( .get_fallback_message )
 
 -1
 $.set_fallback_message
-signal triggered: rwsh.bad_argc ( 0 1 0 .set_fallback_message ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .set_fallback_message )
 
 -1
 $.set_fallback_message something {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .set_fallback_message ) 
+signal triggered: rwsh.excess_argfunction ( .set_fallback_message )
 
 -1
 $.fallback_handler pretend_error
@@ -1123,11 +1152,11 @@ $# .for
 
 0
 $.for {e no arguments $1}
-signal triggered: rwsh.bad_argc ( 0 1 0 .for ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .for )
 
 -1
 $.for no_argfunction
-signal triggered: rwsh.missing_argfunction ( .for ) 
+signal triggered: rwsh.missing_argfunction ( .for )
 
 -1
 $.for 1 {e one argument $1}
@@ -1147,21 +1176,28 @@ $# .function
 
 0
 $.function
-signal triggered: rwsh.bad_argc ( 0 1 0 .function ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .function )
 
 -1
-$.function /bin/echo {.echo $* $nl}
+$.function /bin/echo {.echo wrong echo $* $nl}
+$/bin/echo cannot be a function
+call stack .function
 
-1
+-1
 $.function .exit {.nop}
+$.exit cannot be a function
+call stack .function
 
-2
+-1
 $.function rwsh.escaped_argfunction {.nop}
+$rwsh.escaped_argfunction cannot be a function
+call stack .function
 
-3
+-1
 $.function a
+signal triggered: rwsh.function_not_found ( a .function )
 
-4
+-1
 $.function a {.nop}
 
 0
@@ -1247,64 +1283,71 @@ $# .function_all_flags
 
 0
 $.function_all_flags
-signal triggered: rwsh.bad_argc ( 0 1 0 .function_all_flags ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .function_all_flags )
 
 -1
 $.function_all_flags /bin/echo {e cannot define a path to be a function}
+$/bin/echo cannot be a function
+call stack .function_all_flags
 
-1
+-1
 $.function_all_flags .exit {e cannot redefine a builtin as a function}
+$.exit cannot be a function
+call stack .function_all_flags
 
-2
+-1
 $.function_all_flags .a {can define a function for non-existant builtin}
 
 0
 $.function_all_flags rwsh.argfunction {e cannot define rwsh.argfunction}
+$rwsh.argfunction cannot be a function
+call stack .function_all_flags
 
-3
+-1
 $.function_all_flags a y y {e illegal duplicate required parameter}
-signal triggered: rwsh.duplicate_parameter ( y .function_all_flags ) 
+signal triggered: rwsh.duplicate_parameter ( y .function_all_flags )
 
 -1
 $.function_all_flags a [-x] [-x] {e illegal duplicate flag parameter}
-signal triggered: rwsh.duplicate_parameter ( -x .function_all_flags ) 
+signal triggered: rwsh.duplicate_parameter ( -x .function_all_flags )
 
 -1
 $.function_all_flags a [x x] {e illegal duplicate optional parameter}
-signal triggered: rwsh.duplicate_parameter ( x .function_all_flags ) 
+signal triggered: rwsh.duplicate_parameter ( x .function_all_flags )
 
 -1
 $.function_all_flags a [-x arg bar] [-y arg] {e illegal duplicate flag argument}
-signal triggered: rwsh.duplicate_parameter ( arg .function_all_flags ) 
+signal triggered: rwsh.duplicate_parameter ( arg .function_all_flags )
 
 -1
 $.function_all_flags a -x [-x] {e evil duplication between flags positional}
-signal triggered: rwsh.duplicate_parameter ( -x .function_all_flags ) 
+signal triggered: rwsh.duplicate_parameter ( -x .function_all_flags )
 
 -1
 $.function_all_flags a -- -- {e -- cannot be a duplicate parameter}
-signal triggered: rwsh.duplicate_parameter ( -- .function_all_flags ) 
+signal triggered: rwsh.duplicate_parameter ( -- .function_all_flags )
 
 -1
 $.function_all_flags a [--] [--] {e [--] cannot be a duplicate parameter}
-signal triggered: rwsh.duplicate_parameter ( -- .function_all_flags ) 
+signal triggered: rwsh.duplicate_parameter ( -- .function_all_flags )
 
 -1
 $.function_all_flags a [--] -- {e -- and [--] cannot both be parameters}
-signal triggered: rwsh.duplicate_parameter ( -- .function_all_flags ) 
+signal triggered: rwsh.duplicate_parameter ( -- .function_all_flags )
 
 -1
 $.function_all_flags a [-- arg] {e -- cannot take arguments}
-signal triggered: rwsh.dash_dash_argument ( [-- arg] .function_all_flags ) 
+signal triggered: rwsh.dash_dash_argument ( [-- arg] .function_all_flags )
 
 -1
 $.function_all_flags a [arg -- foo] {e -- cannot take arguments}
-signal triggered: rwsh.dash_dash_argument ( [arg -- foo] .function_all_flags ) 
+signal triggered: rwsh.dash_dash_argument ( [arg -- foo] .function_all_flags )
 
 -1
 $.function_all_flags nonsense
+signal triggered: rwsh.function_not_found ( nonsense .function_all_flags )
 
-4
+-1
 $w test_var_greater
 .function_all_flags test_var_greater -- var value {.test_greater $$var $value}
 0
@@ -1312,16 +1355,16 @@ $.scope 5 n {test_var_greater n}
 unacceptable arguments: for prototype -- var value,
  assigned var=n ,
  but needed (value),
- call stack: test_var_greater .scope 
-n was unused with call stack .scope 
+( call) stack: (test_var_greater .scope)
+n was unused with call stack .scope
 
 -1
 $.scope 5 n {test_var_greater n 3 12}
 unacceptable arguments: for prototype -- var value,
  assigned value=3 var=n ,
  but found (12) excess
- call stack: test_var_greater .scope 
-n was unused with call stack .scope 
+( call) stack: (test_var_greater .scope)
+n was unused with call stack .scope
 
 -1
 $.scope 5 n {test_var_greater n 3}
@@ -1350,23 +1393,23 @@ $ntimes 2 {ntimes 3 {e &&n and $n remaining $nl}}
 0
 $.function_all_flags a [-x] [-] [--long-opt y second {
   e mismatched bracket (i.e. missing close brakcet)}
-signal triggered: rwsh.mismatched_bracket ( [--long-opt y second .function_all_flags ) 
+signal triggered: rwsh.mismatched_bracket ( [--long-opt y second .function_all_flags )
 
 -1
 $.function_all_flags a [-?] [--] {.list_locals}
-signal triggered: rwsh.ambiguous_prototype_dash_dash ( [-?] [--] .function_all_flags ) 
+signal triggered: rwsh.ambiguous_prototype_dash_dash ( [-?] [--] .function_all_flags )
 
 -1
 $.function_all_flags a [-x] [--] foo {.list_locals}
-signal triggered: rwsh.ambiguous_prototype_dash_dash ( [-x] [--] .function_all_flags ) 
+signal triggered: rwsh.ambiguous_prototype_dash_dash ( [-x] [--] .function_all_flags )
 
 -1
 $.function_all_flags a [-?] -- foo {.list_locals}
-signal triggered: rwsh.ambiguous_prototype_dash_dash ( [-?] -- .function_all_flags ) 
+signal triggered: rwsh.ambiguous_prototype_dash_dash ( [-?] -- .function_all_flags )
 
 -1
 $.function_all_flags a [-x] -- {.list_locals}
-signal triggered: rwsh.ambiguous_prototype_dash_dash ( [-x] -- .function_all_flags ) 
+signal triggered: rwsh.ambiguous_prototype_dash_dash ( [-x] -- .function_all_flags )
 
 -1
 $.function_all_flags a [--] {.list_locals}
@@ -1384,7 +1427,7 @@ $a --
 $a foo
 unacceptable arguments: for prototype [--],
  found (foo) excess
- call stack: a 
+( call) stack: a
 
 -1
 $.function_all_flags a [-x] [--long-opt y] second {
@@ -1399,7 +1442,7 @@ $a
 unacceptable arguments: for prototype [--long-opt y] [-x] second,
  assigned -*=() ,
  but needed (second),
- call stack: a 
+( call) stack: a
 
 -1
 $a single
@@ -1415,7 +1458,7 @@ $a --long-opt single
 unacceptable arguments: for prototype [--long-opt y] [-x] second,
  assigned -*=(--long-opt single) --long-opt=(--long-opt single) y=single ,
  but needed (second),
- call stack: a 
+( call) stack: a
 
 -1
 $a --long-opt first -x --long-opt second single
@@ -1433,7 +1476,7 @@ $a
 unacceptable arguments: for prototype [-q option1 option2] [-x o1 o2 o3 o4] required,
  assigned -*=() ,
  but needed (required),
- call stack: a 
+( call) stack: a
 
 -1
 $a single
@@ -1443,7 +1486,7 @@ $a -q one two
 unacceptable arguments: for prototype [-q option1 option2] [-x o1 o2 o3 o4] required,
  assigned -*=(-q one two) -q=(-q one two) option1=one option2=two ,
  but needed (required),
- call stack: a 
+( call) stack: a
 
 -1
 $a -q opt and req
@@ -1453,7 +1496,7 @@ $a -x opt and
 unacceptable arguments: for prototype [-q option1 option2] [-x o1 o2 o3 o4] required,
  assigned -*=(-x opt and) -x=(-x opt and) o1=opt o2=and ,
  but needed (o3 o4 required),
- call stack: a 
+( call) stack: a
 
 -1
 $a -x first second third fourth req
@@ -1482,7 +1525,7 @@ $w a
 $a
 unacceptable arguments: for prototype [optional0] -- [optional1 optional2 optional3] required,
  needed (required),
- call stack: a 
+( call) stack: a
 
 -1
 $a single
@@ -1495,7 +1538,7 @@ $a one two three
 unacceptable arguments: for prototype [optional0] -- [optional1 optional2 optional3] required,
  assigned optional0=one optional1=two optional2=three ,
  but needed (optional3 required),
- call stack: a 
+( call) stack: a
 
 -1
 $a one two three four five
@@ -1505,7 +1548,7 @@ $a one two three four five six seven eight nine
 unacceptable arguments: for prototype [optional0] -- [optional1 optional2 optional3] required,
  assigned optional0=one optional1=two optional2=three optional3=four required=five ,
  but found (six seven eight nine) excess
- call stack: a 
+( call) stack: a
 
 -1
 $.function_all_flags a -y [second] {
@@ -1519,7 +1562,7 @@ $w a
 $a
 unacceptable arguments: for prototype -y [second],
  needed (-y),
- call stack: a 
+( call) stack: a
 
 -1
 $a 1
@@ -1532,7 +1575,7 @@ $a 1 2 3
 unacceptable arguments: for prototype -y [second],
  assigned -y=1 second=2 ,
  but found (3) excess
- call stack: a 
+( call) stack: a
 
 -1
 $.function_all_flags a [-x] -y [--long-opt] second [--] [-] {
@@ -1544,19 +1587,19 @@ $w a
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
 0
 $a --long-opt -xx over-long flag
-signal triggered: rwsh.unrecognized_flag ( -xx a ) 
+signal triggered: rwsh.unrecognized_flag ( -xx a )
 
 -1
 $a -xx --long-opt over-long flag
-signal triggered: rwsh.unrecognized_flag ( -xx a ) 
+signal triggered: rwsh.unrecognized_flag ( -xx a )
 
 -1
 $a --long-op short flag
-signal triggered: rwsh.unrecognized_flag ( --long-op a ) 
+signal triggered: rwsh.unrecognized_flag ( --long-op a )
 
 -1
 $a - --long-op short flag
-signal triggered: rwsh.unrecognized_flag ( --long-op a ) 
+signal triggered: rwsh.unrecognized_flag ( --long-op a )
 
 -1
 $a no flags
@@ -1566,14 +1609,14 @@ $a deficient
 unacceptable arguments: for prototype [--long-opt] [-x] -y second [--] [-],
  assigned -*=() -y=deficient ,
  but needed (second),
- call stack: a 
+( call) stack: a
 
 -1
 $a flagless but_has excess argument
 unacceptable arguments: for prototype [--long-opt] [-x] -y second [--] [-],
  assigned -=excess -*=() -y=flagless second=but_has ,
  but found (argument) excess
- call stack: a 
+( call) stack: a
 
 -1
 $a -x with flag
@@ -1586,7 +1629,7 @@ $a accepted -x interlaced_flag -
 -(-) -*(-x) -x(-x) -y(accepted) second(interlaced_flag) 
 0
 $a tardy flags_last - -x
-signal triggered: rwsh.tardy_flag ( -x a ) 
+signal triggered: rwsh.tardy_flag ( -x a )
 
 -1
 $a -x -- - flag_made_fixed_argument
@@ -1599,14 +1642,14 @@ $a -x -- flag_and_fixed-x -x
 -*(-x --) --(--) -x(-x) -y(flag_and_fixed-x) second(-x) 
 0
 $a -x just flags-x --long-opt
-signal triggered: rwsh.tardy_flag ( --long-opt a ) 
+signal triggered: rwsh.tardy_flag ( --long-opt a )
 
 -1
 $a -x just flags-x -- --long-opt
 -(--long-opt) -*(-x --) --(--) -x(-x) -y(just) second(flags-x) 
 0
 $a -x just flags-x --other
-signal triggered: rwsh.tardy_flag ( --other a ) 
+signal triggered: rwsh.tardy_flag ( --other a )
 
 -1
 $a -x just flags-x -- --other
@@ -1616,7 +1659,7 @@ $a -x with one excess argument
 unacceptable arguments: for prototype [--long-opt] [-x] -y second [--] [-],
  assigned -=excess -*=-x -x=-x -y=with second=one ,
  but found (argument) excess
- call stack: a 
+( call) stack: a
 
 -1
 $a - with flag
@@ -1647,7 +1690,7 @@ $a -x --long-opt deficient
 unacceptable arguments: for prototype [--long-opt] [-x] -y second [--] [-],
  assigned -*=(-x --long-opt) --long-opt=--long-opt -x=-x -y=deficient ,
  but needed (second),
- call stack: a 
+( call) stack: a
 
 -1
 $a -x - --long-opt all_flags in_order
@@ -1685,7 +1728,7 @@ $a excess
 unacceptable arguments: for prototype [-first] [-to],
  assigned -*=() ,
  but found (excess) excess
- call stack: a 
+( call) stack: a
 
 -1
 $a -to
@@ -1698,14 +1741,14 @@ $a -first excess
 unacceptable arguments: for prototype [-first] [-to],
  assigned -*=-first -first=-first ,
  but found (excess) excess
- call stack: a 
+( call) stack: a
 
 -1
 $a -to -- -first -- stops flag parsing rather than being a flag
 unacceptable arguments: for prototype [-first] [-to],
  assigned -*=(-to --) --=-- -to=-to ,
  but found (-first -- stops flag parsing rather than being a flag) excess
- call stack: a 
+( call) stack: a
 
 -1
 $a -to -first
@@ -1728,7 +1771,7 @@ $a excess
 unacceptable arguments: for prototype [-?] [-first],
  assigned -*=() -?=() ,
  but found (excess) excess
- call stack: a 
+( call) stack: a
 
 -1
 $a -to
@@ -1741,14 +1784,14 @@ $a -first excess
 unacceptable arguments: for prototype [-?] [-first],
  assigned -*=-first -?=() -first=-first ,
  but found (excess) excess
- call stack: a 
+( call) stack: a
 
 -1
 $a -to -- -first
 unacceptable arguments: for prototype [-?] [-first],
  assigned -*=(-to --) --=-- -?=-to ,
  but found (-first) excess
- call stack: a 
+( call) stack: a
 
 -1
 $a -to -first
@@ -1771,7 +1814,7 @@ $a -to -- -first
 unacceptable arguments: for prototype [-?] [-first],
  assigned -*=(-to --) --=-- -?=-to ,
  but found (-first) excess
- call stack: a 
+( call) stack: a
 
 -1
 $a -to -first
@@ -1791,31 +1834,31 @@ $a
 -*() -?() nothing_required
 0
 $.function_all_flags a ... y {}
-signal triggered: rwsh.elipsis_first_arg ( ... .function_all_flags ) 
+signal triggered: rwsh.elipsis_first_arg ( ... .function_all_flags )
 
 -1
 $.function_all_flags a [-x] [--file file] ... y {}
-signal triggered: rwsh.elipsis_first_arg ( ... .function_all_flags ) 
+signal triggered: rwsh.elipsis_first_arg ( ... .function_all_flags )
 
 -1
 $.function_all_flags a [...] x {}
-signal triggered: rwsh.elipsis_first_arg ( [...] .function_all_flags ) 
+signal triggered: rwsh.elipsis_first_arg ( [...] .function_all_flags )
 
 -1
 $.function_all_flags a [... y] x {}
-signal triggered: rwsh.elipsis_first_arg ( [... y] .function_all_flags ) 
+signal triggered: rwsh.elipsis_first_arg ( [... y] .function_all_flags )
 
 -1
 $.function_all_flags a x ... [y z] {}
-signal triggered: rwsh.post_elipsis_option ( [y z] .function_all_flags ) 
+signal triggered: rwsh.post_elipsis_option ( [y z] .function_all_flags )
 
 -1
 $.function_all_flags a x [... y] z ... {}
-signal triggered: rwsh.duplicate_parameter ( ... .function_all_flags ) 
+signal triggered: rwsh.duplicate_parameter ( ... .function_all_flags )
 
 -1
 $.function_all_flags a [y z] ... x {}
-signal triggered: rwsh.elipsis_out_of_option_group ( [y z] .function_all_flags ) 
+signal triggered: rwsh.elipsis_out_of_option_group ( [y z] .function_all_flags )
 
 -1
 $.function_all_flags a [y] ... x {}
@@ -1825,35 +1868,35 @@ $w a
 .function_all_flags a [y ...] x {}
 0
 $.function_all_flags a x ... y ... {}
-signal triggered: rwsh.duplicate_parameter ( ... .function_all_flags ) 
+signal triggered: rwsh.duplicate_parameter ( ... .function_all_flags )
 
 -1
 $.function_all_flags a [x ...] [y z] {}
-signal triggered: rwsh.post_elipsis_option ( [y z] .function_all_flags ) 
+signal triggered: rwsh.post_elipsis_option ( [y z] .function_all_flags )
 
 -1
 $.function_all_flags a [x ...] y ... {}
-signal triggered: rwsh.duplicate_parameter ( ... .function_all_flags ) 
+signal triggered: rwsh.duplicate_parameter ( ... .function_all_flags )
 
 -1
 $.function_all_flags a [x ... a] [y] {}
-signal triggered: rwsh.post_elipsis_option ( [y] .function_all_flags ) 
+signal triggered: rwsh.post_elipsis_option ( [y] .function_all_flags )
 
 -1
 $.function_all_flags a [x ... a] y ... {}
-signal triggered: rwsh.duplicate_parameter ( ... .function_all_flags ) 
+signal triggered: rwsh.duplicate_parameter ( ... .function_all_flags )
 
 -1
 $.function_all_flags a [x ... a ...] {}
-signal triggered: rwsh.duplicate_parameter ( ... .function_all_flags ) 
+signal triggered: rwsh.duplicate_parameter ( ... .function_all_flags )
 
 -1
 $.function_all_flags a [x ... a ... b] {}
-signal triggered: rwsh.duplicate_parameter ( ... .function_all_flags ) 
+signal triggered: rwsh.duplicate_parameter ( ... .function_all_flags )
 
 -1
 $.function_all_flags a [-x ...] b [c] {}
-signal triggered: rwsh.post_elipsis_option ( [c] .function_all_flags ) 
+signal triggered: rwsh.post_elipsis_option ( [c] .function_all_flags )
 
 -1
 $.function_all_flags a -? x ... y {
@@ -1868,7 +1911,7 @@ $a -c -a -b first second third
 -*(-c -a -b) -?(-c -a -b) x(first second) y(third) 
 0
 $a -c first -a second -b third
-signal triggered: rwsh.flag_in_elipsis ( -a a ) 
+signal triggered: rwsh.flag_in_elipsis ( -a a )
 
 -1
 $.function_all_flags a -* x ... y {
@@ -1883,7 +1926,7 @@ $a -c -a -b first second third
 -*(-c -a -b) -?(-c -a -b) x(first second) y(third) 
 0
 $a -c first -a second -b third
-signal triggered: rwsh.flag_in_elipsis ( -a a ) 
+signal triggered: rwsh.flag_in_elipsis ( -a a )
 
 -1
 $.function_all_flags a [-?] x ... y {
@@ -1898,14 +1941,14 @@ $a
 unacceptable arguments: for prototype [-?] x ... y,
  assigned -*=() -?=() ,
  but needed (x y),
- call stack: a 
+( call) stack: a
 
 -1
 $a first
 unacceptable arguments: for prototype [-?] x ... y,
  assigned -*=() -?=() x=first ,
  but needed (y),
- call stack: a 
+( call) stack: a
 
 -1
 $a first (se cond)
@@ -1929,7 +1972,7 @@ $a
 unacceptable arguments: for prototype [-?] x ...,
  assigned -*=() -?=() ,
  but needed (x),
- call stack: a 
+( call) stack: a
 
 -1
 $a first second third fourth fifth
@@ -1947,7 +1990,7 @@ $a
 unacceptable arguments: for prototype [-?] x [--] [y ...],
  assigned -*=() -?=() ,
  but needed (x),
- call stack: a 
+( call) stack: a
 
 -1
 $a first
@@ -1974,7 +2017,7 @@ $a first
 unacceptable arguments: for prototype [-?] a [b ... c] d,
  assigned -*=() -?=() a=first ,
  but needed (d),
- call stack: a 
+( call) stack: a
 
 -1
 $a first second
@@ -1984,7 +2027,7 @@ $a first second third
 unacceptable arguments: for prototype [-?] a [b ... c] d,
  assigned -*=() -?=() a=first b=second c=third ,
  but needed (d),
- call stack: a 
+( call) stack: a
 
 -1
 $a first second third fourth
@@ -2011,7 +2054,7 @@ $a -x first
 unacceptable arguments: for prototype [-x ...] b c,
  assigned -*=-x -x=-x b=first ,
  but needed (c),
- call stack: a 
+( call) stack: a
 
 -1
 $a -x first second
@@ -2038,7 +2081,7 @@ $a -x first
 unacceptable arguments: for prototype [-x b ...] c,
  assigned -*=(-x first) -x=(-x first) b=first ,
  but needed (c),
- call stack: a 
+( call) stack: a
 
 -1
 $a -x (fi rst) second
@@ -2048,11 +2091,11 @@ $a -x first (sec ond) third
 -*(-x first (sec ond)) -x(-x first (sec ond)) b(first (sec ond)) c(third) 
 0
 $a -x first -x (sec ond) third
-signal triggered: rwsh.flag_in_elipsis ( -x a ) 
+signal triggered: rwsh.flag_in_elipsis ( -x a )
 
 -1
 $a -x first -y (sec ond) third
-signal triggered: rwsh.flag_in_elipsis ( -y a ) 
+signal triggered: rwsh.flag_in_elipsis ( -y a )
 
 -1
 $a -x (fi rst) (sec ond) third fourth
@@ -2087,7 +2130,7 @@ $a -x first
 unacceptable arguments: for prototype [-x ... b] c,
  assigned -*=(-x first) -x=(-x first) b=first ,
  but needed (c),
- call stack: a 
+( call) stack: a
 
 -1
 $a -x (fi rst) second
@@ -2138,7 +2181,7 @@ $a
 unacceptable arguments: for prototype [-?] x [... y z],
  assigned -*=() -?=() ,
  but needed (x),
- call stack: a 
+( call) stack: a
 
 -1
 $a (fi rst)
@@ -2150,7 +2193,7 @@ $a (fi rst) second
 unacceptable arguments: for prototype [-?] x [... y z],
  assigned -*=() -?=() x=(fi rst) y=second ,
  but needed (z),
- call stack: a 
+( call) stack: a
 
 -1
 $a first (sec ond) third
@@ -2223,7 +2266,7 @@ $a (fi rst)
 unacceptable arguments: for prototype [-?] [x y] [... z],
  assigned -*=() -?=() x=(fi rst) ,
  but needed (y),
- call stack: a 
+( call) stack: a
 
 -1
 $a (fi rst) second
@@ -2254,7 +2297,7 @@ z: fifth
 
 0
 $.function_all_flags a -- [-x] y z {}
-signal triggered: rwsh.post_dash_dash_flag ( [-x] .function_all_flags ) 
+signal triggered: rwsh.post_dash_dash_flag ( [-x] .function_all_flags )
 
 -1
 $.function_all_flags a -- [x y] z {
@@ -2268,7 +2311,7 @@ $w a
 $a
 unacceptable arguments: for prototype -- [x y] z,
  needed (z),
- call stack: a 
+( call) stack: a
 
 -1
 $a --file
@@ -2287,47 +2330,47 @@ $# .global .local .unset .var_exists
 
 0
 $.global
-signal triggered: rwsh.bad_argc ( 0 2 0 .global ) 
+signal triggered: rwsh.bad_argc ( 0 2 0 .global )
 
 -1
 $.global x y z
-signal triggered: rwsh.bad_argc ( 3 2 0 .global ) 
+signal triggered: rwsh.bad_argc ( 3 2 0 .global )
 
 -1
 $.global x y {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .global ) 
+signal triggered: rwsh.excess_argfunction ( .global )
 
 -1
 $.local
-signal triggered: rwsh.bad_argc ( 0 2 0 .local ) 
+signal triggered: rwsh.bad_argc ( 0 2 0 .local )
 
 -1
 $.local x y z
-signal triggered: rwsh.bad_argc ( 3 2 0 .local ) 
+signal triggered: rwsh.bad_argc ( 3 2 0 .local )
 
 -1
 $.local x y {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .local ) 
+signal triggered: rwsh.excess_argfunction ( .local )
 
 -1
 $.unset
-signal triggered: rwsh.bad_argc ( 0 1 0 .unset ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .unset )
 
 -1
 $.unset x {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .unset ) 
+signal triggered: rwsh.excess_argfunction ( .unset )
 
 -1
 $.unset x y
-signal triggered: rwsh.bad_argc ( 2 1 0 .unset ) 
+signal triggered: rwsh.bad_argc ( 2 1 0 .unset )
 
 -1
 $.var_exists
-signal triggered: rwsh.bad_argc ( 0 1 0 .var_exists ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .var_exists )
 
 -1
 $.var_exists x {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .var_exists ) 
+signal triggered: rwsh.excess_argfunction ( .var_exists )
 
 -1
 $.global 100 nihilism
@@ -2482,15 +2525,15 @@ $# .store_output
 
 0
 $.store_output x
-signal triggered: rwsh.missing_argfunction ( .store_output ) 
+signal triggered: rwsh.missing_argfunction ( .store_output )
 
 -1
 $.store_output {e some text}
-signal triggered: rwsh.bad_argc ( 0 1 0 .store_output ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .store_output )
 
 -1
 $.store_output x {e some text}
-signal triggered: rwsh.undefined_variable ( x .store_output ) 
+signal triggered: rwsh.undefined_variable ( x .store_output )
 
 -1
 $.global x ()
@@ -2557,11 +2600,11 @@ $.if .nop {e set up}
 
 0
 $.if .nop {e if before else}
-signal triggered: rwsh.if_before_else ( .if ) 
+signal triggered: rwsh.if_before_else ( .if )
 
 -1
 $.if .return 0 {.else_if .return 0 {e nested syntax; .return 20}}
-signal triggered: rwsh.else_without_if ( .else_if rwsh.mapped_argfunction .if ) 
+signal triggered: rwsh.else_without_if ( .else_if rwsh.mapped_argfunction .if )
 
 -1
 $.else {e already tested; .return 21}
@@ -2583,7 +2626,7 @@ $.if .return 0 {.if .return 1 {
        .else_if .return 0 {
 	   e about to trigger bad_if_nest $nl; .return 23}}
 about to trigger bad_if_nest 
-signal triggered: rwsh.bad_if_nest ( .if ) 
+signal triggered: rwsh.bad_if_nest ( .if )
 
 -1
 $.else {e else_if failed to appropriately set IF_TEST on exit; .return 24}
@@ -2594,14 +2637,14 @@ $.if .return 1 {}
 0
 $.else {
   .if .return 1 {e about to trigger bad_if_nest $nl}}
-signal triggered: rwsh.bad_if_nest ( .else ) 
+signal triggered: rwsh.bad_if_nest ( .else )
 
 -1
 $.if .return 0 {.if .return 0 {
 	   /bin/false should nest properly; .return 22}
        .else {
 	   e nested else not printed; .return 24}}
-signal triggered: rwsh.return_code ( 256 /bin/false rwsh.mapped_argfunction .if rwsh.mapped_argfunction .if ) 
+signal triggered: rwsh.return_code ( 256 /bin/false rwsh.mapped_argfunction .if rwsh.mapped_argfunction .if )
 
 -1
 $
@@ -2611,7 +2654,7 @@ $# .if .else_if .else_if_not .else
 
 -1
 $.if
-signal triggered: rwsh.bad_argc ( 0 1 0 .if ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .if )
 
 -1
 $.else_if .return 0 {e do not run after an exception}
@@ -2621,41 +2664,41 @@ $.else_if_not .return 1 {e do not run after an exception}
 
 0
 $.else_if
-signal triggered: rwsh.bad_argc ( 0 1 0 .else_if ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .else_if )
 
 -1
 $.else_if_not
-signal triggered: rwsh.bad_argc ( 0 1 0 .else_if_not ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .else_if_not )
 
 -1
 $.else {e do not run after an exception}
 
 0
 $.if missing argfunction
-signal triggered: rwsh.missing_argfunction ( .if ) 
+signal triggered: rwsh.missing_argfunction ( .if )
 
 -1
 $.else_if missing argfunction
-signal triggered: rwsh.missing_argfunction ( .else_if ) 
+signal triggered: rwsh.missing_argfunction ( .else_if )
 
 -1
 $.else_if_not missing argfunction
-signal triggered: rwsh.missing_argfunction ( .else_if_not ) 
+signal triggered: rwsh.missing_argfunction ( .else_if_not )
 
 -1
 $.else
-signal triggered: rwsh.missing_argfunction ( .else ) 
+signal triggered: rwsh.missing_argfunction ( .else )
 
 -1
 $.if .return 1 {}
 
 0
 $.else
-signal triggered: rwsh.missing_argfunction ( .else ) 
+signal triggered: rwsh.missing_argfunction ( .else )
 
 -1
 $.else {e second else for if}
-signal triggered: rwsh.else_without_if ( .else ) 
+signal triggered: rwsh.else_without_if ( .else )
 
 -1
 $.if .return 0 {e if true; .return 1}
@@ -2671,18 +2714,18 @@ $.else {e else false; .return 5}
 else false
 5
 $.else {}
-signal triggered: rwsh.else_without_if ( .else ) 
+signal triggered: rwsh.else_without_if ( .else )
 
 -1
 $.else_if .return 0 {e not this one; .return 6}
-signal triggered: rwsh.else_without_if ( .else_if ) 
+signal triggered: rwsh.else_without_if ( .else_if )
 
 -1
 $.else {}
 
 0
 $.else_if_not .return 1 {e not this one; .return 7}
-signal triggered: rwsh.else_without_if ( .else_if_not ) 
+signal triggered: rwsh.else_without_if ( .else_if_not )
 
 -1
 $.else {}
@@ -2698,11 +2741,11 @@ $.internal_features 1
 wrong argument count
 -1
 $.internal_functions 1
-signal triggered: rwsh.bad_argc ( 1 0 0 .internal_functions ) 
+signal triggered: rwsh.bad_argc ( 1 0 0 .internal_functions )
 
 -1
 $.internal_functions {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .internal_functions ) 
+signal triggered: rwsh.excess_argfunction ( .internal_functions )
 
 -1
 $.internal_vars 1
@@ -2718,9 +2761,11 @@ rwsh.bad_argc
 rwsh.bad_argfunction_style
 rwsh.bad_args
 rwsh.bad_if_nest
+rwsh.binary_does_not_exist
 rwsh.binary_not_found
 rwsh.dash_dash_argument
 rwsh.dash_star_argument
+rwsh.directory_not_found
 rwsh.divide_by_zero
 rwsh.double_redirection
 rwsh.duplicate_parameter
@@ -2731,11 +2776,14 @@ rwsh.excess_argfunction
 rwsh.excessive_exceptions_collected
 rwsh.excessive_exceptions_in_catch
 rwsh.excessive_nesting
-rwsh.executable_not_found
+rwsh.exec_failed
 rwsh.failed_substitution
 rwsh.file_open_failure
+rwsh.file_not_found
 rwsh.flag_in_elipsis
+rwsh.function_not_found
 rwsh.if_before_else
+rwsh.illegal_function_name
 rwsh.illegal_variable_name
 rwsh.input_range
 rwsh.internal_error
@@ -2746,6 +2794,7 @@ rwsh.mismatched_parenthesis
 rwsh.missing_argfunction
 rwsh.multiple_argfunctions
 rwsh.not_a_number
+rwsh.not_a_directory
 rwsh.not_executable
 rwsh.not_soon_enough
 rwsh.raw_command
@@ -2785,11 +2834,11 @@ $# .is_default_input .is_default_output .is_default_error
 
 0
 $.is_default_input 1
-signal triggered: rwsh.bad_argc ( 1 0 0 .is_default_input ) 
+signal triggered: rwsh.bad_argc ( 1 0 0 .is_default_input )
 
 -1
 $.is_default_input {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .is_default_input ) 
+signal triggered: rwsh.excess_argfunction ( .is_default_input )
 
 -1
 $m {.is_default_input <dummy_file}
@@ -2799,11 +2848,11 @@ $m {.is_default_input}
 
 0
 $.is_default_output 1
-signal triggered: rwsh.bad_argc ( 1 0 0 .is_default_output ) 
+signal triggered: rwsh.bad_argc ( 1 0 0 .is_default_output )
 
 -1
 $.is_default_output {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .is_default_output ) 
+signal triggered: rwsh.excess_argfunction ( .is_default_output )
 
 -1
 $e ${.is_default_output; .echo $?}
@@ -2816,11 +2865,11 @@ $m {.is_default_output}
 
 0
 $.is_default_error 1
-signal triggered: rwsh.bad_argc ( 1 0 0 .is_default_error ) 
+signal triggered: rwsh.bad_argc ( 1 0 0 .is_default_error )
 
 -1
 $.is_default_error {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .is_default_error ) 
+signal triggered: rwsh.excess_argfunction ( .is_default_error )
 
 -1
 $m {.is_default_error}
@@ -2833,11 +2882,11 @@ $# .list_executables
 
 0
 $.list_executables excess
-signal triggered: rwsh.bad_argc ( 1 0 0 .list_executables ) 
+signal triggered: rwsh.bad_argc ( 1 0 0 .list_executables )
 
 -1
 $.list_executables {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .list_executables ) 
+signal triggered: rwsh.excess_argfunction ( .list_executables )
 
 -1
 $.for ${.list_executables}$ {.combine $1 $nl}
@@ -2896,6 +2945,7 @@ $.for ${.list_executables}$ {.combine $1 $nl}
 .source
 .stepwise
 .store_output
+.test_file_exists
 .test_greater
 .test_is_number
 .test_less
@@ -2955,7 +3005,6 @@ if
 if_only
 if_only_not
 m
-mark
 ntimes
 paren_if_words
 rwsh.after_command
@@ -2966,9 +3015,11 @@ rwsh.bad_argfunction_style
 rwsh.bad_args
 rwsh.bad_if_nest
 rwsh.before_command
+rwsh.binary_does_not_exist
 rwsh.binary_not_found
 rwsh.dash_dash_argument
 rwsh.dash_star_argument
+rwsh.directory_not_found
 rwsh.divide_by_zero
 rwsh.double_redirection
 rwsh.duplicate_parameter
@@ -2979,11 +3030,14 @@ rwsh.excess_argfunction
 rwsh.excessive_exceptions_collected
 rwsh.excessive_exceptions_in_catch
 rwsh.excessive_nesting
-rwsh.executable_not_found
+rwsh.exec_failed
 rwsh.failed_substitution
+rwsh.file_not_found
 rwsh.file_open_failure
 rwsh.flag_in_elipsis
+rwsh.function_not_found
 rwsh.if_before_else
+rwsh.illegal_function_name
 rwsh.illegal_variable_name
 rwsh.input_range
 rwsh.internal_error
@@ -2993,6 +3047,7 @@ rwsh.mismatched_bracket
 rwsh.mismatched_parenthesis
 rwsh.missing_argfunction
 rwsh.multiple_argfunctions
+rwsh.not_a_directory
 rwsh.not_a_number
 rwsh.not_executable
 rwsh.not_soon_enough
@@ -3046,11 +3101,15 @@ $# .ls
 
 0
 $.ls
-signal triggered: rwsh.bad_argc ( 0 1 0 .ls ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .ls )
 
 -1
 $.ls /bin {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .ls ) 
+signal triggered: rwsh.excess_argfunction ( .ls )
+
+-1
+$.ls /bin/usr/
+.ls : could not find file
 
 -1
 $.ls /bin /usr/
@@ -3080,43 +3139,43 @@ $# .getpid .getppid
 
 0
 $.getpid excess
-signal triggered: rwsh.bad_argc ( 1 0 0 .getpid ) 
+signal triggered: rwsh.bad_argc ( 1 0 0 .getpid )
 
 -1
 $.getpid {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .getpid ) 
+signal triggered: rwsh.excess_argfunction ( .getpid )
 
 -1
 $.getppid excess
-signal triggered: rwsh.bad_argc ( 1 0 0 .getppid ) 
+signal triggered: rwsh.bad_argc ( 1 0 0 .getppid )
 
 -1
 $.getppid {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .getppid ) 
+signal triggered: rwsh.excess_argfunction ( .getppid )
 
 -1
 $.fork m {/bin/kill ${.getppid}}
-signal triggered: rwsh.sigterm ( ) 
+signal triggered: rwsh.sigterm ( )
 
 -1
 $.fork m {/bin/kill ${.getpid}}
-signal triggered: rwsh.sigterm ( ) 
+signal triggered: rwsh.sigterm ( )
 
 0
 $m {.fork m {/bin/kill ${.getppid}
             echo after the signal in subshell}
    echo after the signal in parent}
-after the signal in subshell 
-signal triggered: rwsh.sigterm ( ) 
-after the signal in parent 
+after the signal in subshell
+signal triggered: rwsh.sigterm ( )
+after the signal in parent
 
 0
 $m {.fork m {/bin/kill ${.getpid}
             echo after the signal in subshell}
    echo after the signal in parent}
-signal triggered: rwsh.sigterm ( ) 
-after the signal in subshell 
-after the signal in parent 
+signal triggered: rwsh.sigterm ( )
+after the signal in subshell
+after the signal in parent
 
 0
 $
@@ -3126,15 +3185,15 @@ $# .return
 
 0
 $.return
-signal triggered: rwsh.bad_argc ( 0 1 0 .return ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .return )
 
 -1
 $.return 1 1
-signal triggered: rwsh.bad_argc ( 2 1 0 .return ) 
+signal triggered: rwsh.bad_argc ( 2 1 0 .return )
 
 -1
 $.return 0 {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .return ) 
+signal triggered: rwsh.excess_argfunction ( .return )
 
 -1
 $.return 0
@@ -3144,26 +3203,26 @@ $.return 1
 
 1
 $.return \
-signal triggered: rwsh.not_a_number (  .return ) 
+signal triggered: rwsh.not_a_number (  .return )
 
 -1
 $.return O
-signal triggered: rwsh.not_a_number ( O .return ) 
+signal triggered: rwsh.not_a_number ( O .return )
 
 -1
 $.return 1E2
-signal triggered: rwsh.not_a_number ( 1E2 .return ) 
+signal triggered: rwsh.not_a_number ( 1E2 .return )
 
 -1
 $.return 2147483647
 
 2147483647
 $.return 2147483649
-signal triggered: rwsh.input_range ( 2147483649 .return ) 
+signal triggered: rwsh.input_range ( 2147483649 .return )
 
 -1
 $.return -2147483649
-signal triggered: rwsh.input_range ( -2147483649 .return ) 
+signal triggered: rwsh.input_range ( -2147483649 .return )
 
 -1
 $
@@ -3173,71 +3232,71 @@ $# .scope
 
 -1
 $.scope {e $foo}
-signal triggered: rwsh.bad_argc ( 0 2 0 .scope ) 
+signal triggered: rwsh.bad_argc ( 0 2 0 .scope )
 
 -1
 $.scope foo
-signal triggered: rwsh.missing_argfunction ( .scope ) 
+signal triggered: rwsh.missing_argfunction ( .scope )
 
 -1
 $.scope a (y y) {e illegal duplicate required parameter}
-signal triggered: rwsh.duplicate_parameter ( y .scope ) 
+signal triggered: rwsh.duplicate_parameter ( y .scope )
 
 -1
 $.scope a ([-x] [-x]) {e illegal duplicate flag parameter}
-signal triggered: rwsh.duplicate_parameter ( -x .scope ) 
+signal triggered: rwsh.duplicate_parameter ( -x .scope )
 
 -1
 $.scope a ([x x]) {e illegal duplicate optional parameter}
-signal triggered: rwsh.duplicate_parameter ( x .scope ) 
+signal triggered: rwsh.duplicate_parameter ( x .scope )
 
 -1
 $.scope a ([-x arg bar] [-y arg]) {e illegal duplicate flag argument}
-signal triggered: rwsh.duplicate_parameter ( arg .scope ) 
+signal triggered: rwsh.duplicate_parameter ( arg .scope )
 
 -1
 $.scope a (-x [-x]) {e evil duplication between flags positional}
-signal triggered: rwsh.duplicate_parameter ( -x .scope ) 
+signal triggered: rwsh.duplicate_parameter ( -x .scope )
 
 -1
 $.scope -- -- {e -- as a prototype forbids even -- as arguments}
 unacceptable arguments: for prototype --,
  found (--) excess
- call stack: .scope 
+( call) stack: .scope
 
 -1
 $.scope -- () {e but ${.list_locals} is acceptable for empty prototype}
 but -- is acceptable for empty prototype
 0
 $.scope a (-- --) {e -- cannot be a duplicate parameter}
-signal triggered: rwsh.duplicate_parameter ( -- .scope ) 
+signal triggered: rwsh.duplicate_parameter ( -- .scope )
 
 -1
 $.scope a ([--] [--]) {e [--] cannot be a duplicate flag parameter}
-signal triggered: rwsh.duplicate_parameter ( -- .scope ) 
+signal triggered: rwsh.duplicate_parameter ( -- .scope )
 
 -1
 $.scope a ([--] --) {e -- and [--] cannot both be parameters}
-signal triggered: rwsh.duplicate_parameter ( -- .scope ) 
+signal triggered: rwsh.duplicate_parameter ( -- .scope )
 
 -1
 $.scope a ([-- arg]) {e -- cannot take arguments}
-signal triggered: rwsh.dash_dash_argument ( [-- arg] .scope ) 
+signal triggered: rwsh.dash_dash_argument ( [-- arg] .scope )
 
 -1
 $.scope a ([arg -- foo]) {e -- cannot be an argument}
-signal triggered: rwsh.dash_dash_argument ( [arg -- foo] .scope ) 
+signal triggered: rwsh.dash_dash_argument ( [arg -- foo] .scope )
 
 -1
 $.scope -x -y a b ([-?] args ...) {for ${.list_locals}$ {.combine $1 = $$1 \ }}
 -*=-x -y -?=-x -y args=a b 
 0
 $.scope a ([-? bad] arg) {e -? cannot currently take arguments}
-signal triggered: rwsh.dash_star_argument ( [-? bad] .scope ) 
+signal triggered: rwsh.dash_star_argument ( [-? bad] .scope )
 
 -1
 $.scope a ([-* bad] arg) {e -* (aka -?) cannot currently take arguments}
-signal triggered: rwsh.dash_star_argument ( [-* bad] .scope ) 
+signal triggered: rwsh.dash_star_argument ( [-* bad] .scope )
 
 -1
 $.scope -a -* -b a ([-?] a) {for ${.list_locals}$ {.combine $1 = $$1 \ }}
@@ -3283,7 +3342,7 @@ $a
 unacceptable arguments: for prototype [--long-opt y] [-x] second,
  assigned -*=() ,
  but needed (second),
- call stack: a 
+( call) stack: a
 
 -1
 $a single
@@ -3311,14 +3370,14 @@ $a --long-opt single
 unacceptable arguments: for prototype [--long-opt y] [-x] second,
  assigned -*=(--long-opt single) --long-opt=(--long-opt single) y=single ,
  but needed (second),
- call stack: a 
+( call) stack: a
 
 -1
 $pt --long-opt single
 unacceptable arguments: for prototype [--long-opt y] [-x] second,
  assigned -*=(--long-opt single) --long-opt=(--long-opt single) y=single ,
  but needed (second),
- call stack: .scope pt 
+( call) stack: (.scope pt)
 
 -1
 $a --long-opt first -x --long-opt second single
@@ -3368,14 +3427,14 @@ $a excess
 unacceptable arguments: for prototype [-?] [-first],
  assigned -*=() -?=() ,
  but found (excess) excess
- call stack: a 
+( call) stack: a
 
 -1
 $pts excess
 unacceptable arguments: for prototype [-?] [-first],
  assigned -*=() -?=() ,
  but found (excess) excess
- call stack: .scope rwsh.mapped_argfunction .if pts 
+( call) stack: (.scope rwsh.mapped_argfunction .if pts)
 
 -1
 $a -to
@@ -3394,28 +3453,28 @@ $a -first excess
 unacceptable arguments: for prototype [-?] [-first],
  assigned -*=-first -?=() -first=-first ,
  but found (excess) excess
- call stack: a 
+( call) stack: a
 
 -1
 $pts -first excess
 unacceptable arguments: for prototype [-?] [-first],
  assigned -*=-first -?=() -first=-first ,
  but found (excess) excess
- call stack: .scope rwsh.mapped_argfunction .if pts 
+( call) stack: (.scope rwsh.mapped_argfunction .if pts)
 
 -1
 $a -to -- -first
 unacceptable arguments: for prototype [-?] [-first],
  assigned -*=(-to --) --=-- -?=-to ,
  but found (-first) excess
- call stack: a 
+( call) stack: a
 
 -1
 $pts -to -- -first
 unacceptable arguments: for prototype [-?] [-first],
  assigned -*=(-to --) --=-- -?=-to ,
  but found (-first) excess
- call stack: .scope rwsh.mapped_argfunction .if pts 
+( call) stack: (.scope rwsh.mapped_argfunction .if pts)
 
 -1
 $a -to -first
@@ -3434,11 +3493,11 @@ $# .selection_set
 
 0
 $.selection_set A
-signal triggered: rwsh.bad_argc ( 1 2 0 .selection_set ) 
+signal triggered: rwsh.bad_argc ( 1 2 0 .selection_set )
 
 -1
 $.selection_set A /usr {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .selection_set ) 
+signal triggered: rwsh.excess_argfunction ( .selection_set )
 
 -1
 $.selection_set A /usr
@@ -3490,20 +3549,20 @@ $# .set
 
 0
 $.set A
-signal triggered: rwsh.bad_argc ( 1 2 0 .set ) 
+signal triggered: rwsh.bad_argc ( 1 2 0 .set )
 
 -1
 $.set 1 x
 $1 cannot be set
-call stack .set 
+call stack .set
 
 -1
 $.set B x
-signal triggered: rwsh.undefined_variable ( B .set ) 
+signal triggered: rwsh.undefined_variable ( B .set )
 
 -1
 $.set B x {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .set ) 
+signal triggered: rwsh.excess_argfunction ( .set )
 
 -1
 $.set A x
@@ -3519,27 +3578,27 @@ $# .get_max_collectible_exceptions .set_max_collectible_exceptions
 
 0
 $.get_max_collectible_exceptions excess
-signal triggered: rwsh.bad_argc ( 1 0 0 .get_max_collectible_exceptions ) 
+signal triggered: rwsh.bad_argc ( 1 0 0 .get_max_collectible_exceptions )
 
 -1
 $.set_max_collectible_exceptions
-signal triggered: rwsh.bad_argc ( 0 0 0 .set_max_collectible_exceptions ) 
+signal triggered: rwsh.bad_argc ( 0 0 0 .set_max_collectible_exceptions )
 
 -1
 $.get_max_collectible_exceptions {excess}
-signal triggered: rwsh.excess_argfunction ( .get_max_collectible_exceptions ) 
+signal triggered: rwsh.excess_argfunction ( .get_max_collectible_exceptions )
 
 -1
 $.set_max_collectible_exceptions 1 {excess}
-signal triggered: rwsh.excess_argfunction ( .set_max_collectible_exceptions ) 
+signal triggered: rwsh.excess_argfunction ( .set_max_collectible_exceptions )
 
 -1
 $.set_max_collectible_exceptions NaN
-signal triggered: rwsh.not_a_number ( NaN .set_max_collectible_exceptions ) 
+signal triggered: rwsh.not_a_number ( NaN .set_max_collectible_exceptions )
 
 -1
 $.set_max_collectible_exceptions 0
-signal triggered: rwsh.input_range ( 0 .set_max_collectible_exceptions ) 
+signal triggered: rwsh.input_range ( 0 .set_max_collectible_exceptions )
 
 -1
 $.get_max_collectible_exceptions
@@ -3549,13 +3608,13 @@ $.set_max_collectible_exceptions 7
 
 0
 $.collect_errors_except
-signal triggered: rwsh.bad_argc ( 0 1 0 .collect_errors_except ) 
-signal triggered: rwsh.missing_argfunction ( .collect_errors_except ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .collect_errors_except )
+signal triggered: rwsh.missing_argfunction ( .collect_errors_except )
 
 -1
 $.collect_errors_only
-signal triggered: rwsh.bad_argc ( 0 1 0 .collect_errors_only ) 
-signal triggered: rwsh.missing_argfunction ( .collect_errors_only ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .collect_errors_only )
+signal triggered: rwsh.missing_argfunction ( .collect_errors_only )
 
 -1
 $m {.collect_errors_except .nop {
@@ -3563,39 +3622,39 @@ $m {.collect_errors_except .nop {
         .throw rwsh.not_a_number 7
         echo after exception}
      echo between exceptions
-     .scope () {.throw rwsh.executable_not_found foo}
+     .scope () {.throw rwsh.function_not_found foo}
      echo inside collect}
    echo outside collect}
-before exception 
-between exceptions 
-inside collect 
-signal triggered: rwsh.not_a_number ( 7 .throw rwsh.mapped_argfunction m .collect_errors_except rwsh.mapped_argfunction m ) 
-signal triggered: rwsh.executable_not_found ( foo .throw .scope .collect_errors_except rwsh.mapped_argfunction m ) 
+before exception
+between exceptions
+inside collect
+signal triggered: rwsh.not_a_number ( 7 .throw rwsh.mapped_argfunction m .collect_errors_except rwsh.mapped_argfunction m )
+signal triggered: rwsh.function_not_found ( foo .throw .scope .collect_errors_except rwsh.mapped_argfunction m )
 
 -1
 $m {.collect_errors_except echo {
-     .throw rwsh.executable_not_found foo
+     .throw rwsh.function_not_found foo
      echo between exceptions
      .throw echo 7
      echo inside collect}
    echo outside collect}
-between exceptions 
-signal triggered: rwsh.executable_not_found ( foo .throw .collect_errors_except rwsh.mapped_argfunction m ) 
-7 .throw .collect_errors_except rwsh.mapped_argfunction m 
+between exceptions
+signal triggered: rwsh.function_not_found ( foo .throw .collect_errors_except rwsh.mapped_argfunction m )
+7 .throw .collect_errors_except rwsh.mapped_argfunction m
 
 -1
 $# .collect_errors_except .echo {${.throw .echo exception thrown directly}}
 
 -1
-$m {.collect_errors_only rwsh.executable_not_found {
-     .throw rwsh.executable_not_found foo
+$m {.collect_errors_only rwsh.function_not_found {
+     .throw rwsh.function_not_found foo
      echo between exceptions
      .throw echo 7
      echo inside collect}
    echo outside collect}
-between exceptions 
-signal triggered: rwsh.executable_not_found ( foo .throw .collect_errors_only rwsh.mapped_argfunction m ) 
-7 .throw .collect_errors_only rwsh.mapped_argfunction m 
+between exceptions
+signal triggered: rwsh.function_not_found ( foo .throw .collect_errors_only rwsh.mapped_argfunction m )
+7 .throw .collect_errors_only rwsh.mapped_argfunction m
 
 -1
 $.collect_errors_except echo {
@@ -3628,15 +3687,15 @@ $.collect_errors_except echo {
                     .throw echo inside 20
                    .collect_errors_except .echo {echo inside 21}
 }}}}}}}}}}}}}}}}}}}}
-inside 5 
-inside 10 
-inside 15 
-inside 20 
-inside 5 .throw .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except 
-inside 10 .throw .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except 
-inside 15 .throw .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except 
-inside 20 .throw .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except 
-signal triggered: rwsh.excessive_nesting ( echo .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except ) 
+inside 5
+inside 10
+inside 15
+inside 20
+inside 5 .throw .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except
+inside 10 .throw .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except
+inside 15 .throw .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except
+inside 20 .throw .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except
+signal triggered: rwsh.excessive_nesting ( echo .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except )
 
 -1
 $.set_max_collectible_exceptions 1
@@ -3654,8 +3713,8 @@ $.try_catch_recursive collecting_handler {
   .collect_errors_except .echo {
     .throw collecting_handler 1
     .throw collecting_handler 2}}
-1 .throw .collect_errors_except rwsh.mapped_argfunction 
-2 .throw .collect_errors_except rwsh.mapped_argfunction 
+1 .throw .collect_errors_except rwsh.mapped_argfunction
+2 .throw .collect_errors_except rwsh.mapped_argfunction
 
 -1
 $.try_catch_recursive collecting_handler {
@@ -3663,9 +3722,9 @@ $.try_catch_recursive collecting_handler {
     .throw collecting_handler 1
     .throw collecting_handler 2
     echo almost nothing}}
-1 .throw .collect_errors_except rwsh.mapped_argfunction 
-2 .throw .collect_errors_except rwsh.mapped_argfunction 
-signal triggered: rwsh.excessive_exceptions_collected ( 1 .collect_errors_except rwsh.mapped_argfunction .try_catch_recursive ) 
+1 .throw .collect_errors_except rwsh.mapped_argfunction
+2 .throw .collect_errors_except rwsh.mapped_argfunction
+signal triggered: rwsh.excessive_exceptions_collected ( 1 .collect_errors_except rwsh.mapped_argfunction .try_catch_recursive )
 
 -1
 $.set_max_extra_exceptions 0
@@ -3675,9 +3734,9 @@ $.try_catch_recursive collecting_handler {
   .collect_errors_except .echo {
     .throw collecting_handler 1
     .throw collecting_handler 2}}
-1 .throw .collect_errors_except rwsh.mapped_argfunction .try_catch_recursive 
-2 .throw .collect_errors_except rwsh.mapped_argfunction .try_catch_recursive 
-signal triggered: rwsh.excessive_exceptions_in_catch ( 0 .try_catch_recursive ) 
+1 .throw .collect_errors_except rwsh.mapped_argfunction .try_catch_recursive
+2 .throw .collect_errors_except rwsh.mapped_argfunction .try_catch_recursive
+signal triggered: rwsh.excessive_exceptions_in_catch ( 0 .try_catch_recursive )
 
 -1
 $.try_catch_recursive collecting_handler {
@@ -3685,10 +3744,10 @@ $.try_catch_recursive collecting_handler {
     .throw collecting_handler 1
     .throw collecting_handler 2
     echo almost nothing}}
-1 .throw .collect_errors_except rwsh.mapped_argfunction .try_catch_recursive 
-2 .throw .collect_errors_except rwsh.mapped_argfunction .try_catch_recursive 
-signal triggered: rwsh.excessive_exceptions_collected ( 1 .collect_errors_except rwsh.mapped_argfunction .try_catch_recursive ) 
-signal triggered: rwsh.excessive_exceptions_in_catch ( 0 .try_catch_recursive ) 
+1 .throw .collect_errors_except rwsh.mapped_argfunction .try_catch_recursive
+2 .throw .collect_errors_except rwsh.mapped_argfunction .try_catch_recursive
+signal triggered: rwsh.excessive_exceptions_collected ( 1 .collect_errors_except rwsh.mapped_argfunction .try_catch_recursive )
+signal triggered: rwsh.excessive_exceptions_in_catch ( 0 .try_catch_recursive )
 
 -1
 $.set_max_extra_exceptions 1
@@ -3703,72 +3762,72 @@ $
 $# .try_catch_recursive .get_max_extra_exceptions .set_max_extra_exceptions
 
 0
-$.try_catch_recursive rwsh.executable_not_found 
-signal triggered: rwsh.missing_argfunction ( .try_catch_recursive ) 
+$.try_catch_recursive rwsh.function_not_found 
+signal triggered: rwsh.missing_argfunction ( .try_catch_recursive )
 
 -1
 $.try_catch_recursive {.return A}
-signal triggered: rwsh.bad_argc ( 0 1 0 .try_catch_recursive ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .try_catch_recursive )
 
 -1
 $f e_after {m {rwsh.argfunction}; echo after}
 
 0
-$e_after {.try_catch_recursive rwsh.not_a_number rwsh.executable_not_found {
+$e_after {.try_catch_recursive rwsh.not_a_number rwsh.function_not_found {
   .return A}}
-signal triggered: rwsh.not_a_number ( A .return rwsh.mapped_argfunction ) 
-after 
+signal triggered: rwsh.not_a_number ( A .return rwsh.mapped_argfunction )
+after
 
 0
 $f rwsh.autofunction {.nop}
 
 0
-$e_after {.try_catch_recursive rwsh.executable_not_found {.eturn A}}
-signal triggered: rwsh.executable_not_found ( .eturn A rwsh.mapped_argfunction ) 
-after 
+$e_after {.try_catch_recursive rwsh.function_not_found {.eturn A}}
+signal triggered: rwsh.function_not_found ( .eturn A rwsh.mapped_argfunction )
+after
 
 0
 $e_after {.try_catch_recursive rwsh.not_a_number {.return A}}
-signal triggered: rwsh.not_a_number ( A .return rwsh.mapped_argfunction ) 
-after 
+signal triggered: rwsh.not_a_number ( A .return rwsh.mapped_argfunction )
+after
 
 0
 $e_after {.try_catch_recursive rwsh.not_a_number {.cho A}}
-signal triggered: rwsh.executable_not_found ( .cho A rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction m e_after ) 
+signal triggered: rwsh.function_not_found ( .cho A rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction m e_after )
 
 -1
-$e_after {.try_catch_recursive rwsh.not_a_number rwsh.executable_not_found {echo A}}
-A 
-after 
+$e_after {.try_catch_recursive rwsh.not_a_number rwsh.function_not_found {echo A}}
+A
+after
 
 0
 $e_after {m echo hi {.try_catch_recursive ${.internal_functions}$ {&&&*}}}
-hi 
-after 
+hi
+after
 
 0
 $.get_max_extra_exceptions excess
-signal triggered: rwsh.bad_argc ( 1 0 0 .get_max_extra_exceptions ) 
+signal triggered: rwsh.bad_argc ( 1 0 0 .get_max_extra_exceptions )
 
 -1
 $.set_max_extra_exceptions
-signal triggered: rwsh.bad_argc ( 0 0 0 .set_max_extra_exceptions ) 
+signal triggered: rwsh.bad_argc ( 0 0 0 .set_max_extra_exceptions )
 
 -1
 $.get_max_extra_exceptions {excess}
-signal triggered: rwsh.excess_argfunction ( .get_max_extra_exceptions ) 
+signal triggered: rwsh.excess_argfunction ( .get_max_extra_exceptions )
 
 -1
 $.set_max_extra_exceptions 1 {excess}
-signal triggered: rwsh.excess_argfunction ( .set_max_extra_exceptions ) 
+signal triggered: rwsh.excess_argfunction ( .set_max_extra_exceptions )
 
 -1
 $.set_max_extra_exceptions NaN
-signal triggered: rwsh.not_a_number ( NaN .set_max_extra_exceptions ) 
+signal triggered: rwsh.not_a_number ( NaN .set_max_extra_exceptions )
 
 -1
 $.set_max_extra_exceptions -1
-signal triggered: rwsh.input_range ( -1 .set_max_extra_exceptions ) 
+signal triggered: rwsh.input_range ( -1 .set_max_extra_exceptions )
 
 -1
 $.get_max_extra_exceptions
@@ -3781,18 +3840,18 @@ $.get_max_extra_exceptions
 0
 0
 $e_after {.try_catch_recursive rwsh.not_a_number {.try_catch_recursive rwsh.not_a_number {.return A}}}
-signal triggered: rwsh.not_a_number ( A .return rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction m e_after ) 
-signal triggered: rwsh.excessive_exceptions_in_catch ( 0 .try_catch_recursive rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction m e_after ) 
+signal triggered: rwsh.not_a_number ( A .return rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction m e_after )
+signal triggered: rwsh.excessive_exceptions_in_catch ( 0 .try_catch_recursive rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction m e_after )
 
 -1
 $e_after {.try_catch_recursive rwsh.not_a_number {.try_catch_recursive rwsh.not_a_number {.return A}}}
-signal triggered: rwsh.not_a_number ( A .return rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction m e_after ) 
-signal triggered: rwsh.excessive_exceptions_in_catch ( 0 .try_catch_recursive rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction m e_after ) 
+signal triggered: rwsh.not_a_number ( A .return rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction m e_after )
+signal triggered: rwsh.excessive_exceptions_in_catch ( 0 .try_catch_recursive rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction m e_after )
 
 -1
 $e_after {m echo hi {.try_catch_recursive ${.internal_functions}$ {&&&*}}}
-hi 
-after 
+hi
+after
 
 0
 $
@@ -3802,19 +3861,19 @@ $# .source
 
 0
 $.source
-signal triggered: rwsh.bad_argc ( 0 1 0 .source ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .source )
 
 -1
 $.source /etc/hosts {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .source ) 
+signal triggered: rwsh.excess_argfunction ( .source )
 
 -1
 $.source test_files/*fu*bar*
-signal triggered: rwsh.file_open_failure ( test_files/*fu*bar* .source ) 
+signal triggered: rwsh.file_open_failure ( test_files/*fu*bar* .source )
 
 -1
 $.source /etc/hosts
-signal triggered: rwsh.not_executable ( /etc/hosts .source ) 
+signal triggered: rwsh.not_executable ( /etc/hosts .source )
 
 -1
 $# .source is tested by having test_init.sh define #
@@ -3851,11 +3910,11 @@ $f d {e $* $nl; .stepwise $* {d $*}}
 
 0
 $.stepwise {e $* $nl}
-signal triggered: rwsh.bad_argc ( 0 1 0 .stepwise ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .stepwise )
 
 -1
 $.stepwise wrapper 1 2
-signal triggered: rwsh.missing_argfunction ( .stepwise ) 
+signal triggered: rwsh.missing_argfunction ( .stepwise )
 
 -1
 $.stepwise stepwise {e $* $nl}
@@ -3935,43 +3994,63 @@ a 1 2 three
 $
 
 0
+$# .test_file_exists
+
+0
+$.test_file_exists
+signal triggered: rwsh.bad_argc ( 0 1 0 .test_file_exists )
+
+-1
+$.test_file_exists dummy_file {excess argfunc}
+signal triggered: rwsh.excess_argfunction ( .test_file_exists )
+
+-1
+$.test_file_exists /b /in
+
+1
+$.test_file_exists /b /bin /in
+
+0
+$
+
+0
 $# .test_string_equal .test_string_unequal .test_not_empty
 
 0
 $.test_string_equal x
-signal triggered: rwsh.bad_argc ( 1 2 0 .test_string_equal ) 
+signal triggered: rwsh.bad_argc ( 1 2 0 .test_string_equal )
 
 -1
 $.test_string_equal x x x
-signal triggered: rwsh.bad_argc ( 3 2 0 .test_string_equal ) 
+signal triggered: rwsh.bad_argc ( 3 2 0 .test_string_equal )
 
 -1
 $.test_string_equal x x {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .test_string_equal ) 
+signal triggered: rwsh.excess_argfunction ( .test_string_equal )
 
 -1
 $.test_string_unequal x 
-signal triggered: rwsh.bad_argc ( 1 2 0 .test_string_unequal ) 
+signal triggered: rwsh.bad_argc ( 1 2 0 .test_string_unequal )
 
 -1
 $.test_string_unequal x x x
-signal triggered: rwsh.bad_argc ( 3 2 0 .test_string_unequal ) 
+signal triggered: rwsh.bad_argc ( 3 2 0 .test_string_unequal )
 
 -1
 $.test_string_unequal x x {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .test_string_unequal ) 
+signal triggered: rwsh.excess_argfunction ( .test_string_unequal )
 
 -1
 $.test_not_empty 
-signal triggered: rwsh.bad_argc ( 0 1 0 .test_not_empty ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .test_not_empty )
 
 -1
 $.test_not_empty x x
-signal triggered: rwsh.bad_argc ( 2 1 0 .test_not_empty ) 
+signal triggered: rwsh.bad_argc ( 2 1 0 .test_not_empty )
 
 -1
 $.test_not_empty x {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .test_not_empty ) 
+signal triggered: rwsh.excess_argfunction ( .test_not_empty )
 
 -1
 $.test_string_equal x y
@@ -3999,11 +4078,11 @@ $# .test_is_number .test_number_equal .test_greater .test_less
 
 0
 $.test_is_number
-signal triggered: rwsh.bad_argc ( 0 1 0 .test_is_number ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .test_is_number )
 
 -1
 $.test_is_number 42 {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .test_is_number ) 
+signal triggered: rwsh.excess_argfunction ( .test_is_number )
 
 -1
 $.test_is_number ()
@@ -4025,26 +4104,26 @@ $.test_is_number 6.022e23
 
 0
 $.test_number_equal 42
-signal triggered: rwsh.bad_argc ( 1 2 0 .test_number_equal ) 
+signal triggered: rwsh.bad_argc ( 1 2 0 .test_number_equal )
 
 -1
 $.test_number_equal 42 42 {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .test_number_equal ) 
+signal triggered: rwsh.excess_argfunction ( .test_number_equal )
 
 -1
 $.test_number_equal 42 42a
-signal triggered: rwsh.not_a_number ( 42a .test_number_equal ) 
+signal triggered: rwsh.not_a_number ( 42a .test_number_equal )
 
 -1
 $.test_number_equal 42b 42
-signal triggered: rwsh.not_a_number ( 42b .test_number_equal ) 
+signal triggered: rwsh.not_a_number ( 42b .test_number_equal )
 
 -1
 $.test_number_equal 0 0.000000000000000000000000001
 
 1
 $.test_number_equal 1e-9000000000 1e-9000000001
-signal triggered: rwsh.input_range ( 1e-9000000000 .test_number_equal ) 
+signal triggered: rwsh.input_range ( 1e-9000000000 .test_number_equal )
 
 -1
 $.test_number_equal 0 0.0
@@ -4057,11 +4136,11 @@ $.test_number_equal 42 42
 
 0
 $.test_number_equal 6.022e9000000000 .6022e24
-signal triggered: rwsh.input_range ( 6.022e9000000000 .test_number_equal ) 
+signal triggered: rwsh.input_range ( 6.022e9000000000 .test_number_equal )
 
 -1
 $.test_number_equal 6.022e23 .6022e9000000001
-signal triggered: rwsh.input_range ( .6022e9000000001 .test_number_equal ) 
+signal triggered: rwsh.input_range ( .6022e9000000001 .test_number_equal )
 
 -1
 $.test_number_equal 6.022e23 6.022e2
@@ -4071,27 +4150,27 @@ $.test_number_equal 6.022e23 .6022e24
 
 0
 $.test_greater 6.022e23
-signal triggered: rwsh.bad_argc ( 1 2 0 .test_greater ) 
+signal triggered: rwsh.bad_argc ( 1 2 0 .test_greater )
 
 -1
 $.test_greater 6.022e23c 6.022e23 {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .test_greater ) 
+signal triggered: rwsh.excess_argfunction ( .test_greater )
 
 -1
 $.test_greater 6.022e23c 6.022e23
-signal triggered: rwsh.not_a_number ( 6.022e23c .test_greater ) 
+signal triggered: rwsh.not_a_number ( 6.022e23c .test_greater )
 
 -1
 $.test_greater 6.022e23 6.022e23e
-signal triggered: rwsh.not_a_number ( 6.022e23e .test_greater ) 
+signal triggered: rwsh.not_a_number ( 6.022e23e .test_greater )
 
 -1
 $.test_greater 6.022e9000000000 .6022e23
-signal triggered: rwsh.input_range ( 6.022e9000000000 .test_greater ) 
+signal triggered: rwsh.input_range ( 6.022e9000000000 .test_greater )
 
 -1
 $.test_greater 6.022e23 .6022e9000000001
-signal triggered: rwsh.input_range ( .6022e9000000001 .test_greater ) 
+signal triggered: rwsh.input_range ( .6022e9000000001 .test_greater )
 
 -1
 $.test_greater 6.022e2 6.022e23
@@ -4104,27 +4183,27 @@ $.test_greater 6.022e23 6.022e2
 
 0
 $.test_less 6.022e23
-signal triggered: rwsh.bad_argc ( 1 2 0 .test_less ) 
+signal triggered: rwsh.bad_argc ( 1 2 0 .test_less )
 
 -1
 $.test_less 6.022b23 6.022e23 {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .test_less ) 
+signal triggered: rwsh.excess_argfunction ( .test_less )
 
 -1
 $.test_less 6.022b23 6.022e23
-signal triggered: rwsh.not_a_number ( 6.022b23 .test_less ) 
+signal triggered: rwsh.not_a_number ( 6.022b23 .test_less )
 
 -1
 $.test_less 6.022e23 6.022a23
-signal triggered: rwsh.not_a_number ( 6.022a23 .test_less ) 
+signal triggered: rwsh.not_a_number ( 6.022a23 .test_less )
 
 -1
 $.test_less 6.022e9000000000 .6022e23
-signal triggered: rwsh.input_range ( 6.022e9000000000 .test_less ) 
+signal triggered: rwsh.input_range ( 6.022e9000000000 .test_less )
 
 -1
 $.test_less 6.022e23 .6022e9000000001
-signal triggered: rwsh.input_range ( .6022e9000000001 .test_less ) 
+signal triggered: rwsh.input_range ( .6022e9000000001 .test_less )
 
 -1
 $.test_less 6.022e23 6.022e2
@@ -4143,27 +4222,27 @@ $# .enable_readline .disable_readline .toggle_readline
 
 0
 $.toggle_readline excess
-signal triggered: rwsh.bad_argc ( 1 0 0 .toggle_readline ) 
+signal triggered: rwsh.bad_argc ( 1 0 0 .toggle_readline )
 
 -1
 $.toggle_readline {excess}
-signal triggered: rwsh.excess_argfunction ( .toggle_readline ) 
+signal triggered: rwsh.excess_argfunction ( .toggle_readline )
 
 -1
 $.enable_readline excess
-signal triggered: rwsh.bad_argc ( 1 0 0 .enable_readline ) 
+signal triggered: rwsh.bad_argc ( 1 0 0 .enable_readline )
 
 -1
 $.enable_readline {excess}
-signal triggered: rwsh.excess_argfunction ( .enable_readline ) 
+signal triggered: rwsh.excess_argfunction ( .enable_readline )
 
 -1
 $.disable_readline excess
-signal triggered: rwsh.bad_argc ( 1 0 0 .disable_readline ) 
+signal triggered: rwsh.bad_argc ( 1 0 0 .disable_readline )
 
 -1
 $.disable_readline {excess}
-signal triggered: rwsh.excess_argfunction ( .disable_readline ) 
+signal triggered: rwsh.excess_argfunction ( .disable_readline )
 
 -1
 $.return 0
@@ -4194,7 +4273,7 @@ $# Arg_spec::str() (except trailing whitespace) only through SOON case
 
 0
 $.which_test
-signal triggered: rwsh.bad_argc ( 0 1 0 .which_test ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .which_test )
 
 -1
 $.which_test j
@@ -4210,7 +4289,7 @@ $.which_test rwsh.mapped_argfunction {rwsh.argfunction}
 
 0
 $.which_executable
-signal triggered: rwsh.bad_argc ( 0 1 0 .which_executable ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .which_executable )
 
 -1
 $.which_executable j
@@ -4265,11 +4344,11 @@ $m (aa ab ac) bb cc {m $* {
   m &&&1 {echo $* $#}
   m $1 {echo $* $#}
   m $1$ {echo $* $#}}}
-((aa ab ac)) 2 
-(aa ab ac) 2 
-(aa ab ac) 2 
-(aa ab ac) 2 
-aa ab ac 4 
+((aa ab ac)) 2
+(aa ab ac) 2
+(aa ab ac) 2
+(aa ab ac) 2
+aa ab ac 4
 
 0
 $wm () {.echo \\\ \ \\\ \\\\ \ \\|\\\ \  \  \\ \( \) \\\)}
@@ -4326,40 +4405,40 @@ $.which_executable rwsh.mapped_argfunction {rwsh.argfunction}
 {rwsh.argfunction}
 0
 $.waiting_for_shell j
-signal triggered: rwsh.bad_argc ( 1 0 0 .waiting_for_shell ) 
+signal triggered: rwsh.bad_argc ( 1 0 0 .waiting_for_shell )
 
 -1
 $.waiting_for_shell {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .waiting_for_shell ) 
+signal triggered: rwsh.excess_argfunction ( .waiting_for_shell )
 
 -1
 $# .waiting_for_shell
 
 -1
 $.waiting_for_user j
-signal triggered: rwsh.bad_argc ( 1 0 0 .waiting_for_user ) 
+signal triggered: rwsh.bad_argc ( 1 0 0 .waiting_for_user )
 
 -1
 $.waiting_for_user {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .waiting_for_user ) 
+signal triggered: rwsh.excess_argfunction ( .waiting_for_user )
 
 -1
 $# .waiting_for_user
 
 -1
 $.waiting_for_binary j
-signal triggered: rwsh.bad_argc ( 1 0 0 .waiting_for_binary ) 
+signal triggered: rwsh.bad_argc ( 1 0 0 .waiting_for_binary )
 
 -1
 $.waiting_for_binary {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .waiting_for_binary ) 
+signal triggered: rwsh.excess_argfunction ( .waiting_for_binary )
 
 -1
 $# .waiting_for_binary
 
 -1
 $.which_return
-signal triggered: rwsh.bad_argc ( 0 1 0 .which_return ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .which_return )
 
 -1
 $.which_return rwsh.mapped_argfunction
@@ -4387,11 +4466,11 @@ $.which_last_exception .which_last_exception
 
 0
 $.which_last_exception
-signal triggered: rwsh.bad_argc ( 0 1 0 .which_last_exception ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .which_last_exception )
 
 -1
 $.which_last_exception .try_catch_recursive {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .which_last_exception ) 
+signal triggered: rwsh.excess_argfunction ( .which_last_exception )
 
 -1
 $.which_last_exception .which_last_exception
@@ -4431,30 +4510,30 @@ $# .which_total_execution_time
 
 0
 $.usleep_overhead excess
-signal triggered: rwsh.bad_argc ( 1 0 0 .usleep_overhead ) 
+signal triggered: rwsh.bad_argc ( 1 0 0 .usleep_overhead )
 
 -1
 $.usleep_overhead {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .usleep_overhead ) 
+signal triggered: rwsh.excess_argfunction ( .usleep_overhead )
 
 -1
 $.usleep_overhead 
 
 1
 $.usleep
-signal triggered: rwsh.bad_argc ( 0 1 0 .usleep ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .usleep )
 
 -1
 $.usleep 800 {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .usleep ) 
+signal triggered: rwsh.excess_argfunction ( .usleep )
 
 -1
 $.usleep -6
-signal triggered: rwsh.input_range ( -6 .usleep ) 
+signal triggered: rwsh.input_range ( -6 .usleep )
 
 -1
 $.usleep 5i
-signal triggered: rwsh.not_a_number ( 5i .usleep ) 
+signal triggered: rwsh.not_a_number ( 5i .usleep )
 
 -1
 $.usleep 800
@@ -4464,7 +4543,7 @@ $# .usleep_overhead
 
 0
 $.which_execution_count
-signal triggered: rwsh.bad_argc ( 0 1 0 .which_execution_count ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .which_execution_count )
 
 -1
 $.which_execution_count j
@@ -4477,7 +4556,7 @@ $.which_execution_count .usleep
 5
 0
 $.which_last_execution_time
-signal triggered: rwsh.bad_argc ( 0 1 0 .which_last_execution_time ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .which_last_execution_time )
 
 -1
 $.which_last_execution_time j
@@ -4490,7 +4569,7 @@ $# .which_last_execution_time .usleep
 
 0
 $.which_total_execution_time
-signal triggered: rwsh.bad_argc ( 0 1 0 .which_total_execution_time ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .which_total_execution_time )
 
 -1
 $.which_total_execution_time rwsh.mapped_argfunction {echo not tracked}
@@ -4509,19 +4588,23 @@ $# .which_path
 
 1
 $.which_path cat
-signal triggered: rwsh.bad_argc ( 1 2 0 .which_path ) 
+signal triggered: rwsh.bad_argc ( 1 2 0 .which_path )
 
 -1
 $.which_path cat /bin {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .which_path ) 
+signal triggered: rwsh.excess_argfunction ( .which_path )
 
 -1
 $.which_path cat \
+cat : binary not found in ()
+call stack: .which_path
 
-1
+-1
 $.which_path does<not>exist /bin:/usr/bin
+does<not>exist : binary not found in /bin:/usr/bin
+call stack: .which_path
 
-1
+-1
 $.which_path cat /bin:/usr/bin
 /bin/cat
 0
@@ -4541,11 +4624,11 @@ $.set N 4
 
 0
 $.while {e ARGS}
-signal triggered: rwsh.bad_argc ( 0 1 0 .while ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .while )
 
 -1
 $.while tf
-signal triggered: rwsh.missing_argfunction ( .while ) 
+signal triggered: rwsh.missing_argfunction ( .while )
 
 -1
 $.while tf {e printed; .set A 4}
@@ -4584,48 +4667,48 @@ $# .var_add
 
 0
 $.var_add
-signal triggered: rwsh.bad_argc ( 0 2 0 .var_add ) 
+signal triggered: rwsh.bad_argc ( 0 2 0 .var_add )
 
 -1
 $.var_add A 1 2
-signal triggered: rwsh.bad_argc ( 3 2 0 .var_add ) 
+signal triggered: rwsh.bad_argc ( 3 2 0 .var_add )
 
 -1
 $.var_add A 1 {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .var_add ) 
+signal triggered: rwsh.excess_argfunction ( .var_add )
 
 -1
 $.var_add B 1
-signal triggered: rwsh.undefined_variable ( B .var_add ) 
+signal triggered: rwsh.undefined_variable ( B .var_add )
 
 -1
 $.set A A
 
 0
 $.var_add A 2 
-signal triggered: rwsh.not_a_number ( A .var_add ) 
+signal triggered: rwsh.not_a_number ( A .var_add )
 
 -1
 $.set A 1e309
 
 0
 $.var_add A 2 
-signal triggered: rwsh.input_range ( 1e309 .var_add ) 
+signal triggered: rwsh.input_range ( 1e309 .var_add )
 
 -1
 $.set A -1e308
 
 0
 $.var_add A A
-signal triggered: rwsh.not_a_number ( A .var_add ) 
+signal triggered: rwsh.not_a_number ( A .var_add )
 
 -1
 $.var_add A 1e309
-signal triggered: rwsh.input_range ( 1e309 .var_add ) 
+signal triggered: rwsh.input_range ( 1e309 .var_add )
 
 -1
 $.var_add A -1e308
-signal triggered: rwsh.result_range ( -1e308 -1e308 .var_add ) 
+signal triggered: rwsh.result_range ( -1e308 -1e308 .var_add )
 
 -1
 $.var_add A 1e308
@@ -4638,7 +4721,7 @@ $e $A
 1e+308
 0
 $.var_add A 1e308
-signal triggered: rwsh.result_range ( 1e+308 1e308 .var_add ) 
+signal triggered: rwsh.result_range ( 1e+308 1e308 .var_add )
 
 -1
 $.var_add A -1e308
@@ -4648,7 +4731,7 @@ $e $A
 0
 0
 $.var_add A \
-signal triggered: rwsh.not_a_number (  .var_add ) 
+signal triggered: rwsh.not_a_number (  .var_add )
 
 -1
 $e $A
@@ -4661,48 +4744,48 @@ $# .var_divide
 
 0
 $.var_divide A
-signal triggered: rwsh.bad_argc ( 1 2 0 .var_divide ) 
+signal triggered: rwsh.bad_argc ( 1 2 0 .var_divide )
 
 -1
 $.var_divide A 1 2
-signal triggered: rwsh.bad_argc ( 3 2 0 .var_divide ) 
+signal triggered: rwsh.bad_argc ( 3 2 0 .var_divide )
 
 -1
 $.var_divide A 1 {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .var_divide ) 
+signal triggered: rwsh.excess_argfunction ( .var_divide )
 
 -1
 $.var_divide B 1
-signal triggered: rwsh.undefined_variable ( B .var_divide ) 
+signal triggered: rwsh.undefined_variable ( B .var_divide )
 
 -1
 $.set A A
 
 0
 $.var_divide A 2 
-signal triggered: rwsh.not_a_number ( A .var_divide ) 
+signal triggered: rwsh.not_a_number ( A .var_divide )
 
 -1
 $.set A 1e3000000000
 
 0
 $.var_divide A 2 
-signal triggered: rwsh.input_range ( 1e3000000000 .var_divide ) 
+signal triggered: rwsh.input_range ( 1e3000000000 .var_divide )
 
 -1
 $.set A 16.8
 
 0
 $.var_divide A A
-signal triggered: rwsh.not_a_number ( A .var_divide ) 
+signal triggered: rwsh.not_a_number ( A .var_divide )
 
 -1
 $.var_divide A 1e3000000000
-signal triggered: rwsh.input_range ( 1e3000000000 .var_divide ) 
+signal triggered: rwsh.input_range ( 1e3000000000 .var_divide )
 
 -1
 $.var_divide A 0 
-signal triggered: rwsh.divide_by_zero ( 16.8 .var_divide ) 
+signal triggered: rwsh.divide_by_zero ( 16.8 .var_divide )
 
 -1
 $.var_divide A 4.2 
@@ -4715,7 +4798,7 @@ $.set A 1.8e-20
 
 0
 $.var_divide A 1e308
-signal triggered: rwsh.result_range ( 1.8e-20 1e308 .var_divide ) 
+signal triggered: rwsh.result_range ( 1.8e-20 1e308 .var_divide )
 
 -1
 $.set A 0
@@ -4734,26 +4817,26 @@ $# .var_subtract
 
 0
 $.var_subtract
-signal triggered: rwsh.bad_argc ( 0 2 0 .var_subtract ) 
+signal triggered: rwsh.bad_argc ( 0 2 0 .var_subtract )
 
 -1
 $.var_subtract A 1 2
-signal triggered: rwsh.bad_argc ( 3 2 0 .var_subtract ) 
+signal triggered: rwsh.bad_argc ( 3 2 0 .var_subtract )
 
 -1
 $.var_subtract A 1 {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .var_subtract ) 
+signal triggered: rwsh.excess_argfunction ( .var_subtract )
 
 -1
 $.var_subtract B 1
-signal triggered: rwsh.undefined_variable ( B .var_subtract ) 
+signal triggered: rwsh.undefined_variable ( B .var_subtract )
 
 -1
 $.set A A
 
 0
 $.var_subtract A 2 
-signal triggered: rwsh.not_a_number ( A .var_subtract ) 
+signal triggered: rwsh.not_a_number ( A .var_subtract )
 
 -1
 $.set A 3000000000
@@ -4766,7 +4849,7 @@ $.set A 1e308
 
 0
 $.var_subtract A -1e308
-signal triggered: rwsh.result_range ( 1e308 -1e308 .var_subtract ) 
+signal triggered: rwsh.result_range ( 1e308 -1e308 .var_subtract )
 
 -1
 $e $A
@@ -4776,7 +4859,7 @@ $.set A -1e308
 
 0
 $.var_subtract A 1e308
-signal triggered: rwsh.result_range ( -1e308 1e308 .var_subtract ) 
+signal triggered: rwsh.result_range ( -1e308 1e308 .var_subtract )
 
 -1
 $e $A
@@ -4786,7 +4869,7 @@ $.set A -2147483648
 
 0
 $.var_subtract A A
-signal triggered: rwsh.not_a_number ( A .var_subtract ) 
+signal triggered: rwsh.not_a_number ( A .var_subtract )
 
 -1
 $.var_subtract A 3000000000
@@ -4814,7 +4897,7 @@ $e $A
 -7.29496e+09
 0
 $.var_subtract A \
-signal triggered: rwsh.not_a_number (  .var_subtract ) 
+signal triggered: rwsh.not_a_number (  .var_subtract )
 
 -1
 $e $A
@@ -4827,30 +4910,30 @@ $# .version .version_compatible
 
 0
 $.version 1.0
-signal triggered: rwsh.bad_argc ( 1 0 0 .version ) 
+signal triggered: rwsh.bad_argc ( 1 0 0 .version )
 
 -1
 $.version {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .version ) 
+signal triggered: rwsh.excess_argfunction ( .version )
 
 -1
 $.version_compatible
-signal triggered: rwsh.bad_argc ( 0 1 0 .version_compatible ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .version_compatible )
 
 -1
 $.version_compatible 1.0 1.0
-signal triggered: rwsh.bad_argc ( 2 1 0 .version_compatible ) 
+signal triggered: rwsh.bad_argc ( 2 1 0 .version_compatible )
 
 -1
 $.version_compatible 1.0 {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .version_compatible ) 
+signal triggered: rwsh.excess_argfunction ( .version_compatible )
 
 -1
 $.version
 0.3+
 0
 $.version_compatible 1.0
-signal triggered: rwsh.version_incompatible ( 1.0 .version_compatible ) 
+signal triggered: rwsh.version_incompatible ( 1.0 .version_compatible )
 
 -1
 $.version_compatible 0.3+
@@ -4863,8 +4946,9 @@ $# binary test implicitly tests Old_argv_t
 
 0
 $/bn/echo 1 2 3
-signal triggered: rwsh.binary_not_found ( /bn/echo ) 
-signal triggered: rwsh.return_code ( 65280 /bn/echo ) 
+/bn/echo : binary does not exist
+call stack:
+signal triggered: rwsh.return_code ( 65280 /bn/echo )
 
 -1
 $.which_return /bn/echo
@@ -4907,14 +4991,15 @@ $# rwsh.arguments_for_argfunction rwsh.before_command rwsh.binary_not_found
 
 0
 $w x {rwsh.escaped_argfunction me}
-signal triggered: rwsh.arguments_for_argfunction ( rwsh.escaped_argfunction me! ) 
+signal triggered: rwsh.arguments_for_argfunction ( rwsh.escaped_argfunction me! )
 $f rwsh.before_command {.echo $*0; .echo $nl}
 
 0
 $/bn
 rwsh.before_command /bn
-signal triggered: rwsh.binary_not_found ( /bn ) 
-signal triggered: rwsh.return_code ( 65280 /bn ) 
+/bn : binary does not exist
+call stack:
+signal triggered: rwsh.return_code ( 65280 /bn )
 
 -1
 $.which_return /bn
@@ -4939,7 +5024,7 @@ $f rwsh.autofunction {e $*0 $nl}
 0
 $z 1 2 3
 rwsh.autofunction z 1 2 3 
-signal triggered: rwsh.executable_not_found ( z 1 2 3 ) 
+signal triggered: rwsh.function_not_found ( z 1 2 3 )
 
 -1
 $w z
@@ -4949,8 +5034,8 @@ $f rwsh.autofunction {y $*0}
 
 0
 $z 1 2 3
-signal triggered: rwsh.executable_not_found ( y rwsh.autofunction z 1 2 3 rwsh.autofunction ) 
-signal triggered: rwsh.executable_not_found ( z 1 2 3 ) 
+signal triggered: rwsh.function_not_found ( y rwsh.autofunction z 1 2 3 rwsh.autofunction )
+signal triggered: rwsh.function_not_found ( z 1 2 3 )
 
 -1
 $w z
@@ -4987,18 +5072,18 @@ $# m {e &{e hi #>dummy_file}}
 $
 
 0
-$# rwsh.executable_not_found
+$# rwsh.function_not_found
 
 0
 $m {m {x; e should not be printed}}
-signal triggered: rwsh.executable_not_found ( rwsh.autofunction x rwsh.mapped_argfunction m rwsh.mapped_argfunction m ) 
-signal triggered: rwsh.executable_not_found ( x rwsh.mapped_argfunction m rwsh.mapped_argfunction m ) 
+signal triggered: rwsh.function_not_found ( rwsh.autofunction x rwsh.mapped_argfunction m rwsh.mapped_argfunction m )
+signal triggered: rwsh.function_not_found ( x rwsh.mapped_argfunction m rwsh.mapped_argfunction m )
 
 -1
-$f rwsh.executable_not_found
+$f rwsh.function_not_found
 
 0
-$w rwsh.executable_not_found
+$w rwsh.function_not_found
 
 1
 $w x
@@ -5009,8 +5094,8 @@ rwsh.autofunction : command not found ( rwsh.autofunction x )
 x : command not found ( x ) 
 
 -1
-$w rwsh.executable_not_found
-.function rwsh.executable_not_found {.echo $1 (: command not found) \( $* \) (
+$w rwsh.function_not_found
+.function rwsh.function_not_found {.echo $1 (: command not found) \( $* \) (
 )
 .return -1}
 0
@@ -5053,12 +5138,12 @@ $f h {g}
 
 0
 $g
-signal triggered: rwsh.excessive_nesting ( h g h g h g h g h g h g h g h g h g h g h g ) 
+signal triggered: rwsh.excessive_nesting ( h g h g h g h g h g h g h g h g h g h g h g )
 
 -1
 $.stepwise g {e $* $nl; $*}
 h 
-signal triggered: rwsh.excessive_nesting ( g h g h g h g h g h g h g h g h g h g h rwsh.mapped_argfunction .stepwise ) 
+signal triggered: rwsh.excessive_nesting ( g h g h g h g h g h g h g h g h g h g h rwsh.mapped_argfunction .stepwise )
 
 -1
 $f rwsh.excessive_nesting {h}
@@ -5082,7 +5167,7 @@ Exception for failed handler. Original exception with call stack:
 rwsh.excessive_nesting h g h g h g h g h g h g h g h g h g h g h g
 Exception for failed handler. Original exception with call stack:
 rwsh.failed_substitution &{.return 1} rwsh.excessive_nesting
-signal triggered: rwsh.undefined_variable ( Z rwsh.failed_substitution ) 
+signal triggered: rwsh.undefined_variable ( Z rwsh.failed_substitution )
 
 -1
 $e_after {.try_catch_recursive rwsh.undefined_variable rwsh.excessive_nesting rwsh.failed_substitution {g}}
@@ -5090,30 +5175,30 @@ Exception for failed handler. Original exception with call stack:
 rwsh.excessive_nesting g h g h g h g h g h g h g h g h g rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction m e_after
 Exception for failed handler. Original exception with call stack:
 rwsh.failed_substitution &{.return 1} rwsh.excessive_nesting
-signal triggered: rwsh.undefined_variable ( Z rwsh.failed_substitution ) 
-signal triggered: rwsh.excessive_exceptions_in_catch ( 0 .try_catch_recursive rwsh.mapped_argfunction m e_after ) 
+signal triggered: rwsh.undefined_variable ( Z rwsh.failed_substitution )
+signal triggered: rwsh.excessive_exceptions_in_catch ( 0 .try_catch_recursive rwsh.mapped_argfunction m e_after )
 
 -1
 $.set_max_extra_exceptions 5
 
 0
 $e_after {.try_catch_recursive rwsh.undefined_variable rwsh.excessive_nesting rwsh.failed_substitution {g}}
-signal triggered: rwsh.undefined_variable ( Z rwsh.failed_substitution ) 
+signal triggered: rwsh.undefined_variable ( Z rwsh.failed_substitution )
 Exception for failed handler. Original exception with call stack:
 rwsh.excessive_nesting g h g h g h g h g h g h g h g h g rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction m e_after
 Exception for failed handler. Original exception with call stack:
 rwsh.failed_substitution &{.return 1} rwsh.excessive_nesting
-signal triggered: rwsh.undefined_variable ( Z rwsh.failed_substitution ) 
+signal triggered: rwsh.undefined_variable ( Z rwsh.failed_substitution )
 Exception for failed handler. Original exception with call stack:
 rwsh.failed_substitution &{.return 1} rwsh.excessive_nesting .try_catch_recursive rwsh.mapped_argfunction m e_after
 
 -1
 $e_after {.try_catch_recursive rwsh.undefined_variable rwsh.failed_substitution {
   e ${.return 1}}}
-signal triggered: rwsh.undefined_variable ( Z rwsh.failed_substitution ) 
+signal triggered: rwsh.undefined_variable ( Z rwsh.failed_substitution )
 Exception for failed handler. Original exception with call stack:
 rwsh.failed_substitution ${.return 1} rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction m e_after
-signal triggered: rwsh.undefined_variable ( Z rwsh.failed_substitution ) 
+signal triggered: rwsh.undefined_variable ( Z rwsh.failed_substitution )
 
 -1
 $f rwsh.else_without_if {e ${.return 1}}
@@ -5125,7 +5210,7 @@ Exception for failed handler. Original exception with call stack:
 rwsh.else_without_if .else rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction m e_after
 Exception for failed handler. Original exception with call stack:
 rwsh.failed_substitution ${.return 1} rwsh.else_without_if
-signal triggered: rwsh.undefined_variable ( Z rwsh.failed_substitution ) 
+signal triggered: rwsh.undefined_variable ( Z rwsh.failed_substitution )
 Exception for failed handler. Original exception with call stack:
 rwsh.failed_substitution ${.return 1} rwsh.else_without_if .try_catch_recursive rwsh.mapped_argfunction m e_after
 
@@ -5149,7 +5234,7 @@ Exception for failed handler. Original exception with call stack:
 rwsh.failed_substitution ${.return 2} rwsh.failed_substitution .try_catch_recursive rwsh.mapped_argfunction m e_after
 Exception for failed handler. Original exception with call stack:
 rwsh.failed_substitution ${.return 2} rwsh.failed_substitution .try_catch_recursive rwsh.mapped_argfunction m e_after
-signal triggered: rwsh.excessive_exceptions_in_catch ( 5 .try_catch_recursive rwsh.mapped_argfunction m e_after ) 
+signal triggered: rwsh.excessive_exceptions_in_catch ( 5 .try_catch_recursive rwsh.mapped_argfunction m e_after )
 
 -1
 $f rwsh.else_without_if {e $Z}
@@ -5157,10 +5242,10 @@ $f rwsh.else_without_if {e $Z}
 0
 $e_after {.try_catch_recursive rwsh.undefined_variable rwsh.else_without_if {
   .else {}}}
-signal triggered: rwsh.undefined_variable ( Z rwsh.else_without_if ) 
+signal triggered: rwsh.undefined_variable ( Z rwsh.else_without_if )
 Exception for failed handler. Original exception with call stack:
 rwsh.else_without_if .else rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction m e_after
-signal triggered: rwsh.undefined_variable ( Z rwsh.else_without_if ) 
+signal triggered: rwsh.undefined_variable ( Z rwsh.else_without_if )
 
 -1
 $f rwsh.failed_substitution {.return Z}
@@ -5168,10 +5253,10 @@ $f rwsh.failed_substitution {.return Z}
 0
 $e_after {.try_catch_recursive rwsh.not_a_number rwsh.failed_substitution {
   e ${.return 1}}}
-signal triggered: rwsh.not_a_number ( Z .return rwsh.failed_substitution ) 
+signal triggered: rwsh.not_a_number ( Z .return rwsh.failed_substitution )
 Exception for failed handler. Original exception with call stack:
 rwsh.failed_substitution ${.return 1} rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction m e_after
-signal triggered: rwsh.not_a_number ( Z .return rwsh.failed_substitution ) 
+signal triggered: rwsh.not_a_number ( Z .return rwsh.failed_substitution )
 
 -1
 $
@@ -5181,18 +5266,18 @@ $# .throw
 
 0
 $.throw
-signal triggered: rwsh.bad_argc ( 0 1 0 .throw ) 
+signal triggered: rwsh.bad_argc ( 0 1 0 .throw )
 
 -1
 $.throw .nop
 
 -1
 $.throw rwsh.not_a_number 7
-signal triggered: rwsh.not_a_number ( 7 .throw ) 
+signal triggered: rwsh.not_a_number ( 7 .throw )
 
 -1
 $m {if_only .return 0 {.throw m {echo even from $* 7 is a number}}}
-even from .throw rwsh.mapped_argfunction .if if_only rwsh.mapped_argfunction m 7 is a number 
+even from .throw rwsh.mapped_argfunction .if if_only rwsh.mapped_argfunction m 7 is a number
 
 -1
 $m {.try_catch_recursive echo {
@@ -5200,9 +5285,9 @@ $m {.try_catch_recursive echo {
       .throw echo failing successfully
       echo second}
    echo third}
-first 
-failing successfully .throw rwsh.mapped_argfunction 
-third 
+first
+failing successfully .throw rwsh.mapped_argfunction
+third
 
 0
 $
@@ -5235,11 +5320,11 @@ $# rwsh.undefined_variable
 
 0
 $e $WRONG $WWRONG
-signal triggered: rwsh.undefined_variable ( WRONG ) 
+signal triggered: rwsh.undefined_variable ( WRONG )
 
 -1
 $e &WWRONG
-signal triggered: rwsh.undefined_variable ( WWRONG ) 
+signal triggered: rwsh.undefined_variable ( WWRONG )
 
 -1
 $
@@ -5272,7 +5357,7 @@ original_message=Exception for failed handler. Original exception with call stac
 
 N=M
 necessary=val
-N was unused with call stack .scope 
+N was unused with call stack .scope
 
 -1
 $
@@ -5285,11 +5370,11 @@ $.global SHELL unmodified
 
 0
 $.list_environment x
-signal triggered: rwsh.bad_argc ( 1 0 0 .list_environment ) 
+signal triggered: rwsh.bad_argc ( 1 0 0 .list_environment )
 
 -1
 $.list_environment {excess argfunc}
-signal triggered: rwsh.excess_argfunction ( .list_environment ) 
+signal triggered: rwsh.excess_argfunction ( .list_environment )
 
 -1
 $for ${.list_environment}$ {
@@ -5341,13 +5426,13 @@ $.set_max_collectible_exceptions 7
 $.collect_errors_except .nop {${.throw echo exception from inside substitution}}
 Exception for failed handler. Original exception with call stack:
 rwsh.failed_substitution ${.throw echo exception from inside substitution} .collect_errors_except
-signal triggered: rwsh.not_a_number ( Z .return rwsh.failed_substitution ) 
+signal triggered: rwsh.not_a_number ( Z .return rwsh.failed_substitution )
 
 -1
 $.collect_errors_only .nop {${.throw echo exception from inside substitution}}
 Exception for failed handler. Original exception with call stack:
 rwsh.failed_substitution ${.throw echo exception from inside substitution} .collect_errors_only
-signal triggered: rwsh.not_a_number ( Z .return rwsh.failed_substitution ) 
+signal triggered: rwsh.not_a_number ( Z .return rwsh.failed_substitution )
 
 -1
 $
@@ -5366,295 +5451,295 @@ $.scope -- () {}
 
 0
 $.scope -- () {echo $--}
--- 
+--
 
 0
 $.scope -- (-- [a]) {}
-a was unused with call stack .scope 
+a was unused with call stack .scope
 
 -1
 $.scope () {.local a n; .local b o; .local c p}
-a was unused with call stack .scope 
-b was unused with call stack .scope 
-c was unused with call stack .scope 
+a was unused with call stack .scope
+b was unused with call stack .scope
+c was unused with call stack .scope
 
 -1
 $.scope () {
   .local a n; .local b o; .local c p
   echo $a $b $c $d
   .local d too_late}
-signal triggered: rwsh.undefined_variable ( d .scope ) 
+signal triggered: rwsh.undefined_variable ( d .scope )
 
 -1
 $.scope () {
   .local a n; .local b o; .local c p
   echo $d $a $b $c
   .local d too_late}
-a was unused with call stack .scope 
-b was unused with call stack .scope 
-c was unused with call stack .scope 
-signal triggered: rwsh.undefined_variable ( d .scope ) 
+a was unused with call stack .scope
+b was unused with call stack .scope
+c was unused with call stack .scope
+signal triggered: rwsh.undefined_variable ( d .scope )
 
 -1
 $.scope n o p q (a b c d) {echo $a $b $c $d}
-n o p q 
+n o p q
 
 0
 $.scope n o p q (a b c d) {echo a b c d}
-a b c d 
-a was unused with call stack .scope 
-b was unused with call stack .scope 
-c was unused with call stack .scope 
-d was unused with call stack .scope 
+a b c d
+a was unused with call stack .scope
+b was unused with call stack .scope
+c was unused with call stack .scope
+d was unused with call stack .scope
 
 -1
 $.scope n o (a [b] c [d]) {echo $a $c }
-n o 
-b was not checked with call stack .scope 
-d was not checked with call stack .scope 
+n o
+b was not checked with call stack .scope
+d was not checked with call stack .scope
 
 -1
 $.scope n o ([a] b [c] d) {echo $b $d; .var_exists a}
-n o 
-c was not checked with call stack .scope 
+n o
+c was not checked with call stack .scope
 
 -1
 $.scope n o ([a] b [c] d) {echo $b; .var_exists c}
-n 
-a was not checked with call stack .scope 
-d was unused with call stack .scope 
+n
+a was not checked with call stack .scope
+d was unused with call stack .scope
 
 -1
 $.scope n ([a1 a2 a3 a4] b [c] [d1 d2] [e ...]) {echo $b}
-n 
-a1 was not checked with call stack .scope 
-a2 was not checked with call stack .scope 
-a3 was not checked with call stack .scope 
-a4 was not checked with call stack .scope 
-c was not checked with call stack .scope 
-d1 was not checked with call stack .scope 
-d2 was not checked with call stack .scope 
-e was not checked with call stack .scope 
+n
+a1 was not checked with call stack .scope
+a2 was not checked with call stack .scope
+a3 was not checked with call stack .scope
+a4 was not checked with call stack .scope
+c was not checked with call stack .scope
+d1 was not checked with call stack .scope
+d2 was not checked with call stack .scope
+e was not checked with call stack .scope
 
 -1
 $.scope n ([a1 a2 a3 a4] b [c] [d1 d2] [e ...]) {echo $b; .var_exists a4 d2 e c}
-n 
+n
 
 1
 $.scope n ([a1 a2 a3 a4] b [c] [d1 d2] [e ...]) {echo $b; .var_exists a3 d1}
-n 
-c was not checked with call stack .scope 
-e was not checked with call stack .scope 
+n
+c was not checked with call stack .scope
+e was not checked with call stack .scope
 
 -1
 $.scope n ([a1 a2 a3 a4] b [c] [d1 d2] [e ...]) {echo ${.list_locals} $b}
-b n 
+b n
 
 0
 $.scope n o p q r s ([a1 a2 a3 a4] b [c] [d1 d2] [e ...]) {echo ${.list_locals} $b}
-(a1 a2 a3 a4 b c) r 
-a1 was unused with call stack .scope 
-a2 was unused with call stack .scope 
-a3 was unused with call stack .scope 
-a4 was unused with call stack .scope 
-c was unused with call stack .scope 
+(a1 a2 a3 a4 b c) r
+a1 was unused with call stack .scope
+a2 was unused with call stack .scope
+a3 was unused with call stack .scope
+a4 was unused with call stack .scope
+c was unused with call stack .scope
 
 -1
 $.scope n o p q r s t u ([a1 a2 a3 a4] b [c] [d1 d2]) {echo $a1 $d2}
-n u 
-a2 was unused with call stack .scope 
-a3 was unused with call stack .scope 
-a4 was unused with call stack .scope 
-b was unused with call stack .scope 
-c was unused with call stack .scope 
-d1 was unused with call stack .scope 
+n u
+a2 was unused with call stack .scope
+a3 was unused with call stack .scope
+a4 was unused with call stack .scope
+b was unused with call stack .scope
+c was unused with call stack .scope
+d1 was unused with call stack .scope
 
 -1
 $.scope n o p q r s t u ([a1 a2 a3 a4] b [c] [d1 d2]) {
   echo $a1 $a2 $a3 $a4 $c $d1 $d2}
-n o p q s t u 
-b was unused with call stack .scope 
+n o p q s t u
+b was unused with call stack .scope
 
 -1
 $.scope ([-a a1 a2 a3] [-b] [-c] [-d d1]) {}
--a was not checked with call stack .scope 
-a1 was not checked with call stack .scope 
-a2 was not checked with call stack .scope 
-a3 was not checked with call stack .scope 
--b was not checked with call stack .scope 
--c was not checked with call stack .scope 
--d was not checked with call stack .scope 
-d1 was not checked with call stack .scope 
--* was unused with call stack .scope 
+-a was not checked with call stack .scope
+a1 was not checked with call stack .scope
+a2 was not checked with call stack .scope
+a3 was not checked with call stack .scope
+-b was not checked with call stack .scope
+-c was not checked with call stack .scope
+-d was not checked with call stack .scope
+d1 was not checked with call stack .scope
+-* was unused with call stack .scope
 
 -1
 $.scope ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {}
--a was not checked with call stack .scope 
-a1 was not checked with call stack .scope 
-a2 was not checked with call stack .scope 
-a3 was not checked with call stack .scope 
--b was not checked with call stack .scope 
--c was not checked with call stack .scope 
--d was not checked with call stack .scope 
-d1 was not checked with call stack .scope 
--? was unused with call stack .scope 
--* was unused with call stack .scope 
+-a was not checked with call stack .scope
+a1 was not checked with call stack .scope
+a2 was not checked with call stack .scope
+a3 was not checked with call stack .scope
+-b was not checked with call stack .scope
+-c was not checked with call stack .scope
+-d was not checked with call stack .scope
+d1 was not checked with call stack .scope
+-? was unused with call stack .scope
+-* was unused with call stack .scope
 
 -1
 $.scope ([-a a1 a2 a3] [-b] [-c] [-d d1]) {.var_exists -a -b -c -d}
 
 1
 $.scope ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {echo $-?; .var_exists -a -b -c -d}
-() 
+()
 
 1
 $.scope ([-a a1 a2 a3] [-b] [-c] [-d d1]) {.list_locals}
 -*
 0
 $.scope -b -d darg ([-a a1 a2 a3] [-b] [-c] [-d d1]) {.list_locals; echo ()}
--* -b -d d1() 
-d1 was unused with call stack .scope 
--d was unused with call stack .scope 
--* was unused with call stack .scope 
+-* -b -d d1()
+d1 was unused with call stack .scope
+-d was unused with call stack .scope
+-* was unused with call stack .scope
 
 -1
 $.scope ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {echo ${.list_locals} $-?}
-(-* -?) () 
+(-* -?) ()
 
 0
 $.scope -b -d darg -v ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {echo ${.list_locals} $-?}
-(-* -? -b -d d1) -v 
-d1 was unused with call stack .scope 
--d was unused with call stack .scope 
--* was unused with call stack .scope 
+(-* -? -b -d d1) -v
+d1 was unused with call stack .scope
+-d was unused with call stack .scope
+-* was unused with call stack .scope
 
 -1
 $.scope ([-a a1 a2 a3] [-d d1 d2]) {.var_exists a2 d2}
 
 1
 $.scope ([-?] [-a a1 a2 a3] [-d d1 d2]) {.var_exists -? a3 d1}
--? was unused with call stack .scope 
--* was unused with call stack .scope 
+-? was unused with call stack .scope
+-* was unused with call stack .scope
 
 -1
 $.scope ([-a a1 a2 a3] [-b] [-c] [-d d1]) {echo $-*}
-() 
+()
 
 0
 $.scope ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {echo $-*}
-() 
+()
 
 0
 $.scope n ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1] [e] f) {.local loc lval; echo $-*}
-() 
-e was not checked with call stack .scope 
-f was unused with call stack .scope 
-loc was unused with call stack .scope 
+()
+e was not checked with call stack .scope
+f was unused with call stack .scope
+loc was unused with call stack .scope
 
 -1
 $.scope -c ([-a a1 a2 a3] [-b] [-c] [-d d1]) {echo $-c}
--c 
--a was not checked with call stack .scope 
-a1 was not checked with call stack .scope 
-a2 was not checked with call stack .scope 
-a3 was not checked with call stack .scope 
--b was not checked with call stack .scope 
--d was not checked with call stack .scope 
-d1 was not checked with call stack .scope 
--* was unused with call stack .scope 
+-c
+-a was not checked with call stack .scope
+a1 was not checked with call stack .scope
+a2 was not checked with call stack .scope
+a3 was not checked with call stack .scope
+-b was not checked with call stack .scope
+-d was not checked with call stack .scope
+d1 was not checked with call stack .scope
+-* was unused with call stack .scope
 
 -1
 $.scope -b -c ([-a a1 a2 a3] [-b] [-c] [-d d1]) {echo $-c; .var_exists -a -b -d}
--c 
+-c
 
 0
 $.scope -b -c ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {
   echo $-c; .var_exists -a -b -d -?}
--c 
--? was unused with call stack .scope 
--* was unused with call stack .scope 
+-c
+-? was unused with call stack .scope
+-* was unused with call stack .scope
 
 -1
 $.scope -b -c ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {
   echo $-c $-?; .var_exists -a -b -d}
--c () 
+-c ()
 
 0
 $.scope -b -c ([-a a1 a2 a3] [-b] [-c] [-d d1]) {echo $-b; .var_exists a2 d1}
--b 
--c was unused with call stack .scope 
--* was unused with call stack .scope 
+-b
+-c was unused with call stack .scope
+-* was unused with call stack .scope
 
 -1
 $.scope -a n o p -b -c -d q ([-a a1 a2 a3] [-b] [-c] [-d d1]) {
   echo $-c; .var_exists -a -b -d}
--c 
-a1 was unused with call stack .scope 
-a2 was unused with call stack .scope 
-a3 was unused with call stack .scope 
--a was unused with call stack .scope 
-d1 was unused with call stack .scope 
--d was unused with call stack .scope 
--* was unused with call stack .scope 
+-c
+a1 was unused with call stack .scope
+a2 was unused with call stack .scope
+a3 was unused with call stack .scope
+-a was unused with call stack .scope
+d1 was unused with call stack .scope
+-d was unused with call stack .scope
+-* was unused with call stack .scope
 
 -1
 $.scope -a n o p -b -c -d q ([-a a1 a2 a3] [-b] [-c] [-d d1]) {
   echo $-b; .var_exists a2 d1}
--b 
-a1 was unused with call stack .scope 
-a2 was unused with call stack .scope 
-a3 was unused with call stack .scope 
--a was unused with call stack .scope 
--c was unused with call stack .scope 
-d1 was unused with call stack .scope 
--d was unused with call stack .scope 
--* was unused with call stack .scope 
+-b
+a1 was unused with call stack .scope
+a2 was unused with call stack .scope
+a3 was unused with call stack .scope
+-a was unused with call stack .scope
+-c was unused with call stack .scope
+d1 was unused with call stack .scope
+-d was unused with call stack .scope
+-* was unused with call stack .scope
 
 -1
 $.scope -a n o p -b -c -d q ([-a a1 a2 a3] [-b] [-c] [-d d1]) {
   echo $-a $-b $-c $-d}
-(-a n o p) -b -c (-d q) 
+(-a n o p) -b -c (-d q)
 
 0
 $.scope -a n o p -b -c -d q ([-a a1 a2 a3] [-b] [-c] [-d d1]) {
   echo $a1 $a2 $a3 $d1; .var_exists -b -c}
-n o p q 
+n o p q
 
 0
 $.scope -a n o p -b -c -d q ([-a a1 a2 a3] [-b] [-c] [-d d1]) {
   echo $-*}
-(-a n o p -b -c -d q) 
+(-a n o p -b -c -d q)
 
 0
 $.scope -v -a n o p -b -c -d q ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {
   echo $a1 $a2 $a3 $d1; .var_exists -b -c}
-n o p q 
--? was unused with call stack .scope 
--* was unused with call stack .scope 
+n o p q
+-? was unused with call stack .scope
+-* was unused with call stack .scope
 
 -1
 $.scope -v -a n o p -b -c -d q ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {echo $-?}
--v 
-a1 was unused with call stack .scope 
-a2 was unused with call stack .scope 
-a3 was unused with call stack .scope 
--a was unused with call stack .scope 
--b was unused with call stack .scope 
--c was unused with call stack .scope 
-d1 was unused with call stack .scope 
--d was unused with call stack .scope 
--* was unused with call stack .scope 
+-v
+a1 was unused with call stack .scope
+a2 was unused with call stack .scope
+a3 was unused with call stack .scope
+-a was unused with call stack .scope
+-b was unused with call stack .scope
+-c was unused with call stack .scope
+d1 was unused with call stack .scope
+-d was unused with call stack .scope
+-* was unused with call stack .scope
 
 -1
 $.scope -v -a n o p -b -c -d q ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {echo $-*}
-(-v -a n o p -b -c -d q) 
+(-v -a n o p -b -c -d q)
 
 0
 $.scope -a n o p ([-a a1 a2 a3]) {echo $a1 $a3}
-n p 
-a2 was unused with call stack .scope 
--a was unused with call stack .scope 
--* was unused with call stack .scope 
+n p
+a2 was unused with call stack .scope
+-a was unused with call stack .scope
+-* was unused with call stack .scope
 
 -1
 $
@@ -5667,11 +5752,11 @@ $# rwsh.shutdown .exit
 
 0
 $.exit excess_argument
-signal triggered: rwsh.bad_argc ( 1 0 0 .exit ) 
+signal triggered: rwsh.bad_argc ( 1 0 0 .exit )
 
 -1
 $.exit {excess argfunction}
-signal triggered: rwsh.excess_argfunction ( .exit ) 
+signal triggered: rwsh.excess_argfunction ( .exit )
 
 -1
 $.exit
