@@ -43,12 +43,13 @@ void Variable_map::bless_unused_vars() {
     used_vars.insert(i.first);}
 
 Variable_map::~Variable_map() {
-  if (!usage_checked) std::abort();} // variable map usage not checked
+  if (!usage_checked)  // variable map usage not checked, this has found a bug
+    std::abort();}
 
 void Variable_map::append_word_locally(const std::string& key,
                                        const std::string& value) {
   auto i = find(key);
-  if (i == end()) throw Exception(Argm::Undefined_variable, key);
+  if (i == end()) std::abort();  //prototype should only append to what exists
   else i->second += " " + word_from_value(value);}
 
 void Variable_map::append_word_if_exists(const std::string& key,
@@ -64,17 +65,11 @@ void Variable_map::param_or_append_word(const std::string& key,
   if (i == end()) param(key, word_from_value(value));
   else i->second += " " + word_from_value(value);}
 
-bool Variable_map::check(const std::string& key) {
-  checked_vars.insert(key);
-  auto i = find(key);
-  if (i != end()) return true;
-  else if(parent) return parent->check(key);
-  else return false;}
-
-bool Variable_map::exists(const std::string& key) const {
-  auto i = find(key);
-  if (i != end()) return true;
-  else if(parent) return parent->exists(key);
+bool Variable_map::exists(const std::string& key, bool check) {
+  if (check) checked_vars.insert(key);
+  if (simple_exists(key)) return true;
+  else if (undefined_vars.find(key) != undefined_vars.end()) return false;
+  else if (parent) return parent->exists(key, check);
   else return false;}
 
 const std::string& Variable_map::get(const std::string& key) {
@@ -85,10 +80,11 @@ const std::string& Variable_map::get(const std::string& key) {
   auto i = find(key);
   if (i != end()) {
     used_vars.insert(key);
-    return i->second;
-  }
+    return i->second;}
+  else if (undefined_vars.find(key) != undefined_vars.end())
+    throw Undefined_variable(key);
   else if (parent) return parent->get(key);
-  else throw Exception(Argm::Undefined_variable, key);}
+  else throw Exception(Argm::Undeclared_variable, key);}
 
 int Variable_map::global(const std::string& key, const std::string& value) {
   if (parent)
@@ -115,9 +111,14 @@ int Variable_map::local(const std::string& key, const std::string& value) {
 
 void Variable_map::set(const std::string& key, const std::string& value) {
   auto i = find(key);
-  if (i != end()) i->second = value;
+  if (i != end())
+    if (used_vars.find(key) == used_vars.end() && i->second != value) {
+      used_vars.insert(key);  // we're about to throw a more specific error
+      throw Exception(Argm::Unused_before_set, key);}
+    else i->second = value;
+  else if (undefined_vars.find(key) != undefined_vars.end()) param(key, value);
   else if (parent) parent->set(key, value);
-  else throw Exception(Argm::Undefined_variable, key);}
+  else throw Exception(Argm::Undeclared_variable, key);}
 
 int Variable_map::unset(const std::string& key) {
   if (key == "FIGNORE" || key == "?") return 2;

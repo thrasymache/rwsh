@@ -88,6 +88,9 @@ void Parameter_group::arg_to_param(Variable_map& locals,
   if (f_arg == end) while(k < names.size())
     missing += (missing.length()?" ":"") + names[k++];}
 
+void Parameter_group::add_undefined_params(Variable_map& locals) const {
+  for (auto j: names) locals.add_undefined(j);}
+
 std::string Parameter_group::str() const {
   if (!names.size())
     if (required) return "...";
@@ -177,14 +180,19 @@ Variable_map Prototype::arg_to_param(const Argm& argm) const {
       if (param->required || available > needed)
         param->arg_to_param(locals, available, needed, missing, f_arg,
                             argm.end(), nullptr, elipsis_var, dash_dash);
+      else param->add_undefined_params(locals);
       if (++param - positional.begin() == dash_dash_position)
         dash_dash = bare_dash_dash? BARE: BRACKET;}
   if (f_arg != argm.end() || needed || missing.length()) {
     locals.bless_unused_vars();
     bad_args(missing, locals, f_arg, argm.end(), param);}
-  else if (param != positional.end() && param->elipsis == -1) {
-    const std::string& var((param-1)->names.back());
-    locals.set(var, word_from_value(locals.get(var)));}
+  else if (param != positional.end()) {
+    if (param->elipsis == -1) {
+      const std::string& var((param-1)->names.back());
+      locals.set(var, word_from_value(locals.get(var)));}
+    while (param != positional.end()) param++->add_undefined_params(locals);}
+  for (auto j: flag_options) if (!locals.simple_exists(j.first))
+    j.second.add_undefined_params(locals);
   return locals;}
 
 Argm Prototype::bad_args(std::string& missing, const Variable_map& locals,
@@ -224,11 +232,11 @@ char Parameter_group::unused_flag_var_check(Variable_map* vars,
   else if (names.size() == 1)
     if (vars->checked_vars_contains(names[0]) || vars->locals_listed);
     else {
-      unused_flag = vars->exists(names[0]);
+      unused_flag = vars->exists(names[0], false);
       errors.add_error(Exception(
                 unused_flag? Argm::Unused_variable: Argm::Unchecked_variable,
                 names[0]));}
-  else if (vars->exists(names[0])) {
+  else if (vars->exists(names[0], false)) {
     for (auto j=names.begin()+1; j != names.end(); ++j)
       if (!vars->used_vars_contains(*j)) {
         unused_flag = true;
@@ -248,7 +256,7 @@ char Parameter_group::unused_flag_var_check(Variable_map* vars,
 
 void Parameter_group::unused_pos_var_check(Variable_map* vars,
                                            Error_list& errors) const {
-  if (vars->exists(names[0]))
+  if (vars->exists(names[0], false))
     for (auto j: names) {
       if (!vars->used_vars_contains(j)) {
         errors.add_error(Exception(Argm::Unused_variable, j));

@@ -13,6 +13,7 @@
 
 #include "arg_spec.h"
 #include "rwsh_stream.h"
+#include "rwshlib.h"
 #include "variable_map.h"
 
 #include "argm.h"
@@ -98,10 +99,11 @@ std::string Argm::get_var(const std::string& key) const {
       return str.str();}
     case '1': case '2': case '3': case '4': case '5': case '6': case '7':
               case '8': case '9': case '0': {
-      int n = std::atoi(key.c_str());
-      if (argv_v.size() > n) return argv_v[n];
-      else return std::string();}
-        //throw Exception(Argm::Undefined_variable, key);}
+      try {
+        int n = my_strtoi(key.c_str());
+        if (argv_v.size() > n) return argv_v[n];
+        else return std::string();}
+      catch (E_nan ex) {throw Exception(Argm::Undefined_variable, key);}}
     default: return parent_map()->get(key);}}
 
 void Argm::set_var(const std::string& key, const std::string& value) const {
@@ -114,7 +116,7 @@ bool Argm::var_exists(const std::string& key) const {
               case '7': case '8': case '9': case '0': {
       int n = std::atoi(key.c_str());
       return argv_v.size() > n;}
-    default: return parent_map()->check(key);}}
+    default: return parent_map()->exists(key, true);}}
 
 int Argm::global(const std::string& key, const std::string& value) const {
   switch (key[0]) {
@@ -229,12 +231,8 @@ void Error_list::add_error(const Argm& error){
   push_back(error);
   Base_executable::add_error();}
 
-void Error_list::prepend_error(const Argm& error){
-  push_front(error);
-  Base_executable::add_error();}
-
-Old_argv::Old_argv(const Argm& src) : argc_v(src.argc()) {
-  focus = new char*[src.argc()+1];
+Old_argv::Old_argv(const Argm::Argv& src) : argc_v(src.size()) {
+  focus = new char*[src.size()+1];
   copy_to_cstr(src.begin(), src.end(), focus);}
 
 Old_argv::~Old_argv(void) {

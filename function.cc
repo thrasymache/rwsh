@@ -43,7 +43,6 @@ Command_block* Command_block::apply(const Argm& argm, unsigned nesting,
     result->trailing = trailing;
     return result;}}
 
-#include <iostream>
 int Command_block::collect_errors_core(const Argm& src_argm,
                                    const std::vector<std::string>& exceptional,
                                    bool logic, Error_list& parent_exceptions) {
@@ -113,13 +112,14 @@ Command_block::Command_block(const std::string& src,
   if (!size()) push_back(Arg_script("", max_soon, errors));
   point = tpoint + 1;}
 
-Function::Function(const std::string& name_i, const std::string& src,
-        std::string::size_type& point, unsigned max_soon, Error_list& errors) :
-    name_v(name_i), prototype(true), body(src, point, max_soon, errors) {}
-
-Function::Function(const std::string& name_i, const std::string& src,
-                   Error_list& errors) :
-    name_v(name_i), prototype(true) {
+Function::Function(const std::string& name_i,
+                   Argm::const_iterator first_parameter,
+                   Argm::const_iterator parameter_end,
+                   bool non_prototype_i,
+                   const std::string& src, Error_list& errors) :
+    name_v(name_i),
+    prototype(first_parameter, parameter_end, non_prototype_i) {
+  if (prototype.non_prototype) default_error <<"deprecated string non-prototype: " <<name_i <<"\n";
   std::string::size_type point = 0;
   try {
     body = Command_block(src, point, 0, errors);
@@ -141,7 +141,9 @@ Function::Function(const std::string& name_i,
                    bool non_prototype_i,
                    const Command_block& src) :
     prototype(first_parameter, parameter_end, non_prototype_i),
-    name_v(name_i), body(src) {}
+    name_v(name_i), body(src) {
+  //if (non_prototype_i) default_error <<"re-deprecated .function non-prototype: " <<name_i <<"\n";
+  }
 
 // run the given function
 int Function::execute(const Argm& argm, Error_list& exceptions) const {

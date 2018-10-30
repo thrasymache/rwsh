@@ -50,6 +50,7 @@ class Argm {
     Excessive_exceptions_in_catch,
     Excessive_nesting,
     Exec_failed,
+    Executable_already_exists,
     Failed_substitution,
     File_open_failure,
     File_not_found,
@@ -67,8 +68,9 @@ class Argm {
     Mismatched_parenthesis,
     Missing_argfunction,
     Multiple_argfunctions,
-    Not_a_number,
     Not_a_directory,
+    Not_a_function,
+    Not_a_number,
     Not_executable,
     Not_soon_enough,
     Raw_command,
@@ -92,9 +94,11 @@ class Argm {
     Sigunknown,
     Tardy_flag,
     Unchecked_variable,
+    Undeclared_variable,
     Undefined_variable,
     Unreadable_dir,
     Unrecognized_flag,
+    Unused_before_set,
     Unused_variable,
     Version_incompatible,
     Exception_count};
@@ -150,8 +154,7 @@ class Argm {
 
 struct Error_list : public std::list<Argm> {
   void add_error(const Argm& error);
-  void reset(void);
-  void prepend_error(const Argm& error); };
+  void reset(void); };
 
 struct Exception : public Argm {
   Argm::Exception_t exception;
@@ -174,13 +177,17 @@ struct Unclosed_parenthesis : public Exception {
   Unclosed_parenthesis(const std::string& prefix_i) :
     Exception(Argm::Mismatched_parenthesis, prefix_i) {}};
 
+struct Undefined_variable : public Exception {
+  Undefined_variable(const std::string& name_i) :
+    Exception(Argm::Undefined_variable, name_i) {}};
+
 class Old_argv {
   char** focus;
   int argc_v;
 
  public:
-  Old_argv(const Argm& src);
+  Old_argv(const Argm::Argv& src);
   ~Old_argv(void);
-  char** argv(void) {return focus;};
+  char** const argv(void) const {return focus;};
   int argc(void) {return argc_v;}; };
 

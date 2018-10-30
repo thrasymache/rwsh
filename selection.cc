@@ -1,7 +1,7 @@
 // The definition of selection_write and the Entry_pattern class which is
 // used to implement selections.
 //
-// Copyright (C) 2005-2017 Samuel Newbold
+// Copyright (C) 2005-2018 Samuel Newbold
 
 #include <dirent.h>
 #include <fcntl.h>
@@ -25,46 +25,46 @@
 
 Simple_pattern::Simple_pattern(const std::string& src) {
   std::string::size_type j = src.find_first_of('*');
-  if (j == std::string::npos) {
-    only_text = true;
-    initial = src;
-    unterminated = false;}
-  else {
-    only_text = false;
-    initial = std::string(src, 0, j);
-    unterminated = (*src.rbegin() == '*');
-    do {
-      std::string::size_type k = src.find_first_of('*', j+1);
-      if (k > j+1 && j+1 != src.length())
-        terms.push_back(src.substr(j+1, k-j-1));
-      j = k;}
-    while (j < std::string::npos);}}
+  initial = std::string(src, 0, j);
+  for (auto k = src.find_first_of('*', j+1); k < std::string::npos;
+       j = k, k = src.find_first_of('*', j+1))
+    terms.push_back(src.substr(j+1, k-j-1));
+  only_text = (j == std::string::npos);
+  if (j != std::string::npos) last = src.substr(j+1);}
 
-// recursive function to determine matches after initial text. recursivity deals
-// with keeping track of current attempted string position in case current
-// position fails to match, but subsequent position will succeed.
-bool Simple_pattern::find_terms(size_type cur_term, const std::string& s)
-        const {
-  if (cur_term == terms.size())
-    if (unterminated || !s.length()) return true;
-    else return false;
-  for (std::string::size_type  i = s.find(terms[cur_term]);
-       i != std::string::npos; i = s.find(terms[cur_term], i+1))
-    if (find_terms(cur_term+1, s.substr(i + terms[cur_term].length())))
-      return true;
-  return false;}
+// simplistic version - only checks if initial or final is longer, or if
+// remaining terms are contained in competition initial
+bool Simple_pattern::isnt_contained(const Simple_pattern& competition) const {
+  if (initial.size() > competition.initial.size()) return true;
+  if (last.size() > competition.last.size()) return true;
+  size_type cur_term = 0;
+  for (auto j = initial.size(); cur_term < terms.size(); ++cur_term) {
+      j = competition.initial.find(terms[cur_term], j);
+      if (j == std::string::npos) break;
+      j += terms[cur_term].length();}
+  if (cur_term < terms.size()) return true;
+  else return false;}
 
 // returns true if s matches the entry pattern
 bool Simple_pattern::match(const std::string& s) const {
-  if (s.compare(0, initial.size(), initial)) return false;
-  return find_terms(0, s.substr(initial.size()));}
+  auto j = initial.size();
+  if (s.substr(0, j) != initial) return false;        // C++20 starts_with
+  for (auto cur_term: terms) {
+    j = s.find(cur_term, j);
+    if (j == std::string::npos) return false;
+    j += cur_term.length();}
+  auto lstart = s.size() - last.size();
+  if (only_text && j != lstart ||
+      j + last.size() > s.size() ||
+      s.substr(lstart) != last) return false;         // C++20 ends_with
+  else return true;}
 
 // convert to a string. inverse of constructor.
 std::string Simple_pattern::str(void) const {
   std::string result = initial;
   for (auto j: terms) result += '*' + j;
-  if (unterminated) result += '*';
-  return result;}
+  if (only_text) return result;
+  else return result + '*' + last;}
 
 Entry_pattern::Entry_pattern(const std::string& src) {
   std::vector<std::string> temp;
@@ -73,8 +73,18 @@ Entry_pattern::Entry_pattern(const std::string& src) {
   for (auto j: temp) options.push_back(Simple_pattern(j));
   only_text = options.size() == 1 && options[0].is_only_text();}
 
-bool Entry_pattern::match(const std::string& s) const {
-  for (auto j: options) if (j.match(s)) return true;
+bool Entry_pattern::match_with_ignore(const Entry_pattern& ignore_pattern,
+                                      const std::string& s) const {
+  for (auto j: options) if (j.match(s))
+    if (ignore_pattern.specific_match(s, j)) continue;
+    else return true;
+  return false;}
+
+// My kingdom for a better continue!
+bool Entry_pattern::specific_match(const std::string& s,
+                          const Simple_pattern& competition) const {
+  for (auto j: options) if (j.match(s) && j.isnt_contained(competition))
+    return true;
   return false;}
 
 std::string Entry_pattern::str(void) const {
@@ -93,7 +103,8 @@ void str_to_entry_pattern_list(const std::string& src,
   if (src.empty());
   else if (*i == "") {
     res.clear();
-    res.push_back(std::string());}
+    res.push_back(*i);
+    ;}
   else if (*i == "..")
     if (res.size() > 1) {res.pop_back(); res.pop_back();}
     else {res.clear(); ++updir;}

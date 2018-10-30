@@ -11,32 +11,78 @@ arguments more often than with them).
 
 Several changes are coming shortly, which may easily break scripts designed for
 this version of the shell, including the following.
-     *  Any statement returning a non-zero value that isn't handled by a control
-	flow statement (e.g. .if or .while) will cause the current nesting level
-	to terminate, returning that value. In other words, a non-zero return
-	will become an error on the level of an undefine variable, or having a
-	.else statement without a preceeding .if
-     *  A ? character at the end of an argument specification will cause the
-	statement to be skipped if the variable is undefined. A ? in the middle
-	of an argument specification will return the text after the question
-	mark to be returned if the variable is undefined. For example
-	"echo $foo?", will print the contents of foo if it exists, and not
-	produce an error if it does not exist. "echo $foo?(foo does not exist)",
-	will print "foo does not exist" if foo is undefined, and the contents of
-	foo if it is defined.
-     *  Functions will have to use every argument that they are passed, making
-	it equally an error to pass too many arguments to a function as to pass
-	too few.
+     *  Internal functions will loose the initial "rwsh" - e.g.
+        rwsh.function_not_found will become .function_not_found
+     *  Functions will not return integers - they will either successfully
+        complete their execution or they will throw an exception. Control flow
+        statements like .if or .while will respond to a specific exception
+        (rwsh.false) which they will not propagate to their caller.
+     *  All functions will require prototypes, and control flow statements such
+        as .for will also use a prototype for the values passed to the
+        argfunction rather than $1.
+     *  Whether a function takes an argfunction will also be part of the
+        prototype and functions will be able to take more than one argfunction
+        with string arguments being associated with each argfunction. For
+        instance this will permit .scope to take several prototypes with an
+        argfunction for each prototype, and will run the argfunction for which
+        its arguments match the corresponding prototype.
+     *  "Soons" will be replaced with "Earlies". The syntax will not
+        (necessarily) change, but the meaning will. Rather than & meaning to
+        evaluate the first time a containing statement is evaluated and && meaning
+        to evaluate the second time a containing statement is evaluated, & will
+        mean to evaluate at the beginning of the innermost block, and && will
+        mean to evaluate at the beginning of the second most inner block. The
+        result will be that wrapping a set of statements in a .scope or
+        .collect_errors_* will not require changing the number of ampersands,
+        and that the statement ".set FOO &FOO" will have the effect of
+        restoring the value that $FOO had at the beginning of the block.
+     *  Global variables will be replaced by a heirarchical set of scopes.
+        Functions will be declared to place their variables as a child of the
+        current scope (leaving none of the current variables immediately
+        accessible and combining all of its variables into a single value for
+        the current scope), or within the current scope (making all of the
+        current variables available and making the function's variables part of
+        the same map), or to attempt to do one of those two in the parent
+        scope. If there is no parent scope then a .no_more_turtles exception
+        will be thrown.
+     *  Another use of the multiple argfunctions per statement will be the
+        .select_all and .select_last builtins. They will run each of their
+        argument functions in parallel, rotating between them when they input
+        or output or request to cooperate with peers. .select_all will run
+        until all argument functions complete, while .select_last will run
+        until the last argument function specified completes, sending a sigpipe
+        to any other argfunctions currently running.
+     *  Variables and functions will likely share the same namespace, and using
+        a function as if it was a variable will be equivalent to calling it
+        without arguments. Running .set on such a function will call it with
+        the arguments, but will throw an exception if it terminates without
+        having the effect of setting the specified value (or throwing an
+        exception of its own).
+     *  Redirections will be handled by internal functions, so that the effect
+	of >foo, or <bar<baz will be something that can change depending upon
+	the configuration.
      *  When handling a set of arguments as a whole, rather than as a set of
 	words, any excess space that was included when specifying them will be
 	included.
+     *  .stepwise will step through the argument specifications as well as
+        through the statements of a function, permitting one, for example, to
+        identify the arguments that make use of a particular variable.
+     *  Exception call stacks will include all of the arguments for each
+        function at each level of the call stack rather than just the
+        executable names.
+     *  .run_logic will be replaced by a system that treats .shell as a service
+        which includes the request for user input, and which restarts after
+        each command. As with .function_not_found, a missing implementation
+        will be replaced with a simple implementation.
      *  a "/" will be used to define a heirarchy amongst executables and
 	variables. $foo/bar cannot be defined without defining $foo, and it
 	will return the portion of $foo that immediately follows "bar=".
 	Running "foo bar" will run the function that was named "foo/bar".
-     *  Redirections will be handled by internal functions, so that the effect
-	of >foo, or <bar<baz will be something that can change depending upon
-	the configuration.
+     *  Currently, $foo$3 returns the third word of the variable foo. This will
+        be replaced with a system of filters, which can be used to select
+        members of a structure without being limited to whitespace-delimited
+        structures, as well as being able to optionally handle variables that
+        are not defined.
      *  There will be "default redirections", so that interactive commands will
 	not necessarily have either their input or output connected to the
 	terminal. The builtin .is_default_input should be used to determine

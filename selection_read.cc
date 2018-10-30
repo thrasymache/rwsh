@@ -13,11 +13,10 @@ void partial_match_children(In& partial, const Entry_pattern& entry_pattern,
     std::vector<std::string> temp;
     if (first->empty()) read_dir(".", std::back_inserter(temp));
     else read_dir(*first, std::back_inserter(temp));
-    for (auto k: temp) { // each element of directory
-      if (ignore_pattern.match(k)) continue;
-      if (entry_pattern.match(k)) {
+    for (auto k: temp)                      // each element of directory
+      if (entry_pattern.match_with_ignore(ignore_pattern, k)) {
         first = partial.insert(first, *first + k + (more? "/": ""));
-        ++first;}} // point back at dir we are reading
+        ++first;}                           // point back at dir we are reading
     first = partial.erase(first);}}
 
 // treat src as a selection, add matching files to res.

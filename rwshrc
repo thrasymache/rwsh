@@ -1,10 +1,18 @@
-.set_max_nesting 20
-.function () {.nop}
 .echo $*0 >/tmp/lcl (
 )
+.set_max_nesting 20
+.function_all_flags () {.nop}
+.function_all_flags #! -- ignored ... {.nop $ignored}
+.function_all_flags rwsh.autofunction -- cmd [args ...] {
+  .nop $args$
+  .local full_path ${.which_path $cmd $PATH}
+  if_only_not .which_test $full_path {.binary $full_path}
+  if_only_not .test_string_equal $cmd $full_path {
+    .function_all_flags $cmd -- [args ...] {
+      &&full_path $args$}}
+  .error added $cmd to executable map $nl}
 .if .test_number_equal $# 2 {.source /etc/rwshrc-default}
 .else_if .test_string_equal $2 -to {
-  .global EMPTY ()
   .global SHELL /bin/rwsh
   .global TESTABILITY (an=external var(iable))
   .exec ./rwsh test_init.sh
@@ -13,17 +21,16 @@
   .nop .source /etc/rwshrc-default
   .source &2}
 .else_if .test_string_equal $2 -c {
-  .function rwsh.autofunction {
-    .function $1 {&&&{.which_path &&&1 $PATH} $*}}
-  .function rwsh.if_before_else {}
-  .function rwsh.shutdown {.nop}
   .for ${.list_environment}$ {
     .scope $1$ (-- var val) {
       .global $var $val
       .nop $$var}}
   .source /etc/rwshrc-basic
-  rwsh.mapped_argfunction &3 {$1$}
-  .exit}
+  .function_all_flags rwsh.if_before_else stack ... {.nop $stack}
+  .function_all_flags rwsh.shutdown -- args ... {.nop $args; .return 0}
+  .collect_errors_except .nop {
+    rwsh.mapped_argfunction &3 {$1$}
+    .exit}}
 .else {
   .echo unexpected command line: &* (
 )

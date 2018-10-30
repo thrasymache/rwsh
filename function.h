@@ -41,18 +41,22 @@ class Function : public Named_executable {
  public:
   Command_block body;
 
-  Function(const std::string& name, const std::string& src,
-         std::string::size_type& point, unsigned max_soon, Error_list& errors);
-  Function(const std::string& name, const std::string& src, Error_list& errors);
-  Function(const Function& src) :
-    name_v(src.name_v), prototype(src.prototype), body(src.body) {};
+  Function(const std::string& name, Argm::const_iterator first_parameter,
+           Argm::const_iterator parameter_end, bool non_prototype_i,
+           const std::string& src, Error_list& errors);
   Function(const std::string& name_i, Argm::const_iterator first_parameter,
            Argm::const_iterator parameter_end, bool non_prototype_i,
            const Command_block& src);
+  Function(const Function& src) :
+    name_v(src.name_v), prototype(src.prototype), body(src.body) {}
+  Variable_map arg_to_param(const Argm& invoking_argm) const {
+    return prototype.arg_to_param(invoking_argm);}
   Function* copy_pointer(void) const {
     if (!this) return 0;
     else return new Function(*this);};
   virtual int execute(const Argm& argm, Error_list& exceptions) const;
   const std::string& name(void) const {return name_v;};
   void promote_soons(unsigned nesting);
-  std::string str() const; };
+  std::string str() const;
+  void unused_var_check(Variable_map* vars, Error_list& exceptions) const {
+    prototype.unused_var_check(vars, exceptions);} };

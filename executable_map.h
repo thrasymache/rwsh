@@ -10,12 +10,13 @@ class Executable_map : private std::map<std::string, Base_executable*> {
   int not_found(Argm& argm, Error_list& exceptions);    // doesn't catch unwind
  public:
   typedef Base::const_iterator const_iterator;
+  typedef Base::iterator iterator;
 
   Executable_map(void);
   const_iterator begin(void) const {return Base::begin();};
   const_iterator end(void) const {return Base::end();};
   size_type erase (const std::string& key);
-  Base_executable* find(const Argm& key);
+  Base_executable* find_second(const Argm& key);
   int run(Argm& argm, Error_list& exceptions);          // doesn't catch unwind
   int base_run(Argm& argm, Error_list& exceptions);           // catches unwind
   void unused_var_check_at_exit(void);                        // catches unwind

@@ -4,4 +4,5 @@ rwsh
 last.test.result
 last.test_inconsistent.result
 last.test_quick.result
+argfunction.result.last
 test_files/tmp

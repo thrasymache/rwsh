@@ -19,6 +19,7 @@ struct Parameter_group {
                     const std::string* flag,
                     const std::string& elipsis_var,
                     enum Dash_dash_type dash_dash) const;
+  void add_undefined_params(Variable_map& locals) const;
   std::string str() const;
   void bless_unused_vars(Variable_map* vars) const;
   char unused_flag_var_check(Variable_map* vars, Error_list& exceptions) const;

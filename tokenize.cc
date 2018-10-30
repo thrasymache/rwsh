@@ -2,14 +2,15 @@
 // predicate p.
 // In each case res must be a container of strings.
 //
-// Copyright (C) 2005-2016 Samuel Newbold
+// Copyright (C) 2005-2018 Samuel Newbold
 
 // repeated separators are interpreted as a single separator
 // empty input produces no output
 template<class Out, class Pred>
 Out tokenize(const std::string& in, Out res, Pred p) {
-  unsigned token_start=0, i=0;
-  for (; i<in.length(); ++i) {
+  unsigned token_start=-1, i=0;
+  while (i<in.length() && p(in[i])) ++i;
+  for (token_start = i; i<in.length(); ++i) {
     if (p(in[i])) {
       *res++ = in.substr(token_start, i-token_start);
       while (i<in.length() && p(in[i])) ++i;
@@ -35,3 +36,30 @@ Out tokenize_strict(const std::string& in, Out res, Pred p) {
   *res = in.substr(token_start, i-token_start);
   return res;}
 
+namespace {
+std::string substr_word(const std::string& in, unsigned start, unsigned end) {
+  if (in[start] == '(' && in[end-1] == ')')
+    return in.substr(start+1, end-start-2);
+  else return in.substr(start, end-start);}
+} // end unnamed namespace
+
+template<class Out>
+Out tokenize_words(const std::string& in, Out res) {
+  unsigned j=0, nesting=0;
+  while (j < in.length() && isspace(in[j])) ++j;
+  unsigned token_start = j;                              // drop leading space
+  for (; j<in.length(); ++j)
+    if (isspace(in[j])) {
+      *res++ = substr_word(in, token_start, j);
+      while (j < in.length() && isspace(in[j])) ++j;
+      token_start = j--;}                                // drop leading space
+    else if (in[j] == ')')
+      throw Exception(Argm::Mismatched_parenthesis, in.substr(0, j+1));
+    else if (in[j] == '(') for (nesting++; nesting && ++j<in.length();)
+      if (in[j] == '(') nesting++;
+      else if (in[j] == ')') nesting--;
+      else; // step through nested non-parentheses
+    else;   // step through non-nested printing non-parentheses
+  if (nesting) throw Exception(Argm::Mismatched_parenthesis, in);
+  if (token_start != j) *res++ = substr_word(in, token_start, j);
+  return res;}

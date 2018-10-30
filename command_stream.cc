@@ -55,7 +55,8 @@ Command_stream& Command_stream::getline(Arg_script& dest, Error_list& errors) {
     try {
       dest = Arg_script(cmd, 0, errors);
       if (Named_executable::unwind_stack()) {
-        errors.prepend_error(Exception(Argm::Raw_command, cmd));
+        Exception raw_command(Argm::Raw_command, cmd);
+        Base_executable::catch_one(raw_command, errors);
         return *this;}
       cmd_is_incomplete = false;}
     catch (Unclosed_parenthesis exception) {

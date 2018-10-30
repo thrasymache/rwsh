@@ -45,7 +45,3 @@ class Arg_script {
   bool is_argfunction(void) const {return argfunction_level == 1;}; };
 
 bool is_argfunction_name(const std::string& focus);
-bool is_binary_name(const std::string& focus);
-bool is_builtin_name(const std::string& focus);
-bool is_internal_function_name(const std::string& focus);
-bool is_function_name(const std::string& focus);

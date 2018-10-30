@@ -194,11 +194,11 @@ Arg_script::~Arg_script(void) {
 Argm Arg_script::argm(void) const {
   Argm result(Variable_map::global_map, input, output, error);
   if (!argfunction_level) {
-    for(auto i=args.begin(); i != args.end(); ++i) result.push_back(i->str());
+    for(auto j: args) result.push_back(j.str());
     result.set_argfunction(argfunction->copy_pointer());}
   else if (argfunction_level == 1) result.push_back("rwsh.argfunction");
   else if (argfunction_level == 2) result.push_back("rwsh.escaped_argfunction");
-  else abort(); // unhandled argfunction_level
+  else std::abort(); // unhandled argfunction_level
   return result;}
 
 // create a string from Arg_script. inverse of string constructor.
@@ -215,7 +215,8 @@ std::string Arg_script::str(void) const {
     else return result;}
   else if (argfunction_level == 1) return "rwsh.argfunction";
   else if (argfunction_level == 2) return "rwsh.escaped_argfunction";
-  else {abort(); return "";}} // unhandled argfunction_level
+  else if (argfunction_level == 3) return "rwsh.super_escaped_argfunction";
+  else {std::abort(); return "";}} // unhandled argfunction_level
 
 Argm Arg_script::base_interpret(const Argm& src, Error_list& errors) const {
   Argm ret = interpret(src, errors);
@@ -229,8 +230,7 @@ Argm Arg_script::interpret(const Argm& src, Error_list& exceptions) const {
               !output.is_default()? output: src.output.child_stream(),
               !error.is_default()?  error:  src.error.child_stream());
   if (!argfunction_level) {
-    for (auto i = args.begin(); i != args.end(); ++i)
-      i->interpret(src, std::back_inserter(result), exceptions);
+    for (auto j: args) j.interpret(src, std::back_inserter(result), exceptions);
     if (!result.argc()) result.push_back("");
     if (argfunction)
       result.set_argfunction(argfunction->apply(src, 0, exceptions));}
@@ -241,7 +241,7 @@ Argm Arg_script::interpret(const Argm& src, Error_list& exceptions) const {
   else if (argfunction_level == 2)
     result.push_back("rwsh.unescaped_argfunction");
   else if (argfunction_level == 3) result.push_back("rwsh.argfunction");
-  else abort(); // unhandled argfunction_level
+  else std::abort(); // unhandled argfunction_level
   return result;}
 
 // produce a new Arg_script by unescaping argument functions and replacing
@@ -255,14 +255,14 @@ void Arg_script::apply(const Argm& src, unsigned nesting,
     *res++ = result;}
   else {
     Arg_script result(input, output, error, indent, terminator);
-    for (auto i = args.begin(); i != args.end(); ++i)
-      i->apply(src, nesting, std::back_inserter(result.args), exceptions);
+    for (auto j: args)
+      j.apply(src, nesting, std::back_inserter(result.args), exceptions);
     if (argfunction)
       result.argfunction = argfunction->apply(src, nesting+1, exceptions);
     *res++ = result;}}
 
 void Arg_script::promote_soons(unsigned nesting) {
-  for (auto i = args.begin(); i != args.end(); ++i) i->promote_soons(nesting);
+  for (auto j = args.begin(); j != args.end(); ++j) j->promote_soons(nesting);
   argfunction->promote_soons(nesting);}
 
 // test whether an executable name corresponds to one of those used for
@@ -272,17 +272,3 @@ bool is_argfunction_name(const std::string& focus) {
          focus == "rwsh.unescaped_argfunction" ||
          focus == "rwsh.argfunction" ||
          focus == "rwsh.escaped_argfunction";}
-
-// test whether an executable name corresponds to a binary executable
-// (i.e. filesystem path)
-bool is_binary_name(const std::string& focus) {
-  return !focus.compare(0, 1, "/");}
-
-// test whether this is an appropriate name for an internal function
-bool is_internal_function_name(const std::string& focus) {
-  return !focus.compare(0, 5, "rwsh.");}
-
-// test whether an executable name is possible for a function
-bool is_function_name(const std::string& focus) {
-  return !is_binary_name(focus) && !is_internal_function_name(focus);}
-

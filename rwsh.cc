@@ -29,7 +29,6 @@
 #include "selection.h"
 
 #include "function.h"
-#include "argm_star_var.cc"
 
 // static initializers of basic types
 const char* WSPACE = " \t";
@@ -67,6 +66,7 @@ std::string Argm::exception_names[Argm::Exception_count] = {
   "rwsh.excessive_exceptions_in_catch",
   "rwsh.excessive_nesting",
   "rwsh.exec_failed",
+  "rwsh.executable_already_exists",
   "rwsh.failed_substitution",
   "rwsh.file_open_failure",
   "rwsh.file_not_found",
@@ -84,8 +84,9 @@ std::string Argm::exception_names[Argm::Exception_count] = {
   "rwsh.mismatched_parenthesis",
   "rwsh.missing_argfunction",
   "rwsh.multiple_argfunctions",
-  "rwsh.not_a_number",
   "rwsh.not_a_directory",
+  "rwsh.not_a_function",
+  "rwsh.not_a_number",
   "rwsh.not_executable",
   "rwsh.not_soon_enough",
   "rwsh.raw_command",
@@ -109,9 +110,11 @@ std::string Argm::exception_names[Argm::Exception_count] = {
   "rwsh.sigunknown",
   "rwsh.tardy_flag",
   "rwsh.unchecked_variable",
+  "rwsh.undeclared_variable",
   "rwsh.undefined_variable",
   "rwsh.unreadable_dir",
   "rwsh.unrecognized_flag",
+  "rwsh.unused_before_set",
   "rwsh.unused_variable",
   "rwsh.version_incompatible"};
 bool readline_enabled = false;

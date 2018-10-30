@@ -70,9 +70,9 @@ Arg_spec::Arg_spec(const std::string& script, unsigned max_soon,
           text = script.substr(key_start+1, key_end-key_start-1);
         else text="1";}
       else {type=REFERENCE; text=script.substr(key_start, key_end-key_start);}
-  else if (script[0] == '&')
-    if (script.length() < 2) type=SOON;
-    else
+  else if (script[0] == '&') {
+    type=SOON;
+    if (script.length() >= 2)
       if (soon_level > max_soon)
         errors.add_error(Exception(Argm::Not_soon_enough, script));
       else if (script[key_start] == '*') {
@@ -80,7 +80,7 @@ Arg_spec::Arg_spec(const std::string& script, unsigned max_soon,
         if (script.length() - key_start > 1)
           text=script.substr(key_start+1, key_end-key_start-1);
         else text="1";}
-      else {type=SOON; text=script.substr(key_start, key_end-key_start);}
+      else text=script.substr(key_start, key_end-key_start);}
   else if (script[0] == '@')
     if (script.length() < 2) type=SELECTION;
     else if (script[1] == '$')
@@ -106,6 +106,8 @@ Arg_spec::Arg_spec(const std::string& src, std::string::size_type style_start,
   else if (src[tpoint] == '$') {
     type = SUBSTITUTION;
     ++tpoint, soon_level = max_soon;}
+  else type = FIXED; // This is a Bad_argfunction_style, but since we're going
+  // to continue processing, we need to properly initialize the structure
   if (src[tpoint] != '{') {
     errors.add_error(Exception(Argm::Bad_argfunction_style,
                       src.substr(style_start, point-style_start)));
@@ -167,11 +169,11 @@ void Arg_spec::apply(const Argm& src, unsigned nesting,
       else res = src.star_var(text, ref_level, res);
       break;
     case SUBSTITUTION: case SOON_SUBSTITUTION:
-      if (soon_level) {
-        Command_block* new_substitution = substitution->apply(src, nesting+1,
-                                                              exceptions);
+      if (soon_level)
         *res++ = Arg_spec(type, soon_level-1, ref_level, expand_count,
-                          word_selection, new_substitution, text, trailing);}
+                          word_selection,
+                          substitution->apply(src, nesting+1, exceptions),
+                          text, trailing);
       else evaluate_substitution(src, res, exceptions);
       break;
     default: *res++ = *this;}}  // most types are not affected by apply
@@ -206,9 +208,14 @@ Out Arg_spec::evaluate_substitution(const Argm& src, Out res,
   return evaluate_expansion(override_stream.value(), res);}
 
 template<class Out> Out Arg_spec::evaluate_var(const Argm& src, Out res) const {
-  std::string next = src.get_var(text);
-  for (unsigned i = 0; i < ref_level; ++i) next = src.get_var(next);
-  return evaluate_expansion(next, res);}
+  std::string focus = text;
+  try {
+    for (unsigned i = 0; i <= ref_level; ++i) focus = src.get_var(focus);
+    return evaluate_expansion(focus, res);}
+  catch (Undefined_variable) {
+    if (!expand_count) throw;      // $var throws $var$ does not
+    src.var_exists(focus);         // this counts as a variable check
+    return res;}}
 
 // produce one or more strings for destination Argm from Arg_spec and source
 // Argm

@@ -1,3 +1,5 @@
+.source /etc/rwshrc-basic
+.global PATH /bin:/usr/bin
 .getpid
 .getppid
 .function_all_flags timings focus {
@@ -15,5 +17,6 @@
 clock-watch
 clock-watch
 rwsh.mapped_argfunction {timings timings; timings clock-watch}
+.error a stderr print will come before the diff $nl
 .nop $A $FIGNORE
 

@@ -1,8 +1,6 @@
-.function_all_flags # -- args ... {.nop $args}
-.function if_only {.if $* {rwsh.argfunction}; .else {.nop}}
-.function_all_flags c -- args ... {.combine $args$}
 .function_all_flags a [-*] [-x b ...] c {
   .for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+.nop $A $FIGNORE
 .which_executable a
 a first
 a -x first
@@ -23,5 +21,3 @@ a -x first
 a -x (fi rst) second
 a -x first (sec ond) third
 a -x (fi rst) (sec ond) third fourth
-.which_executable if_only
-.nop $A $FIGNORE

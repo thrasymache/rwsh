@@ -2,6 +2,7 @@
 //
 // Copyright (C) 2006-2018 Samuel Newbold
 
+#include <algorithm>
 #include <climits>
 #include <cfloat>
 #include <cstdlib>
@@ -46,7 +47,6 @@ extern char** environ;
 #include "tokenize.cc"
 
 #include "function.h"
-#include "argm_star_var.cc"
 
 namespace {
 std::string fallback_message = "Exception for failed handler. "
@@ -136,6 +136,15 @@ int b_enable_readline(const Argm& argm, Error_list& exceptions) {
   readline_enabled = true;
   return 0;}
 
+// echo arguments to standard error separated by space
+int b_error(const Argm& argm, Error_list& exceptions) {
+  if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
+  if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
+  for (auto i: argm.subrange(1, 1)) argm.error <<i <<" ";
+  argm.error <<argm.back();
+  argm.error.flush();
+  return 0;}
+
 // replace the shell with the given binary
 int b_exec(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
@@ -146,18 +155,17 @@ int b_exec(const Argm& argm, Error_list& exceptions) {
   if (dup2(input, 0) < 0) argm.error <<"dup2 didn't like changing input\n";
   if (dup2(output, 1) < 0) argm.error <<"dup2 didn't like changing output\n";
   if (dup2(error, 2) < 0) argm.error <<"dup2 didn't like changing error\n";
-  Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
-  Old_argv old_argv(lookup);
+  Old_argv old_argv(argm.subrange(1));
   std::vector<char *>env;
   argm.export_env(env);
-  execve(lookup[0].c_str(), old_argv.argv(), &env[0]);
+  execve(*old_argv.argv(), old_argv.argv(), &env[0]);
   // execve does not return on success, so what's the error?
   if (errno == ENOENT)
-    exceptions.add_error(Exception(Argm::Binary_does_not_exist, lookup[0]));
+    exceptions.add_error(Exception(Argm::Binary_does_not_exist, argm[1]));
   else if (errno == EACCES || errno == ENOEXEC)
-    exceptions.add_error(Exception(Argm::Not_executable, lookup[0]));
-  else exceptions.add_error(Exception(Argm::Exec_failed, lookup[0], errno));
-  return 0;}
+    exceptions.add_error(Exception(Argm::Not_executable, argm[1]));
+  else exceptions.add_error(Exception(Argm::Exec_failed, argm[1], errno));
+  return 0;}   // we are depending on the error handlers to indicate failure
 
 // exit the shell
 int b_exit(const Argm& argm, Error_list& exceptions) {
@@ -226,39 +234,57 @@ int b_fork(const Argm& argm, Error_list& exceptions) {
     Argm lookup(argm.subrange(1), argm.argfunction(),
                 argm.parent_map(),
                 argm.input, argm.output.child_stream(), argm.error);
-    status = executable_map.run(lookup, exceptions);
+    status = executable_map.base_run(lookup, exceptions);
     executable_map.unused_var_check_at_exit();
     std::exit(status);}
   else plumber.wait(&status);
-  return WEXITSTATUS(status);}
+  if (WIFEXITED(status) && WEXITSTATUS(status))
+    exceptions.add_error(Exception(Argm::Return_code, WEXITSTATUS(status)));
+  return 0;}
+
+// add binary to executable map with name $1
+int b_binary(const Argm& argm, Error_list& exceptions) {
+  if (argm.argc() != 2)
+    exceptions.add_error(Exception(Argm::Bad_argc, argm.argc()-1, 1, 0));
+  if (argm.argfunction())
+    exceptions.add_error(Exception(Argm::Excess_argfunction));
+  if (Named_executable::unwind_stack()) return 0;
+  Argm lookup(argm.subrange(1), nullptr, argm.parent_map());
+  struct stat sb;
+  if (stat(lookup[0].c_str(), &sb))
+    exceptions.add_error(Exception(Argm::Binary_does_not_exist, lookup[0]));
+  else if (!executable_map.find_second(lookup))
+    executable_map.set(new Binary(lookup[0]));
+  else exceptions.add_error(Exception(Argm::Executable_already_exists,
+                                      lookup[0]));
+  return 0;}
 
 // add argfunction to executable map with name $1
 int b_function(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
+  else if (!argm.argfunction()) throw Exception(Argm::Missing_argfunction);
   Argm lookup(argm.subrange(1), nullptr, argm.parent_map());
-  Base_executable *e = executable_map.find(lookup);
-  if (is_binary_name(argm[1]) || is_argfunction_name(argm[1]) ||
-      dynamic_cast<Builtin*>(e))
+  Base_executable *e = executable_map.find_second(lookup);
+  if (is_argfunction_name(argm[1]) || dynamic_cast<Builtin*>(e))
     exceptions.add_error(Exception(Argm::Illegal_function_name, argm[1]));
-  else if (argm.argfunction()) executable_map.set(new Function(argm[1],
+  else {
+      argm.error <<"deprecated non-prototype: " <<argm.str() <<"\n";
+      executable_map.set(new Function(argm[1],
                        argm.begin()+2, argm.end(), true, *argm.argfunction()));
-  else if (!executable_map.erase(*(argm.begin()+1)))
-    exceptions.add_error(Exception(Argm::Function_not_found, argm[1]));
+  }
   return 0;}
 
 // add argfunction to executable map with name $1 and arguments $*2
 // the arguments must include all flags that can be passed to this function
 int b_function_all_flags(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
+  else if (!argm.argfunction()) throw Exception(Argm::Missing_argfunction);
   Argm lookup(argm.subrange(1, argm.argc()-2), nullptr, argm.parent_map());
-  Base_executable *e = executable_map.find(lookup);
-  if (is_binary_name(argm[1]) || is_argfunction_name(argm[1]) ||
-      dynamic_cast<Builtin*>(e))
+  Base_executable *e = executable_map.find_second(lookup);
+  if (is_argfunction_name(argm[1]) || dynamic_cast<Builtin*>(e))
     exceptions.add_error(Exception(Argm::Illegal_function_name, argm[1]));
-  else if (argm.argfunction()) executable_map.set(new Function(argm[1],
-                      argm.begin()+2, argm.end(), false, *argm.argfunction()));
-  else if (!executable_map.erase(*(argm.begin()+1)))
-    exceptions.add_error(Exception(Argm::Function_not_found, argm[1]));
+  else executable_map.set(new Function(argm[1], argm.begin()+2, argm.end(),
+                          false, *argm.argfunction()));
   return 0;}
 
 // Get the configurable message for fallback_handler
@@ -303,29 +329,34 @@ namespace {
 bool in_if_block = false, successful_condition = false,
   conditional_block_exception = false;
 
-int if_core(const Argm& argm, Error_list& exceptions, bool logic, bool els) {
+int if_core(const Argm& argm, Error_list& exceptions, bool logic, bool is_else){
   if (!in_if_block) throw Exception(Argm::Else_without_if);
   else if (successful_condition) return Variable_map::dollar_question;
   else {
+    int ret = 0;
     Argm lookup(argm.subrange(1), nullptr, argm.parent_map(),
                   argm.input, argm.output.child_stream(), argm.error);
-    if (els || logic == !executable_map.run(lookup, exceptions)) {
-      if (Named_executable::unwind_stack()) return -1;
+    in_if_block = false;
+    bool run = is_else || logic == !executable_map.run(lookup, exceptions);
+    successful_condition = false;         // just in case lookup set it to true
+    if (Base_executable::unwind_stack()) conditional_block_exception = true;
+    else if (in_if_block) {
       in_if_block = false;
-      int ret;
+      throw Exception(Argm::Bad_if_nest);}
+    else if (run) {
       if (argm.argfunction()) {
         Argm mapped_argm(argm.parent_map(),
                          argm.input, argm.output.child_stream(), argm.error);
         mapped_argm.push_back("rwsh.mapped_argfunction");
         ret = (*argm.argfunction())(mapped_argm, exceptions);}
-      else ret = 0;
-      if (Base_executable::unwind_stack()) conditional_block_exception = true;
+      if (Base_executable::unwind_stack())
+        conditional_block_exception = ! is_else;
       else if (in_if_block) {
         in_if_block = false;
         throw Exception(Argm::Bad_if_nest);}
-      else in_if_block = successful_condition = true;
-      return ret;}
-    else return 0;}}
+      else in_if_block = successful_condition = true;}
+    in_if_block = true;
+    return ret;}}
 }
 
 // run argfunction if $* returns true
@@ -380,7 +411,7 @@ int b_else(const Argm& argm, Error_list& exceptions) {
     in_if_block = false;
     return ret;}
   catch (Exception exception) {
-    in_if_block = false;
+     in_if_block = false;
     throw exception;}}
 
 // prints a list of all internal functions
@@ -458,7 +489,10 @@ int b_ls(const Argm& argm, Error_list& exceptions) {
     argm.output <<i <<"\n";
     found = true;}
   argm.output.flush();
-  if (!found) exceptions.add_error(Exception(Argm::File_not_found, argm));
+  if (!found) {
+    std::string tried(argm[1]);
+    for (auto i: argm.subrange(2)) tried += " " + i;
+    exceptions.add_error(Exception(Argm::File_not_found, tried)); }
   return 0;}
 
 // ignore arguments, argfunctions, and then do nothing
@@ -488,16 +522,32 @@ int b_return(const Argm& argm, Error_list& exceptions) {
   catch (E_nan) {throw Exception(Argm::Not_a_number, argm[1]);}
   catch (E_range) {throw Exception(Argm::Input_range, argm[1]);}}
 
+// remove executable with name $1 from executable map
+int b_rm_executable(const Argm& argm, Error_list& exceptions) {
+  if (argm.argc() != 2)
+    exceptions.add_error(Exception(Argm::Bad_argc, argm.argc()-1, 1, 0));
+  if (argm.argfunction())
+    exceptions.add_error(Exception(Argm::Excess_argfunction));
+  if (Named_executable::unwind_stack()) return 0;
+  Argm lookup(argm.subrange(1), nullptr, argm.parent_map());
+  Base_executable *e = executable_map.find_second(lookup);
+  if (dynamic_cast<Builtin*>(e))
+    exceptions.add_error(Exception(Argm::Illegal_function_name, argm[1]));
+  else if (!executable_map.erase(*(argm.begin()+1)))
+    exceptions.add_error(Exception(Argm::Function_not_found, argm[1]));
+  else; // successfully removed executable
+  return 0;}
+
 // run the argfunction having set local variables according to the given
 // prototype
 int b_scope(const Argm& argm, Error_list& exceptions) {
-  if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 2, 0);
+  if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   else if (!argm.argfunction()) throw Exception(Argm::Missing_argfunction);
-  Argm prototype_argm(argm.parent_map(),
-                      default_input, default_output, default_error);
+  Argm prototype_argm(argm.parent_map(), argm.input, argm.output, argm.error);
   tokenize_words(argm[argm.argc()-1], std::back_inserter(prototype_argm));
   Prototype prototype(prototype_argm.begin(), prototype_argm.end(), false);
-  Argm invoking_argm(argm.subrange(0, 1), nullptr, argm.parent_map());
+  Argm invoking_argm(argm.subrange(0, 1), nullptr, argm.parent_map(),
+                     argm.input, argm.output, argm.error);
   int ret = (*argm.argfunction()).prototype_execute(invoking_argm, prototype,
                                                     exceptions);
   if (Named_executable::unwind_stack()) return -1;
@@ -540,7 +590,7 @@ int b_set_fallback_message(const Argm& argm, Error_list& exceptions) {
 // Set the number of exceptions that can be thrown inside .collect_errors_*
 // before they exit early
 int b_set_max_collectible_exceptions(const Argm& argm, Error_list& exceptions) {
-  if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
+  if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   try {
     Base_executable::max_collect = my_strtoi(argm[1], 1,INT_MAX);
@@ -552,7 +602,7 @@ int b_set_max_collectible_exceptions(const Argm& argm, Error_list& exceptions) {
 // Set the number of exceptions that can be thrown by catch blocks after
 // max_collectible_exceptions have already been thrown
 int b_set_max_extra_exceptions(const Argm& argm, Error_list& exceptions) {
-  if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
+  if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   try {
     Base_executable::max_extra = my_strtoi(argm[1], 0, INT_MAX);
@@ -564,7 +614,7 @@ int b_set_max_extra_exceptions(const Argm& argm, Error_list& exceptions) {
 // Set the maximum number of nesting levels where functions call functions
 // before completing.
 int b_set_max_nesting(const Argm& argm, Error_list& exceptions) {
-  if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
+  if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   try {
     Base_executable::max_nesting = my_strtoi(argm[1], 0, INT_MAX);
@@ -605,19 +655,24 @@ int b_stepwise(const Argm& argm, Error_list& exceptions) {
   if (!argm.argfunction()) throw Exception(Argm::Missing_argfunction);
   Argm lookup(argm.subrange(1), nullptr, argm.parent_map(),
                 argm.input, argm.output.child_stream(), argm.error);
-  Base_executable* e = executable_map.find(lookup);
-  if (!e) return 1;  // executable not found
+  Base_executable* e = executable_map.find_second(lookup);
+  if (!e) throw Exception(Argm::Function_not_found, argm[1]);
   Function* f = dynamic_cast<Function*>(e);
-  if (!f) return 2; // the named executable is not a function
+  if (!f) return 3; //throw Exception(Argm::Not_a_function, argm[1]);
+  // this must be caught and handled to use .stepwise recursively
+  Variable_map locals(f->arg_to_param(lookup));
+  Argm params(lookup.argv(), lookup.argfunction(), &locals,
+              lookup.input, lookup.output, lookup.error);
   int ret = -1;
-  for (auto i: f->body) {
-    Argm body_i(i.interpret(lookup, exceptions));
+  for (auto j: f->body) {
+    Argm body_i(j.interpret(params, exceptions));
     Argm body("rwsh.mapped_argfunction", body_i.argv(), nullptr,
-              argm.parent_map(), body_i.input, body_i.output, body_i.error);
+              body_i.parent_map(), body_i.input, body_i.output, body_i.error);
     ret  = (*argm.argfunction())(body, exceptions);
     if (Named_executable::unwind_stack()) {
       ret = -1;
       break;}}
+  f->unused_var_check(&locals, exceptions);
   return ret;} // last return value from argfunction
 
 // run the argfunction and store its output in the variable $1
@@ -658,6 +713,13 @@ int b_test_greater(const Argm& argm, Error_list& exceptions) {
   catch (E_nan) {throw Exception(Argm::Not_a_number, argm[2]);}
   catch (E_range) {throw Exception(Argm::Input_range, argm[2]);}
   return lhs <= rhs;} // C++ and shell have inverted logic
+
+// return true if the first string is repeated in subsequent arguments
+int b_test_in(const Argm& argm, Error_list& exceptions) {
+  if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
+  if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
+  for (auto j: argm.subrange(2)) if (argm[1] == j) return 0;
+  return 1;}          // C++ and shell have inverted logic
 
 // return true if the string converts to a number
 int b_test_is_number(const Argm& argm, Error_list& exceptions) {
@@ -780,7 +842,7 @@ int b_usleep_overhead(const Argm& argm, Error_list& exceptions) {
   Argm usleep_argm(".usleep", Argm::Argv(), nullptr,
                    Variable_map::global_map, default_input, default_output,
                    default_error);
-  Base_executable* focus = executable_map.find(Argm(usleep_argm));
+  Base_executable* focus = executable_map.find_second(Argm(usleep_argm));
   unsigned count = focus->execution_count();
   if (!count) return 1;
   struct timeval slept = focus->total_execution_time();
@@ -911,7 +973,7 @@ int b_which_executable(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
   if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
-  Base_executable* focus = executable_map.find(lookup);
+  Base_executable* focus = executable_map.find_second(lookup);
   if (focus) {
     argm.output <<focus->str();
     argm.output.flush();
@@ -923,7 +985,7 @@ int b_which_executable(const Argm& argm, Error_list& exceptions) {
 int b_which_execution_count(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
-  Base_executable* focus = executable_map.find(lookup);
+  Base_executable* focus = executable_map.find_second(lookup);
   if (focus) {
     argm.output <<focus->execution_count();
     argm.output.flush();
@@ -935,7 +997,7 @@ int b_which_last_exception(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
-  Base_executable* focus = executable_map.find(lookup);
+  Base_executable* focus = executable_map.find_second(lookup);
   if (focus) {
     argm.output <<focus->last_exception();
     argm.output.flush();
@@ -947,7 +1009,7 @@ int b_which_last_exception(const Argm& argm, Error_list& exceptions) {
 int b_which_last_execution_time(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
-  Base_executable* focus = executable_map.find(lookup);
+  Base_executable* focus = executable_map.find_second(lookup);
   if (focus) {
     argm.output <<focus->last_execution_time();
     argm.output.flush();
@@ -959,7 +1021,7 @@ int b_which_last_execution_time(const Argm& argm, Error_list& exceptions) {
 int b_which_total_execution_time(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
-  Base_executable* focus = executable_map.find(lookup);
+  Base_executable* focus = executable_map.find_second(lookup);
   if (focus) {
     struct timeval val = focus->total_execution_time();
     argm.output <<val;
@@ -967,15 +1029,22 @@ int b_which_total_execution_time(const Argm& argm, Error_list& exceptions) {
     return 0;}
   else return 1;}          // executable does not exist
 
-// find the binary in $2 with filename $1
+// if the filename has a leading dot, then check in current directory
+// otherwise find the binary in $2 with filename $1
 int b_which_path(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 3) throw Exception(Argm::Bad_argc, argm.argc()-1, 2, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   std::vector<std::string> path;
-  tokenize_strict(argm[2], std::back_inserter(path),
-                  std::bind2nd(std::equal_to<char>(), ':'));
-  for (auto i: path) {
-    std::string test = i + '/' + argm[1];
+  tokenize(argm[2], std::back_inserter(path),
+           std::bind2nd(std::equal_to<char>(), ':'));
+  for (auto j: path) {
+    std::string test;
+    if (argm[1].substr(0,1) == "/" || argm[1].substr(0,2) == "./" ||
+        argm[1].substr(0,3) == "../")
+      if (argm[1].substr(0, j.length()) != j) continue;
+      else test = argm[1];
+    else if (j.back() == '/') test = j + argm[1];
+    else test = j + '/' + argm[1];
     struct stat sb;
     if (!stat(test.c_str(), &sb)) {
       argm.output <<test;
@@ -987,7 +1056,7 @@ int b_which_path(const Argm& argm, Error_list& exceptions) {
 int b_which_return(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
-  Base_executable* focus = executable_map.find(lookup);
+  Base_executable* focus = executable_map.find_second(lookup);
   if (focus) {
     argm.output <<focus->last_ret();
     argm.output.flush();
@@ -999,7 +1068,7 @@ int b_which_test(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
   if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
-  return !executable_map.find(lookup);}
+  return !executable_map.find_second(lookup);}
 
 // for each time that the arguments return true, run the argfunction
 // returns the last return from the argfunction

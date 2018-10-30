@@ -120,8 +120,7 @@ void Base_executable::exception_handler(Error_list& exceptions) {
   in_exception_handler = false;}
 
 // code to call exception handlers when requested within a function
-void Base_executable::catch_blocks(const Argm& argm,
-                                   Error_list& exceptions) {
+void Base_executable::catch_blocks(const Argm& argm, Error_list& exceptions) {
   for (auto focus = exceptions.begin();
        focus != exceptions.end();)
     if (find(argm.begin() + 1, argm.end(), (*focus)[0]) != argm.end()) {
@@ -131,11 +130,11 @@ void Base_executable::catch_blocks(const Argm& argm,
                      Exception(Argm::Excessive_exceptions_in_catch, max_extra));
          execution_handler_excess_thrown = true;
          return;}
+      unsigned previous_count = current_exception_count;
       in_exception_handler = true;
       unwind_stack_v = false;
-      unsigned previous_count = current_exception_count;
-      //Error_list current_exceptions;
       executable_map.run(*focus, exceptions);
+      in_exception_handler = false;
       dropped_catches += current_exception_count - previous_count;
       if (!unwind_stack()) {
         focus = exceptions.erase(focus);
@@ -146,6 +145,14 @@ void Base_executable::catch_blocks(const Argm& argm,
   else unwind_stack_v = false;
   Variable_map::dollar_question = -1;
   in_exception_handler = false;}
+
+// run one exception handler restoring unwind_stack afterwards
+void Base_executable::catch_one(Argm& argm, Error_list& exceptions) {
+  in_exception_handler = true;
+  unwind_stack_v = false;
+  executable_map.run(argm, exceptions);
+  in_exception_handler = false;
+  unwind_stack_v = true;}
 
 Binary::Binary(const std::string& impl) : implementation(impl) {}
 
@@ -161,16 +168,17 @@ int Binary::execute(const Argm& argm_i, Error_list& exceptions) const {
     if (dup2(output, 1) < 0)
       argm_i.error <<"dup2 didn't like changing output\n";
     if (dup2(error, 2) < 0) argm_i.error <<"dup2 didn't like changing error\n";
-    Old_argv argv(argm_i);
+    Old_argv argv(argm_i.subrange(0));
     std::vector<char *>env;
     argm_i.export_env(env);
     ret = execve(implementation.c_str(), argv.argv(), &env[0]);
-    Exception error_argm(Argm::Binary_does_not_exist, argm_i[0]);
-    executable_map.run(error_argm, exceptions);
+    exceptions.add_error(Exception(Argm::Binary_does_not_exist, argm_i[0]));
+    Named_executable::exception_handler(exceptions);
     executable_map.unused_var_check_at_exit();
     exit(ret);}
   else plumber.wait(&ret);
-  if (ret) exceptions.add_error(Exception(Argm::Return_code, ret));
+  if (WIFEXITED(ret) && WEXITSTATUS(ret))
+    exceptions.add_error(Exception(Argm::Return_code, WEXITSTATUS(ret)));
   return ret;}
 
 Builtin::Builtin(const std::string& name_i,

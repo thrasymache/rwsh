@@ -22,7 +22,15 @@
 #include "function.h"
 
 void internal_init(Error_list& exceptions) {
+  Argm empty_prototype(Variable_map::global_map,
+                       default_input, default_output, default_error);
+  Argm any_args(Variable_map::global_map,
+                default_input, default_output, default_error);
+  any_args.push_back("--");
+  any_args.push_back("[args");
+  any_args.push_back("...]");
   executable_map.set(new Builtin(".argc", b_argc));
+  executable_map.set(new Builtin(".binary", b_binary));
   executable_map.set(new Builtin(".cd", b_cd));
   executable_map.set(new Builtin(".collect_errors_except",
                                  b_collect_errors_except));
@@ -31,6 +39,7 @@ void internal_init(Error_list& exceptions) {
   executable_map.set(new Builtin(".combine", b_combine));
   executable_map.set(new Builtin(".enable_readline", b_enable_readline));
   executable_map.set(new Builtin(".echo", b_echo));
+  executable_map.set(new Builtin(".error", b_error));
   executable_map.set(new Builtin(".disable_readline", b_disable_readline));
   executable_map.set(new Builtin(".else", b_else));
   executable_map.set(new Builtin(".else_if", b_else_if));
@@ -56,24 +65,28 @@ void internal_init(Error_list& exceptions) {
   executable_map.set(new Builtin(".global", b_global));
   executable_map.set(new Builtin(".if", b_if));
   executable_map.set(new Function(".init",
+      any_args.begin(), any_args.end(), false,
       "{.set_max_nesting 10\n"
-          ".function rwsh.file_open_failure {.echo init file $1 does not exist "
-          "\\(call stack $*2 \\) (\n)}\n"
-          ".function rwsh.raw_command {.nop $*}\n"
-          ".source /etc/rwshrc $*\n"
-          ".for &{.internal_functions}$ {" //.echo $1; .which_executable $1}\n"
-            ".if .which_test $1 {.nop}\n"
-            ".else {.echo &&1 not defined (\n)}}\n"
-          ".if .which_test rwsh.help {"
-            ".if .test_not_empty &&{rwsh.help} {.nop}\n"
-            ".else {.echo rwsh.help produces no output (\n)}}\n"
-          ".else {.echo rwsh.help not defined (\n)}}", exceptions));
+      "    .function_all_flags rwsh.file_open_failure name stack ... {"
+      "        .combine (init file ) $name ( does not exist\n"
+      "call stack ) $stack (\n)}\n"
+      "    .function_all_flags rwsh.raw_command -- args ... {.nop $args}\n"
+      "    .source /etc/rwshrc $args$\n"
+      "    .for &{.internal_functions}$ {" //.echo $1; .which_executable $1}\n"
+      "      .if .which_test $1 {.nop}\n"
+      "      .else {.echo &&1 not defined (\n)}}\n"
+      "    .if .which_test rwsh.help {"
+      "      .if .test_not_empty &&{rwsh.help} {.nop}\n"
+      "      .else {.echo rwsh.help produces no output (\n)}}\n"
+      "    .else {.echo rwsh.help not defined (\n)}}", exceptions));
   executable_map.set(new Function(".internal_features",
+      empty_prototype.begin(), empty_prototype.end(), false,
       "{.if .test_number_equal $# 1 {"
           ".echo rwsh.after_command rwsh.before_command rwsh.run_logic}; "
       ".else {.echo wrong argument count; .return -1}}", exceptions));
   executable_map.set(new Builtin(".internal_functions", b_internal_functions));
   executable_map.set(new Function(".internal_vars",
+      empty_prototype.begin(), empty_prototype.end(), false,
       "{.if .test_number_equal $# 1 {"
           ".echo FIGNORE ?}; "
       ".else {.echo wrong argument count; .return -1}}", exceptions));
@@ -87,6 +100,7 @@ void internal_init(Error_list& exceptions) {
   executable_map.set(new Builtin(".ls", b_ls));
   executable_map.set(new Builtin(".nop", b_nop));
   executable_map.set(new Builtin(".return", b_return));
+  executable_map.set(new Builtin(".rm_executable", b_rm_executable));
   executable_map.set(new Builtin(".scope", b_scope));
   executable_map.set(new Builtin(".selection_set", b_selection_set));
   executable_map.set(new Builtin(".set", b_set));
@@ -103,6 +117,7 @@ void internal_init(Error_list& exceptions) {
   executable_map.set(new Builtin(".test_file_exists", b_test_file_exists));
   executable_map.set(new Builtin(".test_greater", b_test_greater));
   executable_map.set(new Builtin(".test_is_number", b_test_is_number));
+  executable_map.set(new Builtin(".test_in", b_test_in));
   executable_map.set(new Builtin(".test_less", b_test_less));
   executable_map.set(new Builtin(".test_not_empty", b_test_not_empty));
   executable_map.set(new Builtin(".test_number_equal", b_test_number_equal));

@@ -33,6 +33,7 @@ class Base_executable {
   bool is_running(void) const {return !!executable_nesting;};
   static void exception_handler(Error_list& exceptions);
   static void catch_blocks(const Argm& argm, Error_list& exceptions);
+  static void catch_one(Argm& argm, Error_list& exceptions);
   static void add_error(void);
   unsigned execution_count(void) const {return execution_count_v;};
   const std::string& last_exception(void) const {return last_exception_v;};

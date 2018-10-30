@@ -1,6 +1,7 @@
 // Copyright (C) 2006-2017 Samuel Newbold
 
 int b_argc(const Argm& argm, Error_list& exceptions);
+int b_binary(const Argm& argm, Error_list& exceptions);
 int b_cd(const Argm& argm, Error_list& exceptions);
 int b_collect_errors_except(const Argm& argm, Error_list& exceptions);
 int b_collect_errors_only(const Argm& argm, Error_list& exceptions);
@@ -11,6 +12,7 @@ int b_else(const Argm& argm, Error_list& exceptions);
 int b_else_if(const Argm& argm, Error_list& exceptions);
 int b_else_if_not(const Argm& argm, Error_list& exceptions);
 int b_enable_readline(const Argm& argm, Error_list& exceptions);
+int b_error(const Argm& argm, Error_list& exceptions);
 int b_exec(const Argm& argm, Error_list& exceptions);
 int b_exit(const Argm& argm, Error_list& exceptions);
 int b_fallback_handler(const Argm& argm, Error_list& exceptions);
@@ -38,6 +40,7 @@ int b_local(const Argm& argm, Error_list& exceptions);
 int b_ls(const Argm& argm, Error_list& exceptions);
 int b_nop(const Argm& argm, Error_list& exceptions);
 int b_return(const Argm& argm, Error_list& exceptions);
+int b_rm_executable(const Argm& argm, Error_list& exceptions);
 int b_scope(const Argm& argm, Error_list& exceptions);
 int b_selection_set(const Argm& argm, Error_list& exceptions);
 int b_set(const Argm& argm, Error_list& exceptions);
@@ -50,6 +53,7 @@ int b_stepwise(const Argm& argm, Error_list& exceptions);
 int b_store_output(const Argm& argm, Error_list& exceptions);
 int b_test_file_exists(const Argm& argm, Error_list& exceptions);
 int b_test_greater(const Argm& argm, Error_list& exceptions);
+int b_test_in(const Argm& argm, Error_list& exceptions);
 int b_test_is_number(const Argm& argm, Error_list& exceptions);
 int b_test_less(const Argm& argm, Error_list& exceptions);
 int b_test_not_empty(const Argm& argm, Error_list& exceptions);

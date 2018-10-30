@@ -6,9 +6,10 @@ std::string word_from_value(const std::string& value);
 
 class Variable_map : private std::map<std::string, std::string> {
   typedef std::map<std::string, std::string> Base;
-  std::set<std::string> used_vars;
   std::set<std::string> checked_vars;
   std::set<std::string> local_vars;
+  std::set<std::string> undefined_vars;
+  std::set<std::string> used_vars;
   Variable_map* parent;
 
   const Variable_map* parent_with(const std::string& key) const;
@@ -28,31 +29,33 @@ public:
 
   const_iterator begin(void) const {return Base::begin();};
   const_iterator end(void) const {return Base::end();};
-  const std::set<std::string>& locals(void) const {return local_vars;};
   iterator begin(void) {return Base::begin();};
   iterator end(void) {return Base::end();};
   unsigned size(void) const {return Base::size();};
+
+  void add_undefined(const std::string& key) {undefined_vars.insert(key);}
   void append_word_locally(const std::string& key, const std::string& value);
   void append_word_if_exists(const std::string& key, const std::string& value);
   void param_or_append_word(const std::string& key, const std::string& value);
-  bool check(const std::string& key);
-  bool exists(const std::string& key) const;
+  template <class In, class Out>
+      Out copy_to_char_star_star(
+              In first, In last, Out res, const Variable_map* descendant);
+  bool exists(const std::string& key, bool check);
+  void export_env(std::vector<char*>& env);
   const std::string& get(const std::string& key);
   int global(const std::string& key, const std::string& value);
   int param(const std::string& key, const std::string& value);
   int local(const std::string& key, const std::string& value);
+  const std::set<std::string>& locals(void) const {return local_vars;};
   void set(const std::string& key, const std::string& value);
+  bool simple_exists(const std::string& key) const {return find(key) != end();}
   int unset(const std::string& key);
   bool used_vars_contains(const std::string& key) const {
     return used_vars.find(key) !=  used_vars.end();};
   bool checked_vars_contains(const std::string& key) const {
     return checked_vars.find(key) !=  checked_vars.end();};
   void used_vars_insert(const std::string& key) {
-    used_vars.insert(key);};
-  template <class In, class Out>
-      Out copy_to_char_star_star(
-              In first, In last, Out res, const Variable_map* descendant);
-  void export_env(std::vector<char*>& env);};
+    used_vars.insert(key);}; };
 
 inline bool isargvar(const std::string& focus) {
   switch(focus[0]) {
