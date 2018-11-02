@@ -20,8 +20,8 @@ line continuation
  .echo ignore leading space
 	.echo ignore leading tab
 rwsh.mapped_argfunction {	   .echo ignore leading tab in argfunction}
-.which_executable rwsh.mapped_argfunction {.nop}
-.which_executable rwsh.argfunction {
+.whence_function rwsh.mapped_argfunction {.nop}
+.whence_function rwsh.argfunction {
   multiple line argfunction }
 .nop rwsh.argfunction rwsh.mismatched_brace } &&&is$not$all
 .source
@@ -34,30 +34,28 @@ rwsh.mapped_argfunction {	   .echo ignore leading tab in argfunction}
 .source test_files/unclosed_parenthesis.rwsh
 .source test_files/multiple_errors.rwsh
 .nop multiple statements \; on a line
-.which_executable rwsh.argfunction {rwsh.multiple_argfunctions} {}
-.which_executable rwsh.argfunction {rwsh.argfunction with text args}
-.which_executable rwsh.argfunction {rwsh.argfunction {with a function arg}}
-w x {rwsh.escaped_argfunction me}
-.which_executable rwsh.argfunction {{{{{{{{{{{}}}}}}}}}}}
-.which_executable rwsh.argfunction {
+.whence_function rwsh.argfunction {rwsh.multiple_argfunctions} {}
+.whence_function rwsh.argfunction {rwsh.argfunction with text args}
+.whence_function rwsh.argfunction {rwsh.argfunction {with a function arg}}
+.whence_function x {rwsh.escaped_argfunction me}
+.whence_function rwsh.argfunction {{{{{{{{{{{}}}}}}}}}}}
+.whence_function rwsh.argfunction {
   .function_all_flags  x  { ${ .which_path  echo  $PATH }  something } }
 
 ## ability of functions to perform custom control flow
 # rwshrc-basic
-fni w command {.which_executable $command {rwsh.argfunction}}
 .function e {.echo $*}
 .function om {rwsh.argfunction}
 .function_all_flags sa [args ...] {
   .scope $args$ ([args ...]) {rwsh.argfunction}}
 .function_all_flags se {.scope () {rwsh.argfunction}}
-.which_executable w
-.which_executable e
-.which_executable om
-.which_executable sa
-.which_executable se
-which e
-which ee
-which () {}
+.whence_function e
+.whence_function om
+.whence_function sa
+.whence_function se
+whence e
+whence ee
+whence () {}
 e text that does not have a prompt appended
 se {e again}
 if_only .return 1 {e not printed}
@@ -94,8 +92,8 @@ e $*2 1 2
 .else {}
 
 # .init, rwshrc's autofunction, .binary
-which .init
-which rwsh.autofunction
+whence .init
+whence rwsh.autofunction
 .binary {e excess argfunction}
 .binary /bin/rzwsh
 .binary /bin/cat
@@ -109,15 +107,15 @@ true
 fals
 /bin/true add the binary by itself
 true add the function using existing binary
-.which_executable /bin/false
+.whence_function /bin/false
 false add the function and the binary at once
-.which_executable true
+.whence_function true
 /bin/echo this will add /bin/echo to the hash table
 /bin/echo this will use the existing /bin/echo reference
 echo this function is already defined
-.which_executable echo
+.whence_function echo
 rwsh.autofunction ./rwsh
-.which_executable ./rwsh
+.whence_function ./rwsh
 ./rwsh -c (echo in a subshell)
 ./rwsh -c (false)
 ./rwsh -c (.get_pid)
@@ -125,12 +123,12 @@ rwsh.autofunction ./rwsh
 ./rwsh test_files/pause_hello.rwsh <test_files/pause_hello.rwsh
 ./rwsh test_files/signal_triggered.rwsh <test_files/pause_hello.rwsh
 rwsh.autofunction test_files/../rwsh
-which test_files/../rwsh
+whence test_files/../rwsh
 
 .function_all_flags rwsh.autofunction -- cmd [args ...] {
   # $args$ redefining rwsh.autofunction tested by subsequent usage
   .local full_path ${.which_path $cmd $PATH}
-  if_only_not .which_test $full_path {.binary $full_path}
+  if_only_not .test_executable_exists $full_path {.binary $full_path}
   if_only_not .test_string_equal $cmd $full_path {
     .function_all_flags $cmd -- [args ...] {
       &&full_path $args$
@@ -160,7 +158,7 @@ se {se {.for @e*c {e $1 $nl}} >test_files/tmp}
 .global LC_ALL C
 .nop $LC_ALL
 sort test_files/tmp
-w sort
+whence sort
 e @test_files/*xx
 e @test_files/*x*x*x*x
 e @test_files/*xyxy
@@ -244,7 +242,7 @@ se {sa &B$$1 {e $# $args$}}
 # Arg_spec::SUBSTITUTION and Arg_spec::SOON_SUBSTITUTION, apply(), interpret(),
 # evaluate_substitution()
 e ${e $A}
-w rwsh.argfunction {e ${e $A}}
+whence rwsh.argfunction {e ${e $A}}
 .scope not_bin A {
    e &{.echo $A} &&{.echo $A} $A $nl
    .scope otherwise A {
@@ -394,10 +392,10 @@ x {x {x {x {
 .fork se {.exec /bin/echo something; /bin/echo else}
 .scope () {.fork se {.exec /bn/echo 1 2 3}}
 .fork se {/bn/echo 1 2 3}
-.which_return /bn/echo
+.last_exception /bn/echo
 .exec /bn/echo 1 2 3
 /bn/echo 1 2 3
-.which_return /bn/echo
+.last_exception /bn/echo
 .fork se {/bn/echo 1 2 3}
 .fork .exec /bn/echo 1 2 3
 /bn/echo 1 2 3
@@ -433,14 +431,14 @@ x {x {x {x {
 .function_all_flags rwsh.escaped_argfunction {.nop}
 .rm_executable a
 .function_all_flags a {.nop}
-.which_executable a
+.whence_function a
 a 1 2 3
 .rm_executable a
-.which_executable a
+.whence_function a
 .global A \
 .echo () A () A () $#
 .function_all_flags a arg {e 9 $A $arg @/usr}
-.which_executable a
+.whence_function a
 a \
 a 1
 a 1 2
@@ -451,7 +449,7 @@ a 1 2
 fn g name {.function_all_flags $name name {
   .function_all_flags $name {rwsh.argfunction}}}
 g a {e 3 2 1 $nl}
-w a
+whence a
 a b
 b
 # a function redefining itself doesn't seg fault
@@ -472,11 +470,11 @@ g
 .function_all_flags a [-- arg] {e -- cannot take arguments}
 .function_all_flags a [arg -- foo] {e -- cannot take arguments}
 .rm_executable nonsense
-w test_var_greater
+whence test_var_greater
 .scope 5 n {test_var_greater n}
 .scope 5 n {test_var_greater n 3 12}
 .scope 5 n {test_var_greater n 3}
-w ntimes
+whence ntimes
 ntimes -- 3 {e $n remaining $nl}
 ntimes 2 {ntimes 3 {e &&n and $n remaining $nl}}
 .function_all_flags a [-x] [-] [--long-opt y second {
@@ -486,13 +484,13 @@ ntimes 2 {ntimes 3 {e &&n and $n remaining $nl}}
 .function_all_flags a [-?] -- foo {.list_locals}
 .function_all_flags a [-x] -- {.list_locals}
 .function_all_flags a [--] {.list_locals}
-w a
+whence a
 a
 a --
 a foo
 .function_all_flags a [-x] [--long-opt y] second {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
-w a
+whence a
 a
 a single
 a -x single
@@ -501,7 +499,7 @@ a --long-opt single
 a --long-opt first -x --long-opt second single
 .function_all_flags a [-q option1 option2] [-x o1 o2 o3 o4] required {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
-w a
+whence a
 a
 a single
 a -q one two
@@ -514,7 +512,7 @@ a -x one two three four five -q six seven
 a one -x two three four five -q six seven
 .function_all_flags a [optional0] -- [optional1 optional2 optional3] required {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
-w a
+whence a
 a
 a single
 a one two
@@ -523,14 +521,14 @@ a one two three four five
 a one two three four five six seven eight nine
 .function_all_flags a -y [second] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
-w a
+whence a
 a
 a 1
 a 1 2
 a 1 2 3
 .function_all_flags a [-x] -y [--long-opt] second [--] [-] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
-w a
+whence a
 a --long-opt -xx over-long flag
 a -xx --long-opt over-long flag
 a --long-op short flag
@@ -568,7 +566,7 @@ a --long-opt -x -x - --long-opt all_flags doubled
 .function_all_flags a [-first] [-to] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   e nothing_required}
-w a
+whence a
 a
 a excess
 a -to
@@ -579,7 +577,7 @@ a -to -first
 .function_all_flags a [-?] [-first] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   e nothing_required}
-w a
+whence a
 a
 a excess
 a -to
@@ -590,14 +588,14 @@ a -to -first
 .function_all_flags a [-*] [-first] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   e nothing_required}
-w a
+whence a
 a
 a -to -- -first
 a -to -first
 .function_all_flags a [-?] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   e nothing_required}
-w a
+whence a
 a
 .function_all_flags a ... y {}
 .function_all_flags a [-x] [--file file] ... y {}
@@ -607,7 +605,7 @@ a
 .function_all_flags a x [... y] z ... {}
 .function_all_flags a [y z] ... x {}
 .function_all_flags a [y] ... x {}
-w a
+whence a
 .function_all_flags a x ... y ... {}
 .function_all_flags a [x ...] [y z] {}
 .function_all_flags a [x ...] y ... {}
@@ -618,17 +616,17 @@ w a
 .function_all_flags a [-x ...] b [c] {}
 .function_all_flags a -? x ... y {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
-w a
+whence a
 a -c -a -b first second third
 a -c first -a second -b third
 .function_all_flags a -* x ... y {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
-w a
+whence a
 a -c -a -b first second third
 a -c first -a second -b third
 .function_all_flags a [-?] x ... y {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
-w a
+whence a
 a 
 a first
 a first (se cond)
@@ -636,12 +634,12 @@ a first (se cond) third
 a first (se cond) third fourth (fi fth)
 .function_all_flags a [-?] x [...] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
-w a
+whence a
 a
 a first second third fourth fifth
 .function_all_flags a [-?] x [--] [y ...] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
-w a
+whence a
 a
 a first
 a first second
@@ -649,7 +647,7 @@ a first second third
 a first second third fourth fifth
 .function_all_flags a [-?] a [b ... c] d {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
-w a
+whence a
 a first
 a first second
 a first second third
@@ -658,7 +656,7 @@ a first second third fourth fifth
 a first second third fourth fifth sixth
 .function_all_flags a [-x ...] b c {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
-w a
+whence a
 a first second
 a -x first
 a -x first second
@@ -666,7 +664,7 @@ a -x first second third
 a -x first second third fourth
 .function_all_flags a [-x b ...] c {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
-w a
+whence a
 a first
 a -x first
 a -x (fi rst) second
@@ -682,7 +680,7 @@ a -x (fi rst) (sec ond) third fourth
   if_only .var_exists b {c (b: ) $b$ $nl}
   if_only .var_exists c {c (c: ) $c$ $nl}
 }
-w a
+whence a
 a first
 a -x first
 a -x (fi rst) second
@@ -693,7 +691,7 @@ a -x (fi rst) (sec ond) third fourth
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   .combine $nl
   if_only .var_exists x {c (x: ) $x$ $nl}}
-w a
+whence a
 a
 a (fi rst)
 a (fi rst) second
@@ -703,7 +701,7 @@ a () (sec ond) third fourth
 a (fi rst) (sec ond) (thi rd) (fou rth) (fi fth)
 .function_all_flags a [-?] [x] [... y] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
-w a
+whence a
 a
 a (fi rst)
 a (fi rst) second
@@ -716,7 +714,7 @@ a (fi rst) (sec ond) (thi rd) (fou rth) (fi fth)
   if_only .var_exists x {c (x: ) $x $nl}
   if_only .var_exists y {c (y: ) $y$ $nl}
   if_only .var_exists z {c (z: ) $z$ $nl}}
-w a
+whence a
 a
 a (fi rst)
 a (fi rst) second
@@ -726,7 +724,7 @@ a (fi rst) (sec ond) (thi rd) (fou rth) (fi fth)
 .function_all_flags a -- [-x] y z {}
 .function_all_flags a -- [x y] z {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
-w a
+whence a
 a
 a --file
 a first second third
@@ -738,6 +736,7 @@ a -x second -
 .get_max_collectible_exceptions {excess}
 .set_max_collectible_exceptions 1 {excess}
 .set_max_collectible_exceptions NaN
+.get_max_collectible_exceptions
 .set_max_collectible_exceptions 0
 .get_max_collectible_exceptions
 .set_max_collectible_exceptions 7
@@ -798,6 +797,7 @@ se {.collect_errors_only rwsh.function_not_found {
 .function_all_flags collecting_handler args ... {
   echo $args$
 }
+.get_max_extra_exceptions
 .set_max_extra_exceptions 1
 .try_catch_recursive collecting_handler {
   .collect_errors_except .echo {
@@ -1167,14 +1167,14 @@ se {.is_default_error}
 .scope single ([-x] [--long-opt y] second) {var_val ${.list_locals}$}
 .function_all_flags a [-x] [--long-opt y] second {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
-w a
+whence a
 .function_all_flags pt -- args ... {
   .scope $args$ ([-x] [--long-opt y] second) {
     for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
   .combine $nl
   .scope $args$ ( [-?] [--long-opt y] second) {
     for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}}
-w pt
+whence pt
 a
 a single
 pt single
@@ -1189,7 +1189,7 @@ pt --long-opt first -x --long-opt second single
 .function_all_flags a [-?] [-first] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   e nothing_required}
-w a
+whence a
 .function_all_flags pts -- [args ...] {
   .if var_exists args {
     .scope $args$ ([-first] [-?]) {
@@ -1198,7 +1198,7 @@ w a
   else {.scope ([-first] [-?]) {
       .for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
       e nothing_required}}
-w pts
+whence pts
 a
 pts
 a excess
@@ -1280,6 +1280,8 @@ e_after {sa echo hi {.try_catch_recursive ${.internal_functions}$ {&&&args$}}}
 e_after {.try_catch_recursive rwsh.not_a_number {.try_catch_recursive rwsh.not_a_number {.return A}}}
 e_after {.try_catch_recursive rwsh.not_a_number {.try_catch_recursive rwsh.not_a_number {.return A}}}
 e_after {sa echo hi {.try_catch_recursive ${.internal_functions}$ {&&&args$}}}
+.set_max_extra_exceptions 5
+.get_max_extra_exceptions
 
 # .stepwise
 .function_all_flags wrapper args ... {a $args$ two; a $args$ three}
@@ -1380,27 +1382,42 @@ wrapper 1 2
 .nop .toggle_readline
 .nop .toggle_readline
 
-# .which_executable .which_test .which_return
+# .test_executable_exists .type .whence_function 
 # Arg_script::str() but only an unknown fraction of the lines
 # Arg_spec::str() (except trailing whitespace) only through SOON case
-.which_test
-.which_test j
-.which_test #
-.which_test rwsh.mapped_argfunction
-.which_test rwsh.mapped_argfunction {rwsh.argfunction}
-.which_executable
-.which_executable j
-.which_executable #
-w rwsh.mapped_argfunction {.nop 1 () \ \\ \$ \@ \) \(}
-w rwsh.mapped_argfunction {.nop 1 () \  \\ \$ \@ \) \(}
-w rwsh.mapped_argfunction {@a @$a @$1 @$* @$*2}
-w rwsh.mapped_argfunction {>dummy_file}
+.test_executable_exists
+.test_executable_exists j
+.test_executable_exists #
+.test_executable_exists .nop
+.test_executable_exists /bin/cat
+.test_executable_exists rwsh.mapped_argfunction
+.test_executable_exists rwsh.mapped_argfunction {rwsh.argfunction}
+.type
+.type j
+.type #
+.type .nop
+.type /bin/cat
+.type rwsh.mapped_argfunction
+.type rwsh.mapped_argfunction {rwsh.argfunction}
+type .nop rwsh.mapped_argfunction j # {rwsh.argfunction}
+type -t .nop rwsh.mapped_argfunction j # {rwsh.argfunction}
+.whence_function
+.whence_function j
+.whence_function #
+.whence_function .nop
+.whence_function /bin/cat
+.whence_function rwsh.mapped_argfunction
+.whence_function rwsh.mapped_argfunction {rwsh.argfunction}
+whence rwsh.mapped_argfunction {.nop 1 () \ \\ \$ \@ \) \(}
+whence rwsh.mapped_argfunction {.nop 1 () \  \\ \$ \@ \) \(}
+whence rwsh.mapped_argfunction {@a @$a @$1 @$* @$*2}
+whence rwsh.mapped_argfunction {>dummy_file}
 # new tests here
-w rwsh.mapped_argfunction {{&&{&&x &&{e}}$$$ ${&&x ${e}}$$$ {&&&x &&&{e} {&&&&x &&&&{e}}}}}
-w rwsh.mapped_argfunction {$A $$A $0 $$$1 $# $* $*2 $A$$$ $A$10 $$*$ $$$*12$}
-w rwsh.mapped_argfunction {&&A &&0 &&* &&*3 &&$A$$$ &&$A$10 &&*$ &&*6$ {&&&A$ &&&A$10}}
+.whence_function rwsh.mapped_argfunction {{&&{&&x &&{e}}$$$ ${&&x ${e}}$$$ {&&&x &&&{e} {&&&&x &&&&{e}}}}}
+whence rwsh.mapped_argfunction {$A $$A $0 $$$1 $# $* $*2 $A$$$ $A$10 $$*$ $$$*12$}
+.whence_function rwsh.mapped_argfunction {&&A &&0 &&* &&*3 &&$A$$$ &&$A$10 &&*$ &&*6$ {&&&A$ &&&A$10}}
 .function_all_flags wm [args ...] {
-   w rwsh.mapped_argfunction {rwsh.argfunction}
+   .whence_function rwsh.mapped_argfunction {rwsh.argfunction}
    .echo $nl
    .scope $args$ (a1 a2 a3) {rwsh.argfunction}}
 wm (aa ab ac) bb cc {
@@ -1413,7 +1430,7 @@ wm (aa ab ac) bb cc {
   sa $args$ {echo $args$ $#}
   sa $more$ {echo $args$ $#}}}
 .function_all_flags wm [args ...] {
-   w rwsh.mapped_argfunction {rwsh.argfunction}
+   whence rwsh.mapped_argfunction {rwsh.argfunction}
    .echo $nl
    .nop $args
    se {rwsh.argfunction}}
@@ -1427,12 +1444,12 @@ wm () {
 wm () {.echo () xx(yy \$ \@ \$$ \@@ }
 wm () {.echo (  ) (	) (
 )}
-w rwsh.mapped_argfunction {.nop 1}
-w rwsh.mapped_argfunction {@a @$a @$1 @$* @$*2}
-w rwsh.mapped_argfunction {>dummy_file}
+whence rwsh.mapped_argfunction {.nop 1}
+whence rwsh.mapped_argfunction {@a @$a @$1 @$* @$*2}
+whence rwsh.mapped_argfunction {>dummy_file}
 
-.which_executable rwsh.mapped_argfunction
-.which_executable rwsh.mapped_argfunction {rwsh.argfunction}
+# .waiting_for_shell .waiting_for_user .waiting_for_binary
+# actual use of these builtins is in test_inconsistent.sh
 .waiting_for_shell j
 .waiting_for_shell {excess argfunc}
 # .waiting_for_shell
@@ -1442,29 +1459,23 @@ w rwsh.mapped_argfunction {>dummy_file}
 .waiting_for_binary j
 .waiting_for_binary {excess argfunc}
 # .waiting_for_binary
-.which_return
-.which_return rwsh.mapped_argfunction
-.which_return rwsh.mapped_argfunction {echo not tracked}
-.which_return j
-.which_return .which_return
-.which_return .waiting_for_binary
 
-# .which_last_exception
-.which_last_exception .which_last_exception
-.which_last_exception
-.which_last_exception .try_catch_recursive {excess argfunc}
-.which_last_exception .which_last_exception
-.which_last_exception .which_last_return
-.which_last_exception .try_catch_recursive
-.which_last_exception .which_last_execution_time
-.which_last_exception /bin/which
-.which_last_exception /bin/cat
-.which_last_exception /bin/echo
-.which_last_exception e
-.which_last_exception test_var_greater
+# .last_exception
+.last_exception .last_exception
+.last_exception
+.last_exception .try_catch_recursive {excess argfunc}
+.last_exception .last_exception
+.last_exception function_that_does_not_exist
+.last_exception .try_catch_recursive
+.last_exception .last_execution_time
+.last_exception /bin/which
+.last_exception /bin/cat
+.last_exception /bin/echo
+.last_exception e
+.last_exception test_var_greater
 
-# .usleep .which_execution_count .which_last_execution_time
-# .which_total_execution_time
+# .usleep .execution_count .last_execution_time
+# .total_execution_time
 .usleep_overhead excess
 .usleep_overhead {excess argfunc}
 .usleep_overhead 
@@ -1474,18 +1485,18 @@ w rwsh.mapped_argfunction {>dummy_file}
 .usleep 5i
 .usleep 800
 # .usleep_overhead 
-.which_execution_count
-.which_execution_count j
-.which_execution_count rwsh.mapped_argfunction {echo not tracked}
-.which_execution_count .usleep
-.which_last_execution_time
-.which_last_execution_time j
-.which_last_execution_time rwsh.mapped_argfunction {echo not tracked}
-# .which_last_execution_time .usleep
-.which_total_execution_time
-.which_total_execution_time rwsh.mapped_argfunction {echo not tracked}
-.which_total_execution_time j
-# .which_total_execution_time .usleep
+.execution_count
+.execution_count j
+.execution_count rwsh.mapped_argfunction {echo not tracked}
+.execution_count .usleep
+.last_execution_time
+.last_execution_time j
+.last_execution_time rwsh.mapped_argfunction {echo not tracked}
+# .last_execution_time .usleep
+.total_execution_time
+.total_execution_time rwsh.mapped_argfunction {echo not tracked}
+.total_execution_time j
+# .total_execution_time .usleep
 
 # .which_path
 .which_path cat
@@ -1608,9 +1619,9 @@ e $A
 # rwsh.after_command rwsh.raw_command rwsh.prompt
 # all of these are used as part of the test itself. If this changes, then the 
 # following tests will fail.
-w rwsh.after_command
-w rwsh.prompt
-w rwsh.raw_command
+whence rwsh.after_command
+whence rwsh.prompt
+whence rwsh.raw_command
 
 # rwsh.before_command
 fn rwsh.before_command args ... {.echo $0 $args$; .echo $nl}
@@ -1624,10 +1635,10 @@ fn rwsh.before_command args ... {.echo $0 $args$; .echo $nl}
 # rwsh.function_not_found
 se {se {not_a_thing; e should not be printed}}
 .rm_executable rwsh.function_not_found
-w rwsh.function_not_found
-w not_a_thing
+.whence_function rwsh.function_not_found
+whence not_a_thing
 not_a_thing
-w rwsh.function_not_found
+.whence_function rwsh.function_not_found
 
 # rwsh.help rwsh.internal_error
 rwsh.help
@@ -1637,9 +1648,11 @@ rwsh.internal_error techincally this is untestable
 # rwsh.escaped_argfunction
 rwsh.mapped_argfunction 1 2 3 {e a $* a}
 rwsh.mapped_argfunction
-fn g {w rwsh.argfunction {rwsh.unescaped_argfunction}
-     w rwsh.argfunction {rwsh.argfunction}
-     w rwsh.argfunction {rwsh.escaped_argfunction}}
+fn g {.whence_function rwsh.argfunction {rwsh.unescaped_argfunction}
+     .combine $nl
+     .whence_function rwsh.argfunction {rwsh.argfunction}
+     .combine $nl
+     .whence_function rwsh.argfunction {rwsh.escaped_argfunction}}
 g {}
 
 # rwsh.excessive_nesting Base_executable::exception_handler
@@ -1652,6 +1665,7 @@ g
 fn rwsh.excessive_nesting args ... {.nop $args; e &&{.return 1}}
 fn rwsh.failed_substitution args ... {.nop $args; e $Z}
 g
+.set_max_extra_exceptions 0
 e_after {.try_catch_recursive rwsh.undeclared_variable rwsh.excessive_nesting rwsh.failed_substitution {g}}
 .set_max_extra_exceptions 5
 e_after {.try_catch_recursive rwsh.undeclared_variable rwsh.excessive_nesting rwsh.failed_substitution {g}}

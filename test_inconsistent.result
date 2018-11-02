@@ -30,6 +30,7 @@ call stack .source rwsh.mapped_argfunction
 
 # set up environment
 .set_max_collectible_exceptions 10
+.set_max_extra_exceptions 5
 .global nl (
 )
 
@@ -270,11 +271,15 @@ fn ntimes n {
   .else {.global $var $value}}
 fn single -- args ... {.scope ${$args$}$ result {echo $result}}
 fn test_var_not_equal var value {.test_string_unequal $$var $value}
-.function_all_flags test_var_greater -- var value {.test_greater $$var $value}
-fn which command {
-  .if .which_test $command {
-    .combine ${.which_executable $command {rwsh.argfunction}} $nl}
-  .else {echo no $command}}
+fn test_var_greater -- var value {.test_greater $$var $value}
+fn type [-t] args ... {
+  .for $args$ {
+    .try_catch_recursive rwsh.function_not_found {
+      if_only_not .var_exists -t {.echo &&&1 is ()}
+      .combine &&&&{.type &&&1 {rwsh.argfunction}} $nl}}}
+fn whence command {
+  .try_catch_recursive rwsh.function_not_found {
+    .combine ${.whence_function $command {rwsh.argfunction}} $nl}}
 fn whichp binary {.which_path $binary $PATH}
 .function_all_flags var_exists -- var {.var_exists $var}
 .function_all_flags var_val -- [var ...] {
@@ -320,6 +325,7 @@ $.source /etc/rwshrc-basic
 
 # set up environment
 .set_max_collectible_exceptions 10
+.set_max_extra_exceptions 5
 .global nl (
 )
 
@@ -560,11 +566,15 @@ fn ntimes n {
   .else {.global $var $value}}
 fn single -- args ... {.scope ${$args$}$ result {echo $result}}
 fn test_var_not_equal var value {.test_string_unequal $$var $value}
-.function_all_flags test_var_greater -- var value {.test_greater $$var $value}
-fn which command {
-  .if .which_test $command {
-    .combine ${.which_executable $command {rwsh.argfunction}} $nl}
-  .else {echo no $command}}
+fn test_var_greater -- var value {.test_greater $$var $value}
+fn type [-t] args ... {
+  .for $args$ {
+    .try_catch_recursive rwsh.function_not_found {
+      if_only_not .var_exists -t {.echo &&&1 is ()}
+      .combine &&&&{.type &&&1 {rwsh.argfunction}} $nl}}}
+fn whence command {
+  .try_catch_recursive rwsh.function_not_found {
+    .combine ${.whence_function $command {rwsh.argfunction}} $nl}}
 fn whichp binary {.which_path $binary $PATH}
 .function_all_flags var_exists -- var {.var_exists $var}
 .function_all_flags var_val -- [var ...] {
@@ -596,15 +606,15 @@ $.global PATH /bin:/usr/bin
 
 0
 $.getpid
-2615
+32357
 0
 $.getppid
-14621
+15140
 0
 $.function_all_flags timings focus {
-  .combine $focus (:	last\() ${.which_last_execution_time $focus} \) \	
-  .combine (total\() ${.which_total_execution_time $focus} \) \	
-  .combine (count\() ${.which_execution_count $focus} \) $nl}
+  .combine $focus (:	last\() ${.last_execution_time $focus} \) \	
+  .combine (total\() ${.total_execution_time $focus} \) \	
+  .combine (count\() ${.execution_count $focus} \) $nl}
 
 0
 $.function_all_flags clock-watch {
@@ -620,22 +630,22 @@ $.function_all_flags clock-watch {
 $clock-watch
 timings:	last(0.000000)	total(0.000000)	count(0)
 clock-watch:	last(0.000000)	total(0.000000)	count(0)
-usleep overhead:	8.7e-05
-.usleep:	last(0.000687)	total(0.000687)	count(1)
-/bin/true:	last(0.000927)	total(0.000927)	count(1)
+usleep overhead:	6.4e-05
+.usleep:	last(0.000664)	total(0.000664)	count(1)
+/bin/true:	last(0.001054)	total(0.001054)	count(1)
 
 0
 $clock-watch
-timings:	last(0.000114)	total(0.000555)	count(4)
-clock-watch:	last(0.002654)	total(0.002654)	count(1)
-usleep overhead:	8.85e-05
-.usleep:	last(0.000690)	total(0.001377)	count(2)
-/bin/true:	last(0.000846)	total(0.001773)	count(2)
+timings:	last(0.000182)	total(0.000865)	count(4)
+clock-watch:	last(0.003217)	total(0.003217)	count(1)
+usleep overhead:	6.45e-05
+.usleep:	last(0.000665)	total(0.001329)	count(2)
+/bin/true:	last(0.000836)	total(0.001890)	count(2)
 
 0
 $rwsh.mapped_argfunction {timings timings; timings clock-watch}
-timings:	last(0.000131)	total(0.001093)	count(8)
-clock-watch:	last(0.002177)	total(0.004831)	count(2)
+timings:	last(0.000112)	total(0.001404)	count(8)
+clock-watch:	last(0.002163)	total(0.005380)	count(2)
 
 0
 $.error a stderr print will come before the diff $nl

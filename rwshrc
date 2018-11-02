@@ -6,7 +6,7 @@
 .function_all_flags rwsh.autofunction -- cmd [args ...] {
   .nop $args$
   .local full_path ${.which_path $cmd $PATH}
-  if_only_not .which_test $full_path {.binary $full_path}
+  if_only_not .test_executable_exists $full_path {.binary $full_path}
   if_only_not .test_string_equal $cmd $full_path {
     .function_all_flags $cmd -- [args ...] {
       &&full_path $args$}}

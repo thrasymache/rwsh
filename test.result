@@ -30,6 +30,7 @@ call stack .source rwsh.mapped_argfunction
 
 # set up environment
 .set_max_collectible_exceptions 10
+.set_max_extra_exceptions 5
 .global nl (
 )
 
@@ -270,11 +271,15 @@ fn ntimes n {
   .else {.global $var $value}}
 fn single -- args ... {.scope ${$args$}$ result {echo $result}}
 fn test_var_not_equal var value {.test_string_unequal $$var $value}
-.function_all_flags test_var_greater -- var value {.test_greater $$var $value}
-fn which command {
-  .if .which_test $command {
-    .combine ${.which_executable $command {rwsh.argfunction}} $nl}
-  .else {echo no $command}}
+fn test_var_greater -- var value {.test_greater $$var $value}
+fn type [-t] args ... {
+  .for $args$ {
+    .try_catch_recursive rwsh.function_not_found {
+      if_only_not .var_exists -t {.echo &&&1 is ()}
+      .combine &&&&{.type &&&1 {rwsh.argfunction}} $nl}}}
+fn whence command {
+  .try_catch_recursive rwsh.function_not_found {
+    .combine ${.whence_function $command {rwsh.argfunction}} $nl}}
 fn whichp binary {.which_path $binary $PATH}
 .function_all_flags var_exists -- var {.var_exists $var}
 .function_all_flags var_val -- [var ...] {
@@ -387,10 +392,10 @@ ignore leading tab
 $rwsh.mapped_argfunction {	   .echo ignore leading tab in argfunction}
 ignore leading tab in argfunction
 0
-$.which_executable rwsh.mapped_argfunction {.nop}
+$.whence_function rwsh.mapped_argfunction {.nop}
 {.nop}
 0
-$.which_executable rwsh.argfunction {
+$.whence_function rwsh.argfunction {
   multiple line argfunction }
 {
   multiple line argfunction}
@@ -461,18 +466,18 @@ call stack: .source
 $.nop multiple statements \; on a line
 
 -1
-$.which_executable rwsh.argfunction {rwsh.multiple_argfunctions} {}
+$.whence_function rwsh.argfunction {rwsh.multiple_argfunctions} {}
 multiple argfunctions not supported at this time
-$.which_executable rwsh.argfunction {rwsh.argfunction with text args}
+$.whence_function rwsh.argfunction {rwsh.argfunction with text args}
 cannot specify arguments for (rwsh.argfunction with text args!) directly
-$.which_executable rwsh.argfunction {rwsh.argfunction {with a function arg}}
+$.whence_function rwsh.argfunction {rwsh.argfunction {with a function arg}}
 cannot specify arguments for (rwsh.argfunction {with a function arg}!) directly
-$w x {rwsh.escaped_argfunction me}
+$.whence_function x {rwsh.escaped_argfunction me}
 cannot specify arguments for (rwsh.escaped_argfunction me!) directly
-$.which_executable rwsh.argfunction {{{{{{{{{{{}}}}}}}}}}}
+$.whence_function rwsh.argfunction {{{{{{{{{{{}}}}}}}}}}}
 {{{{{{{{{{{}}}}}}}}}}}
 0
-$.which_executable rwsh.argfunction {
+$.whence_function rwsh.argfunction {
   .function_all_flags  x  { ${ .which_path  echo  $PATH }  something } }
 {
   .function_all_flags x { ${ .which_path echo $PATH} something}}
@@ -484,9 +489,6 @@ $## ability of functions to perform custom control flow
 
 0
 $# rwshrc-basic
-
-0
-$fni w command {.which_executable $command {rwsh.argfunction}}
 
 0
 $.function e {.echo $*}
@@ -502,31 +504,28 @@ $.function_all_flags sa [args ...] {
 $.function_all_flags se {.scope () {rwsh.argfunction}}
 
 0
-$.which_executable w
-.function_all_flags w -- command {.which_executable $command {rwsh.argfunction}}
-0
-$.which_executable e
+$.whence_function e
 .function e {.echo $*}
 0
-$.which_executable om
+$.whence_function om
 .function om {rwsh.argfunction}
 0
-$.which_executable sa
+$.whence_function sa
 .function_all_flags sa [args ...] {
   .scope $args$ ([args ...]) {rwsh.argfunction}}
 0
-$.which_executable se
+$.whence_function se
 .function_all_flags se  {.scope () {rwsh.argfunction}}
 0
-$which e
+$whence e
 .function e {.echo $*}
 
 0
-$which ee
-no ee
+$whence ee
+ee : command not found ( ee .whence_function rwsh.mapped_argfunction rwsh.mapped_argfunction )
 
-0
-$which () {}
+-1
+$whence () {}
 .function_all_flags ()  {.nop}
 
 0
@@ -639,28 +638,28 @@ $
 $# .init, rwshrc's autofunction, .binary
 
 0
-$which .init
+$whence .init
 .function_all_flags .init -- [args ...] {.set_max_nesting 10
     .function_all_flags rwsh.file_open_failure name stack ... {        .combine (init file ) $name ( does not exist
 call stack ) $stack (
 )}
     .function_all_flags rwsh.raw_command -- args ... {.nop $args}
     .source /etc/rwshrc $args$
-    .for &{.internal_functions}$ {      .if .which_test $1 {.nop}
+    .for &{.internal_functions}$ {      .if .test_executable_exists $1 {.nop}
       .else {.echo &&1 not defined (
 )}}
-    .if .which_test rwsh.help {      .if .test_not_empty &&{rwsh.help} {.nop}
+    .if .test_executable_exists rwsh.help {      .if .test_not_empty &&{rwsh.help} {.nop}
       .else {.echo rwsh.help produces no output (
 )}}
     .else {.echo rwsh.help not defined (
 )}}
 
 0
-$which rwsh.autofunction
+$whence rwsh.autofunction
 .function_all_flags rwsh.autofunction -- cmd [args ...] {
   .nop $args$
   .local full_path ${.which_path $cmd $PATH}
-  if_only_not .which_test $full_path {.binary $full_path}
+  if_only_not .test_executable_exists $full_path {.binary $full_path}
   if_only_not .test_string_equal $cmd $full_path {
     .function_all_flags $cmd -- [args ...] {
       &full_path $args$}}
@@ -725,14 +724,15 @@ $/bin/true add the binary by itself
 $true add the function using existing binary
 
 0
-$.which_executable /bin/false
+$.whence_function /bin/false
+/bin/false : command not found ( /bin/false .whence_function )
 
-1
+-1
 $false add the function and the binary at once
 /bin/false returned 1 : call stack /bin/false false
 
 -1
-$.which_executable true
+$.whence_function true
 .function_all_flags true -- [args ...] {
       /bin/true $args$}
 0
@@ -748,13 +748,13 @@ $echo this function is already defined
 this function is already defined
 
 0
-$.which_executable echo
+$.whence_function echo
 .function_all_flags echo -- text ... {.echo $text; .combine $nl}
 0
 $rwsh.autofunction ./rwsh
 
 0
-$.which_executable ./rwsh
+$.whence_function ./rwsh
 ./rwsh
 0
 $./rwsh -c (echo in a subshell)
@@ -1108,7 +1108,7 @@ rwsh.undeclared_variable nl rwsh.undeclared_variable
 $rwsh.autofunction test_files/../rwsh
 
 0
-$which test_files/../rwsh
+$whence test_files/../rwsh
 .function_all_flags test_files/../rwsh -- [args ...] {
       ./test_files/../rwsh $args$}
 
@@ -1119,7 +1119,7 @@ $
 $.function_all_flags rwsh.autofunction -- cmd [args ...] {
   # $args$ redefining rwsh.autofunction tested by subsequent usage
   .local full_path ${.which_path $cmd $PATH}
-  if_only_not .which_test $full_path {.binary $full_path}
+  if_only_not .test_executable_exists $full_path {.binary $full_path}
   if_only_not .test_string_equal $cmd $full_path {
     .function_all_flags $cmd -- [args ...] {
       &&full_path $args$
@@ -1216,10 +1216,11 @@ executable_map.cc
 this sort function has been brought to you by .autofunction
 
 0
-$w sort
+$whence sort
 .function_all_flags sort -- [args ...] {
       /usr/bin/sort $args$
       echo this sort function has been brought to you by .autofunction}
+
 0
 $e @test_files/*xx
 test_files/ixxx
@@ -1518,8 +1519,9 @@ $# evaluate_substitution()
 $e ${e $A}
 /bin
 0
-$w rwsh.argfunction {e ${e $A}}
+$whence rwsh.argfunction {e ${e $A}}
 {e ${e $A}}
+
 0
 $.scope not_bin A {
    e &{.echo $A} &&{.echo $A} $A $nl
@@ -2010,7 +2012,7 @@ call stack: .which_path rwsh.autofunction rwsh.autofunction .scope se
 .fork returned 255 : call stack .fork
 
 -1
-$.which_return /bn/echo
+$.last_exception /bn/echo
 
 1
 $.exec /bn/echo 1 2 3
@@ -2024,7 +2026,7 @@ call stack: .which_path rwsh.autofunction rwsh.autofunction
 /bn/echo : command not found ( /bn/echo 1 2 3 )
 
 -1
-$.which_return /bn/echo
+$.last_exception /bn/echo
 
 1
 $.fork se {/bn/echo 1 2 3}
@@ -2171,7 +2173,7 @@ a : command not found ( a .rm_executable )
 $.function_all_flags a {.nop}
 
 0
-$.which_executable a
+$.whence_function a
 .function_all_flags a  {.nop}
 0
 $a 1 2 3
@@ -2183,9 +2185,10 @@ unacceptable arguments: for prototype ,
 $.rm_executable a
 
 0
-$.which_executable a
+$.whence_function a
+a : command not found ( a .whence_function )
 
-1
+-1
 $.global A \
 
 0
@@ -2195,7 +2198,7 @@ $.echo () A () A () $#
 $.function_all_flags a arg {e 9 $A $arg @/usr}
 
 0
-$.which_executable a
+$.whence_function a
 .function_all_flags a arg {e 9 $A $arg @/usr}
 0
 $a \
@@ -2233,9 +2236,10 @@ $fn g name {.function_all_flags $name name {
 $g a {e 3 2 1 $nl}
 
 0
-$w a
+$whence a
 .function_all_flags a name {
   .function_all_flags $name {e 3 2 1 $nl}}
+
 0
 $a b
 
@@ -2324,8 +2328,9 @@ $.rm_executable nonsense
 nonsense : command not found ( nonsense .rm_executable )
 
 -1
-$w test_var_greater
+$whence test_var_greater
 .function_all_flags test_var_greater -- var value {.test_greater $$var $value}
+
 0
 $.scope 5 n {test_var_greater n}
 unacceptable arguments: for prototype -- var value,
@@ -2346,11 +2351,12 @@ n was unused with call stack .scope
 $.scope 5 n {test_var_greater n 3}
 
 0
-$w ntimes
+$whence ntimes
 .function_all_flags ntimes n {
   .while test_var_greater n 0 {
     rwsh.mapped_argfunction {rwsh.argfunction}
     .var_subtract n 1}}
+
 0
 $ntimes -- 3 {e $n remaining $nl}
 3 remaining 
@@ -2392,8 +2398,9 @@ $.function_all_flags a [-x] -- {.list_locals}
 $.function_all_flags a [--] {.list_locals}
 
 0
-$w a
+$whence a
 .function_all_flags a [--] {.list_locals}
+
 0
 $a
 
@@ -2411,9 +2418,10 @@ $.function_all_flags a [-x] [--long-opt y] second {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
-$w a
+$whence a
 .function_all_flags a [--long-opt y] [-x] second {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+
 0
 $a
 unacceptable arguments: for prototype [--long-opt y] [-x] second,
@@ -2445,9 +2453,10 @@ $.function_all_flags a [-q option1 option2] [-x o1 o2 o3 o4] required {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
-$w a
+$whence a
 .function_all_flags a [-q option1 option2] [-x o1 o2 o3 o4] required {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+
 0
 $a
 unacceptable arguments: for prototype [-q option1 option2] [-x o1 o2 o3 o4] required,
@@ -2495,9 +2504,10 @@ $.function_all_flags a [optional0] -- [optional1 optional2 optional3] required {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
-$w a
+$whence a
 .function_all_flags a [optional0] -- [optional1 optional2 optional3] required {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+
 0
 $a
 unacceptable arguments: for prototype [optional0] -- [optional1 optional2 optional3] required,
@@ -2532,9 +2542,10 @@ $.function_all_flags a -y [second] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
-$w a
+$whence a
 .function_all_flags a -y [second] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+
 0
 $a
 unacceptable arguments: for prototype -y [second],
@@ -2559,9 +2570,10 @@ $.function_all_flags a [-x] -y [--long-opt] second [--] [-] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
-$w a
+$whence a
 .function_all_flags a [--long-opt] [-x] -y second [--] [-] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+
 0
 $a --long-opt -xx over-long flag
 -xx flag is unrecognized for a
@@ -2700,10 +2712,11 @@ $.function_all_flags a [-first] [-to] {
   e nothing_required}
 
 0
-$w a
+$whence a
 .function_all_flags a [-first] [-to] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
   e nothing_required}
+
 0
 $a
 -*() nothing_required
@@ -2743,10 +2756,11 @@ $.function_all_flags a [-?] [-first] {
   e nothing_required}
 
 0
-$w a
+$whence a
 .function_all_flags a [-?] [-first] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
   e nothing_required}
+
 0
 $a
 -*() -?() nothing_required
@@ -2786,10 +2800,11 @@ $.function_all_flags a [-*] [-first] {
   e nothing_required}
 
 0
-$w a
+$whence a
 .function_all_flags a [-?] [-first] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
   e nothing_required}
+
 0
 $a
 -*() -?() nothing_required
@@ -2809,10 +2824,11 @@ $.function_all_flags a [-?] {
   e nothing_required}
 
 0
-$w a
+$whence a
 .function_all_flags a [-?] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
   e nothing_required}
+
 0
 $a
 -*() -?() nothing_required
@@ -2855,8 +2871,9 @@ call stack: .function_all_flags
 $.function_all_flags a [y] ... x {}
 
 0
-$w a
+$whence a
 .function_all_flags a [y ...] x {}
+
 0
 $.function_all_flags a x ... y ... {}
 duplicated parameter in function definition: ...
@@ -2902,9 +2919,10 @@ $.function_all_flags a -? x ... y {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
-$w a
+$whence a
 .function_all_flags a [-?] x ... y {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+
 0
 $a -c -a -b first second third
 -*(-c -a -b) -?(-c -a -b) x(first second) y(third) 
@@ -2918,9 +2936,10 @@ $.function_all_flags a -* x ... y {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
-$w a
+$whence a
 .function_all_flags a [-?] x ... y {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+
 0
 $a -c -a -b first second third
 -*(-c -a -b) -?(-c -a -b) x(first second) y(third) 
@@ -2934,9 +2953,10 @@ $.function_all_flags a [-?] x ... y {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
-$w a
+$whence a
 .function_all_flags a [-?] x ... y {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+
 0
 $a 
 unacceptable arguments: for prototype [-?] x ... y,
@@ -2965,9 +2985,10 @@ $.function_all_flags a [-?] x [...] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
-$w a
+$whence a
 .function_all_flags a [-?] x ... {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+
 0
 $a
 unacceptable arguments: for prototype [-?] x ...,
@@ -2983,9 +3004,10 @@ $.function_all_flags a [-?] x [--] [y ...] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
-$w a
+$whence a
 .function_all_flags a [-?] x [--] [y ...] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+
 0
 $a
 unacceptable arguments: for prototype [-?] x [--] [y ...],
@@ -3010,9 +3032,10 @@ $.function_all_flags a [-?] a [b ... c] d {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
-$w a
+$whence a
 .function_all_flags a [-?] a [b ... c] d {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+
 0
 $a first
 unacceptable arguments: for prototype [-?] a [b ... c] d,
@@ -3044,9 +3067,10 @@ $.function_all_flags a [-x ...] b c {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
-$w a
+$whence a
 .function_all_flags a [-x ...] b c {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+
 0
 $a first second
 -*() b(first) c(second) 
@@ -3071,9 +3095,10 @@ $.function_all_flags a [-x b ...] c {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
-$w a
+$whence a
 .function_all_flags a [-x b ...] c {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+
 0
 $a first
 -*() c(first) 
@@ -3114,7 +3139,7 @@ $.function_all_flags a [-x ... b] c {
 }
 
 0
-$w a
+$whence a
 .function_all_flags a [-x ... b] c {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
   .combine $nl
@@ -3123,6 +3148,7 @@ $w a
   if_only .var_exists b {c (b: ) $b$ $nl}
   if_only .var_exists c {c (c: ) $c$ $nl}
 }
+
 0
 $a first
 -*() c(first) 
@@ -3174,11 +3200,12 @@ $.function_all_flags a x [-?] [... y z] {
   if_only .var_exists x {c (x: ) $x$ $nl}}
 
 0
-$w a
+$whence a
 .function_all_flags a [-?] x [... y z] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
   .combine $nl
   if_only .var_exists x {c (x: ) $x$ $nl}}
+
 0
 $a
 unacceptable arguments: for prototype [-?] x [... y z],
@@ -3223,9 +3250,10 @@ $.function_all_flags a [-?] [x] [... y] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
-$w a
+$whence a
 .function_all_flags a [-?] [x] [... y] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+
 0
 $a
 -*() -?() 
@@ -3253,13 +3281,14 @@ $.function_all_flags a [-?] [x y] [... z] {
   if_only .var_exists z {c (z: ) $z$ $nl}}
 
 0
-$w a
+$whence a
 .function_all_flags a [-?] [x y] [... z] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
   .combine $nl
   if_only .var_exists x {c (x: ) $x $nl}
   if_only .var_exists y {c (y: ) $y$ $nl}
   if_only .var_exists z {c (z: ) $z$ $nl}}
+
 0
 $a
 -*() -?() 
@@ -3308,9 +3337,10 @@ $.function_all_flags a -- [x y] z {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
-$w a
+$whence a
 .function_all_flags a -- [x y] z {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+
 0
 $a
 unacceptable arguments: for prototype -- [x y] z,
@@ -3354,6 +3384,9 @@ NaN is not a number
 call stack: .set_max_collectible_exceptions
 
 -1
+$.get_max_collectible_exceptions
+10
+0
 $.set_max_collectible_exceptions 0
 value 0 is out of usable numeric range
 call stack .set_max_collectible_exceptions
@@ -3464,6 +3497,9 @@ $.function_all_flags collecting_handler args ... {
   echo $args$
 }
 
+0
+$.get_max_extra_exceptions
+5
 0
 $.set_max_extra_exceptions 1
 
@@ -4472,6 +4508,7 @@ $.for ${.list_executables}$ {.combine $1 $nl}
 .enable_readline
 .error
 .exec
+.execution_count
 .exit
 .fallback_handler
 .for
@@ -4494,6 +4531,8 @@ $.for ${.list_executables}$ {.combine $1 $nl}
 .is_default_error
 .is_default_input
 .is_default_output
+.last_exception
+.last_execution_time
 .list_environment
 .list_executables
 .list_locals
@@ -4512,6 +4551,7 @@ $.for ${.list_executables}$ {.combine $1 $nl}
 .source
 .stepwise
 .store_output
+.test_executable_exists
 .test_file_exists
 .test_greater
 .test_in
@@ -4523,7 +4563,9 @@ $.for ${.list_executables}$ {.combine $1 $nl}
 .test_string_unequal
 .throw
 .toggle_readline
+.total_execution_time
 .try_catch_recursive
+.type
 .unset
 .usleep
 .usleep_overhead
@@ -4536,14 +4578,8 @@ $.for ${.list_executables}$ {.combine $1 $nl}
 .waiting_for_binary
 .waiting_for_shell
 .waiting_for_user
-.which_executable
-.which_execution_count
-.which_last_exception
-.which_last_execution_time
+.whence_function
 .which_path
-.which_return
-.which_test
-.which_total_execution_time
 .while
 /
 /bin/cat
@@ -4678,10 +4714,10 @@ test_files/../rwsh
 test_var_greater
 test_var_not_equal
 true
+type
 var_exists
 var_val
-w
-which
+whence
 whichp
 
 0
@@ -4886,9 +4922,10 @@ $.function_all_flags a [-x] [--long-opt y] second {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
 
 0
-$w a
+$whence a
 .function_all_flags a [--long-opt y] [-x] second {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+
 0
 $.function_all_flags pt -- args ... {
   .scope $args$ ([-x] [--long-opt y] second) {
@@ -4898,13 +4935,14 @@ $.function_all_flags pt -- args ... {
     for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}}
 
 0
-$w pt
+$whence pt
 .function_all_flags pt -- args ... {
   .scope $args$ ([-x] [--long-opt y] second) {
     for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
   .combine $nl
   .scope $args$ ( [-?] [--long-opt y] second) {
     for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}}
+
 0
 $a
 unacceptable arguments: for prototype [--long-opt y] [-x] second,
@@ -4960,10 +4998,11 @@ $.function_all_flags a [-?] [-first] {
   e nothing_required}
 
 0
-$w a
+$whence a
 .function_all_flags a [-?] [-first] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
   e nothing_required}
+
 0
 $.function_all_flags pts -- [args ...] {
   .if var_exists args {
@@ -4975,7 +5014,7 @@ $.function_all_flags pts -- [args ...] {
       e nothing_required}}
 
 0
-$w pts
+$whence pts
 .function_all_flags pts -- [args ...] {
   .if var_exists args {
     .scope $args$ ([-first] [-?]) {
@@ -4984,6 +5023,7 @@ $w pts
   else {.scope ([-first] [-?]) {
       .for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
       e nothing_required}}
+
 0
 $a
 -*() -?() nothing_required
@@ -5279,6 +5319,12 @@ $e_after {sa echo hi {.try_catch_recursive ${.internal_functions}$ {&&&args$}}}
 hi
 after
 
+0
+$.set_max_extra_exceptions 5
+
+0
+$.get_max_extra_exceptions
+5
 0
 $
 
@@ -5684,7 +5730,7 @@ $.nop .toggle_readline
 $
 
 0
-$# .which_executable .which_test .which_return
+$# .test_executable_exists .type .whence_function 
 
 0
 $# Arg_script::str() but only an unknown fraction of the lines
@@ -5693,58 +5739,121 @@ $# Arg_script::str() but only an unknown fraction of the lines
 $# Arg_spec::str() (except trailing whitespace) only through SOON case
 
 0
-$.which_test
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .which_test
+$.test_executable_exists
+unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .test_executable_exists
 
 -1
-$.which_test j
+$.test_executable_exists j
 
 1
-$.which_test #
+$.test_executable_exists #
 
 0
-$.which_test rwsh.mapped_argfunction
+$.test_executable_exists .nop
+
+0
+$.test_executable_exists /bin/cat
+
+0
+$.test_executable_exists rwsh.mapped_argfunction
 
 1
-$.which_test rwsh.mapped_argfunction {rwsh.argfunction}
+$.test_executable_exists rwsh.mapped_argfunction {rwsh.argfunction}
 
 0
-$.which_executable
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .which_executable
+$.type
+unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .type
 
 -1
-$.which_executable j
+$.type j
+j : command not found ( j .type )
 
-1
-$.which_executable #
+-1
+$.type #
+function
+0
+$.type .nop
+builtin
+0
+$.type /bin/cat
+file
+0
+$.type rwsh.mapped_argfunction
+rwsh.mapped_argfunction : command not found ( rwsh.mapped_argfunction .type )
+
+-1
+$.type rwsh.mapped_argfunction {rwsh.argfunction}
+argfunction
+0
+$type .nop rwsh.mapped_argfunction j # {rwsh.argfunction}
+.nop is builtin
+rwsh.mapped_argfunction is rwsh.mapped_argfunction : command not found ( rwsh.mapped_argfunction .type rwsh.mapped_argfunction rwsh.mapped_argfunction )
+j is j : command not found ( j .type rwsh.mapped_argfunction rwsh.mapped_argfunction )
+# is function
+
+0
+$type -t .nop rwsh.mapped_argfunction j # {rwsh.argfunction}
+builtin
+rwsh.mapped_argfunction : command not found ( rwsh.mapped_argfunction .type rwsh.mapped_argfunction rwsh.mapped_argfunction )
+j : command not found ( j .type rwsh.mapped_argfunction rwsh.mapped_argfunction )
+function
+
+0
+$.whence_function
+unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .whence_function
+
+-1
+$.whence_function j
+j : command not found ( j .whence_function )
+
+-1
+$.whence_function #
 .function_all_flags # -- [ignored ...] {.nop $ignored$}
 0
-$w rwsh.mapped_argfunction {.nop 1 () \ \\ \$ \@ \) \(}
+$.whence_function .nop
+.nop
+0
+$.whence_function /bin/cat
+/bin/cat
+0
+$.whence_function rwsh.mapped_argfunction
+rwsh.mapped_argfunction : command not found ( rwsh.mapped_argfunction .whence_function )
+
+-1
+$.whence_function rwsh.mapped_argfunction {rwsh.argfunction}
+{rwsh.argfunction}
+0
+$whence rwsh.mapped_argfunction {.nop 1 () \ \\ \$ \@ \) \(}
 {.nop 1 () ( \\) \$ \@ \) \(}
+
 0
-$w rwsh.mapped_argfunction {.nop 1 () \  \\ \$ \@ \) \(}
+$whence rwsh.mapped_argfunction {.nop 1 () \  \\ \$ \@ \) \(}
 {.nop 1 () ( ) \\ \$ \@ \) \(}
+
 0
-$w rwsh.mapped_argfunction {@a @$a @$1 @$* @$*2}
+$whence rwsh.mapped_argfunction {@a @$a @$1 @$* @$*2}
 {@a @$a @$1 @$*1 @$*2}
+
 0
-$w rwsh.mapped_argfunction {>dummy_file}
+$whence rwsh.mapped_argfunction {>dummy_file}
 {>dummy_file}
+
 0
 $# new tests here
 
 0
-$w rwsh.mapped_argfunction {{&&{&&x &&{e}}$$$ ${&&x ${e}}$$$ {&&&x &&&{e} {&&&&x &&&&{e}}}}}
+$.whence_function rwsh.mapped_argfunction {{&&{&&x &&{e}}$$$ ${&&x ${e}}$$$ {&&&x &&&{e} {&&&&x &&&&{e}}}}}
 {{&{&x &{e}}$$$ ${&x ${e}}$$$ {&&x &&{e} {&&&x &&&{e}}}}}
 0
-$w rwsh.mapped_argfunction {$A $$A $0 $$$1 $# $* $*2 $A$$$ $A$10 $$*$ $$$*12$}
+$whence rwsh.mapped_argfunction {$A $$A $0 $$$1 $# $* $*2 $A$$$ $A$10 $$*$ $$$*12$}
 {$A $$A $0 $$$1 $# $* $*2 $A$$$ $A$10 $$*$ $$$*12$}
+
 0
-$w rwsh.mapped_argfunction {&&A &&0 &&* &&*3 &&$A$$$ &&$A$10 &&*$ &&*6$ {&&&A$ &&&A$10}}
+$.whence_function rwsh.mapped_argfunction {&&A &&0 &&* &&*3 &&$A$$$ &&$A$10 &&*$ &&*6$ {&&&A$ &&&A$10}}
 {&A &0 &* &*3 &$A$$$ &$A$10 &*$ &*6$ {&&A$ &&A$10}}
 0
 $.function_all_flags wm [args ...] {
-   w rwsh.mapped_argfunction {rwsh.argfunction}
+   .whence_function rwsh.mapped_argfunction {rwsh.argfunction}
    .echo $nl
    .scope $args$ (a1 a2 a3) {rwsh.argfunction}}
 
@@ -5771,7 +5880,7 @@ bb cc 3
 
 0
 $.function_all_flags wm [args ...] {
-   w rwsh.mapped_argfunction {rwsh.argfunction}
+   whence rwsh.mapped_argfunction {rwsh.argfunction}
    .echo $nl
    .nop $args
    se {rwsh.argfunction}}
@@ -5779,56 +5888,66 @@ $.function_all_flags wm [args ...] {
 0
 $wm () {.echo \\\ \ \\\ \\\\ \ \\|\\\ \  \  \\ \( \) \\\)}
 {.echo (\\  \\ \\\\) ( \\|\\  ) ( ) \\ \( \) \\)}
+
 \  \ \\  \|\     \ ( ) \)
 0
 $wm () {.echo (\\  \\ \\\\) ( \\|\\  ) ( ) (\\) (\() (\)) (\\\))}
 {.echo (\\  \\ \\\\) ( \\|\\  ) ( ) \\ \( \) \\)}
+
 \  \ \\  \|\     \ ( ) \)
 0
 $wm () {.echo a\\bc\\d\\\\e fg\\|\\hij klm \\ \) \( \\\(}
 {.echo a\\bc\\d\\\\e fg\\|\\hij klm \\ \) \( \\(}
+
 a\bc\d\\e fg\|\hij klm \ ) ( \(
 0
 $wm () {
 .echo \( \) \\( \\) \\\( \\\) \\\\( \\\\) \\\\\( \\\\\)}
 {
 .echo \( \) \\( \\) \\( \\) \\\\( \\\\) \\\\( \\\\)}
+
 ( ) \( \) \( \) \\( \\) \\( \\)
 0
 $wm () {
 .echo \) \( \\) \\( \\\) \\\( \\\\) \\\\( \\\\\) \\\\\(}
 {
 .echo \) \( \\) \\( \\) \\( \\\\) \\\\( \\\\) \\\\(}
+
 ) ( \) \( \) \( \\) \\( \\) \\(
 0
 $wm () {.echo () xx(yy \$ \@ \$$ \@@ }
 {.echo () xx(yy \$ \@ $$ @@}
+
  xx(yy $ @ $$ @@
 0
 $wm () {.echo (  ) (	) (
 )}
 {.echo (  ) (	) (
 )}
+
    	 
 
 0
-$w rwsh.mapped_argfunction {.nop 1}
+$whence rwsh.mapped_argfunction {.nop 1}
 {.nop 1}
+
 0
-$w rwsh.mapped_argfunction {@a @$a @$1 @$* @$*2}
+$whence rwsh.mapped_argfunction {@a @$a @$1 @$* @$*2}
 {@a @$a @$1 @$*1 @$*2}
+
 0
-$w rwsh.mapped_argfunction {>dummy_file}
+$whence rwsh.mapped_argfunction {>dummy_file}
 {>dummy_file}
+
 0
 $
 
 0
-$.which_executable rwsh.mapped_argfunction
+$# .waiting_for_shell .waiting_for_user .waiting_for_binary
 
-1
-$.which_executable rwsh.mapped_argfunction {rwsh.argfunction}
-{rwsh.argfunction}
+0
+$# actual use of these builtins is in test_inconsistent.sh
+
 0
 $.waiting_for_shell j
 unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .waiting_for_shell
@@ -5863,76 +5982,57 @@ $.waiting_for_binary {excess argfunc}
 $# .waiting_for_binary
 
 -1
-$.which_return
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .which_return
-
--1
-$.which_return rwsh.mapped_argfunction
-
-1
-$.which_return rwsh.mapped_argfunction {echo not tracked}
-0
-0
-$.which_return j
-
-1
-$.which_return .which_return
-1
-0
-$.which_return .waiting_for_binary
--1
-0
 $
 
-0
-$# .which_last_exception
-
-0
-$.which_last_exception .which_last_exception
-
-0
-$.which_last_exception
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .which_last_exception
+-1
+$# .last_exception
 
 -1
-$.which_last_exception .try_catch_recursive {excess argfunc}
-.which_last_exception does not accept an argfunction with call stack: .which_last_exception
+$.last_exception .last_exception
+
+0
+$.last_exception
+unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .last_exception
 
 -1
-$.which_last_exception .which_last_exception
-rwsh.excess_argfunction .which_last_exception .try_catch_recursive {excess argfunc}
+$.last_exception .try_catch_recursive {excess argfunc}
+.last_exception does not accept an argfunction with call stack: .last_exception
+
+-1
+$.last_exception .last_exception
+rwsh.excess_argfunction .last_exception .try_catch_recursive {excess argfunc}
 0
-$.which_last_exception .which_last_return
+$.last_exception function_that_does_not_exist
 
 1
-$.which_last_exception .try_catch_recursive
+$.last_exception .try_catch_recursive
 rwsh.not_a_number A .return rwsh.mapped_argfunction .try_catch_recursive rwsh.mapped_argfunction .try_catch_recursive rwsh.not_a_number {.try_catch_recursive rwsh.not_a_number {.return A}}; rwsh.excessive_exceptions_in_catch 0 .try_catch_recursive rwsh.mapped_argfunction .try_catch_recursive rwsh.not_a_number {.try_catch_recursive rwsh.not_a_number {.return A}}
 0
-$.which_last_exception .which_last_execution_time
+$.last_exception .last_execution_time
 
 0
-$.which_last_exception /bin/which
+$.last_exception /bin/which
 
 1
-$.which_last_exception /bin/cat
+$.last_exception /bin/cat
 rwsh.file_open_failure non_existent_file /bin/cat <non_existent_file
 0
-$.which_last_exception /bin/echo
+$.last_exception /bin/echo
 
 0
-$.which_last_exception e
+$.last_exception e
 
 0
-$.which_last_exception test_var_greater
+$.last_exception test_var_greater
 rwsh.bad_args -- var value (value 3) (var n)  12 test_var_greater n 3 12
 0
 $
 
 0
-$# .usleep .which_execution_count .which_last_execution_time
+$# .usleep .execution_count .last_execution_time
 
 0
-$# .which_total_execution_time
+$# .total_execution_time
 
 0
 $.usleep_overhead excess
@@ -5970,43 +6070,43 @@ $.usleep 800
 $# .usleep_overhead 
 
 0
-$.which_execution_count
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .which_execution_count
+$.execution_count
+unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .execution_count
 
 -1
-$.which_execution_count j
+$.execution_count j
 
 1
-$.which_execution_count rwsh.mapped_argfunction {echo not tracked}
+$.execution_count rwsh.mapped_argfunction {echo not tracked}
 0
 0
-$.which_execution_count .usleep
+$.execution_count .usleep
 5
 0
-$.which_last_execution_time
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .which_last_execution_time
+$.last_execution_time
+unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .last_execution_time
 
 -1
-$.which_last_execution_time j
+$.last_execution_time j
 
 1
-$.which_last_execution_time rwsh.mapped_argfunction {echo not tracked}
+$.last_execution_time rwsh.mapped_argfunction {echo not tracked}
 0.000000
 0
-$# .which_last_execution_time .usleep
+$# .last_execution_time .usleep
 
 0
-$.which_total_execution_time
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .which_total_execution_time
+$.total_execution_time
+unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .total_execution_time
 
 -1
-$.which_total_execution_time rwsh.mapped_argfunction {echo not tracked}
+$.total_execution_time rwsh.mapped_argfunction {echo not tracked}
 0.000000
 0
-$.which_total_execution_time j
+$.total_execution_time j
 
 1
-$# .which_total_execution_time .usleep
+$# .total_execution_time .usleep
 
 1
 $
@@ -6457,17 +6557,20 @@ $# all of these are used as part of the test itself. If this changes, then the
 $# following tests will fail.
 
 0
-$w rwsh.after_command
+$whence rwsh.after_command
 .function_all_flags rwsh.after_command -- args ... {
   .nop $args
   .set last_command_return $?
   .combine $nl $last_command_return $nl}
+
 0
-$w rwsh.prompt
+$whence rwsh.prompt
 .function_all_flags rwsh.prompt  {.echo \$}
+
 0
-$w rwsh.raw_command
+$whence rwsh.raw_command
 .function_all_flags rwsh.raw_command -- cmd {.echo $cmd; .echo $nl}
+
 0
 $
 
@@ -6512,19 +6615,26 @@ not_a_thing : command not found ( not_a_thing .scope se .scope se )
 $.rm_executable rwsh.function_not_found
 
 0
-$w rwsh.function_not_found
+$.whence_function rwsh.function_not_found
+Exception for failed handler. Original exception with call stack:
+rwsh.function_not_found rwsh.function_not_found .whence_function
+Exception for failed handler. Original exception with call stack:
+rwsh.function_not_found rwsh.function_not_found rwsh.function_not_found .whence_function
+rwsh.function_not_found : binary not found in /bin:/usr/bin:.
+call stack: .which_path rwsh.autofunction rwsh.autofunction
 
-1
-$w not_a_thing
+-1
+$whence not_a_thing
+not_a_thing : command not found ( not_a_thing .whence_function rwsh.mapped_argfunction rwsh.mapped_argfunction )
 
-1
+-1
 $not_a_thing
 not_a_thing : binary not found in /bin:/usr/bin:.
 call stack: .which_path rwsh.autofunction rwsh.autofunction
 not_a_thing : command not found ( not_a_thing )
 
 -1
-$w rwsh.function_not_found
+$.whence_function rwsh.function_not_found
 .function_all_flags rwsh.function_not_found cmd [args ...] {.echo $cmd (: command not found) \( $cmd $args$ \); .echo (
 )
 .return -1}
@@ -6561,15 +6671,21 @@ call stack: .which_path rwsh.autofunction rwsh.autofunction
 rwsh.mapped_argfunction : command not found ( rwsh.mapped_argfunction )
 
 -1
-$fn g {w rwsh.argfunction {rwsh.unescaped_argfunction}
-     w rwsh.argfunction {rwsh.argfunction}
-     w rwsh.argfunction {rwsh.escaped_argfunction}}
+$fn g {.whence_function rwsh.argfunction {rwsh.unescaped_argfunction}
+     .combine $nl
+     .whence_function rwsh.argfunction {rwsh.argfunction}
+     .combine $nl
+     .whence_function rwsh.argfunction {rwsh.escaped_argfunction}}
 
 0
 $g {}
-{w rwsh.argfunction {}
-     w rwsh.argfunction {rwsh.argfunction}
-     w rwsh.argfunction {rwsh.escaped_argfunction}}{}{rwsh.argfunction}
+{.whence_function rwsh.argfunction {}
+     .combine $nl
+     .whence_function rwsh.argfunction {rwsh.argfunction}
+     .combine $nl
+     .whence_function rwsh.argfunction {rwsh.escaped_argfunction}}
+{}
+{rwsh.argfunction}
 0
 $
 
@@ -6617,6 +6733,9 @@ Z was not declared
 call stack: rwsh.failed_substitution
 
 -1
+$.set_max_extra_exceptions 0
+
+0
 $e_after {.try_catch_recursive rwsh.undeclared_variable rwsh.excessive_nesting rwsh.failed_substitution {g}}
 Exception for failed handler. Original exception with call stack:
 rwsh.excessive_nesting g h g h g h g h g h g h g h g h g rwsh.mapped_argfunction .try_catch_recursive .scope se e_after

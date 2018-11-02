@@ -30,6 +30,7 @@ call stack .source rwsh.mapped_argfunction
 
 # set up environment
 .set_max_collectible_exceptions 10
+.set_max_extra_exceptions 5
 .global nl (
 )
 
@@ -270,11 +271,15 @@ fn ntimes n {
   .else {.global $var $value}}
 fn single -- args ... {.scope ${$args$}$ result {echo $result}}
 fn test_var_not_equal var value {.test_string_unequal $$var $value}
-.function_all_flags test_var_greater -- var value {.test_greater $$var $value}
-fn which command {
-  .if .which_test $command {
-    .combine ${.which_executable $command {rwsh.argfunction}} $nl}
-  .else {echo no $command}}
+fn test_var_greater -- var value {.test_greater $$var $value}
+fn type [-t] args ... {
+  .for $args$ {
+    .try_catch_recursive rwsh.function_not_found {
+      if_only_not .var_exists -t {.echo &&&1 is ()}
+      .combine &&&&{.type &&&1 {rwsh.argfunction}} $nl}}}
+fn whence command {
+  .try_catch_recursive rwsh.function_not_found {
+    .combine ${.whence_function $command {rwsh.argfunction}} $nl}}
 fn whichp binary {.which_path $binary $PATH}
 .function_all_flags var_exists -- var {.var_exists $var}
 .function_all_flags var_val -- [var ...] {
@@ -322,7 +327,7 @@ $.function_all_flags a [-*] [-x b ...] c {
 $.nop $A $FIGNORE
 
 0
-$.which_executable a
+$.whence_function a
 .function_all_flags a [-?] [-x b ...] c {
   .for &{.list_locals}$ {.combine $1 \( $$1 \) ( )}}
 0
@@ -355,7 +360,7 @@ $.function_all_flags a [-*] [-x ... b] c {
 }
 
 0
-$.which_executable a
+$.whence_function a
 .function_all_flags a [-?] [-x ... b] c {
   .for &{.list_locals}$ {.combine $1 \( $$1 \) ( )}
   .combine $nl

@@ -167,6 +167,18 @@ int b_exec(const Argm& argm, Error_list& exceptions) {
   else exceptions.add_error(Exception(Argm::Exec_failed, argm[1], errno));
   return 0;}   // we are depending on the error handlers to indicate failure
 
+// print the number of times that the executable in the executable map with
+// key $1 has been run
+int b_execution_count(const Argm& argm, Error_list& exceptions) {
+  if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
+  Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
+  Base_executable* focus = executable_map.find_second(lookup);
+  if (focus) {
+    argm.output <<focus->execution_count();
+    argm.output.flush();
+    return 0;}
+  else return 1;}          // executable does not exist
+
 // exit the shell
 int b_exit(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
@@ -441,6 +453,30 @@ int b_is_default_error(const Argm& argm, Error_list& exceptions) {
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   return !argm.error.is_default();}
 
+// print the last exception that was thrown by this function
+int b_last_exception(const Argm& argm, Error_list& exceptions) {
+  if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
+  if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
+  Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
+  Base_executable* focus = executable_map.find_second(lookup);
+  if (focus) {
+    argm.output <<focus->last_exception();
+    argm.output.flush();
+    return 0;}
+  else return 1;}          // executable does not exist
+
+// print the number of times that the executable in the executable map with
+// key $1 has been run
+int b_last_execution_time(const Argm& argm, Error_list& exceptions) {
+  if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
+  Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
+  Base_executable* focus = executable_map.find_second(lookup);
+  if (focus) {
+    argm.output <<focus->last_execution_time();
+    argm.output.flush();
+    return 0;}
+  else return 1;}          // executable does not exist
+
 // print the environment that the shell started in
 int b_list_environment(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
@@ -691,6 +727,13 @@ int b_store_output(const Argm& argm, Error_list& exceptions) {
   argm.set_var(argm[1], text.value());
   return 0;}
 
+// return true if there is an executable in the executable map with key $1
+int b_test_executable_exists(const Argm& argm, Error_list& exceptions) {
+  if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
+  Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
+  if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
+  return !executable_map.find_second(lookup);}
+
 // list the files specified by the arguments if they exist
 int b_test_file_exists(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
@@ -798,6 +841,19 @@ int b_toggle_readline(const Argm& argm, Error_list& exceptions) {
   readline_enabled = ! readline_enabled;
   return 0;}
 
+// print the number of times that the executable in the executable map with
+// key $1 has been run
+int b_total_execution_time(const Argm& argm, Error_list& exceptions) {
+  if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
+  Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
+  Base_executable* focus = executable_map.find_second(lookup);
+  if (focus) {
+    struct timeval val = focus->total_execution_time();
+    argm.output <<val;
+    argm.output.flush();
+    return 0;}
+  else return 1;}          // executable does not exist
+
 // run the handler for specified exceptions
 int b_try_catch_recursive(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
@@ -810,6 +866,22 @@ int b_try_catch_recursive(const Argm& argm, Error_list& exceptions) {
     Base_executable::catch_blocks(argm, exceptions);
     return -1;}
   return ret;}
+// print the type of executable with name $1 from executable map
+int b_type(const Argm& argm, Error_list& exceptions) {
+  if (argm.argc() != 2)
+    exceptions.add_error(Exception(Argm::Bad_argc, argm.argc()-1, 1, 0));
+  if (Named_executable::unwind_stack()) return 0;
+  Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
+  if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
+  Base_executable *e = executable_map.find_second(lookup);
+  if (!e) exceptions.add_error(Exception(Argm::Function_not_found, argm[1]));
+  else if (dynamic_cast<Function*>(e)) argm.output <<"function";
+  else if (dynamic_cast<Binary*>(e))   argm.output <<"file";
+  else if (dynamic_cast<Builtin*>(e))  argm.output <<"builtin";
+  else if (dynamic_cast<Command_block*>(e))  argm.output <<"argfunction";
+  else std::abort(); // successfully removed executable
+  return 0;}
+
 
 // removes the given variable from the variable map. you could be really
 // pedantic and throw an rwsh.undefined_variable if it doesn't exist, but the
@@ -969,65 +1041,16 @@ int b_waiting_for_user(const Argm& argm, Error_list& exceptions) {
 
 // print the string corresponding to the executable in the executable map with
 // key $1
-int b_which_executable(const Argm& argm, Error_list& exceptions) {
+int b_whence_function(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
   if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
   Base_executable* focus = executable_map.find_second(lookup);
   if (focus) {
     argm.output <<focus->str();
-    argm.output.flush();
-    return 0;}
-  else return 1;} // executable does not exist
-
-// print the number of times that the executable in the executable map with
-// key $1 has been run
-int b_which_execution_count(const Argm& argm, Error_list& exceptions) {
-  if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
-  Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
-  Base_executable* focus = executable_map.find_second(lookup);
-  if (focus) {
-    argm.output <<focus->execution_count();
-    argm.output.flush();
-    return 0;}
-  else return 1;}          // executable does not exist
-
-// print the last exception that was thrown by this function
-int b_which_last_exception(const Argm& argm, Error_list& exceptions) {
-  if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
-  if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
-  Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
-  Base_executable* focus = executable_map.find_second(lookup);
-  if (focus) {
-    argm.output <<focus->last_exception();
-    argm.output.flush();
-    return 0;}
-  else return 1;}          // executable does not exist
-
-// print the number of times that the executable in the executable map with
-// key $1 has been run
-int b_which_last_execution_time(const Argm& argm, Error_list& exceptions) {
-  if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
-  Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
-  Base_executable* focus = executable_map.find_second(lookup);
-  if (focus) {
-    argm.output <<focus->last_execution_time();
-    argm.output.flush();
-    return 0;}
-  else return 1;}          // executable does not exist
-
-// print the number of times that the executable in the executable map with
-// key $1 has been run
-int b_which_total_execution_time(const Argm& argm, Error_list& exceptions) {
-  if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
-  Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
-  Base_executable* focus = executable_map.find_second(lookup);
-  if (focus) {
-    struct timeval val = focus->total_execution_time();
-    argm.output <<val;
-    argm.output.flush();
-    return 0;}
-  else return 1;}          // executable does not exist
+    argm.output.flush();}
+  else exceptions.add_error(Exception(Argm::Function_not_found, argm[1]));
+  return 0;}
 
 // if the filename has a leading dot, then check in current directory
 // otherwise find the binary in $2 with filename $1
@@ -1051,24 +1074,6 @@ int b_which_path(const Argm& argm, Error_list& exceptions) {
       return 0;}}
   exceptions.add_error(Exception(Argm::Binary_not_found, argm[1], argm[2]));
   return 0;}                                      // executable does not exist
-
-// prints the last return value of the executable with named $1
-int b_which_return(const Argm& argm, Error_list& exceptions) {
-  if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
-  Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
-  Base_executable* focus = executable_map.find_second(lookup);
-  if (focus) {
-    argm.output <<focus->last_ret();
-    argm.output.flush();
-    return 0;}
-  else return 1;} // executable does not exist
-
-// return true if there is an executable in the executable map with key $1
-int b_which_test(const Argm& argm, Error_list& exceptions) {
-  if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
-  Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
-  if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
-  return !executable_map.find_second(lookup);}
 
 // for each time that the arguments return true, run the argfunction
 // returns the last return from the argfunction

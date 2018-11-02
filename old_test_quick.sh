@@ -4,7 +4,7 @@
 .function_flag_ignorant cc args {.combine $args$}
 .function_all_flags a [-*] [-x b ...] c {
   .for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
-.which_executable a
+.whence_function a
 a first
 a -x first
 a -x (fi rst) second
@@ -18,13 +18,13 @@ a -x (fi rst) (sec ond) third fourth
   if_only .var_exists b {c (b: ) $b$ $nl}
   if_only .var_exists c {c (c: ) $c$ $nl}
 }
-.which_executable a
+.whence_function a
 a first
 a -x first
 a -x (fi rst) second
 a -x first (sec ond) third
 a -x (fi rst) (sec ond) third fourth
-.which_executable if_only
+.whence_function if_only
 .combine &{c (sec ond)} x $nl x
 .combine &{c (sec ond)}$ x $nl x
 .combine &{cc (sec ond)} x $nl x
@@ -47,7 +47,7 @@ a -x (fi rst) (sec ond) third fourth
   .else_if .test_less $nest 20 {rx $lhs$ $rhs}
   .else {.nop}
   .var_subtract nest 1}
-.which_executable recurse
+.whence_function recurse
 recurse a b c d e f g h i j k l m n o p q r s t u v w x y z
 # recurse ((((((((a b))) (c d)) (e f)) (g h)) (i j)) k l) m n (o (p (q (r (s (t (u (v (w (x (y z)))))))))))
 recurse (a b) ((c d e) ((f g h) ((i j k) ((l m n) ((o p q) ((r s t) ((u v w) ((x y z)))))))))

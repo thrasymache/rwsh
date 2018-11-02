@@ -106,7 +106,6 @@ fns grep [-l] [regex] [file ...] {
       .set grep-sel $result$}
     .else {&{whichp grep} $-*$ $REGEX @$s}}}
 fn grep-sel {.set s $grep-sel}
-fn gs       {.set s $grep-sel}
 sfn gzip
 sfn gunzip
 fn home {cd $HOME}
@@ -165,18 +164,18 @@ fn unselect {.set s ()}
 
 # misc
 .function_all_flags . -- command ... {.source $command$}
-.function_all_flags ex_count -- cmd {.which_execution_count $cmd; c $nl}
+.function_all_flags ex_count -- cmd {.execution_count $cmd; c $nl}
 .function_all_flags exec -- command ... {.exec $command$ }
 .function_all_flags exit {.exit}
-.function_all_flags last_time cmd {.which_last_execution_time $cmd; c $nl}
+.function_all_flags last_time cmd {.last_execution_time $cmd; c $nl}
 fn local {. &{c $HOME /.rwshrc}}
 fn mark {ntimes 4 {.echo ####################}; c $nl}
 fn ret {.return $*}
 .function_all_flags timings cmd {
-  .echo last time (); .which_last_execution_time $cmd; c $nl
-  .echo total time (); .which_total_execution_time $cmd; c $nl
-  .echo execution count (); .which_execution_count $cmd; c $nl}
-.function_all_flags total_time cmd {.which_total_execution_time $cmd; c $nl}
+  .echo last time (); .last_execution_time $cmd; c $nl
+  .echo total time (); .total_execution_time $cmd; c $nl
+  .echo execution count (); .execution_count $cmd; c $nl}
+.function_all_flags total_time cmd {.total_execution_time $cmd; c $nl}
 .function_all_flags user_shell_ratio {
   .local time &&{.waiting_for_user}
   .var_divide time &&{.waiting_for_shell}
@@ -217,9 +216,13 @@ fn qt [-?] [-nc] {
       &{whichp diff} $-?$ test_quick.result last.test_quick.result}
     .else {&{whichp diff} -c test_quick.result last.test_quick.result}}}
 fn bless-qt {&{whichp cp} last.test_quick.result test_quick.result}
-fn arg-out {/bin/rwsh -to <argfunction.sh}
-fn arg-diff {/bin/rwsh -to <argfunction.sh >argfunction.result.last
-  &{whichp diff} -c argfunction.basic-result argfunction.result.last}
+fn arg-out {./rwsh -to <argfunction.sh}
+fn arg-diff [-?] {
+  arg-out >argfunction.result.last
+  .if .test_not_empty $-? {
+    &{whichp diff} $-?$ argfunction.basic-result argfunction.result.last}
+  .else {&{whichp diff} -c argfunction.basic-result argfunction.result.last}}
+fn bless-arg {&{whichp cp} argfunction.result.last argfunction.basic-result}
 
 # final setup and individual configuration
 .source &{c $HOME /.rwshrc}

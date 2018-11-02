@@ -45,6 +45,8 @@ void internal_init(Error_list& exceptions) {
   executable_map.set(new Builtin(".else_if", b_else_if));
   executable_map.set(new Builtin(".else_if_not", b_else_if_not));
   executable_map.set(new Builtin(".exec", b_exec));
+  executable_map.set(new Builtin(".execution_count",
+                                 b_execution_count));
   executable_map.set(new Builtin(".exit", b_exit));
   executable_map.set(new Builtin(".fallback_handler", b_fallback_handler));
   executable_map.set(new Builtin(".get_fallback_message",
@@ -72,10 +74,10 @@ void internal_init(Error_list& exceptions) {
       "call stack ) $stack (\n)}\n"
       "    .function_all_flags rwsh.raw_command -- args ... {.nop $args}\n"
       "    .source /etc/rwshrc $args$\n"
-      "    .for &{.internal_functions}$ {" //.echo $1; .which_executable $1}\n"
-      "      .if .which_test $1 {.nop}\n"
+      "    .for &{.internal_functions}$ {" //.echo $1; .whence_function $1}\n"
+      "      .if .test_executable_exists $1 {.nop}\n"
       "      .else {.echo &&1 not defined (\n)}}\n"
-      "    .if .which_test rwsh.help {"
+      "    .if .test_executable_exists rwsh.help {"
       "      .if .test_not_empty &&{rwsh.help} {.nop}\n"
       "      .else {.echo rwsh.help produces no output (\n)}}\n"
       "    .else {.echo rwsh.help not defined (\n)}}", exceptions));
@@ -93,6 +95,10 @@ void internal_init(Error_list& exceptions) {
   executable_map.set(new Builtin(".is_default_input", b_is_default_input));
   executable_map.set(new Builtin(".is_default_output", b_is_default_output));
   executable_map.set(new Builtin(".is_default_error", b_is_default_error));
+  executable_map.set(new Builtin(".last_exception",
+                                 b_last_exception));
+  executable_map.set(new Builtin(".last_execution_time",
+                                 b_last_execution_time));
   executable_map.set(new Builtin(".list_environment", b_list_environment));
   executable_map.set(new Builtin(".list_executables", b_list_executables));
   executable_map.set(new Builtin(".list_locals", b_list_locals));
@@ -114,6 +120,8 @@ void internal_init(Error_list& exceptions) {
   executable_map.set(new Builtin(".source", b_source));
   executable_map.set(new Builtin(".stepwise", b_stepwise));
   executable_map.set(new Builtin(".store_output", b_store_output));
+  executable_map.set(new Builtin(".test_executable_exists",
+                                 b_test_executable_exists));
   executable_map.set(new Builtin(".test_file_exists", b_test_file_exists));
   executable_map.set(new Builtin(".test_greater", b_test_greater));
   executable_map.set(new Builtin(".test_is_number", b_test_is_number));
@@ -126,26 +134,19 @@ void internal_init(Error_list& exceptions) {
                                  b_test_string_unequal));
   executable_map.set(new Builtin(".throw", b_throw));
   executable_map.set(new Builtin(".toggle_readline", b_toggle_readline));
+  executable_map.set(new Builtin(".total_execution_time",
+                                 b_total_execution_time));
   executable_map.set(new Builtin(".try_catch_recursive",
                                  b_try_catch_recursive));
+  executable_map.set(new Builtin(".type", b_type));
   executable_map.set(new Builtin(".unset", b_unset));
   executable_map.set(new Builtin(".usleep", b_usleep));
   executable_map.set(new Builtin(".usleep_overhead", b_usleep_overhead));
   executable_map.set(new Builtin(".waiting_for_binary", b_waiting_for_binary));
   executable_map.set(new Builtin(".waiting_for_shell", b_waiting_for_shell));
   executable_map.set(new Builtin(".waiting_for_user", b_waiting_for_user));
-  executable_map.set(new Builtin(".which_executable", b_which_executable));
-  executable_map.set(new Builtin(".which_execution_count",
-                                 b_which_execution_count));
-  executable_map.set(new Builtin(".which_last_exception",
-                                 b_which_last_exception));
-  executable_map.set(new Builtin(".which_last_execution_time",
-                                 b_which_last_execution_time));
+  executable_map.set(new Builtin(".whence_function", b_whence_function));
   executable_map.set(new Builtin(".which_path", b_which_path));
-  executable_map.set(new Builtin(".which_return", b_which_return));
-  executable_map.set(new Builtin(".which_test", b_which_test));
-  executable_map.set(new Builtin(".which_total_execution_time",
-                                 b_which_total_execution_time));
   executable_map.set(new Builtin(".while", b_while));
   executable_map.set(new Builtin(".var_add", b_var_add));
   executable_map.set(new Builtin(".var_divide", b_var_divide));

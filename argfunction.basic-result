@@ -30,6 +30,7 @@ call stack .source rwsh.mapped_argfunction
 
 # set up environment
 .set_max_collectible_exceptions 10
+.set_max_extra_exceptions 5
 .global nl (
 )
 
@@ -270,11 +271,15 @@ fn ntimes n {
   .else {.global $var $value}}
 fn single -- args ... {.scope ${$args$}$ result {echo $result}}
 fn test_var_not_equal var value {.test_string_unequal $$var $value}
-.function_all_flags test_var_greater -- var value {.test_greater $$var $value}
-fn which command {
-  .if .which_test $command {
-    .combine ${.which_executable $command {rwsh.argfunction}} $nl}
-  .else {echo no $command}}
+fn test_var_greater -- var value {.test_greater $$var $value}
+fn type [-t] args ... {
+  .for $args$ {
+    .try_catch_recursive rwsh.function_not_found {
+      if_only_not .var_exists -t {.echo &&&1 is ()}
+      .combine &&&&{.type &&&1 {rwsh.argfunction}} $nl}}}
+fn whence command {
+  .try_catch_recursive rwsh.function_not_found {
+    .combine ${.whence_function $command {rwsh.argfunction}} $nl}}
 fn whichp binary {.which_path $binary $PATH}
 .function_all_flags var_exists -- var {.var_exists $var}
 .function_all_flags var_val -- [var ...] {
@@ -330,9 +335,9 @@ $.function_all_flags # [args ...] {.nop $args$}
 0
 $.function_all_flags fw {
   .function_all_flags f1 name {rwsh.argfunction}
-  .which_executable f1; .echo $nl
+  .whence_function f1; .echo $nl
   f1 f2 {rwsh.argfunction}
-  .which_executable f2; .echo $nl
+  .whence_function f2; .echo $nl
   .rm_executable f1; .rm_executable f2}
 
 0
@@ -344,104 +349,100 @@ hi
 0
 $fw {.while .return 1 {.function_all_flags &&name {rwsh.argfunction}}}
 .function_all_flags f1 name {.while .return 1 {.function_all_flags &name {rwsh.argfunction}}}
-
-f2 : command not found ( f2 .rm_executable fw )
+f2 : command not found ( f2 .whence_function fw )
 
 -1
 $.function_all_flags f1 name {
   .echo function name $name $nl
-  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .whence_function rwsh.argfunction {rwsh.argfunction}
   .echo $nl end of function body $nl}
 
 0
 $f1 f2 {
   .echo noname $1 $nl
-  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .whence_function rwsh.argfunction {rwsh.argfunction}
   .echo $nl end of nothing $nl}
 function name f2 
 {
   .echo noname $1 $nl
-  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .whence_function rwsh.argfunction {rwsh.argfunction}
   .echo $nl end of nothing $nl}
  end of function body 
 
 0
 $fw {
   .echo function name $name $nl
-  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .whence_function rwsh.argfunction {rwsh.argfunction}
   .echo $nl end of function body $nl}
 .function_all_flags f1 name {
   .echo function name $name $nl
-  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .whence_function rwsh.argfunction {rwsh.argfunction}
   .echo $nl end of function body $nl}
 function name f2 
 {
   .echo function name $name $nl
-  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .whence_function rwsh.argfunction {rwsh.argfunction}
   .echo $nl end of function body $nl}
  end of function body 
-
-f2 : command not found ( f2 .rm_executable fw )
+f2 : command not found ( f2 .whence_function fw )
 
 -1
 $fw {.for 1 2 3 {
   .echo function name $1 $name $nl
-  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .whence_function rwsh.argfunction {rwsh.argfunction}
   .echo $nl end of function body $nl}}
 .function_all_flags f1 name {.for 1 2 3 {
   .echo function name $1 $name $nl
-  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .whence_function rwsh.argfunction {rwsh.argfunction}
   .echo $nl end of function body $nl}}
 function name 1 f2 
 {.for 1 2 3 {
   .echo function name $1 $name $nl
-  .which_executable rwsh.argfunction
+  .whence_function rwsh.argfunction
   .echo $nl end of function body $nl}}
  end of function body 
 function name 2 f2 
 {.for 1 2 3 {
   .echo function name $1 $name $nl
-  .which_executable rwsh.argfunction
+  .whence_function rwsh.argfunction
   .echo $nl end of function body $nl}}
  end of function body 
 function name 3 f2 
 {.for 1 2 3 {
   .echo function name $1 $name $nl
-  .which_executable rwsh.argfunction
+  .whence_function rwsh.argfunction
   .echo $nl end of function body $nl}}
  end of function body 
-
-f2 : command not found ( f2 .rm_executable fw )
+f2 : command not found ( f2 .whence_function fw )
 
 -1
 $fw {.for 1 2 3 {rwsh.mapped_argfunction $1 {
   .echo function name &&name $nl
-  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .whence_function rwsh.argfunction {rwsh.argfunction}
   .echo $nl end of function body $nl}}}
 .function_all_flags f1 name {.for 1 2 3 {rwsh.mapped_argfunction $1 {
   .echo function name &name $nl
-  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .whence_function rwsh.argfunction {rwsh.argfunction}
   .echo $nl end of function body $nl}}}
 function name f2 
 {.for 1 2 3 {rwsh.mapped_argfunction $1 {
   .echo function name &name $nl
-  .which_executable rwsh.argfunction
+  .whence_function rwsh.argfunction
   .echo $nl end of function body $nl}}}
  end of function body 
 function name f2 
 {.for 1 2 3 {rwsh.mapped_argfunction $1 {
   .echo function name &name $nl
-  .which_executable rwsh.argfunction
+  .whence_function rwsh.argfunction
   .echo $nl end of function body $nl}}}
  end of function body 
 function name f2 
 {.for 1 2 3 {rwsh.mapped_argfunction $1 {
   .echo function name &name $nl
-  .which_executable rwsh.argfunction
+  .whence_function rwsh.argfunction
   .echo $nl end of function body $nl}}}
  end of function body 
-
-f2 : command not found ( f2 .rm_executable fw )
+f2 : command not found ( f2 .whence_function fw )
 
 -1
 $# all of the above make sense, and the next should be identical to the last
@@ -449,20 +450,20 @@ $# all of the above make sense, and the next should be identical to the last
 -1
 $fw {rwsh.mapped_argfunction $1 {.for 1 2 3 {
   .echo function name &&name $nl
-  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .whence_function rwsh.argfunction {rwsh.argfunction}
   .echo $nl end of function body $nl}}}
 .function_all_flags f1 name {rwsh.mapped_argfunction $1 {.for 1 2 3 {
   .echo function name &name $nl
-  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .whence_function rwsh.argfunction {rwsh.argfunction}
   .echo $nl end of function body $nl}}}
 function name f2 
 {rwsh.mapped_argfunction $1 {.for 1 2 3 {
   .echo function name &name $nl
-  .which_executable rwsh.argfunction {.for 1 2 3 {
+  .whence_function rwsh.argfunction {.for 1 2 3 {
   .echo function name f2 $nl
-  .which_executable rwsh.argfunction {rwsh.mapped_argfunction $1 {.for 1 2 3 {
+  .whence_function rwsh.argfunction {rwsh.mapped_argfunction $1 {.for 1 2 3 {
   .echo function name &&&&&&name $nl
-  .which_executable rwsh.argfunction
+  .whence_function rwsh.argfunction
   .echo $nl end of function body $nl}}}
   .echo $nl end of function body $nl}}
   .echo $nl end of function body $nl}}}
@@ -470,11 +471,11 @@ function name f2
 function name f2 
 {rwsh.mapped_argfunction $1 {.for 1 2 3 {
   .echo function name &name $nl
-  .which_executable rwsh.argfunction {.for 1 2 3 {
+  .whence_function rwsh.argfunction {.for 1 2 3 {
   .echo function name f2 $nl
-  .which_executable rwsh.argfunction {rwsh.mapped_argfunction $1 {.for 1 2 3 {
+  .whence_function rwsh.argfunction {rwsh.mapped_argfunction $1 {.for 1 2 3 {
   .echo function name &&&&&&name $nl
-  .which_executable rwsh.argfunction
+  .whence_function rwsh.argfunction
   .echo $nl end of function body $nl}}}
   .echo $nl end of function body $nl}}
   .echo $nl end of function body $nl}}}
@@ -482,17 +483,16 @@ function name f2
 function name f2 
 {rwsh.mapped_argfunction $1 {.for 1 2 3 {
   .echo function name &name $nl
-  .which_executable rwsh.argfunction {.for 1 2 3 {
+  .whence_function rwsh.argfunction {.for 1 2 3 {
   .echo function name f2 $nl
-  .which_executable rwsh.argfunction {rwsh.mapped_argfunction $1 {.for 1 2 3 {
+  .whence_function rwsh.argfunction {rwsh.mapped_argfunction $1 {.for 1 2 3 {
   .echo function name &&&&&&name $nl
-  .which_executable rwsh.argfunction
+  .whence_function rwsh.argfunction
   .echo $nl end of function body $nl}}}
   .echo $nl end of function body $nl}}
   .echo $nl end of function body $nl}}}
  end of function body 
-
-f2 : command not found ( f2 .rm_executable fw )
+f2 : command not found ( f2 .whence_function fw )
 
 -1
 $# mostly as wierd
@@ -500,26 +500,25 @@ $# mostly as wierd
 -1
 $fw {rwsh.mapped_argfunction rwsh.not_a_number {
   .echo function name &&name $nl
-  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .whence_function rwsh.argfunction {rwsh.argfunction}
   .echo $nl end of function body $nl}}
 .function_all_flags f1 name {rwsh.mapped_argfunction rwsh.not_a_number {
   .echo function name &name $nl
-  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .whence_function rwsh.argfunction {rwsh.argfunction}
   .echo $nl end of function body $nl}}
 function name f2 
 {rwsh.mapped_argfunction rwsh.not_a_number {
   .echo function name &name $nl
-  .which_executable rwsh.argfunction {
+  .whence_function rwsh.argfunction {
   .echo function name f2 $nl
-  .which_executable rwsh.argfunction {rwsh.mapped_argfunction rwsh.not_a_number {
+  .whence_function rwsh.argfunction {rwsh.mapped_argfunction rwsh.not_a_number {
   .echo function name &&&&name $nl
-  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .whence_function rwsh.argfunction {rwsh.argfunction}
   .echo $nl end of function body $nl}}
   .echo $nl end of function body $nl}
   .echo $nl end of function body $nl}}
  end of function body 
-
-f2 : command not found ( f2 .rm_executable fw )
+f2 : command not found ( f2 .whence_function fw )
 
 -1
 $# normal again
@@ -527,80 +526,77 @@ $# normal again
 -1
 $fw {.try_catch_recursive rwsh.not_a_number {
   .echo function name &&name $nl
-  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .whence_function rwsh.argfunction {rwsh.argfunction}
   .echo $nl end of function body $nl}}
 .function_all_flags f1 name {.try_catch_recursive rwsh.not_a_number {
   .echo function name &name $nl
-  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .whence_function rwsh.argfunction {rwsh.argfunction}
   .echo $nl end of function body $nl}}
 function name f2 
 {.try_catch_recursive rwsh.not_a_number {
   .echo function name &name $nl
-  .which_executable rwsh.argfunction
+  .whence_function rwsh.argfunction
   .echo $nl end of function body $nl}}
  end of function body 
-
-f2 : command not found ( f2 .rm_executable fw )
+f2 : command not found ( f2 .whence_function fw )
 
 -1
 $fw {.for 1 2 3 {.try_catch_recursive rwsh.not_a_number {
   .echo function name &&name $nl
-  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .whence_function rwsh.argfunction {rwsh.argfunction}
   .echo $nl end of function body $nl}}}
 .function_all_flags f1 name {.for 1 2 3 {.try_catch_recursive rwsh.not_a_number {
   .echo function name &name $nl
-  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .whence_function rwsh.argfunction {rwsh.argfunction}
   .echo $nl end of function body $nl}}}
 function name f2 
 {.for 1 2 3 {.try_catch_recursive rwsh.not_a_number {
   .echo function name &name $nl
-  .which_executable rwsh.argfunction
+  .whence_function rwsh.argfunction
   .echo $nl end of function body $nl}}}
  end of function body 
 function name f2 
 {.for 1 2 3 {.try_catch_recursive rwsh.not_a_number {
   .echo function name &name $nl
-  .which_executable rwsh.argfunction
+  .whence_function rwsh.argfunction
   .echo $nl end of function body $nl}}}
  end of function body 
 function name f2 
 {.for 1 2 3 {.try_catch_recursive rwsh.not_a_number {
   .echo function name &name $nl
-  .which_executable rwsh.argfunction
+  .whence_function rwsh.argfunction
   .echo $nl end of function body $nl}}}
  end of function body 
-
-f2 : command not found ( f2 .rm_executable fw )
+f2 : command not found ( f2 .whence_function fw )
 
 -1
 $fw {.try_catch_recursive rwsh.not_a_number {.for 1 2 3 {
   .echo function name &&name $nl
-  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .whence_function rwsh.argfunction {rwsh.argfunction}
   .echo $nl end of function body $nl}}}
 .function_all_flags f1 name {.try_catch_recursive rwsh.not_a_number {.for 1 2 3 {
   .echo function name &name $nl
-  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .whence_function rwsh.argfunction {rwsh.argfunction}
   .echo $nl end of function body $nl}}}
 function name f2 
 {.try_catch_recursive rwsh.not_a_number {.for 1 2 3 {
   .echo function name &name $nl
-  .which_executable rwsh.argfunction
+  .whence_function rwsh.argfunction
   .echo $nl end of function body $nl}}}
  end of function body 
 function name f2 
 {.try_catch_recursive rwsh.not_a_number {.for 1 2 3 {
   .echo function name &name $nl
-  .which_executable rwsh.argfunction
+  .whence_function rwsh.argfunction
   .echo $nl end of function body $nl}}}
  end of function body 
 function name f2 
 {.try_catch_recursive rwsh.not_a_number {.for 1 2 3 {
   .echo function name &name $nl
-  .which_executable rwsh.argfunction
+  .whence_function rwsh.argfunction
   .echo $nl end of function body $nl}}}
  end of function body 
-
-f2 : command not found ( f2 .rm_executable fw )
+f2 : command not found ( f2 .whence_function fw )
 
 -1
 $# maybe weird?
@@ -608,26 +604,25 @@ $# maybe weird?
 -1
 $fw {rwsh.mapped_argfunction $1 {
   .echo function name &&name $nl
-  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .whence_function rwsh.argfunction {rwsh.argfunction}
   .echo $nl end of function body $nl}}
 .function_all_flags f1 name {rwsh.mapped_argfunction $1 {
   .echo function name &name $nl
-  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .whence_function rwsh.argfunction {rwsh.argfunction}
   .echo $nl end of function body $nl}}
 function name f2 
 {rwsh.mapped_argfunction $1 {
   .echo function name &name $nl
-  .which_executable rwsh.argfunction {
+  .whence_function rwsh.argfunction {
   .echo function name f2 $nl
-  .which_executable rwsh.argfunction {rwsh.mapped_argfunction $1 {
+  .whence_function rwsh.argfunction {rwsh.mapped_argfunction $1 {
   .echo function name &&&&name $nl
-  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .whence_function rwsh.argfunction {rwsh.argfunction}
   .echo $nl end of function body $nl}}
   .echo $nl end of function body $nl}
   .echo $nl end of function body $nl}}
  end of function body 
-
-f2 : command not found ( f2 .rm_executable fw )
+f2 : command not found ( f2 .whence_function fw )
 
 -1
 $# definitely weird
@@ -635,20 +630,20 @@ $# definitely weird
 -1
 $fw {rwsh.mapped_argfunction $name {.for a b {
   .echo function name &&name $nl
-  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .whence_function rwsh.argfunction {rwsh.argfunction}
   .echo $nl end of function body $nl}}}
 .function_all_flags f1 name {rwsh.mapped_argfunction $name {.for a b {
   .echo function name &name $nl
-  .which_executable rwsh.argfunction {rwsh.argfunction}
+  .whence_function rwsh.argfunction {rwsh.argfunction}
   .echo $nl end of function body $nl}}}
 function name f2 
 {rwsh.mapped_argfunction $name {.for a b {
   .echo function name &name $nl
-  .which_executable rwsh.argfunction {.for a b {
+  .whence_function rwsh.argfunction {.for a b {
   .echo function name f2 $nl
-  .which_executable rwsh.argfunction {rwsh.mapped_argfunction $name {.for a b {
+  .whence_function rwsh.argfunction {rwsh.mapped_argfunction $name {.for a b {
   .echo function name &&&&&&name $nl
-  .which_executable rwsh.argfunction
+  .whence_function rwsh.argfunction
   .echo $nl end of function body $nl}}}
   .echo $nl end of function body $nl}}
   .echo $nl end of function body $nl}}}
@@ -656,17 +651,16 @@ function name f2
 function name f2 
 {rwsh.mapped_argfunction $name {.for a b {
   .echo function name &name $nl
-  .which_executable rwsh.argfunction {.for a b {
+  .whence_function rwsh.argfunction {.for a b {
   .echo function name f2 $nl
-  .which_executable rwsh.argfunction {rwsh.mapped_argfunction $name {.for a b {
+  .whence_function rwsh.argfunction {rwsh.mapped_argfunction $name {.for a b {
   .echo function name &&&&&&name $nl
-  .which_executable rwsh.argfunction
+  .whence_function rwsh.argfunction
   .echo $nl end of function body $nl}}}
   .echo $nl end of function body $nl}}
   .echo $nl end of function body $nl}}}
  end of function body 
-
-f2 : command not found ( f2 .rm_executable fw )
+f2 : command not found ( f2 .whence_function fw )
 
 -1
 $fw {rwsh.mapped_argfunction {.function_all_flags $name {rwsh.argfunction}}}
