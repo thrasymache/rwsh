@@ -3,7 +3,7 @@
 .set_max_nesting 20
 .function_all_flags () {.nop}
 .function_all_flags #! -- ignored ... {.nop $ignored}
-.function_all_flags rwsh.autofunction -- cmd [args ...] {
+.function_all_flags .autofunction -- cmd [args ...] {
   .nop $args$
   .local full_path ${.which_path $cmd $PATH}
   if_only_not .test_executable_exists $full_path {.binary $full_path}
@@ -26,10 +26,10 @@
       .global $var $val
       .nop $$var}}
   .source /etc/rwshrc-basic
-  .function_all_flags rwsh.if_before_else stack ... {.nop $stack}
-  .function_all_flags rwsh.shutdown -- args ... {.nop $args; .return 0}
+  .function_all_flags .if_before_else stack ... {.nop $stack}
+  .function_all_flags .shutdown -- args ... {.nop $args; .return 0}
   .collect_errors_except .nop {
-    rwsh.mapped_argfunction &3 {$1$}
+    .mapped_argfunction &3 {$1$}
     .exit}}
 .else {
   .echo unexpected command line: &* (

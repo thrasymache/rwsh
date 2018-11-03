@@ -1,30 +1,28 @@
 init file /non-existent/file/to/test/failure does not exist
-call stack .source rwsh.mapped_argfunction
-.for ${.echo rwsh.sigterm rwsh.multiple_argfunctions}$ {.nop
-  .function_all_flags $1 {.echo signal triggered: $0 \( \); .combine $nl; .return -1}}
+call stack .source .mapped_argfunction
 .global last_command_return -10
 .global A \
 .global N \
 .nop $N
 
-.nop .function_all_flags rwsh.run_logic -- cmd [args ...] {
+.nop .function_all_flags .run_logic -- cmd [args ...] {
   .return $last_command_return
-  .signal_handler &{.internal_functions}$ {&&* {rwsh.argfunction}}
-  rwsh.mapped_argfunction {&&* {rwsh.argfunction}}
-  &&* {rwsh.argfunction}
+  .signal_handler &{.internal_functions}$ {&&* {.argfunction}}
+  .mapped_argfunction {&&* {.argfunction}}
+  &&* {.argfunction}
   .set last_command_return $?
   .echo $nl
   .echo $last_command_return
   .echo $nl}
-.function_all_flags rwsh.before_command -- args ... {
+.function_all_flags .before_command -- args ... {
   .nop $args
   .return $last_command_return}
-.function_all_flags rwsh.after_command -- args ... {
+.function_all_flags .after_command -- args ... {
   .nop $args
   .set last_command_return $?
   .combine $nl $last_command_return $nl}
-.function_all_flags rwsh.prompt {.echo \$}
-.function_all_flags rwsh.vars {.internal_vars}
+.function_all_flags .prompt {.echo \$}
+.function_all_flags .vars {.internal_vars}
 .source /etc/rwshrc-basic
 .function_all_flags # -- [ignored ...] {.nop $ignored$}
 
@@ -35,17 +33,17 @@ call stack .source rwsh.mapped_argfunction
 )
 
 # internal functions
-.function_all_flags rwsh.ambiguous_prototype_dash_dash prototype stack ... {
+.function_all_flags .ambiguous_prototype_dash_dash prototype stack ... {
   .echo $prototype is an ambiguous location for a prototype --
   .combine ( (it requests reading the user's mind) ) \( stack: $stack \) $nl}
-.function_all_flags rwsh.arguments_for_argfunction name {
+.function_all_flags .arguments_for_argfunction name {
   echo cannot specify arguments for $name directly}
-.function_all_flags rwsh.bad_argc required needed optional [stack ...] {
+.function_all_flags .bad_argc required needed optional [stack ...] {
   .echo unacceptable argument count: received $required non-optional
   echo , but needed $needed \(with $optional optional\) for $stack$}
-.function_all_flags rwsh.bad_argfunction_style style {
+.function_all_flags .bad_argfunction_style style {
   echo $style is neither an argfunction nor a substitution}
-.function_all_flags rwsh.bad_args -- proto assigned needed excess call_stack ... {
+.function_all_flags .bad_args -- proto assigned needed excess call_stack ... {
   .combine (unacceptable arguments: for prototype ) $proto , $nl
   if_only .test_not_empty $assigned {
     .combine ( assigned )
@@ -57,214 +55,214 @@ call stack .source rwsh.mapped_argfunction
   if_only .test_not_empty $excess {
     .combine ( found \() $excess (\) excess) $nl}
   echo \ call stack:  $call_stack}
-.function_all_flags rwsh.bad_if_nest stack ... {
+.function_all_flags .bad_if_nest stack ... {
   echo nested .if without .else with call stack: $stack$}
-.function_all_flags rwsh.binary_does_not_exist name [stack ...] {
+.function_all_flags .binary_does_not_exist name [stack ...] {
   echo $name : binary does not exist
   if_only .var_exists stack {echo call stack: $stack}}
-.function_all_flags rwsh.binary_not_found name path stack ... {
+.function_all_flags .binary_not_found name path stack ... {
   echo $name : binary not found in $path
   echo call stack: $stack$}
-.function_all_flags rwsh.dash_dash_argument args stack ... {
+.function_all_flags .dash_dash_argument args stack ... {
   echo optional -- parameter cannot take arguments \( $args \) with call stack: $stack$}
-.function_all_flags rwsh.dash_star_argument args stack ... {
+.function_all_flags .dash_star_argument args stack ... {
   echo optional -* parameter cannot take arguments \( $args \) with call stack: $stack$}
-.function_all_flags rwsh.directory_not_found -- dir stack ... {
+.function_all_flags .directory_not_found -- dir stack ... {
   .combine $dir ( directory does not exist) $nl
   echo call stack $stack}
-.function_all_flags rwsh.divide_by_zero numerator stack ... {
+.function_all_flags .divide_by_zero numerator stack ... {
   echo attempt to divide $numerator by 0 with call stack: $stack$}
-.function_all_flags rwsh.double_redirection first second [stack ...] {
+.function_all_flags .double_redirection first second [stack ...] {
   echo double redirection is not supported at this time: $first and $second
   if_only .var_exists stack {echo call stack: $stack$}}
-.function_all_flags rwsh.duplicate_parameter -- parameter stack ... {
+.function_all_flags .duplicate_parameter -- parameter stack ... {
   echo duplicated parameter in function definition: $parameter
   echo call stack: $stack$}
-.function_all_flags rwsh.elipsis_first_arg -- elipsis stack ... {
+.function_all_flags .elipsis_first_arg -- elipsis stack ... {
   echo $elipsis elipsis cannot be the first argument in a prototype
   echo call stack: $stack$}
-.function_all_flags rwsh.elipsis_out_of_option_group -- group stack ... {
+.function_all_flags .elipsis_out_of_option_group -- group stack ... {
   echo $group for elipsis to apply to option it must occur within the brackets
   echo call stack: $stack$}
-.function_all_flags rwsh.else_without_if stack ... {
+.function_all_flags .else_without_if stack ... {
   echo else without if with call stack: $stack$}
-.function_all_flags rwsh.excess_argfunction cmd [stack ...] {
+.function_all_flags .excess_argfunction cmd [stack ...] {
   echo $cmd does not accept an argfunction with call stack: $cmd $stack$}
-.function_all_flags rwsh.excessive_exceptions_collected max stack ... {
+.function_all_flags .excessive_exceptions_collected max stack ... {
   echo exceeded maximum number of exceptions \( $max \) in collect_errors.
   echo call stack: $stack$}
-.function_all_flags rwsh.excessive_exceptions_in_catch max stack ... {
+.function_all_flags .excessive_exceptions_in_catch max stack ... {
   echo exceeded maximum number of exceptions \( $max \) in try_catch.
   echo call stack: $stack$}
-.function_all_flags rwsh.excessive_nesting stack ... {
+.function_all_flags .excessive_nesting stack ... {
   echo function exceeded max nesting \( ${.get_max_nesting} \). call stack: $stack}
-.function_all_flags rwsh.exec_failed binary errno stack ... {
+.function_all_flags .exec_failed binary errno stack ... {
   .combine (.exec failed for ) $binary ( with errno ) $errno $nl
   echo call stack $stack}
-.function_all_flags rwsh.executable_already_exists -- binary stack ... {
+.function_all_flags .executable_already_exists -- binary stack ... {
   echo $binary is already an executable in the hash table $nl
   echo call stack $stack}
-.function_all_flags rwsh.failed_substitution substitution [stack ...] {
+.function_all_flags .failed_substitution substitution [stack ...] {
   echo substitution $substitution failed
   echo call stack $stack$}
-.function_all_flags rwsh.file_not_found -- file stack ... {
+.function_all_flags .file_not_found -- file stack ... {
   echo could not find file $file
   echo call stack $stack}
-.function_all_flags rwsh.file_open_failure -- file stack ... {
+.function_all_flags .file_open_failure -- file stack ... {
   echo could not open file $file
   echo call stack $stack}
-.function_all_flags rwsh.flag_in_elipsis -- flag stack ... {
+.function_all_flags .flag_in_elipsis -- flag stack ... {
   echo found flag $flag while collecting arguments for elipsis
   echo call stack $stack$}
-.function_all_flags rwsh.function_not_found -- cmd [stack ...] {
+.function_all_flags .function_not_found -- cmd [stack ...] {
   echo $cmd : command not found \( $cmd $stack$ \)}
-.function_all_flags rwsh.help [args ...] {
+.function_all_flags .help [args ...] {
   .nop $args$
   .echo this is the default configuration for rwsh \(or something copied from it
   echo \), documentation should be available at rwsh.sf.net or rwsh.org}
-.function_all_flags rwsh.if_before_else stack ... {
+.function_all_flags .if_before_else stack ... {
   echo two .if commands without a .else between them with call stack : $stack$}
-.function_all_flags rwsh.illegal_function_name name stack ... {
+.function_all_flags .illegal_function_name name stack ... {
   .combine \$ $name ( cannot be a function) $nl
   echo call stack $stack}
-.function_all_flags rwsh.illegal_variable_name name stack ... {
+.function_all_flags .illegal_variable_name name stack ... {
   .combine \$ $name ( cannot be set) $nl
   echo call stack $stack}
-.function_all_flags rwsh.input_range -- value stack ... {
+.function_all_flags .input_range -- value stack ... {
   echo value $value is out of usable numeric range
   echo call stack $stack$}
-.function_all_flags rwsh.internal_error -- [args ...] {
+.function_all_flags .internal_error -- [args ...] {
   echo internal error: $args$
   .return -1}
-.function_all_flags rwsh.invalid_word_selection selection [stack ...] {
+.function_all_flags .invalid_word_selection selection [stack ...] {
   echo $selection is not a valid word selection
   echo call stack $stack$}
-.function_all_flags rwsh.mismatched_brace context [stack ...] {
+.function_all_flags .mismatched_brace context [stack ...] {
   echo mismatched brace: $context $stack$}
-.function_all_flags rwsh.mismatched_bracket context stack ... {
+.function_all_flags .mismatched_bracket context stack ... {
   echo mismatched bracket: $context
   echo call stack: $stack$}
-.function rwsh.mismatched_parenthesis {
+.function .mismatched_parenthesis {
   .echo signal triggered: $0 \( $* \); .combine $nl
   echo mismatched parenthesis: $1
   echo call stack: $*2
   .return -1}
-.function_all_flags rwsh.missing_argfunction cmd [add_stack ...] {
+.function_all_flags .missing_argfunction cmd [add_stack ...] {
   echo $cmd requires an argfunction
   if_only .var_exists add_stack {echo stack $add_stack$}}
-.function_all_flags rwsh.multiple_argfunctions {
+.function_all_flags .multiple_argfunctions {
   echo multiple argfunctions not supported at this time}
-.function_all_flags rwsh.not_a_directory file stack ... {
+.function_all_flags .not_a_directory file stack ... {
   .combine $file ( is not a directory) $nl
   echo call stack $stack}
-.function_all_flags rwsh.not_a_function executable stack ... {
+.function_all_flags .not_a_function executable stack ... {
   .combine $executable ( is not a function) $nl
   echo call stack $stack}
-.function_all_flags rwsh.not_a_number -- nan stack ... {
+.function_all_flags .not_a_number -- nan stack ... {
   echo $nan is not a number
   echo call stack: $stack$}
-.function_all_flags rwsh.not_executable file stack ... {
+.function_all_flags .not_executable file stack ... {
   echo $file is not executable
   echo call stack: $stack$}
-.function_all_flags rwsh.not_soon_enough too_late [stack ...] {
+.function_all_flags .not_soon_enough too_late [stack ...] {
   echo $too_late attempts to substitute after the command has been run
   if_only .var_exists stack {echo call stack $stack}}
-.function_all_flags rwsh.post_elipsis_option -- flag stack ... {
+.function_all_flags .post_elipsis_option -- flag stack ... {
   echo option $flag coming after an elipsis has no meaning
   echo call stack: $stack$}
-.function_all_flags rwsh.post_dash_dash_flag -- flag stack ... {
+.function_all_flags .post_dash_dash_flag -- flag stack ... {
   echo flag option $flag occurs after -- in the prototype
   echo call stack: $stack$}
-.function_all_flags rwsh.result_range -- lhs rhs op [stack ...] {
+.function_all_flags .result_range -- lhs rhs op [stack ...] {
   echo result of $op with arguments $lhs and $rhs is out of range
   echo call stack: $op $stack$}
-.function_all_flags rwsh.return_code code cmd [add_stack ...] {
+.function_all_flags .return_code code cmd [add_stack ...] {
   echo $cmd returned $code : call stack $cmd $add_stack$}
-.function_all_flags rwsh.selection_not_found not_found selection [stack ...] {
+.function_all_flags .selection_not_found not_found selection [stack ...] {
   .echo no file matching pattern $not_found
   if_only .test_string_unequal $not_found $selection {
     .echo () for selection $selection}
   .echo $nl
   if_only .var_exists stack {echo call stack: $stack$}
   .return -1}
-.function_all_flags rwsh.sigcont [args ...] {
+.function_all_flags .sigcont [args ...] {
   echo received SIGCONT: $args$; .return -1}
-.function_all_flags rwsh.sigchld [args ...] {
+.function_all_flags .sigchld [args ...] {
   echo received SIGCHLD: $args$; .return -1}
-.function_all_flags rwsh.sighup [args ...] {
+.function_all_flags .sighup [args ...] {
   echo received SIGHUP: $args$; .return -1}
-.function_all_flags rwsh.sigint [args ...] {
+.function_all_flags .sigint [args ...] {
   echo received SIGINT: $args$; .return -1}
-.function_all_flags rwsh.sigquit [args ...] {
+.function_all_flags .sigquit [args ...] {
   echo received SIGQUIT: $args$; .return -1}
-.function_all_flags rwsh.sigpipe [args ...] {
+.function_all_flags .sigpipe [args ...] {
   echo received SIGPIPE: $args$; .return -1}
-.function_all_flags rwsh.sigterm [args ...] {
+.function_all_flags .sigterm [args ...] {
   echo received SIGTERM: $args$; .return -1}
-.function_all_flags rwsh.sigtstp [args ...] {
+.function_all_flags .sigtstp [args ...] {
   echo received SIGTSTP: $args$; .return -1}
-.function_all_flags rwsh.siginfo [args ...] {
+.function_all_flags .siginfo [args ...] {
   echo received SIGINFO: $args$; .return -1}
-.function_all_flags rwsh.sigusr1 [args ...] {
+.function_all_flags .sigusr1 [args ...] {
   echo received SIGUSR1: $args$; .return -1}
-.function_all_flags rwsh.sigusr2 [args ...] {
+.function_all_flags .sigusr2 [args ...] {
   echo received SIGUSR2: $args$; .return -1}
-.function_all_flags rwsh.sigunknown [args ...] {
+.function_all_flags .sigunknown [args ...] {
   echo received unknown unix signal: $args$; .return -1}
-.function_all_flags rwsh.shutdown -- args ... {
+.function_all_flags .shutdown -- args ... {
   .nop $args
   .combine $nl (now terminating normally) $nl}
-.function_all_flags rwsh.tardy_flag -- flag stack ... {
+.function_all_flags .tardy_flag -- flag stack ... {
   echo $flag flag comes too late in command
   echo call stack: $stack$}
-.function_all_flags rwsh.unchecked_variable -- var [stack ...] {
+.function_all_flags .unchecked_variable -- var [stack ...] {
   echo $var was not checked with call stack $stack$}
-.function_all_flags rwsh.undeclared_variable -- name [stack ...] {
+.function_all_flags .undeclared_variable -- name [stack ...] {
   echo $name was not declared
   echo call stack: $stack$}
-.function_all_flags rwsh.undefined_variable -- name [stack ...] {
+.function_all_flags .undefined_variable -- name [stack ...] {
   echo optional variable $name was not defined
   echo call stack: $stack$}
-.function_all_flags rwsh.unreadable_dir dir errno [stack ...] {
+.function_all_flags .unreadable_dir dir errno [stack ...] {
   .combine (cannot read directory ) $dir \ \(errno\  $errno \) $nl
   echo call stack: $stack$
   .return -1}
-.function_all_flags rwsh.unrecognized_flag -- flag cmd [add_stack ...] {
+.function_all_flags .unrecognized_flag -- flag cmd [add_stack ...] {
   echo $flag flag is unrecognized for $cmd
   echo call stack: $cmd $add_stack$}
-.function_all_flags rwsh.unused_before_set -- var [stack ...] {
+.function_all_flags .unused_before_set -- var [stack ...] {
   echo attempt to set $var before making use of its initial value
   echo call stack $stack$}
-.function_all_flags rwsh.unused_variable -- var [stack ...] {
+.function_all_flags .unused_variable -- var [stack ...] {
   echo $var was unused with call stack $stack$}
-.function_all_flags rwsh.version_incompatible version stack ... {
+.function_all_flags .version_incompatible version stack ... {
   echo this shell is not compatible with requested version $version
   echo call stack: $stack$}
 
 # ability of functions to act as builtin wrappers
 .function_all_flags ! args ... {.if $args$ {.return 1}; .else {.return 0}}
-.function_all_flags af -- [argv ...] {rwsh.argfunction}
+.function_all_flags af -- [argv ...] {.argfunction}
 .function_all_flags c -- text ... {.combine $text$}
 .function_all_flags e -- text ... {.echo $text}
 .function_all_flags echo -- text ... {.echo $text; .combine $nl}
 .function_all_flags echo-comments cmd ... {
   .stepwise $cmd$ {if_only .test_in $1 .nop # #! ## {echo &&&*}}}
 .function_all_flags exec -- argv ... {.exec $argv$}
-.function_all_flags elif command ... {.else_if $command$ {rwsh.argfunction}}
-.function_all_flags else {.else {rwsh.argfunction}}
+.function_all_flags elif command ... {.else_if $command$ {.argfunction}}
+.function_all_flags else {.else {.argfunction}}
 .function_all_flags fn -- prototype ... {
-  .function_all_flags $prototype$ {rwsh.argfunction}}
+  .function_all_flags $prototype$ {.argfunction}}
 .function_all_flags fni -- name args ... {
-  .function_all_flags $name -- $args$ {rwsh.argfunction}}
+  .function_all_flags $name -- $args$ {.argfunction}}
 .function_all_flags fns -- name args ... {
-  .function_all_flags $name [-*] $args$ {rwsh.argfunction}}
+  .function_all_flags $name [-*] $args$ {.argfunction}}
 .function_all_flags if_only -- args ... {
-  .if $args$ {rwsh.argfunction}; .else {.nop}}
+  .if $args$ {.argfunction}; .else {.nop}}
 .function_all_flags if_only_not -- args ... {
-  .if $args$ {.nop}; .else {rwsh.argfunction}}
+  .if $args$ {.nop}; .else {.argfunction}}
 fn ntimes n {
   .while test_var_greater n 0 {
-    rwsh.mapped_argfunction {rwsh.argfunction}
+    .mapped_argfunction {.argfunction}
     .var_subtract n 1}}
 .function_all_flags setf var value {
   .if .var_exists $var {.set $var $value}
@@ -274,12 +272,12 @@ fn test_var_not_equal var value {.test_string_unequal $$var $value}
 fn test_var_greater -- var value {.test_greater $$var $value}
 fn type [-t] args ... {
   .for $args$ {
-    .try_catch_recursive rwsh.function_not_found {
+    .try_catch_recursive .function_not_found {
       if_only_not .var_exists -t {.echo &&&1 is ()}
-      .combine &&&&{.type &&&1 {rwsh.argfunction}} $nl}}}
+      .combine &&&&{.type &&&1 {.argfunction}} $nl}}}
 fn whence command {
-  .try_catch_recursive rwsh.function_not_found {
-    .combine ${.whence_function $command {rwsh.argfunction}} $nl}}
+  .try_catch_recursive .function_not_found {
+    .combine ${.whence_function $command {.argfunction}} $nl}}
 fn whichp binary {.which_path $binary $PATH}
 .function_all_flags var_exists -- var {.var_exists $var}
 .function_all_flags var_val -- [var ...] {
@@ -311,10 +309,10 @@ polish / .var_divide
       .global $var $val
       .nop $$var}}
   .source /etc/rwshrc-basic
-  .function_all_flags rwsh.if_before_else stack ... {.nop $stack}
-  .function_all_flags rwsh.shutdown -- args ... {.nop $args; .return 0}
+  .function_all_flags .if_before_else stack ... {.nop $stack}
+  .function_all_flags .shutdown -- args ... {.nop $args; .return 0}
   .collect_errors_except .nop {
-    rwsh.mapped_argfunction &3 {$1$}
+    .mapped_argfunction &3 {$1$}
     .exit}}
 .else {
   .echo unexpected command line: &* (

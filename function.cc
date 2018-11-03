@@ -105,7 +105,7 @@ Command_block::Command_block(const std::string& src,
   while (tpoint != std::string::npos && src[tpoint] != '}') {
     push_back(Arg_script(src, ++tpoint, max_soon, errors));
     if (size() != 1 && back().is_argfunction())
-      default_output <<"rwsh.argfunction cannot occur as one of several "
+      default_output <<".argfunction cannot occur as one of several "
                   "commands\n";}
   if (tpoint == std::string::npos)
     throw Unclosed_brace(src.substr(0, point-1));

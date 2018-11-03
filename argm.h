@@ -30,6 +30,7 @@ class Argm {
     No_exception,
     Ambiguous_prototype_dash_dash,
     Arguments_for_argfunction,
+    Autofunction,
     Bad_argc,
     Bad_argfunction_style,
     Bad_args,

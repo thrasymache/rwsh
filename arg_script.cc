@@ -126,13 +126,13 @@ std::string::size_type Arg_script::constructor(const std::string& src,
   after_loop:
   if (!args.size()) args.push_back(Arg_spec("", max_soon, errors));
   if (is_argfunction_name(args.front().str()) &&  // argfunction_level handling
-      args.front().str() != "rwsh.mapped_argfunction")
+      args.front().str() != ".mapped_argfunction")
     if (args.size() != 1 || argfunction)
       errors.add_error(Exception(Argm::Arguments_for_argfunction, str()));
-    else if (args.front().str() == "rwsh.unescaped_argfunction")
+    else if (args.front().str() == ".unescaped_argfunction")
       argfunction_level = 1;
-    else if (args.front().str() == "rwsh.argfunction") argfunction_level = 2;
-    else if (args.front().str() == "rwsh.escaped_argfunction")
+    else if (args.front().str() == ".argfunction") argfunction_level = 2;
+    else if (args.front().str() == ".escaped_argfunction")
       argfunction_level = 3;
     else std::abort();                           // unhandled argfunction level
   if (src[point] == '}') terminator = *"";
@@ -196,8 +196,8 @@ Argm Arg_script::argm(void) const {
   if (!argfunction_level) {
     for(auto j: args) result.push_back(j.str());
     result.set_argfunction(argfunction->copy_pointer());}
-  else if (argfunction_level == 1) result.push_back("rwsh.argfunction");
-  else if (argfunction_level == 2) result.push_back("rwsh.escaped_argfunction");
+  else if (argfunction_level == 1) result.push_back(".argfunction");
+  else if (argfunction_level == 2) result.push_back(".escaped_argfunction");
   else std::abort(); // unhandled argfunction_level
   return result;}
 
@@ -213,9 +213,9 @@ std::string Arg_script::str(void) const {
     if (argfunction) result += (result.size()?" ":"") + argfunction->str();
     if (terminator) return result + terminator;
     else return result;}
-  else if (argfunction_level == 1) return "rwsh.argfunction";
-  else if (argfunction_level == 2) return "rwsh.escaped_argfunction";
-  else if (argfunction_level == 3) return "rwsh.super_escaped_argfunction";
+  else if (argfunction_level == 1) return ".argfunction";
+  else if (argfunction_level == 2) return ".escaped_argfunction";
+  else if (argfunction_level == 3) return ".super_escaped_argfunction";
   else {std::abort(); return "";}} // unhandled argfunction_level
 
 Argm Arg_script::base_interpret(const Argm& src, Error_list& errors) const {
@@ -235,12 +235,12 @@ Argm Arg_script::interpret(const Argm& src, Error_list& exceptions) const {
     if (argfunction)
       result.set_argfunction(argfunction->apply(src, 0, exceptions));}
   else if (is_argfunction()) {
-    result.push_back("rwsh.mapped_argfunction");
+    result.push_back(".mapped_argfunction");
     copy(src.begin()+1, src.end(), std::back_inserter(result));
     result.set_argfunction(src.argfunction()->copy_pointer());}
   else if (argfunction_level == 2)
-    result.push_back("rwsh.unescaped_argfunction");
-  else if (argfunction_level == 3) result.push_back("rwsh.argfunction");
+    result.push_back(".unescaped_argfunction");
+  else if (argfunction_level == 3) result.push_back(".argfunction");
   else std::abort(); // unhandled argfunction_level
   return result;}
 
@@ -268,7 +268,7 @@ void Arg_script::promote_soons(unsigned nesting) {
 // test whether an executable name corresponds to one of those used for
 // argument functions.
 bool is_argfunction_name(const std::string& focus) {
-  return focus == "rwsh.mapped_argfunction" ||
-         focus == "rwsh.unescaped_argfunction" ||
-         focus == "rwsh.argfunction" ||
-         focus == "rwsh.escaped_argfunction";}
+  return focus == ".mapped_argfunction" ||
+         focus == ".unescaped_argfunction" ||
+         focus == ".argfunction" ||
+         focus == ".escaped_argfunction";}

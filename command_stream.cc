@@ -1,6 +1,6 @@
 // The definition of the Command_stream class. It is constructed from a
 // standard stream and defines an input operator for Argm objects. It also
-// handles the calling of rwsh.prompt.
+// handles the calling of .prompt.
 //
 // Copyright (C) 2005-2018 Samuel Newbold
 
@@ -30,7 +30,7 @@
 Command_stream::Command_stream(Rwsh_istream_p& s, bool subprompt_i) :
     src(s), subprompt(subprompt_i) {}
 
-// write the next command to dest. run rwsh.prompt as appropriate
+// write the next command to dest. run .prompt as appropriate
 Command_stream& Command_stream::getline(Arg_script& dest, Error_list& errors) {
   if (this->fail()) return *this;
   std::string cmd;

@@ -84,7 +84,7 @@ int b_collect_errors_except(const Argm& argm, Error_list& exceptions) {
   if (Named_executable::unwind_stack()) return 0;
   Argm blank(argm.parent_map(), argm.input, argm.output.child_stream(),
              argm.error);
-  blank.push_back("rwsh.mapped_argfunction");
+  blank.push_back(".mapped_argfunction");
   std::vector<std::string> exceptional(argm.begin()+1, argm.end());
   return argm.argfunction()->collect_errors_core(blank, exceptional, true,
                                                  exceptions);}
@@ -100,7 +100,7 @@ int b_collect_errors_only(const Argm& argm, Error_list& exceptions) {
   if (Named_executable::unwind_stack()) return 0;
   Argm blank(argm.parent_map(), argm.input, argm.output.child_stream(),
              argm.error);
-  blank.push_back("rwsh.mapped_argfunction");
+  blank.push_back(".mapped_argfunction");
   std::vector<std::string> exceptional(argm.begin()+1, argm.end());
   return argm.argfunction()->collect_errors_core(blank, exceptional, false,
                                                  exceptions);}
@@ -209,7 +209,7 @@ int b_for(const Argm& argm, Error_list& exceptions) {
   if (!argm.argfunction()) throw Exception(Argm::Missing_argfunction);
   int ret = -1;
   Argm body(argm.parent_map(), argm.input, argm.output, argm.error);
-  body.push_back("rwsh.mapped_argfunction");
+  body.push_back(".mapped_argfunction");
   body.push_back("");
   for (auto i: argm.subrange(1)) {
     if (argm.argfunction()) {
@@ -229,7 +229,7 @@ int b_for_each_line(const Argm& argm, Error_list& exceptions) {
     std::string line;
     // shouldn't interfere with input being consumed by this builtin
     Argm body(argm.parent_map(), default_input, argm.output, argm.error);
-    body.push_back("rwsh.mapped_argfunction");
+    body.push_back(".mapped_argfunction");
     argm.input.getline(line);
     if (argm.input.fail() && !line.size()) break;
     tokenize(line, std::back_inserter(body),
@@ -359,7 +359,7 @@ int if_core(const Argm& argm, Error_list& exceptions, bool logic, bool is_else){
       if (argm.argfunction()) {
         Argm mapped_argm(argm.parent_map(),
                          argm.input, argm.output.child_stream(), argm.error);
-        mapped_argm.push_back("rwsh.mapped_argfunction");
+        mapped_argm.push_back(".mapped_argfunction");
         ret = (*argm.argfunction())(mapped_argm, exceptions);}
       if (Base_executable::unwind_stack())
         conditional_block_exception = ! is_else;
@@ -702,7 +702,7 @@ int b_stepwise(const Argm& argm, Error_list& exceptions) {
   int ret = -1;
   for (auto j: f->body) {
     Argm body_i(j.interpret(params, exceptions));
-    Argm body("rwsh.mapped_argfunction", body_i.argv(), nullptr,
+    Argm body(".mapped_argfunction", body_i.argv(), nullptr,
               body_i.parent_map(), body_i.input, body_i.output, body_i.error);
     ret  = (*argm.argfunction())(body, exceptions);
     if (Named_executable::unwind_stack()) {
@@ -720,7 +720,7 @@ int b_store_output(const Argm& argm, Error_list& exceptions) {
   Substitution_stream text;
   Argm mapped_argm(argm.parent_map(),
                    argm.input, text.child_stream(), argm.error);
-  mapped_argm.push_back("rwsh.mapped_argfunction");
+  mapped_argm.push_back(".mapped_argfunction");
   int ret = (*argm.argfunction())(mapped_argm, exceptions);
   if (Named_executable::unwind_stack()) return -1;
   if (ret) return ret;
@@ -731,7 +731,7 @@ int b_store_output(const Argm& argm, Error_list& exceptions) {
 int b_test_executable_exists(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
-  if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
+  if (lookup[0] == ".argfunction") lookup[0] = ".mapped_argfunction";
   return !executable_map.find_second(lookup);}
 
 // list the files specified by the arguments if they exist
@@ -860,7 +860,7 @@ int b_try_catch_recursive(const Argm& argm, Error_list& exceptions) {
   if (!argm.argfunction()) throw Exception(Argm::Missing_argfunction);
   Argm mapped_argm(argm.parent_map(),
                    argm.input, argm.output.child_stream(), argm.error);
-  mapped_argm.push_back("rwsh.mapped_argfunction");
+  mapped_argm.push_back(".mapped_argfunction");
   int ret = (*argm.argfunction())(mapped_argm, exceptions);
   if (Named_executable::unwind_stack()) {
     Base_executable::catch_blocks(argm, exceptions);
@@ -872,7 +872,7 @@ int b_type(const Argm& argm, Error_list& exceptions) {
     exceptions.add_error(Exception(Argm::Bad_argc, argm.argc()-1, 1, 0));
   if (Named_executable::unwind_stack()) return 0;
   Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
-  if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
+  if (lookup[0] == ".argfunction") lookup[0] = ".mapped_argfunction";
   Base_executable *e = executable_map.find_second(lookup);
   if (!e) exceptions.add_error(Exception(Argm::Function_not_found, argm[1]));
   else if (dynamic_cast<Function*>(e)) argm.output <<"function";
@@ -884,7 +884,7 @@ int b_type(const Argm& argm, Error_list& exceptions) {
 
 
 // removes the given variable from the variable map. you could be really
-// pedantic and throw an rwsh.undefined_variable if it doesn't exist, but the
+// pedantic and throw an .undefined_variable if it doesn't exist, but the
 // fact is that the requested state (one where this variable isn't set) is
 // already the case, so it's hard to say what you're protecting people from.
 int b_unset(const Argm& argm, Error_list& exceptions) {
@@ -1044,7 +1044,7 @@ int b_waiting_for_user(const Argm& argm, Error_list& exceptions) {
 int b_whence_function(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
-  if (lookup[0] == "rwsh.argfunction") lookup[0] = "rwsh.mapped_argfunction";
+  if (lookup[0] == ".argfunction") lookup[0] = ".mapped_argfunction";
   Base_executable* focus = executable_map.find_second(lookup);
   if (focus) {
     argm.output <<focus->str();
@@ -1087,7 +1087,7 @@ int b_while(const Argm& argm, Error_list& exceptions) {
     if (Named_executable::unwind_stack()) return -1;
     Argm mapped_argm(argm.parent_map(), argm.input, argm.output.child_stream(),
                      argm.error);
-    mapped_argm.push_back("rwsh.mapped_argfunction");
+    mapped_argm.push_back(".mapped_argfunction");
     ret = (*argm.argfunction())(mapped_argm, exceptions);
     if (Named_executable::unwind_stack()) return -1;}
   return ret;}

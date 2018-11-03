@@ -49,7 +49,7 @@ Executable_map::size_type Executable_map::erase (const std::string& key) {
 Base_executable* Executable_map::find_second(const Argm& key) {
   iterator i = Base::find(key[0]);
   if (i != end()) return i->second;
-  else if (key[0] == "rwsh.mapped_argfunction") return key.argfunction();
+  else if (key[0] == ".mapped_argfunction") return key.argfunction();
   else return nullptr;}
 
 bool Executable_map::run_if_exists(const std::string& key, Argm& argm_i) {
@@ -85,8 +85,9 @@ int Executable_map::run(Argm& argm, Error_list& exceptions) {
       not_found(argm, exceptions);
     else {
       in_autofunction = true;
-      Argm auto_argm("rwsh.autofunction", argm.argv(), argm.argfunction(),
-                     argm.parent_map(), argm.input, argm.output, argm.error);
+      Argm auto_argm(Argm::exception_names[Argm::Autofunction], argm.argv(),
+                     argm.argfunction(), argm.parent_map(),
+                     argm.input, argm.output, argm.error);
       run(auto_argm, exceptions);
       in_autofunction = false;
       i = find_second(argm);                            // second check for key

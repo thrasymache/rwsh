@@ -8,7 +8,7 @@
 .disable_readline
 .enable_readline
 
-.try_catch_recursive rwsh.unused_variable {.collect_errors_except .nop {
+.try_catch_recursive .unused_variable {.collect_errors_except .nop {
   # set up environment
   .function_all_flags set_if_undefined -- var [value] {
     .if .var_exists $var {.nop $value$}
@@ -97,7 +97,7 @@ sfn-subcommand git status
 fns grep [-l] [regex] [file ...] {
   if_only .var_exists regex {.set REGEX $regex}
   if_only .var_exists file {.selection_set s $file}
-  .try_catch_recursive rwsh.return_code {
+  .try_catch_recursive .return_code {
     .if var_exists -l {
       .local result ()
       .nop $result
@@ -150,13 +150,13 @@ sfn wc
 fn unselect {.set s ()}
 
 # internal functions
-.function_all_flags rwsh.run_logic -- cmd [args ...] {
-   .try_catch_recursive &{.internal_functions}$ {$cmd $args$ {rwsh.argfunction}}
-  # $* {rwsh.argfunction}
+.function_all_flags .run_logic -- cmd [args ...] {
+   .try_catch_recursive &{.internal_functions}$ {$cmd $args$ {.argfunction}}
+  # $* {.argfunction}
   .local ret $?
   if_only_not .test_number_equal $ret 0 {echo $cmd returned $ret}}
-.function_all_flags rwsh.prompt {.echo $s; .echo \$}
-.function_all_flags rwsh.vars {
+.function_all_flags .prompt {.echo $s; .echo \$}
+.function_all_flags .vars {
   .internal_vars
   echo $nl HOME $HOME
   echo REGEX $REGEX

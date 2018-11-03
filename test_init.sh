@@ -1,31 +1,29 @@
 .global nl (
 )
-.try_catch_recursive rwsh.file_open_failure {
+.try_catch_recursive .file_open_failure {
   .source /non-existent/file/to/test/failure}
-.function_all_flags rwsh.raw_command -- cmd {.echo $cmd; .echo $nl}
-.for ${.echo rwsh.sigterm rwsh.multiple_argfunctions}$ {.nop
-  .function_all_flags $1 {.echo signal triggered: $0 \( \); .combine $nl; .return -1}}
+.function_all_flags .raw_command -- cmd {.echo $cmd; .echo $nl}
 .global last_command_return -10
 .global A \
 .global N \
 .nop $N
 
-.nop .function_all_flags rwsh.run_logic -- cmd [args ...] {
+.nop .function_all_flags .run_logic -- cmd [args ...] {
   .return $last_command_return
-  .signal_handler &{.internal_functions}$ {&&* {rwsh.argfunction}}
-  rwsh.mapped_argfunction {&&* {rwsh.argfunction}}
-  &&* {rwsh.argfunction}
+  .signal_handler &{.internal_functions}$ {&&* {.argfunction}}
+  .mapped_argfunction {&&* {.argfunction}}
+  &&* {.argfunction}
   .set last_command_return $?
   .echo $nl
   .echo $last_command_return
   .echo $nl}
-.function_all_flags rwsh.before_command -- args ... {
+.function_all_flags .before_command -- args ... {
   .nop $args
   .return $last_command_return}
-.function_all_flags rwsh.after_command -- args ... {
+.function_all_flags .after_command -- args ... {
   .nop $args
   .set last_command_return $?
   .combine $nl $last_command_return $nl}
-.function_all_flags rwsh.prompt {.echo \$}
-.function_all_flags rwsh.vars {.internal_vars}
+.function_all_flags .prompt {.echo \$}
+.function_all_flags .vars {.internal_vars}
 .source /etc/rwshrc-basic

@@ -1,5 +1,5 @@
 .function_flag_ignorant # args ... {.nop $args}
-.function if_only {.if $* {rwsh.argfunction}; .else {.nop}}
+.function if_only {.if $* {.argfunction}; .else {.nop}}
 .function_flag_ignorant c args ... {.combine $args$}
 .function_flag_ignorant cc args {.combine $args$}
 .function_all_flags a [-*] [-x b ...] c {

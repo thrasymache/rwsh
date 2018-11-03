@@ -11,8 +11,6 @@ arguments more often than with them).
 
 Several changes are coming shortly, which may easily break scripts designed for
 this version of the shell, including the following.
-     *  Internal functions will loose the initial "rwsh" - e.g.
-        rwsh.function_not_found will become .function_not_found
      *  Functions will not return integers - they will either successfully
         complete their execution or they will throw an exception. Control flow
         statements like .if or .while will respond to a specific exception

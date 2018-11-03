@@ -1,8 +1,8 @@
 // Copyright (C) 2005-2018 Samuel Newbold
 
-// Executable_map must be able to lookup rwsh.argfunction, which is
+// Executable_map must be able to lookup .argfunction, which is
 // part of an Argm. Thus Argm must be the key_type so as to specify which
-// rwsh.argfunction is intended. Argm are not stored in the map, so
+// .argfunction is intended. Argm are not stored in the map, so
 // value_type is not std::pair<key_type, mapped_type>
 class Executable_map : private std::map<std::string, Base_executable*> {
   typedef std::map<std::string, Base_executable*> Base;

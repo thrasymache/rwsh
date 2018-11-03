@@ -69,22 +69,22 @@ void internal_init(Error_list& exceptions) {
   executable_map.set(new Function(".init",
       any_args.begin(), any_args.end(), false,
       "{.set_max_nesting 10\n"
-      "    .function_all_flags rwsh.file_open_failure name stack ... {"
+      "    .function_all_flags .file_open_failure name stack ... {"
       "        .combine (init file ) $name ( does not exist\n"
       "call stack ) $stack (\n)}\n"
-      "    .function_all_flags rwsh.raw_command -- args ... {.nop $args}\n"
+      "    .function_all_flags .raw_command -- args ... {.nop $args}\n"
       "    .source /etc/rwshrc $args$\n"
       "    .for &{.internal_functions}$ {" //.echo $1; .whence_function $1}\n"
       "      .if .test_executable_exists $1 {.nop}\n"
       "      .else {.echo &&1 not defined (\n)}}\n"
-      "    .if .test_executable_exists rwsh.help {"
-      "      .if .test_not_empty &&{rwsh.help} {.nop}\n"
-      "      .else {.echo rwsh.help produces no output (\n)}}\n"
-      "    .else {.echo rwsh.help not defined (\n)}}", exceptions));
+      "    .if .test_executable_exists .help {"
+      "      .if .test_not_empty ${.help} {.nop}\n"
+      "      .else {.echo .help produces no output (\n)}}\n"
+      "    .else {.echo .help not defined (\n)}}", exceptions));
   executable_map.set(new Function(".internal_features",
       empty_prototype.begin(), empty_prototype.end(), false,
       "{.if .test_number_equal $# 1 {"
-          ".echo rwsh.after_command rwsh.before_command rwsh.run_logic}; "
+          ".echo .after_command .before_command .run_logic}; "
       ".else {.echo wrong argument count; .return -1}}", exceptions));
   executable_map.set(new Builtin(".internal_functions", b_internal_functions));
   executable_map.set(new Function(".internal_vars",
