@@ -97,6 +97,11 @@ int Executable_map::run(Argm& argm, Error_list& exceptions) {
     exceptions.add_error(error);
     return -1;}}
 
+bool Executable_map::run_condition(Argm& argm, Error_list& exceptions) {
+  run(argm, exceptions);
+  return !Base_executable::remove_exceptions(".false", exceptions) &&
+         !exceptions.size();}  // optional
+
 int Executable_map::not_found(Argm& argm_i, Error_list& exceptions) {
   if (Base::find(Argm::exception_names[Argm::Function_not_found]) == end()) {
     Argm prototype_argm(argm_i.parent_map(), argm_i.input, argm_i.output, argm_i.error);

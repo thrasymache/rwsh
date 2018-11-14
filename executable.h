@@ -21,7 +21,7 @@ class Base_executable {
   struct timeval last_execution_time_v;
   static unsigned max_collect;
   static unsigned max_extra;
-  static unsigned max_nesting;
+  static int max_nesting;
   struct timeval total_execution_time_v;
 
   Base_executable(void) : executable_nesting(0), del_on_term(false),
@@ -30,10 +30,13 @@ class Base_executable {
     last_execution_time_v.tv_usec = 0;
     total_execution_time_v.tv_sec = 0;
     total_execution_time_v.tv_usec = 0;};
+  virtual ~Base_executable(void) {}
   bool is_running(void) const {return !!executable_nesting;};
   static void exception_handler(Error_list& exceptions);
   static void catch_blocks(const Argm& argm, Error_list& exceptions);
   static void catch_one(Argm& argm, Error_list& exceptions);
+  static bool remove_exceptions(const std::string &name,
+                                Error_list& exceptions);
   static void add_error(void);
   unsigned execution_count(void) const {return execution_count_v;};
   const std::string& last_exception(void) const {return last_exception_v;};

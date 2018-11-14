@@ -53,6 +53,7 @@ class Argm {
     Exec_failed,
     Executable_already_exists,
     Failed_substitution,
+    False,
     File_open_failure,
     File_not_found,
     Flag_in_elipsis,

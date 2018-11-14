@@ -121,8 +121,7 @@ void Base_executable::exception_handler(Error_list& exceptions) {
 
 // code to call exception handlers when requested within a function
 void Base_executable::catch_blocks(const Argm& argm, Error_list& exceptions) {
-  for (auto focus = exceptions.begin();
-       focus != exceptions.end();)
+  for (auto focus = exceptions.begin(); focus != exceptions.end();)
     if (find(argm.begin() + 1, argm.end(), (*focus)[0]) != argm.end()) {
       if (dropped_catches >= max_extra) {
          if (!execution_handler_excess_thrown)
@@ -145,6 +144,19 @@ void Base_executable::catch_blocks(const Argm& argm, Error_list& exceptions) {
   else unwind_stack_v = false;
   Variable_map::dollar_question = -1;
   in_exception_handler = false;}
+
+bool Base_executable::remove_exceptions(const std::string &name,
+                                        Error_list& exceptions) {
+  bool ret = false;
+  bool unwind_stack_before = unwind_stack_v;
+  for (auto focus = exceptions.begin(); focus != exceptions.end();)
+    if ((*focus)[0] == name) {
+      ret = true;
+      focus = exceptions.erase(focus);
+      --current_exception_count;}
+    else focus++;
+  if (unwind_stack_before && !exceptions.size()) unwind_stack_v = false;
+  return ret;}
 
 // run one exception handler restoring unwind_stack afterwards
 void Base_executable::catch_one(Argm& argm, Error_list& exceptions) {

@@ -8,7 +8,7 @@
   .whence_function f2; .echo $nl
   .rm_executable f1; .rm_executable f2}
 fw {.echo hi $nl; .function_all_flags $name {.argfunction}}
-fw {.while .return 1 {.function_all_flags &&name {.argfunction}}}
+fw {.while .throw .false {.function_all_flags &&name {.argfunction}}}
 .function_all_flags f1 name {
   .echo function name $name $nl
   .whence_function .argfunction {.argfunction}

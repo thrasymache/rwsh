@@ -79,6 +79,9 @@
 .function_all_flags .failed_substitution substitution [stack ...] {
   echo substitution $substitution failed
   echo call stack $stack$}
+.function_all_flags .false test [stack ...] {
+  echo assertion $test failed
+  echo call stack $stack$}
 .function_all_flags .file_not_found -- file stack ... {
   echo could not find file $file
   echo call stack $stack}
@@ -214,7 +217,9 @@
   echo call stack: $stack$}
 
 # ability of functions to act as builtin wrappers
-.function_all_flags ! args ... {.if $args$ {.return 1}; .else {.return 0}}
+.function_all_flags ! args ... {
+  .if $args$ {.throw .false ${.echo ! $args}}
+  .else {.return 0}}
 .function_all_flags af -- [argv ...] {.argfunction}
 .function_all_flags c -- text ... {.combine $text$}
 .function_all_flags e -- text ... {.echo $text}

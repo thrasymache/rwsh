@@ -1,9 +1,7 @@
 init file /non-existent/file/to/test/failure does not exist
-call stack .source .mapped_argfunction
+call stack .source .try_catch_recursive(body)
 .global last_command_return -10
 .global A \
-.global N \
-.nop $N
 
 .nop .function_all_flags .run_logic -- cmd [args ...] {
   .return $last_command_return
@@ -104,6 +102,9 @@ call stack .source .mapped_argfunction
   echo call stack $stack}
 .function_all_flags .failed_substitution substitution [stack ...] {
   echo substitution $substitution failed
+  echo call stack $stack$}
+.function_all_flags .false test [stack ...] {
+  echo assertion $test failed
   echo call stack $stack$}
 .function_all_flags .file_not_found -- file stack ... {
   echo could not find file $file
@@ -240,7 +241,9 @@ call stack .source .mapped_argfunction
   echo call stack: $stack$}
 
 # ability of functions to act as builtin wrappers
-.function_all_flags ! args ... {.if $args$ {.return 1}; .else {.return 0}}
+.function_all_flags ! args ... {
+  .if $args$ {.throw .false ${.echo ! $args}}
+  .else {.return 0}}
 .function_all_flags af -- [argv ...] {.argfunction}
 .function_all_flags c -- text ... {.combine $text$}
 .function_all_flags e -- text ... {.echo $text}
@@ -520,7 +523,7 @@ $whence e
 
 0
 $whence ee
-ee : command not found ( ee .whence_function .mapped_argfunction .mapped_argfunction )
+ee : command not found ( ee .whence_function .try_catch_recursive(body) .try_catch_recursive(body) )
 
 -1
 $whence () {}
@@ -533,10 +536,10 @@ text that does not have a prompt appended
 $se {e again}
 again
 0
-$if_only .return 1 {e not printed}
+$if_only .test_is_number false {e not printed}
 
 0
-$if_only .return 0 {e printed without error}
+$if_only .test_is_number 0 {e printed without error}
 printed without error
 0
 $.function_all_flags for -- [items ...] {
@@ -894,6 +897,7 @@ hello world
 .exec_failed not defined 
 .executable_already_exists not defined 
 .failed_substitution not defined 
+.false not defined 
 .file_not_found not defined 
 .flag_in_elipsis not defined 
 .function_not_found not defined 
@@ -1730,7 +1734,7 @@ $se {e hi >outfile}
 $/bin/cat outfile
 hi
 0
-$.if .return 0 {>outfile /bin/echo there}
+$.if .test_is_number 0 {>outfile /bin/echo there}
 
 0
 $.else {.nop}
@@ -1886,10 +1890,10 @@ $.fork .mapped_argfunction {
   .try_catch_recursive .binary_not_found {.which_path ../bin/rwsh /bin:.}
   }
 ../bin/rwsh : binary not found in /bin:.
-call stack: .which_path .mapped_argfunction
+call stack: .which_path .try_catch_recursive(body)
 directory is now /bin in subshell
 ../bin/rwsh : binary not found in /bin
-call stack: .which_path .mapped_argfunction
+call stack: .which_path .try_catch_recursive(body)
 ../bin/rwsh
 0
 $
@@ -2011,8 +2015,9 @@ call stack: .which_path .autofunction .autofunction .scope se
 
 -1
 $.last_exception /bn/echo
+/bn/echo : command not found ( /bn/echo .last_exception )
 
-1
+-1
 $.exec /bn/echo 1 2 3
 /bn/echo : binary does not exist
 call stack: .exec
@@ -2025,8 +2030,9 @@ call stack: .which_path .autofunction .autofunction
 
 -1
 $.last_exception /bn/echo
+/bn/echo : command not found ( /bn/echo .last_exception )
 
-1
+-1
 $.fork se {/bn/echo 1 2 3}
 /bn/echo : binary not found in /bin:/usr/bin:.
 call stack: .which_path .autofunction .autofunction .scope se
@@ -3506,8 +3512,8 @@ $.try_catch_recursive collecting_handler {
   .collect_errors_except .echo {
     .throw collecting_handler 1
     .throw collecting_handler 2}}
-1 .throw .collect_errors_except .mapped_argfunction
-2 .throw .collect_errors_except .mapped_argfunction
+1 .throw .collect_errors_except .try_catch_recursive(body)
+2 .throw .collect_errors_except .try_catch_recursive(body)
 
 -1
 $.try_catch_recursive collecting_handler {
@@ -3515,10 +3521,10 @@ $.try_catch_recursive collecting_handler {
     .throw collecting_handler 1
     .throw collecting_handler 2
     echo almost nothing}}
-1 .throw .collect_errors_except .mapped_argfunction
-2 .throw .collect_errors_except .mapped_argfunction
+1 .throw .collect_errors_except .try_catch_recursive(body)
+2 .throw .collect_errors_except .try_catch_recursive(body)
 exceeded maximum number of exceptions ( 1 ) in collect_errors.
-call stack: .collect_errors_except .mapped_argfunction .try_catch_recursive
+call stack: .collect_errors_except .try_catch_recursive(body) .try_catch_recursive
 
 -1
 $.set_max_extra_exceptions 0
@@ -3528,8 +3534,8 @@ $.try_catch_recursive collecting_handler {
   .collect_errors_except .echo {
     .throw collecting_handler 1
     .throw collecting_handler 2}}
-1 .throw .collect_errors_except .mapped_argfunction .try_catch_recursive
-2 .throw .collect_errors_except .mapped_argfunction .try_catch_recursive
+1 .throw .collect_errors_except .try_catch_recursive(body) .try_catch_recursive
+2 .throw .collect_errors_except .try_catch_recursive(body) .try_catch_recursive
 exceeded maximum number of exceptions ( 0 ) in try_catch.
 call stack: .try_catch_recursive
 
@@ -3539,10 +3545,10 @@ $.try_catch_recursive collecting_handler {
     .throw collecting_handler 1
     .throw collecting_handler 2
     echo almost nothing}}
-1 .throw .collect_errors_except .mapped_argfunction .try_catch_recursive
-2 .throw .collect_errors_except .mapped_argfunction .try_catch_recursive
+1 .throw .collect_errors_except .try_catch_recursive(body) .try_catch_recursive
+2 .throw .collect_errors_except .try_catch_recursive(body) .try_catch_recursive
 exceeded maximum number of exceptions ( 1 ) in collect_errors.
-call stack: .collect_errors_except .mapped_argfunction .try_catch_recursive
+call stack: .collect_errors_except .try_catch_recursive(body) .try_catch_recursive
 exceeded maximum number of exceptions ( 0 ) in try_catch.
 call stack: .try_catch_recursive
 
@@ -3690,20 +3696,28 @@ $.var_exists 0
 
 0
 $.var_exists 2
+assertion (var exists: 2) failed
+call stack .var_exists
 
-1
+-1
 $.var_exists x
+assertion (var exists: x) failed
+call stack .var_exists
 
-1
+-1
 $.var_exists x y
+assertion (var exists: x y) failed
+call stack .var_exists
 
-1
+-1
 $.var_exists # y
 
 0
 $.var_exists y x
+assertion (var exists: y x) failed
+call stack .var_exists
 
-1
+-1
 $.unset x
 
 1
@@ -3790,14 +3804,18 @@ $e $x
 nihilism
 0
 $.var_exists y
+assertion (var exists: y) failed
+call stack .var_exists
 
-1
+-1
 $.unset x
 
 0
 $.var_exists x
+assertion (var exists: x) failed
+call stack .var_exists
 
-1
+-1
 $.return 0
 
 0
@@ -3847,6 +3865,34 @@ $## if_core
 $# helper functions
 
 0
+$.function_all_flags silent_throw [text ...] {
+  .collect_errors_only .false echo {
+    .throw .false first
+    .throw echo exception $text$
+    .throw .false second
+    .return 0}}
+
+0
+$.function_all_flags caught_silent_throw [text ...] {
+  .try_catch_recursive echo {silent_throw $text$}}
+
+0
+$silent_throw on its own
+assertion first failed
+call stack .throw .collect_errors_only silent_throw
+exception on its own .throw .collect_errors_only silent_throw
+assertion second failed
+call stack .throw .collect_errors_only silent_throw
+
+-1
+$caught_silent_throw on its own
+exception on its own .throw .collect_errors_only silent_throw .try_catch_recursive(body)
+assertion first failed
+call stack .throw .collect_errors_only silent_throw .try_catch_recursive(body) .try_catch_recursive caught_silent_throw
+assertion second failed
+call stack .throw .collect_errors_only silent_throw .try_catch_recursive(body) .try_catch_recursive caught_silent_throw
+
+-1
 $fn if_true {.if .test_not_empty ( ) {.argfunction}}
 
 0
@@ -3908,28 +3954,149 @@ $fn conditional_echo first second {
 $
 
 0
-$# ! negation
+$# ! negation: if_core workout
 
 0
-$.return 1
-
-1
-$.return 0
-
-0
-$! .return 1
+$.function_all_flags !x args ... {
+  .if .throw .false anyway {}
+  .else_if_not $args$ {.return 0}
+  .else {.throw .false ${.echo ! $args}}}
 
 0
-$! .return 0
+$.test_string_equal 42 420e-1
+assertion (42 == 420e-1) failed
+call stack .test_string_equal
 
-1
-$! ! .return 1
+-1
+$.test_number_equal 42 420e-1
 
-1
-$! ! .return 2
+0
+$!  .test_greater 50 230
 
-1
-$! ! .return 0
+0
+$!x .test_greater 50 230
+
+0
+$!  .test_less 5 2.3e1
+assertion (! .test_less 5 2.3e1) failed
+call stack .throw .mapped_argfunction .if !
+
+-1
+$!x .test_less 5 2.3e1
+assertion (! .test_less 5 2.3e1) failed
+call stack .throw .mapped_argfunction .else !x
+
+-1
+$!  !  .test_executable_exists !!!
+assertion (! ! .test_executable_exists !!!) failed
+call stack .throw .mapped_argfunction .if !
+
+-1
+$!  !x .test_executable_exists !!!
+assertion (! !x .test_executable_exists !!!) failed
+call stack .throw .mapped_argfunction .if !
+
+-1
+$!x !  .test_executable_exists !!!
+assertion (! ! .test_executable_exists !!!) failed
+call stack .throw .mapped_argfunction .else !x
+
+-1
+$!x !x .test_executable_exists !!!
+assertion (! !x .test_executable_exists !!!) failed
+call stack .throw .mapped_argfunction .else !x
+
+-1
+$!  !  .whence_function !!!
+!!! : command not found ( !!! .whence_function .if ! .if ! )
+
+-1
+$!x !x .whence_function !!!
+!!! : command not found ( !!! .whence_function .else_if_not !x .else_if_not !x )
+
+-1
+$!  !  .test_not_empty 0
+
+0
+$!  !x .test_not_empty 0
+
+0
+$!x !  .test_not_empty 0
+
+0
+$!x !x .test_not_empty 0
+
+0
+$!  !  !  .test_in 0 0
+assertion (! ! ! .test_in 0 0) failed
+call stack .throw .mapped_argfunction .if !
+
+-1
+$!  !  !  .test_in 0
+
+0
+$!  !  !  !  .test_in 0
+assertion (! ! ! ! .test_in 0) failed
+call stack .throw .mapped_argfunction .if !
+
+-1
+$!  !  !x !  .test_in 0
+assertion (! ! !x ! .test_in 0) failed
+call stack .throw .mapped_argfunction .if !
+
+-1
+$!  !x !  !  .test_in 0
+assertion (! !x ! ! .test_in 0) failed
+call stack .throw .mapped_argfunction .if !
+
+-1
+$!  !x !x !  .test_in 0
+assertion (! !x !x ! .test_in 0) failed
+call stack .throw .mapped_argfunction .if !
+
+-1
+$!x !  !  !  .test_in 0
+assertion (! ! ! ! .test_in 0) failed
+call stack .throw .mapped_argfunction .else !x
+
+-1
+$!x !  !x !  .test_in 0
+assertion (! ! !x ! .test_in 0) failed
+call stack .throw .mapped_argfunction .else !x
+
+-1
+$!x !x !  !  .test_in 0
+assertion (! !x ! ! .test_in 0) failed
+call stack .throw .mapped_argfunction .else !x
+
+-1
+$!x !x !x !  .test_in 0
+assertion (! !x !x ! .test_in 0) failed
+call stack .throw .mapped_argfunction .else !x
+
+-1
+$!  !  !  !  .test_in 0 0
+
+0
+$!  !  !x !  .test_in 0 0
+
+0
+$!  !x !  !  .test_in 0 0
+
+0
+$!  !x !x !  .test_in 0 0
+
+0
+$!x !  !  !  .test_in 0 0
+
+0
+$!x !  !x !  .test_in 0 0
+
+0
+$!x !x !  !  .test_in 0 0
+
+0
+$!x !x !x !  .test_in 0 0
 
 0
 $
@@ -4193,12 +4360,27 @@ $.collect_errors_except .nop {
 nested .if without .else with call stack: .if .mapped_argfunction .else .collect_errors_except
 
 -1
+$.collect_errors_except .nop {
+  .try_catch_recursive echo {
+    .if silent_throw in if {echo definitely should not print}
+    .else {echo skipped because non-.false exception thrown earlier}}}
+exception in if .throw .collect_errors_only silent_throw .if .try_catch_recursive(body)
+
+-1
+$.collect_errors_except .nop {
+  .try_catch_recursive echo {
+    .if caught_silent_throw in if {echo still should not print}
+    .else {echo not skipped because only .false were thrown earlier}}}
+exception in if .throw .collect_errors_only silent_throw .try_catch_recursive(body)
+not skipped because only .false were thrown earlier
+
+0
 $
 
--1
+0
 $# exception thrown in argfunction
 
--1
+0
 $.if ${conditional_echo unfindable anywhere}$ {e also a failed substitution}
 unfindable : binary not found in /bin:/usr/bin:.
 call stack: .which_path .autofunction .autofunction .if
@@ -4241,10 +4423,10 @@ $.if
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .if
 
 -1
-$.else_if .return 0 {e do not run after an exception}
+$.else_if .test_is_number 0 {e do not run after an exception}
 
 0
-$.else_if_not .return 1 {e do not run after an exception}
+$.else_if_not .test_is_number false {e do not run after an exception}
 
 0
 $.else_if
@@ -4274,7 +4456,7 @@ $.else
 .else requires an argfunction
 
 -1
-$.if .return 0 {}
+$.if .test_is_number 0 {}
 
 0
 $.else {e first else for if}
@@ -4284,13 +4466,13 @@ $.else {e second else for if}
 else without if with call stack: .else
 
 -1
-$.if .return 0 {e if true; .return 1}
+$.if .test_is_number 0 {e if true}
 if true
-1
+0
 $.else {e else true; .return 3}
 
-1
-$.if .return 1 {e if false; .return 4}
+0
+$.if .test_is_number false {e if false}
 
 0
 $.else {e else false; .return 5}
@@ -4300,14 +4482,14 @@ $.else {}
 else without if with call stack: .else
 
 -1
-$.else_if .return 0 {e not this one; .return 6}
+$.else_if .test_is_number 0 {e not this one}
 else without if with call stack: .else_if
 
 -1
 $.else {}
 
 0
-$.else_if_not .return 1 {e not this one; .return 7}
+$.else_if_not .test_is_number false {e nor this}
 else without if with call stack: .else_if_not
 
 -1
@@ -4369,6 +4551,7 @@ $.internal_functions
 .exec_failed
 .executable_already_exists
 .failed_substitution
+.false
 .file_open_failure
 .file_not_found
 .flag_in_elipsis
@@ -4436,8 +4619,10 @@ $.is_default_input {excess argfunc}
 
 -1
 $se {.is_default_input <dummy_file}
+assertion is_default_input failed
+call stack .is_default_input .scope se
 
-1
+-1
 $se {.is_default_input}
 
 0
@@ -4450,11 +4635,15 @@ $.is_default_output {excess argfunc}
 
 -1
 $e ${.is_default_output; .echo $?}
-1
+assertion is_default_output failed
+call stack .is_default_output e
+
 0
 $se {.is_default_output >dummy_file}
+assertion is_default_output failed
+call stack .is_default_output .scope se
 
-1
+-1
 $se {.is_default_output}
 
 0
@@ -4485,6 +4674,7 @@ $.list_executables {excess argfunc}
 -1
 $.for ${.list_executables}$ {.combine $1 $nl}
 !
+!x
 #
 #!
 ##
@@ -4537,6 +4727,7 @@ $.for ${.list_executables}$ {.combine $1 $nl}
 .exit
 .failed_substitution
 .fallback_handler
+.false
 .file_not_found
 .file_open_failure
 .flag_in_elipsis
@@ -4669,6 +4860,7 @@ a
 af
 b
 c
+caught_silent_throw
 collecting_handler
 conditional_echo
 conditional_false
@@ -4707,6 +4899,7 @@ polish
 sa
 se
 setf
+silent_throw
 single
 sort
 test_files/../rwsh
@@ -5230,29 +5423,29 @@ $fn e_after {se {.argfunction}; echo after}
 $e_after {.try_catch_recursive .not_a_number .function_not_found {
   .return A}}
 A is not a number
-call stack: .return .mapped_argfunction
+call stack: .return .try_catch_recursive(body)
 after
 
 0
 $e_after {
   .try_catch_recursive .function_not_found .binary_not_found {
-    .eturn A}}
-.eturn : binary not found in /bin:/usr/bin:.
-call stack: .which_path .autofunction .autofunction .mapped_argfunction
-.eturn : command not found ( .eturn A .mapped_argfunction )
+    ..return A}}
+..return : binary not found in /bin:/usr/bin:.
+call stack: .which_path .autofunction .autofunction .try_catch_recursive(body)
+..return : command not found ( ..return A .try_catch_recursive(body) )
 after
 
 0
 $e_after {.try_catch_recursive .not_a_number {.return A}}
 A is not a number
-call stack: .return .mapped_argfunction
+call stack: .return .try_catch_recursive(body)
 after
 
 0
 $e_after {.try_catch_recursive .not_a_number {.cho A}}
 .cho : binary not found in /bin:/usr/bin:.
-call stack: .which_path .autofunction .autofunction .mapped_argfunction .try_catch_recursive .scope se e_after
-.cho : command not found ( .cho A .mapped_argfunction .try_catch_recursive .scope se e_after )
+call stack: .which_path .autofunction .autofunction .try_catch_recursive(body) .try_catch_recursive .scope se e_after
+.cho : command not found ( .cho A .try_catch_recursive(body) .try_catch_recursive .scope se e_after )
 
 -1
 $e_after {.try_catch_recursive .not_a_number .function_not_found {echo A}}
@@ -5302,16 +5495,16 @@ $.get_max_extra_exceptions
 0
 $e_after {.try_catch_recursive .not_a_number {.try_catch_recursive .not_a_number {.return A}}}
 A is not a number
-call stack: .return .mapped_argfunction .try_catch_recursive .mapped_argfunction .try_catch_recursive .scope se e_after
+call stack: .return .try_catch_recursive(body) .try_catch_recursive .try_catch_recursive(body) .try_catch_recursive .scope se e_after
 exceeded maximum number of exceptions ( 0 ) in try_catch.
-call stack: .try_catch_recursive .mapped_argfunction .try_catch_recursive .scope se e_after
+call stack: .try_catch_recursive .try_catch_recursive(body) .try_catch_recursive .scope se e_after
 
 -1
 $e_after {.try_catch_recursive .not_a_number {.try_catch_recursive .not_a_number {.return A}}}
 A is not a number
-call stack: .return .mapped_argfunction .try_catch_recursive .mapped_argfunction .try_catch_recursive .scope se e_after
+call stack: .return .try_catch_recursive(body) .try_catch_recursive .try_catch_recursive(body) .try_catch_recursive .scope se e_after
 exceeded maximum number of exceptions ( 0 ) in try_catch.
-call stack: .try_catch_recursive .mapped_argfunction .try_catch_recursive .scope se e_after
+call stack: .try_catch_recursive .try_catch_recursive(body) .try_catch_recursive .scope se e_after
 
 -1
 $e_after {sa echo hi {.try_catch_recursive ${.internal_functions}$ {&&&args$}}}
@@ -5355,7 +5548,7 @@ stepwise : command not found ( stepwise .stepwise )
 -1
 $.stepwise .stepwise {e $* $nl}
 
-3
+0
 $.stepwise wrapper 1 2 {e $* $nl}
 a 1 2 two 
 a 1 2 three 
@@ -5418,7 +5611,7 @@ e 1 2 three three
 .echo 1 2 three three 
  
 
-3
+0
 $.stepwise wrapper 1 2 {e $* $nl}
 a 1 2 one 
 a 1 2 two 
@@ -5440,8 +5633,10 @@ $.test_file_exists dummy_file {excess argfunc}
 
 -1
 $.test_file_exists /b /in
+assertion ( -e /b -e /in) failed
+call stack .test_file_exists
 
-1
+-1
 $.test_file_exists /b /bin /in
 
 0
@@ -5488,8 +5683,10 @@ $.test_not_empty x {excess argfunc}
 
 -1
 $.test_string_equal x y
+assertion (x == y) failed
+call stack .test_string_equal
 
-1
+-1
 $.test_string_equal x x
 
 0
@@ -5497,11 +5694,15 @@ $.test_string_unequal x y
 
 0
 $.test_string_unequal x x
+assertion (x != x) failed
+call stack .test_string_unequal
 
-1
+-1
 $.test_not_empty \
+assertion ( -n ) failed
+call stack .test_not_empty
 
-1
+-1
 $.test_not_empty x
 
 0
@@ -5510,8 +5711,10 @@ unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optio
 
 -1
 $.test_in x
+assertion (x in) failed
+call stack .test_in
 
-1
+-1
 $.test_in x x
 
 0
@@ -5519,8 +5722,10 @@ $.test_in z y z
 
 0
 $.test_in w x y z
+assertion (w in x y z) failed
+call stack .test_in
 
-1
+-1
 $.test_in y x y z
 
 0
@@ -5539,11 +5744,15 @@ $.test_is_number 42 {excess argfunc}
 
 -1
 $.test_is_number ()
+assertion (is_number  - NaN) failed
+call stack .test_is_number
 
-1
+-1
 $.test_is_number 42a
+assertion (is_number 42a - NaN) failed
+call stack .test_is_number
 
-1
+-1
 $.test_is_number 42
 
 0
@@ -5551,8 +5760,10 @@ $.test_is_number -0.314
 
 0
 $.test_is_number 6.022e9000000000
+assertion (is_number 6.022e9000000000 - range) failed
+call stack .test_is_number
 
-2
+-1
 $.test_is_number 6.022e23
 
 0
@@ -5575,8 +5786,10 @@ call stack: .test_number_equal
 
 -1
 $.test_number_equal 0 0.000000000000000000000000001
+assertion (0 -eq 0.000000000000000000000000001) failed
+call stack .test_number_equal
 
-1
+-1
 $.test_number_equal 1e-9000000000 1e-9000000001
 value 1e-9000000000 is out of usable numeric range
 call stack .test_number_equal
@@ -5586,8 +5799,10 @@ $.test_number_equal 0 0.0
 
 0
 $.test_number_equal 42 42.01
+assertion (42 -eq 42.01) failed
+call stack .test_number_equal
 
-1
+-1
 $.test_number_equal 42 42
 
 0
@@ -5602,8 +5817,10 @@ call stack .test_number_equal
 
 -1
 $.test_number_equal 6.022e23 6.022e2
+assertion (6.022e23 -eq 6.022e2) failed
+call stack .test_number_equal
 
-1
+-1
 $.test_number_equal 6.022e23 .6022e24
 
 0
@@ -5636,11 +5853,15 @@ call stack .test_greater
 
 -1
 $.test_greater 6.022e2 6.022e23
+assertion (6.022e2 -gt 6.022e23) failed
+call stack .test_greater
 
-1
+-1
 $.test_greater 6.022e23 .6022e24
+assertion (6.022e23 -gt .6022e24) failed
+call stack .test_greater
 
-1
+-1
 $.test_greater 6.022e23 6.022e2
 
 0
@@ -5673,11 +5894,15 @@ call stack .test_less
 
 -1
 $.test_less 6.022e23 6.022e2
+assertion (6.022e23 -lt 6.022e2) failed
+call stack .test_less
 
-1
+-1
 $.test_less 6.022e23 .6022e24
+assertion (6.022e23 -lt .6022e24) failed
+call stack .test_less
 
-1
+-1
 $.test_less 6.022e2 6.022e23
 
 0
@@ -5743,8 +5968,10 @@ unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optio
 
 -1
 $.test_executable_exists j
+assertion (executable exists: j) failed
+call stack .test_executable_exists
 
-1
+-1
 $.test_executable_exists #
 
 0
@@ -5755,8 +5982,10 @@ $.test_executable_exists /bin/cat
 
 0
 $.test_executable_exists .mapped_argfunction
+assertion (executable exists: .mapped_argfunction) failed
+call stack .test_executable_exists
 
-1
+-1
 $.test_executable_exists .mapped_argfunction {.argfunction}
 
 0
@@ -5786,15 +6015,15 @@ argfunction
 0
 $type .nop .mapped_argfunction j # {.argfunction}
 .nop is builtin
-.mapped_argfunction is .mapped_argfunction : command not found ( .mapped_argfunction .type .mapped_argfunction .mapped_argfunction )
-j is j : command not found ( j .type .mapped_argfunction .mapped_argfunction )
+.mapped_argfunction is .mapped_argfunction : command not found ( .mapped_argfunction .type .try_catch_recursive(body) .try_catch_recursive(body) )
+j is j : command not found ( j .type .try_catch_recursive(body) .try_catch_recursive(body) )
 # is function
 
 0
 $type -t .nop .mapped_argfunction j # {.argfunction}
 builtin
-.mapped_argfunction : command not found ( .mapped_argfunction .type .mapped_argfunction .mapped_argfunction )
-j : command not found ( j .type .mapped_argfunction .mapped_argfunction )
+.mapped_argfunction : command not found ( .mapped_argfunction .type .try_catch_recursive(body) .try_catch_recursive(body) )
+j : command not found ( j .type .try_catch_recursive(body) .try_catch_recursive(body) )
 function
 
 0
@@ -5988,6 +6217,9 @@ $# .last_exception
 
 -1
 $.last_exception .last_exception
+.function_not_found /bn/echo .last_exception /bn/echo
+0
+$.last_exception .nop
 
 0
 $.last_exception
@@ -6002,17 +6234,19 @@ $.last_exception .last_exception
 .excess_argfunction .last_exception .try_catch_recursive {excess argfunc}
 0
 $.last_exception function_that_does_not_exist
+function_that_does_not_exist : command not found ( function_that_does_not_exist .last_exception )
 
-1
+-1
 $.last_exception .try_catch_recursive
-.not_a_number A .return .mapped_argfunction .try_catch_recursive .mapped_argfunction .try_catch_recursive .not_a_number {.try_catch_recursive .not_a_number {.return A}}; .excessive_exceptions_in_catch 0 .try_catch_recursive .mapped_argfunction .try_catch_recursive .not_a_number {.try_catch_recursive .not_a_number {.return A}}
+.not_a_number A .return .try_catch_recursive(body) .try_catch_recursive .try_catch_recursive(body) .try_catch_recursive .not_a_number {.try_catch_recursive .not_a_number {.return A}}; .excessive_exceptions_in_catch 0 .try_catch_recursive .try_catch_recursive(body) .try_catch_recursive .not_a_number {.try_catch_recursive .not_a_number {.return A}}
 0
 $.last_exception .last_execution_time
 
 0
 $.last_exception /bin/which
+/bin/which : command not found ( /bin/which .last_exception )
 
-1
+-1
 $.last_exception /bin/cat
 .file_open_failure non_existent_file /bin/cat <non_existent_file
 0
@@ -6023,7 +6257,7 @@ $.last_exception e
 
 0
 $.last_exception test_var_greater
-.bad_args -- var value (value 3) (var n)  12 test_var_greater n 3 12
+.false 0 -gt 0 .test_greater test_var_greater n 0
 0
 $
 
@@ -6043,8 +6277,10 @@ $.usleep_overhead {excess argfunc}
 
 -1
 $.usleep_overhead 
+() is not a number
+call stack: .usleep_overhead
 
-1
+-1
 $.usleep
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .usleep
 
@@ -6074,8 +6310,9 @@ unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optio
 
 -1
 $.execution_count j
+j : command not found ( j .execution_count )
 
-1
+-1
 $.execution_count .mapped_argfunction {echo not tracked}
 0
 0
@@ -6087,8 +6324,9 @@ unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optio
 
 -1
 $.last_execution_time j
+j : command not found ( j .last_execution_time )
 
-1
+-1
 $.last_execution_time .mapped_argfunction {echo not tracked}
 0.000000
 0
@@ -6103,17 +6341,18 @@ $.total_execution_time .mapped_argfunction {echo not tracked}
 0.000000
 0
 $.total_execution_time j
+j : command not found ( j .total_execution_time )
 
-1
+-1
 $# .total_execution_time .usleep
 
-1
+-1
 $
 
-1
+-1
 $# .which_path
 
-1
+-1
 $.which_path cat
 unacceptable argument count: received 1 non-optional, but needed 2 (with 0 optional) for .which_path
 
@@ -6177,36 +6416,40 @@ $
 $# .while
 
 0
-$.function_all_flags tf {.test_string_unequal $A $N}
+$.function_all_flags tf N {.test_string_unequal $A $N}
 
 0
 $.set A 0
-
-0
-$.set N 4
 
 0
 $.while {e ARGS}
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .while
 
 -1
-$.while tf
+$.while tf 4 
 .while requires an argfunction
 
 -1
-$.while tf {e printed; .set A 4}
+$.while tf 4 {e printed; .set A 4}
 printed
 0
-$.while tf {e skipped}
+$.while tf 4 {e skipped}
 
 -1
 $.while .return 0 {.throw .echo exception within while}
 exception within while .throw .mapped_argfunction .while
 -1
+$.while silent_throw within condition {e body skipped}
+exception within condition .throw .collect_errors_only silent_throw .while
+
+-1
+$.while .throw .false because {e body skipped}
+
+-1
 $.set A 0
 
 0
-$.while tf {e in .while argfunction $A $nl; .var_add A 1}
+$.while tf 4 {e in .while argfunction $A $nl; .var_add A 1}
 in .while argfunction 0 
 in .while argfunction 1 
 in .while argfunction 2 
@@ -6216,8 +6459,8 @@ in .while argfunction 3
 $.set A 0
 
 0
-$.while tf {.if .return $A {.set A 1}
-           .else {.function_all_flags tf {.return 1}}
+$.while tf 4 {.if .test_number_equal 0 $A {.set A 1}
+           .else {.function_all_flags tf N {.throw .false $N}}
            e in overwriting argfunction $nl}
 in overwriting argfunction 
 in overwriting argfunction 
@@ -6624,7 +6867,7 @@ call stack: .which_path .autofunction .autofunction
 
 -1
 $whence not_a_thing
-not_a_thing : command not found ( not_a_thing .whence_function .mapped_argfunction .mapped_argfunction )
+not_a_thing : command not found ( not_a_thing .whence_function .try_catch_recursive(body) .try_catch_recursive(body) )
 
 -1
 $not_a_thing
@@ -6737,7 +6980,7 @@ $.set_max_extra_exceptions 0
 0
 $e_after {.try_catch_recursive .undeclared_variable .excessive_nesting .failed_substitution {g}}
 Exception for failed handler. Original exception with call stack:
-.excessive_nesting g h g h g h g h g h g h g h g h g .mapped_argfunction .try_catch_recursive .scope se e_after
+.excessive_nesting g h g h g h g h g h g h g h g h g .try_catch_recursive(body) .try_catch_recursive .scope se e_after
 Exception for failed handler. Original exception with call stack:
 .failed_substitution &{.return 1} .excessive_nesting
 Z was not declared
@@ -6753,7 +6996,7 @@ $e_after {.try_catch_recursive .undeclared_variable .excessive_nesting .failed_s
 Z was not declared
 call stack: .failed_substitution
 Exception for failed handler. Original exception with call stack:
-.excessive_nesting g h g h g h g h g h g h g h g h g .mapped_argfunction .try_catch_recursive .scope se e_after
+.excessive_nesting g h g h g h g h g h g h g h g h g .try_catch_recursive(body) .try_catch_recursive .scope se e_after
 Exception for failed handler. Original exception with call stack:
 .failed_substitution &{.return 1} .excessive_nesting
 Z was not declared
@@ -6767,7 +7010,7 @@ $e_after {.try_catch_recursive .undeclared_variable .failed_substitution {
 Z was not declared
 call stack: .failed_substitution
 Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.return 1} .mapped_argfunction .try_catch_recursive .scope se e_after
+.failed_substitution ${.return 1} .try_catch_recursive(body) .try_catch_recursive .scope se e_after
 Z was not declared
 call stack: .failed_substitution
 
@@ -6778,7 +7021,7 @@ $fn .else_without_if args ... {.nop $args; e ${.return 1}}
 $e_after {.try_catch_recursive .undeclared_variable .else_without_if {
   .else {}}}
 Exception for failed handler. Original exception with call stack:
-.else_without_if .else .mapped_argfunction .try_catch_recursive .scope se e_after
+.else_without_if .else .try_catch_recursive(body) .try_catch_recursive .scope se e_after
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.return 1} .else_without_if
 Z was not declared
@@ -6793,7 +7036,7 @@ $fn .failed_substitution args ... {.nop $args; e ${.return 2}}
 $e_after {.try_catch_recursive .undeclared_variable .failed_substitution {
   e ${.return 1}}}
 Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.return 1} .mapped_argfunction .try_catch_recursive .scope se e_after
+.failed_substitution ${.return 1} .try_catch_recursive(body) .try_catch_recursive .scope se e_after
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.return 2} .failed_substitution
 Exception for failed handler. Original exception with call stack:
@@ -6818,7 +7061,7 @@ $e_after {.try_catch_recursive .undeclared_variable .else_without_if {
 Z was not declared
 call stack: .else_without_if
 Exception for failed handler. Original exception with call stack:
-.else_without_if .else .mapped_argfunction .try_catch_recursive .scope se e_after
+.else_without_if .else .try_catch_recursive(body) .try_catch_recursive .scope se e_after
 Z was not declared
 call stack: .else_without_if
 
@@ -6831,7 +7074,7 @@ $e_after {.try_catch_recursive .not_a_number .failed_substitution {
 Z is not a number
 call stack: .return .failed_substitution
 Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.return 1} .mapped_argfunction .try_catch_recursive .scope se e_after
+.failed_substitution ${.return 1} .try_catch_recursive(body) .try_catch_recursive .scope se e_after
 Z is not a number
 call stack: .return .failed_substitution
 
@@ -6854,8 +7097,25 @@ $.throw .not_a_number 7
 call stack: .throw
 
 -1
-$se {if_only .return 0 {.throw sa {echo even from $args$ 7 is a number}}}
+$se {if_only .test_is_number 0 {
+  .throw sa {echo even from $args$ 7 is a number}}}
 even from .throw .mapped_argfunction .if if_only .scope se 7 is a number
+
+-1
+$.throw .throw echo innocently
+Exception for failed handler. Original exception with call stack:
+.throw echo innocently .throw
+innocently .throw .throw
+
+-1
+$.throw .throw exception_bomb
+Exception for failed handler. Original exception with call stack:
+.throw exception_bomb .throw
+Exception for failed handler. Original exception with call stack:
+exception_bomb .throw .throw
+exception_bomb : command not found ( exception_bomb .throw .throw )
+exception_bomb : binary not found in /bin:/usr/bin:.
+call stack: .which_path .autofunction .autofunction
 
 -1
 $se {.try_catch_recursive echo {
@@ -6864,7 +7124,7 @@ $se {.try_catch_recursive echo {
       echo second}
    echo third}
 first
-failing successfully .throw .mapped_argfunction
+failing successfully .throw .try_catch_recursive(body)
 third
 
 0
@@ -6874,7 +7134,10 @@ $
 $# .run_logic
 
 0
-$fn .run_logic flag cmd ... {.if .return $flag {.nop}; .else_if $cmd$ {.nop}; .else {.nop}}
+$fn .run_logic flag cmd ... {
+  .if .test_number_equal 0 $flag {.nop}
+  .else_if $cmd$ {.nop}
+  .else {.nop}}
 
 0
 $0 e don't print nuthin'
@@ -7075,7 +7338,6 @@ A=-7.29496e+09
 C=(external) () ( ) internal(parenthesis)
 FIGNORE=
 LC_ALL=C
-N=4
 PATH=/bin:/usr/bin:.
 SHELL=/bin/rwsh
 TESTABILITY=an=external var(iable)
@@ -7171,11 +7433,15 @@ d was not checked with call stack .scope
 -1
 $.scope n o ([a] b [c] d) {echo $b $d; .var_exists a}
 n o
+assertion (var exists: a) failed
+call stack .var_exists .scope
 c was not checked with call stack .scope
 
 -1
 $.scope n o ([a] b [c] d) {echo $b; .var_exists c}
 n
+assertion (var exists: c) failed
+call stack .var_exists .scope
 a was not checked with call stack .scope
 d was unused with call stack .scope
 
@@ -7194,10 +7460,14 @@ e was not checked with call stack .scope
 -1
 $.scope n ([a1 a2 a3 a4] b [c] [d1 d2] [e ...]) {echo $b; .var_exists a4 d2 e c}
 n
+assertion (var exists: a4 d2 e c) failed
+call stack .var_exists .scope
 
-1
+-1
 $.scope n ([a1 a2 a3 a4] b [c] [d1 d2] [e ...]) {echo $b; .var_exists a3 d1}
 n
+assertion (var exists: a3 d1) failed
+call stack .var_exists .scope
 c was not checked with call stack .scope
 e was not checked with call stack .scope
 
@@ -7257,12 +7527,16 @@ d1 was not checked with call stack .scope
 
 -1
 $.scope ([-a a1 a2 a3] [-b] [-c] [-d d1]) {.var_exists -a -b -c -d}
+assertion (var exists: -a -b -c -d) failed
+call stack .var_exists .scope
 
-1
+-1
 $.scope ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {echo $-?; .var_exists -a -b -c -d}
 ()
+assertion (var exists: -a -b -c -d) failed
+call stack .var_exists .scope
 
-1
+-1
 $.scope ([-a a1 a2 a3] [-b] [-c] [-d d1]) {.list_locals}
 -*
 0
@@ -7285,8 +7559,10 @@ d1 was unused with call stack .scope
 
 -1
 $.scope ([-a a1 a2 a3] [-d d1 d2]) {.var_exists a2 d2}
+assertion (var exists: a2 d2) failed
+call stack .var_exists .scope
 
-1
+-1
 $.scope ([-?] [-a a1 a2 a3] [-d d1 d2]) {.var_exists -? a3 d1}
 -? was unused with call stack .scope
 -* was unused with call stack .scope
@@ -7337,6 +7613,8 @@ $.scope -b -c ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {
 0
 $.scope -b -c ([-a a1 a2 a3] [-b] [-c] [-d d1]) {echo $-b; .var_exists a2 d1}
 -b
+assertion (var exists: a2 d1) failed
+call stack .var_exists .scope
 -c was unused with call stack .scope
 -* was unused with call stack .scope
 

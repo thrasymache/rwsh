@@ -1,9 +1,7 @@
 init file /non-existent/file/to/test/failure does not exist
-call stack .source .mapped_argfunction
+call stack .source .try_catch_recursive(body)
 .global last_command_return -10
 .global A \
-.global N \
-.nop $N
 
 .nop .function_all_flags .run_logic -- cmd [args ...] {
   .return $last_command_return
@@ -104,6 +102,9 @@ call stack .source .mapped_argfunction
   echo call stack $stack}
 .function_all_flags .failed_substitution substitution [stack ...] {
   echo substitution $substitution failed
+  echo call stack $stack$}
+.function_all_flags .false test [stack ...] {
+  echo assertion $test failed
   echo call stack $stack$}
 .function_all_flags .file_not_found -- file stack ... {
   echo could not find file $file
@@ -240,7 +241,9 @@ call stack .source .mapped_argfunction
   echo call stack: $stack$}
 
 # ability of functions to act as builtin wrappers
-.function_all_flags ! args ... {.if $args$ {.return 1}; .else {.return 0}}
+.function_all_flags ! args ... {
+  .if $args$ {.throw .false ${.echo ! $args}}
+  .else {.return 0}}
 .function_all_flags af -- [argv ...] {.argfunction}
 .function_all_flags c -- text ... {.combine $text$}
 .function_all_flags e -- text ... {.echo $text}
@@ -400,6 +403,9 @@ $.source /etc/rwshrc-basic
 .function_all_flags .failed_substitution substitution [stack ...] {
   echo substitution $substitution failed
   echo call stack $stack$}
+.function_all_flags .false test [stack ...] {
+  echo assertion $test failed
+  echo call stack $stack$}
 .function_all_flags .file_not_found -- file stack ... {
   echo could not find file $file
   echo call stack $stack}
@@ -535,7 +541,9 @@ $.source /etc/rwshrc-basic
   echo call stack: $stack$}
 
 # ability of functions to act as builtin wrappers
-.function_all_flags ! args ... {.if $args$ {.return 1}; .else {.return 0}}
+.function_all_flags ! args ... {
+  .if $args$ {.throw .false ${.echo ! $args}}
+  .else {.return 0}}
 .function_all_flags af -- [argv ...] {.argfunction}
 .function_all_flags c -- text ... {.combine $text$}
 .function_all_flags e -- text ... {.echo $text}
@@ -604,10 +612,10 @@ $.global PATH /bin:/usr/bin
 
 0
 $.getpid
-15331
+24875
 0
 $.getppid
-15074
+4926
 0
 $.function_all_flags timings focus {
   .combine $focus (:	last\() ${.last_execution_time $focus} \) \	
@@ -628,22 +636,22 @@ $.function_all_flags clock-watch {
 $clock-watch
 timings:	last(0.000000)	total(0.000000)	count(0)
 clock-watch:	last(0.000000)	total(0.000000)	count(0)
-usleep overhead:	0.000104
-.usleep:	last(0.000704)	total(0.000704)	count(1)
-/bin/true:	last(0.000943)	total(0.000943)	count(1)
+usleep overhead:	8.3e-05
+.usleep:	last(0.000683)	total(0.000683)	count(1)
+/bin/true:	last(0.001328)	total(0.001328)	count(1)
 
 0
 $clock-watch
-timings:	last(0.000113)	total(0.000558)	count(4)
-clock-watch:	last(0.002757)	total(0.002757)	count(1)
-usleep overhead:	9.8e-05
-.usleep:	last(0.000692)	total(0.001396)	count(2)
-/bin/true:	last(0.000888)	total(0.001831)	count(2)
+timings:	last(0.000137)	total(0.000771)	count(4)
+clock-watch:	last(0.003378)	total(0.003378)	count(1)
+usleep overhead:	7.1e-05
+.usleep:	last(0.000659)	total(0.001342)	count(2)
+/bin/true:	last(0.000792)	total(0.002120)	count(2)
 
 0
 $.mapped_argfunction {timings timings; timings clock-watch}
-timings:	last(0.000110)	total(0.001074)	count(8)
-clock-watch:	last(0.002223)	total(0.004980)	count(2)
+timings:	last(0.000104)	total(0.001263)	count(8)
+clock-watch:	last(0.002052)	total(0.005430)	count(2)
 
 0
 $.error a stderr print will come before the diff $nl

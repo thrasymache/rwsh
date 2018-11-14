@@ -69,6 +69,7 @@ std::string Argm::exception_names[Argm::Exception_count] = {
   ".exec_failed",
   ".executable_already_exists",
   ".failed_substitution",
+  ".false",
   ".file_open_failure",
   ".file_not_found",
   ".flag_in_elipsis",
@@ -120,7 +121,7 @@ std::string Argm::exception_names[Argm::Exception_count] = {
   ".version_incompatible"};
 bool readline_enabled = false;
 Variable_map root_variable_map(nullptr);
-unsigned Base_executable::max_nesting = 0;
+int Base_executable::max_nesting = 0;
 int Variable_map::dollar_question = -1;
 bool Variable_map::exit_requested = false;
 

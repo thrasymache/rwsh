@@ -80,7 +80,8 @@ Arg_spec::Arg_spec(const std::string& script, unsigned max_soon,
         if (script.length() - key_start > 1)
           text=script.substr(key_start+1, key_end-key_start-1);
         else text="1";}
-      else text=script.substr(key_start, key_end-key_start);}
+      else text=script.substr(key_start, key_end-key_start);
+    else;}
   else if (script[0] == '@')
     if (script.length() < 2) type=SELECTION;
     else if (script[1] == '$')

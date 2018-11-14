@@ -58,8 +58,8 @@ whence ee
 whence () {}
 e text that does not have a prompt appended
 se {e again}
-if_only .return 1 {e not printed}
-if_only .return 0 {e printed without error}
+if_only .test_is_number false {e not printed}
+if_only .test_is_number 0 {e printed without error}
 .function_all_flags for -- [items ...] {
   .if .var_exists items {.for $items$ {.argfunction}}
   .else {.nop}}
@@ -305,7 +305,7 @@ se {sa {e hi >one >two} {cat <three <four}
 .else {.echo outfile properly removed}
 se {e hi >outfile}
 /bin/cat outfile
-.if .return 0 {>outfile /bin/echo there}
+.if .test_is_number 0 {>outfile /bin/echo there}
 .else {.nop}
 /bin/cat outfile
 se {se >outfile {e line 1 $nl; e line 2 longer $nl; .echo $nl; e ending}}
@@ -917,6 +917,16 @@ e $x
 
 ## if_core
 # helper functions
+.function_all_flags silent_throw [text ...] {
+  .collect_errors_only .false echo {
+    .throw .false first
+    .throw echo exception $text$
+    .throw .false second
+    .return 0}}
+.function_all_flags caught_silent_throw [text ...] {
+  .try_catch_recursive echo {silent_throw $text$}}
+silent_throw on its own
+caught_silent_throw on its own
 fn if_true {.if .test_not_empty ( ) {.argfunction}}
 fn if_false {.if .test_not_empty ()  {.argfunction}}
 fn else_if_true {.else_if .test_string_unequal q w {.argfunction}}
@@ -946,14 +956,45 @@ fn conditional_echo first second {
   .else_if_not .echo $first {echo not printed else if echo fails}
   .else {.echo () $second}}
 
-# ! negation
-.return 1
-.return 0
-! .return 1
-! .return 0
-! ! .return 1
-! ! .return 2
-! ! .return 0
+# ! negation: if_core workout
+.function_all_flags !x args ... {
+  .if .throw .false anyway {}
+  .else_if_not $args$ {.return 0}
+  .else {.throw .false ${.echo ! $args}}}
+.test_string_equal 42 420e-1
+.test_number_equal 42 420e-1
+!  .test_greater 50 230
+!x .test_greater 50 230
+!  .test_less 5 2.3e1
+!x .test_less 5 2.3e1
+!  !  .test_executable_exists !!!
+!  !x .test_executable_exists !!!
+!x !  .test_executable_exists !!!
+!x !x .test_executable_exists !!!
+!  !  .whence_function !!!
+!x !x .whence_function !!!
+!  !  .test_not_empty 0
+!  !x .test_not_empty 0
+!x !  .test_not_empty 0
+!x !x .test_not_empty 0
+!  !  !  .test_in 0 0
+!  !  !  .test_in 0
+!  !  !  !  .test_in 0
+!  !  !x !  .test_in 0
+!  !x !  !  .test_in 0
+!  !x !x !  .test_in 0
+!x !  !  !  .test_in 0
+!x !  !x !  .test_in 0
+!x !x !  !  .test_in 0
+!x !x !x !  .test_in 0
+!  !  !  !  .test_in 0 0
+!  !  !x !  .test_in 0 0
+!  !x !  !  .test_in 0 0
+!  !x !x !  .test_in 0 0
+!x !  !  !  .test_in 0 0
+!x !  !x !  .test_in 0 0
+!x !x !  !  .test_in 0 0
+!x !x !x !  .test_in 0 0
 
 # properly sequenced un-nested conditionals where everything succeeds
 if_true {e if_true printing}
@@ -1055,6 +1096,14 @@ if_false {echo ${conditional_echo .test_not_empty ()}}
 .collect_errors_except .nop {
   if_false {}
   .else {.if if_with_body .test_in unmatched {echo if in condition of body}}}
+.collect_errors_except .nop {
+  .try_catch_recursive echo {
+    .if silent_throw in if {echo definitely should not print}
+    .else {echo skipped because non-.false exception thrown earlier}}}
+.collect_errors_except .nop {
+  .try_catch_recursive echo {
+    .if caught_silent_throw in if {echo still should not print}
+    .else {echo not skipped because only .false were thrown earlier}}}
 
 # exception thrown in argfunction
 .if ${conditional_echo unfindable anywhere}$ {e also a failed substitution}
@@ -1066,8 +1115,8 @@ if_true {echo &{unfindable anywhere}}
 
 # .if .else_if .else_if_not .else
 .if
-.else_if .return 0 {e do not run after an exception}
-.else_if_not .return 1 {e do not run after an exception}
+.else_if .test_is_number 0 {e do not run after an exception}
+.else_if_not .test_is_number false {e do not run after an exception}
 .else_if
 .else_if_not
 .else {e do not run after an exception}
@@ -1075,17 +1124,17 @@ if_true {echo &{unfindable anywhere}}
 .else_if missing argfunction
 .else_if_not missing argfunction
 .else
-.if .return 0 {}
+.if .test_is_number 0 {}
 .else {e first else for if}
 .else {e second else for if}
-.if .return 0 {e if true; .return 1}
+.if .test_is_number 0 {e if true}
 .else {e else true; .return 3}
-.if .return 1 {e if false; .return 4}
+.if .test_is_number false {e if false}
 .else {e else false; .return 5}
 .else {}
-.else_if .return 0 {e not this one; .return 6}
+.else_if .test_is_number 0 {e not this one}
 .else {}
-.else_if_not .return 1 {e not this one; .return 7}
+.else_if_not .test_is_number false {e nor this}
 .else {}
 
 # .internal_features .internal_functions .internal_vars
@@ -1263,7 +1312,7 @@ e_after {.try_catch_recursive .not_a_number .function_not_found {
   .return A}}
 e_after {
   .try_catch_recursive .function_not_found .binary_not_found {
-    .eturn A}}
+    ..return A}}
 e_after {.try_catch_recursive .not_a_number {.return A}}
 e_after {.try_catch_recursive .not_a_number {.cho A}}
 e_after {.try_catch_recursive .not_a_number .function_not_found {echo A}}
@@ -1462,6 +1511,7 @@ whence .mapped_argfunction {>dummy_file}
 
 # .last_exception
 .last_exception .last_exception
+.last_exception .nop
 .last_exception
 .last_exception .try_catch_recursive {excess argfunc}
 .last_exception .last_exception
@@ -1516,19 +1566,20 @@ whence .mapped_argfunction {>dummy_file}
 .which_path rwsh /usr/bin:.
 
 # .while
-.function_all_flags tf {.test_string_unequal $A $N}
+.function_all_flags tf N {.test_string_unequal $A $N}
 .set A 0
-.set N 4
 .while {e ARGS}
-.while tf
-.while tf {e printed; .set A 4}
-.while tf {e skipped}
+.while tf 4 
+.while tf 4 {e printed; .set A 4}
+.while tf 4 {e skipped}
 .while .return 0 {.throw .echo exception within while}
+.while silent_throw within condition {e body skipped}
+.while .throw .false because {e body skipped}
 .set A 0
-.while tf {e in .while argfunction $A $nl; .var_add A 1}
+.while tf 4 {e in .while argfunction $A $nl; .var_add A 1}
 .set A 0
-.while tf {.if .return $A {.set A 1}
-           .else {.function_all_flags tf {.return 1}}
+.while tf 4 {.if .test_number_equal 0 $A {.set A 1}
+           .else {.function_all_flags tf N {.throw .false $N}}
            e in overwriting argfunction $nl}
 
 # .var_add
@@ -1688,7 +1739,10 @@ e_after {.try_catch_recursive .not_a_number .failed_substitution {
 .throw
 .throw .nop
 .throw .not_a_number 7
-se {if_only .return 0 {.throw sa {echo even from $args$ 7 is a number}}}
+se {if_only .test_is_number 0 {
+  .throw sa {echo even from $args$ 7 is a number}}}
+.throw .throw echo innocently
+.throw .throw exception_bomb
 se {.try_catch_recursive echo {
       echo first
       .throw echo failing successfully
@@ -1696,7 +1750,10 @@ se {.try_catch_recursive echo {
    echo third}
 
 # .run_logic
-fn .run_logic flag cmd ... {.if .return $flag {.nop}; .else_if $cmd$ {.nop}; .else {.nop}}
+fn .run_logic flag cmd ... {
+  .if .test_number_equal 0 $flag {.nop}
+  .else_if $cmd$ {.nop}
+  .else {.nop}}
 0 e don't print nuthin'
 1 e do print
 1 .rm_executable .run_logic

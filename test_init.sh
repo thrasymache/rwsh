@@ -5,8 +5,6 @@
 .function_all_flags .raw_command -- cmd {.echo $cmd; .echo $nl}
 .global last_command_return -10
 .global A \
-.global N \
-.nop $N
 
 .nop .function_all_flags .run_logic -- cmd [args ...] {
   .return $last_command_return
