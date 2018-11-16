@@ -23,9 +23,12 @@
 .else_if .test_string_equal $2 -c {
   .for ${.list_environment}$ {
     .scope $1$ (-- var val) {
-      .global $var $val
-      .nop $$var}}
+      .if .var_exists $var {.nop $val}
+      .else {
+        .global $var $val
+        .nop $$var}}}
   .source /etc/rwshrc-basic
+  .nop $FIGNORE
   .function_all_flags .if_before_else stack ... {.nop $stack}
   .function_all_flags .shutdown -- args ... {.nop $args; .return 0}
   .collect_errors_except .nop {

@@ -58,6 +58,7 @@ class Argm {
     File_not_found,
     Flag_in_elipsis,
     Function_not_found,
+    Global_would_be_masked,
     If_before_else,
     Illegal_function_name,
     Illegal_variable_name,
@@ -102,6 +103,7 @@ class Argm {
     Unrecognized_flag,
     Unused_before_set,
     Unused_variable,
+    Variable_already_exists,
     Version_incompatible,
     Exception_count};
 
@@ -112,13 +114,13 @@ class Argm {
     parent_map()->export_env(env);}
 
   std::string get_var(const std::string& key) const;
-  int global(const std::string& key, const std::string& value) const;
-  int local(const std::string& key, const std::string& value) const;
+  void global(const std::string& key, const std::string& value) const;
+  void local(const std::string& key, const std::string& value) const;
   void locals_listed(void) const;
   void set_var(const std::string& key, const std::string& value) const;
   template<class Out>
   Out star_var(const std::string& key, unsigned reference_level, Out res) const;
-  int unset_var(const std::string& key) const;
+  void unset_var(const std::string& key) const;
   bool var_exists(const std::string& key) const;
 
 // map semantics

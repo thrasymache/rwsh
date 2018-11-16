@@ -93,6 +93,10 @@
   echo call stack $stack$}
 .function_all_flags .function_not_found -- cmd [stack ...] {
   echo $cmd : command not found \( $cmd $stack$ \)}
+.function_all_flags .global_would_be_masked name stack ... {
+  .echo requested global $name already exists as a local
+  echo . It would be masked by the local and inaccessible from here
+  echo call stack $stack$}
 .function_all_flags .help [args ...] {
   .nop $args$
   .echo this is the default configuration for rwsh \(or something copied from it
@@ -212,6 +216,9 @@
   echo call stack $stack$}
 .function_all_flags .unused_variable -- var [stack ...] {
   echo $var was unused with call stack $stack$}
+.function_all_flags .variable_already_exists name stack ... {
+  echo variable $name already exists
+  echo call stack $stack$}
 .function_all_flags .version_incompatible version stack ... {
   echo this shell is not compatible with requested version $version
   echo call stack: $stack$}

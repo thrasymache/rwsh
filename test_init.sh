@@ -1,8 +1,7 @@
-.global nl (
-)
 .try_catch_recursive .file_open_failure {
   .source /non-existent/file/to/test/failure}
-.function_all_flags .raw_command -- cmd {.echo $cmd; .echo $nl}
+.function_all_flags .raw_command -- cmd {.echo $cmd; .echo (
+)}
 .global last_command_return -10
 .global A \
 

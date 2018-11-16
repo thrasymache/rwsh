@@ -846,9 +846,11 @@ se {.fork se {/bin/kill ${.getpid}
 .unset
 .unset x {excess argfunc}
 .unset x y
+.unset ?
 .var_exists
 .var_exists x {excess argfunc}
 .global 100 nihilism
+.local 0 nihilism
 .global .var_exists (must be requested to be checked)
 e $.var_exists
 .unset #
@@ -870,6 +872,7 @@ e $.var_exists
 .var_exists x y
 e $x
 .global x nihilism
+.global x ubernihilism
 .function_all_flags a {if_only .var_exists x {e in a x \( $x \) $nl}
              if_only .var_exists y {e in a y \( $y \) $nl}
              .local x (first level not global)
@@ -888,8 +891,8 @@ e $x
              if_only .var_exists y {e in c y \( $y \) $nl}
              # can unset a local, but only one at a time
              .unset x
-             .global y (attempting to create global masked by local)
-             e $? $nl
+             .try_catch_recursive .global_would_be_masked {
+               .global y (attempting to create global masked by local)}
              .set x (third level overwrites first)
              .local x (third level masks first)
              .set y (level three overwrites one)
@@ -907,6 +910,7 @@ e $x
 # .store_output
 .store_output x
 .store_output {e some text}
+.store_output # {e some text}
 .store_output x {e some text}
 .global x ()
 .store_output x {e some text; .return 1}
@@ -1794,7 +1798,8 @@ echo-comments excessive-commentary #
 .list_environment {excess argfunc}
 for ${.list_environment}$ {
   .scope $1$ (var val) {
-    .global $var $val}}
+    .if .test_in $var ? FIGNORE SHELL {echo $var : $$var to $val}
+    .else {.global $var $val}}}
 e $TESTABILITY
 e $SHELL
 .unset TESTABILITY

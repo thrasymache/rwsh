@@ -1,5 +1,9 @@
 .for ${.list_environment}$ {
-  .scope $1$ (-- var val) {.global $var $val; .nop $$var}}
+    .scope $1$ (-- var val) {
+      .if .var_exists $var {.nop $val}
+      .else {
+        .global $var $val
+        .nop $$var}}}
 .source /etc/rwshrc-basic
 
 # only the last line is actually needed, but this is the only test of these

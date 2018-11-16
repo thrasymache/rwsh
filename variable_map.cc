@@ -86,28 +86,29 @@ const std::string& Variable_map::get(const std::string& key) {
   else if (parent) return parent->get(key);
   else throw Exception(Argm::Undeclared_variable, key);}
 
-int Variable_map::global(const std::string& key, const std::string& value) {
+void Variable_map::global(const std::string& key, const std::string& value) {
   if (parent)
-    if (find(key) != end()) return 3;
+    if (find(key) != end()) throw Exception(Argm::Global_would_be_masked, key);
     else if (usage_checked)
       throw Exception(Argm::Internal_error,
                       "variable map added to after usage checked");
-    else return parent->global(key, value);
-  else return local(key, value);}
+    else parent->global(key, value);
+  else local(key, value);}
 
 // params have their usage checked by the prototype (to properly handle -* etc)
-int Variable_map::param(const std::string& key, const std::string& value) {
+void Variable_map::param(const std::string& key, const std::string& value) {
   std::pair<std::string, std::string> entry(key, value);
   std::pair<iterator, bool> ret = insert(entry);
-  return !ret.second;}  // yeah, you need to do this
+  if (!ret.second && value != ret.first->second)
+    throw Exception(Argm::Variable_already_exists, key);}
 
 // locals have their usage checked directly
-int Variable_map::local(const std::string& key, const std::string& value) {
+void Variable_map::local(const std::string& key, const std::string& value) {
   if (usage_checked)
     throw Exception(Argm::Internal_error,
                     "variable map added to after usage checked");
   local_vars.insert(key);
-  return param(key, value);}  // yeah, you need to do this
+  param(key, value);}
 
 void Variable_map::set(const std::string& key, const std::string& value) {
   auto i = find(key);
@@ -120,12 +121,13 @@ void Variable_map::set(const std::string& key, const std::string& value) {
   else if (parent) parent->set(key, value);
   else throw Exception(Argm::Undeclared_variable, key);}
 
-int Variable_map::unset(const std::string& key) {
-  if (key == "FIGNORE" || key == "?") return 2;
+void Variable_map::unset(const std::string& key) {
+  if (key == "FIGNORE" || key == "?")
+    throw Exception(Argm::Illegal_variable_name, key);
   auto i = find(key);
-  if (i != end()) {erase(i); return 0;}
-  else if (parent) return parent->unset(key);
-  else return 1;}
+  if (i != end()) erase(i);
+  else if (parent) parent->unset(key);
+  else throw Exception(Argm::Undeclared_variable, key);}
 
 const Variable_map* Variable_map::parent_with(const std::string& key) const {
   auto i = find(key);

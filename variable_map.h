@@ -43,13 +43,13 @@ public:
   bool exists(const std::string& key, bool check);
   void export_env(std::vector<char*>& env);
   const std::string& get(const std::string& key);
-  int global(const std::string& key, const std::string& value);
-  int param(const std::string& key, const std::string& value);
-  int local(const std::string& key, const std::string& value);
+  void global(const std::string& key, const std::string& value);
+  void param(const std::string& key, const std::string& value);
+  void local(const std::string& key, const std::string& value);
   const std::set<std::string>& locals(void) const {return local_vars;};
   void set(const std::string& key, const std::string& value);
   bool simple_exists(const std::string& key) const {return find(key) != end();}
-  int unset(const std::string& key);
+  void unset(const std::string& key);
   bool used_vars_contains(const std::string& key) const {
     return used_vars.find(key) !=  used_vars.end();};
   bool checked_vars_contains(const std::string& key) const {

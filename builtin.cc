@@ -335,7 +335,8 @@ int b_get_max_nesting(const Argm& argm, Error_list& exceptions) {
 int b_global(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 3) throw Exception(Argm::Bad_argc, argm.argc()-1, 2, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
-  else return argm.global(argm[1], argm[2]);}
+  argm.global(argm[1], argm[2]);
+  return 0;}
 
 namespace {
 bool in_if_block = false, successful_condition = false,
@@ -521,7 +522,8 @@ int b_list_locals(const Argm& argm, Error_list& exceptions) {
 int b_local(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 3) throw Exception(Argm::Bad_argc, argm.argc()-1, 2, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
-  else return argm.local(argm[1], argm[2]);}
+  argm.local(argm[1], argm[2]);
+  return 0;}
 
 // list the files specified by the arguments if they exist
 int b_ls(const Argm& argm, Error_list& exceptions) {
@@ -724,14 +726,13 @@ int b_stepwise(const Argm& argm, Error_list& exceptions) {
 int b_store_output(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (!argm.argfunction()) throw Exception(Argm::Missing_argfunction);
-  if (isargvar(argm[1])) return 2;
+  if (isargvar(argm[1])) throw Exception(Argm::Illegal_variable_name, argm[1]);
   Substitution_stream text;
   Argm mapped_argm(argm.parent_map(),
                    argm.input, text.child_stream(), argm.error);
   mapped_argm.push_back(".mapped_argfunction");
   int ret = (*argm.argfunction())(mapped_argm, exceptions);
-  if (Named_executable::unwind_stack()) return -1;
-  if (ret) return ret;
+  if (Named_executable::unwind_stack() || ret) return ret;
   argm.set_var(argm[1], text.value());
   return 0;}
 
@@ -919,7 +920,8 @@ int b_type(const Argm& argm, Error_list& exceptions) {
 int b_unset(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
-  else return argm.unset_var(argm[1]);}
+  argm.unset_var(argm[1]);
+  return 0;}
 
 namespace {double sleep_requested = 0.0;}
 

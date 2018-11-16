@@ -74,6 +74,7 @@ std::string Argm::exception_names[Argm::Exception_count] = {
   ".file_not_found",
   ".flag_in_elipsis",
   ".function_not_found",
+  ".global_would_be_masked",
   ".if_before_else",
   ".illegal_function_name",
   ".illegal_variable_name",
@@ -118,6 +119,7 @@ std::string Argm::exception_names[Argm::Exception_count] = {
   ".unrecognized_flag",
   ".unused_before_set",
   ".unused_variable",
+  ".variable_already_exists",
   ".version_incompatible"};
 bool readline_enabled = false;
 Variable_map root_variable_map(nullptr);

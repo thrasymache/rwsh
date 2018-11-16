@@ -118,26 +118,29 @@ bool Argm::var_exists(const std::string& key) const {
       return argv_v.size() > n;}
     default: return parent_map()->exists(key, true);}}
 
-int Argm::global(const std::string& key, const std::string& value) const {
+void Argm::global(const std::string& key, const std::string& value) const {
   switch (key[0]) {
     case '#': case '*': case '1': case '2': case '3': case '4': case '5':
-              case '6': case '7': case '8': case '9': case '0': return 2;
-    default: return parent_map()->global(key, value);}}
+              case '6': case '7': case '8': case '9': case '0':
+      throw Exception(Argm::Illegal_variable_name, key);
+    default: parent_map()->global(key, value);}}
 
-int Argm::local(const std::string& key, const std::string& value) const {
+void Argm::local(const std::string& key, const std::string& value) const {
   switch (key[0]) {
     case '#': case '*': case '1': case '2': case '3': case '4': case '5':
-              case '6': case '7': case '8': case '9': case '0': return 2;
-    default: return parent_map()->local(key, value);}}
+              case '6': case '7': case '8': case '9': case '0':
+      throw Exception(Argm::Illegal_variable_name, key);
+    default: parent_map()->local(key, value);}}
 
 void Argm::locals_listed(void) const {
   parent_map()->locals_listed = true;}
 
-int Argm::unset_var(const std::string& key) const {
+void Argm::unset_var(const std::string& key) const {
   switch (key[0]) {
     case '#': case '*': case '1': case '2': case '3': case '4': case '5':
-              case '6': case '7': case '8': case '9': case '0': return 3;
-    default: return parent_map()->unset(key);}}
+              case '6': case '7': case '8': case '9': case '0':
+      throw Exception(Argm::Illegal_variable_name, key);
+    default: parent_map()->unset(key);}}
 
 // algorithm that is the meat of Old_argv constructor
 template<class In>char** copy_to_cstr(In first, In last, char** res) {
