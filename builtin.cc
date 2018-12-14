@@ -215,7 +215,9 @@ int b_for(const Argm& argm, Error_list& exceptions) {
     if (argm.argfunction()) {
       body[1] = i;
       ret  = (*argm.argfunction())(body, exceptions);
-      if (Named_executable::unwind_stack()) return -1;}
+      (void) Base_executable::remove_exceptions(".continue", exceptions);
+      if (Base_executable::remove_exceptions(".break", exceptions)) return 0;
+      else if (Named_executable::unwind_stack()) return -1;}
     else ret = 0;}
   return ret;}
 
@@ -234,7 +236,10 @@ int b_for_each_line(const Argm& argm, Error_list& exceptions) {
     if (argm.input.fail() && !line.size()) break;
     tokenize(line, std::back_inserter(body),
              std::bind2nd(std::equal_to<char>(), ' '));
-    ret = (*argm.argfunction())(body, exceptions);}
+    ret = (*argm.argfunction())(body, exceptions);
+    (void) Base_executable::remove_exceptions(".continue", exceptions);
+    if (Base_executable::remove_exceptions(".break", exceptions)) return 0;
+    else if (Named_executable::unwind_stack()) return -1;}
   return ret;}
 
 int b_fork(const Argm& argm, Error_list& exceptions) {
@@ -559,6 +564,18 @@ int b_getppid(const Argm& argm, Error_list& exceptions) {
   argm.output <<(unsigned) getppid();
   return 0;}
 
+// add the given exception as a replacement for the current one (if nothing
+// afterwards fails)
+int b_replace_exception(const Argm& argm, Error_list& exceptions) {
+  if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
+  if (!Base_executable::in_exception_handler())
+    throw Exception(Argm::Not_catching_exception);
+  Argm new_exception(argm.subrange(1), argm.argfunction(),
+                     Variable_map::global_map,
+                     argm.input, argm.output.child_stream(), argm.error);
+  exceptions.replace_error(new_exception);
+  return 0;}
+
 // return the value given by the argument
 int b_return(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
@@ -715,9 +732,9 @@ int b_stepwise(const Argm& argm, Error_list& exceptions) {
     Argm body(".mapped_argfunction", body_i.argv(), nullptr,
               body_i.parent_map(), body_i.input, body_i.output, body_i.error);
     ret  = (*argm.argfunction())(body, exceptions);
-    if (Named_executable::unwind_stack()) {
-      ret = -1;
-      break;}}
+    (void) Base_executable::remove_exceptions(".continue", exceptions);
+    if (Base_executable::remove_exceptions(".break", exceptions)) break;
+    else if (Named_executable::unwind_stack()) break;}
   f->unused_var_check(&locals, exceptions);
   return ret;} // last return value from argfunction
 
@@ -1124,5 +1141,7 @@ int b_while(const Argm& argm, Error_list& exceptions) {
                      argm.error);
     mapped_argm.push_back(".mapped_argfunction");
     ret = (*argm.argfunction())(mapped_argm, exceptions);
-    if (Named_executable::unwind_stack()) return -1;}
+    (void) Base_executable::remove_exceptions(".continue", exceptions);
+    if (Base_executable::remove_exceptions(".break", exceptions)) return 0;
+    else if (Named_executable::unwind_stack()) return -1;}
   return ret;}

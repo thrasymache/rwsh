@@ -61,6 +61,12 @@ call stack .source .try_catch_recursive(body)
 .function_all_flags .binary_not_found name path stack ... {
   echo $name : binary not found in $path
   echo call stack: $stack$}
+.function_all_flags .break stack ... {
+  echo .break thrown outside of control flow body
+  echo call stack: $stack$}
+.function_all_flags .continue stack ... {
+  echo .continue thrown outside of control flow body
+  echo call stack: $stack$}
 .function_all_flags .dash_dash_argument args stack ... {
   echo optional -- parameter cannot take arguments \( $args \) with call stack: $stack$}
 .function_all_flags .dash_star_argument args stack ... {
@@ -166,6 +172,9 @@ call stack .source .try_catch_recursive(body)
 .function_all_flags .not_a_number -- nan stack ... {
   echo $nan is not a number
   echo call stack: $stack$}
+.function_all_flags .not_catching_exception stack ... {
+  echo .replace_exception called outside of an exception handler
+  echo call stack: $stack$}
 .function_all_flags .not_executable file stack ... {
   echo $file is not executable
   echo call stack: $stack$}
@@ -190,30 +199,30 @@ call stack .source .try_catch_recursive(body)
   .echo $nl
   if_only .var_exists stack {echo call stack: $stack$}
   .return -1}
-.function_all_flags .sigcont [args ...] {
-  echo received SIGCONT: $args$; .return -1}
-.function_all_flags .sigchld [args ...] {
-  echo received SIGCHLD: $args$; .return -1}
-.function_all_flags .sighup [args ...] {
-  echo received SIGHUP: $args$; .return -1}
-.function_all_flags .sigint [args ...] {
-  echo received SIGINT: $args$; .return -1}
-.function_all_flags .sigquit [args ...] {
-  echo received SIGQUIT: $args$; .return -1}
-.function_all_flags .sigpipe [args ...] {
-  echo received SIGPIPE: $args$; .return -1}
-.function_all_flags .sigterm [args ...] {
-  echo received SIGTERM: $args$; .return -1}
-.function_all_flags .sigtstp [args ...] {
-  echo received SIGTSTP: $args$; .return -1}
-.function_all_flags .siginfo [args ...] {
-  echo received SIGINFO: $args$; .return -1}
-.function_all_flags .sigusr1 [args ...] {
-  echo received SIGUSR1: $args$; .return -1}
-.function_all_flags .sigusr2 [args ...] {
-  echo received SIGUSR2: $args$; .return -1}
-.function_all_flags .sigunknown [args ...] {
-  echo received unknown unix signal: $args$; .return -1}
+.function_all_flags .sigcont {
+  echo received SIGCONT; .return -1}
+.function_all_flags .sigchld {
+  echo received SIGCHLD; .return -1}
+.function_all_flags .sighup {
+  echo received SIGHUP; .return -1}
+.function_all_flags .sigint {
+  .throw echo $nl received SIGINT}
+.function_all_flags .sigquit {
+  echo received SIGQUIT; .return -1}
+.function_all_flags .sigpipe {
+  echo received SIGPIPE; .return -1}
+.function_all_flags .sigterm {
+  .throw echo $nl received SIGTERM}
+.function_all_flags .sigtstp {
+  echo received SIGTSTP; .return -1}
+.function_all_flags .siginfo {
+  echo received SIGINFO; .return -1}
+.function_all_flags .sigusr1 {
+  echo received SIGUSR1; .return -1}
+.function_all_flags .sigusr2 {
+  echo received SIGUSR2; .return -1}
+.function_all_flags .sigunknown {
+  echo received unknown unix signal; .return -1}
 .function_all_flags .shutdown -- args ... {
   .nop $args
   .combine $nl (now terminating normally) $nl}
@@ -254,6 +263,11 @@ call stack .source .try_catch_recursive(body)
 .function_all_flags af -- [argv ...] {.argfunction}
 .function_all_flags c -- text ... {.combine $text$}
 .function_all_flags e -- text ... {.echo $text}
+.function_all_flags do_while argv ... {
+  .try_catch_recursive .break {
+    .nop $argv
+    .try_catch_recursive .continue {.argfunction}
+    .while $argv$ {.argfunction}}}
 .function_all_flags echo -- text ... {.echo $text; .combine $nl}
 .function_all_flags echo-comments cmd ... {
   .stepwise $cmd$ {if_only .test_in $1 .nop # #! ## {echo &&&*}}}
@@ -274,6 +288,20 @@ fn ntimes n {
   .while test_var_greater n 0 {
     .mapped_argfunction {.argfunction}
     .var_subtract n 1}}
+.function_all_flags outer_break stack ... {
+  .replace_exception .break $stack$}
+.function_all_flags outer_continue stack ... {
+  .replace_exception .continue $stack$}
+.function_all_flags scope_for var vals ... {
+  .for $vals$ {
+    .scope $1 $var {.argfunction}}}
+.function_all_flags outer_for var vals ... {
+  .for $vals$ {
+    .scope $1 $var {
+      .try_catch_recursive outer_break outer_continue {.argfunction}}}}
+.function_all_flags outer_while argv ... {
+  .while $argv$ {
+    .try_catch_recursive outer_break outer_continue {.argfunction}}}
 .function_all_flags setf var value {
   .if .var_exists $var {.set $var $value}
   .else {.global $var $value}}
@@ -289,7 +317,13 @@ fn whence command {
   .try_catch_recursive .function_not_found {
     .combine ${.whence_function $command {.argfunction}} $nl}}
 fn whichp binary {.which_path $binary $PATH}
+.function_all_flags while_and_one_more argv ... {
+  .try_catch_recursive .break {
+    .while $argv$ {.argfunction}
+    .try_catch_recursive .continue {.argfunction}}}
 .function_all_flags var_exists -- var {.var_exists $var}
+.function_all_flags var_in var set ... {.test_in $$var $set$}
+.function_all_flags var_less var N {.test_less $$var $N}
 .function_all_flags var_val -- [var ...] {
   .if .var_exists var {.for $var$ {.combine $1 \( $$1 \) \ }}
   .else {.nop}}
@@ -891,6 +925,8 @@ hello world
 .bad_if_nest not defined 
 .binary_does_not_exist not defined 
 .binary_not_found not defined 
+.break not defined 
+.continue not defined 
 .dash_dash_argument not defined 
 .dash_star_argument not defined 
 .directory_not_found not defined 
@@ -926,6 +962,7 @@ hello world
 .not_a_directory not defined 
 .not_a_function not defined 
 .not_a_number not defined 
+.not_catching_exception not defined 
 .not_executable not defined 
 .not_soon_enough not defined 
 .return_code not defined 
@@ -1779,6 +1816,19 @@ $.for_each_line <outfile
 $.for_each_line <outfile <another A{}
 double redirection is not supported at this time: <outfile and <another
 A is neither an argfunction nor a substitution
+$.for_each_line <outfile {
+  echo current line $*
+  if_only .test_greater $2 1 {
+    .collect_errors_except .nop {
+      .throw .continue
+      .throw .break
+      .throw .continue}}
+  .throw .continue
+  echo not printed}
+current line line 1
+current line line 2 longer
+
+0
 $.for_each_line <outfile {e line of $# \( $* \) $nl}
 line of 3 ( line 1 ) 
 line of 4 ( line 2 longer ) 
@@ -2148,6 +2198,72 @@ $.for no_argfunction
 -1
 $.for 1 {e one argument $1}
 one argument 1
+0
+$.for 1 2 3 4 {
+  echo current arg $1
+  if_only .test_greater $1 2 {
+    .collect_errors_except .nop {
+      .throw .continue
+      .throw .break
+      .throw .continue}}
+  .throw .continue
+  echo not printed}
+current arg 1
+current arg 2
+current arg 3
+
+0
+$fn fIJ outer inner {
+  .local sum 0
+  .nop $sum
+  $outer I 1 2 3 4 5 6 {
+    if_only_not .test_string_equal $I 1 {.combine $nl}
+    .combine $I :
+    $inner J 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 {
+      if_only .test_less 1 $J {.echo ,}
+      .echo $J
+      .set sum ${+ $I $J}
+      .if .test_less 5 $sum$ {.throw outer_break}
+      .else_if .test_less 3 $sum$ {.throw outer_continue}
+      .else {}}}
+  .echo $nl}
+
+0
+$fIJ scope_for scope_for
+1:1,2,3Exception for failed handler. Original exception with call stack:
+outer_continue .throw .mapped_argfunction .else_if .scope .mapped_argfunction .for scope_for .scope .mapped_argfunction .for scope_for fIJ
+.continue thrown outside of control flow body
+call stack: .throw .mapped_argfunction .else_if .scope .mapped_argfunction .for scope_for .scope .mapped_argfunction .for scope_for fIJ .replace_exception outer_continue
+
+-1
+$fIJ outer_for scope_for
+1:1,2,3
+2:1,2
+3:1
+4:1
+5:1
+
+0
+$fIJ scope_for outer_for
+1:1,2,3,4,5
+2:1,2,3,4
+3:1,2,3
+4:1,2
+5:1
+6:1
+
+0
+$fIJ outer_for outer_for
+1:1,2,3,4,5
+2:1,2,3,4
+3:1,2,3
+4:1,2
+5:1
+6:1
+
+0
+$.else {}
+
 0
 $.for 1 2 3 4 {e four arguments $1 $nl}
 four arguments 1 
@@ -3580,7 +3696,7 @@ $.get_max_collectible_exceptions
 $
 
 0
-$# .getpid .getppid
+$# .getpid .getppid .sighup
 
 0
 $.getpid excess
@@ -3599,32 +3715,54 @@ $.getppid {excess argfunc}
 .getppid does not accept an argfunction with call stack: .getppid
 
 -1
-$.fork se {/bin/kill ${.getppid}}
+$se {.fork se {
+      /bin/kill -HUP ${.getppid}
+      echo after the signal in subshell}
+    echo after the signal in parent}
 added /bin/kill to executable map in test suite
-received SIGTERM:
+after the signal in subshell
+received SIGHUP
+after the signal in parent
+
+0
+$se {.fork se {
+      /bin/kill -HUP ${.getpid}
+      echo after the signal in subshell}
+    echo after the signal in parent}
+added /bin/kill to executable map in test suite
+received SIGHUP
+after the signal in subshell
+after the signal in parent
+
+0
+$.while .return 0 {
+  echo before signals
+  /bin/kill -PIPE ${.getpid}
+  echo after sigpipe
+  /bin/kill ${.getpid}
+  echo should not continue beyond SIGTERM}
+before signals
+added /bin/kill to executable map in test suite
+received SIGPIPE
+after sigpipe
+(
+) received SIGTERM .throw .sigterm /bin/kill .mapped_argfunction .while
 
 -1
-$.fork se {/bin/kill ${.getpid}}
-added /bin/kill to executable map in test suite
-received SIGTERM:
+$.while .return 0 {
+  echo before signals
+  /bin/kill -USR1 ${.getpid}
+  echo after sigusr1
+  /bin/kill -INT ${.getpid}
+  echo should not continue beyond SIGINT}
+before signals
+received SIGUSR1
+after sigusr1
+(
+) received SIGINT .throw .sigint /bin/kill .mapped_argfunction .while
 
-0
-$se {.fork se {/bin/kill ${.getppid}
-            echo after the signal in subshell}
-   echo after the signal in parent}
-added /bin/kill to executable map in test suite
-after the signal in subshell
-received SIGTERM:
-after the signal in parent
-
-0
-$se {.fork se {/bin/kill ${.getpid}
-            echo after the signal in subshell}
-   echo after the signal in parent}
-added /bin/kill to executable map in test suite
-received SIGTERM:
-after the signal in subshell
-after the signal in parent
+-1
+$.return 0
 
 0
 $
@@ -4586,6 +4724,8 @@ $.internal_functions
 .bad_if_nest
 .binary_does_not_exist
 .binary_not_found
+.break
+.continue
 .dash_dash_argument
 .dash_star_argument
 .directory_not_found
@@ -4622,6 +4762,7 @@ $.internal_functions
 .not_a_directory
 .not_a_function
 .not_a_number
+.not_catching_exception
 .not_executable
 .not_soon_enough
 .raw_command
@@ -4749,10 +4890,12 @@ $.for ${.list_executables}$ {.combine $1 $nl}
 .binary
 .binary_does_not_exist
 .binary_not_found
+.break
 .cd
 .collect_errors_except
 .collect_errors_only
 .combine
+.continue
 .dash_dash_argument
 .dash_star_argument
 .directory_not_found
@@ -4829,12 +4972,14 @@ $.for ${.list_executables}$ {.combine $1 $nl}
 .not_a_directory
 .not_a_function
 .not_a_number
+.not_catching_exception
 .not_executable
 .not_soon_enough
 .post_dash_dash_flag
 .post_elipsis_option
 .prompt
 .raw_command
+.replace_exception
 .result_range
 .return
 .return_code
@@ -4908,6 +5053,7 @@ $.for ${.list_executables}$ {.combine $1 $nl}
 /bin/cat
 /bin/echo
 /bin/false
+/bin/kill
 /bin/rm
 /bin/true
 /usr/bin/sort
@@ -4920,6 +5066,7 @@ collecting_handler
 conditional_echo
 conditional_false
 conditional_true
+do_while
 double_if_with_body
 e
 echo
@@ -4933,6 +5080,7 @@ else_if_true
 else_if_with_body
 else_with_body
 exec
+fIJ
 false
 fn
 fni
@@ -4949,9 +5097,14 @@ if_with_body
 ntimes
 obscured_else
 om
+outer_break
+outer_continue
+outer_for
+outer_while
 paren_if_words
 polish
 sa
+scope_for
 se
 setf
 silent_throw
@@ -4963,9 +5116,12 @@ test_var_not_equal
 true
 type
 var_exists
+var_in
+var_less
 var_val
 whence
 whichp
+while_and_one_more
 
 0
 $
@@ -5010,6 +5166,29 @@ $.nop {optional argfunc}
 
 0
 $.nop 1 2 3 4 5
+
+0
+$
+
+0
+$# .replace_exception
+
+0
+$.replace_exception
+unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .replace_exception
+
+-1
+$.replace_exception echo not in exception handler
+.replace_exception called outside of an exception handler
+call stack: .replace_exception
+
+-1
+$.try_catch_recursive .replace_exception {
+  .throw .replace_exception echo now in exception handler}
+now in exception handler .throw .try_catch_recursive(body) .replace_exception .try_catch_recursive
+
+-1
+$.return 0
 
 0
 $
@@ -5667,6 +5846,19 @@ e 1 2 three three
  
 
 0
+$.stepwise wrapper 1 2 {
+  echo current line: $*
+  if_only .test_string_equal $4 two {
+    .collect_errors_except .nop {
+      .throw .continue
+      .throw .break
+      .throw .continue}}
+  .throw .continue
+  echo not printed}
+current line: a 1 2 one
+current line: a 1 2 two
+
+-1
 $.stepwise wrapper 1 2 {e $* $nl}
 a 1 2 one 
 a 1 2 two 
@@ -6471,24 +6663,22 @@ $
 $# .while
 
 0
-$.function_all_flags tf N {.test_string_unequal $A $N}
-
-0
-$.set A 0
-
-0
 $.while {e ARGS}
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .while
 
 -1
-$.while tf 4 
+$.while var_less A 4 
 .while requires an argfunction
 
 -1
-$.while tf 4 {e printed; .set A 4}
+$.scope 0 A {.while var_less A 4 {echo printed; .throw .break; echo skipped}}
+printed
+
+0
+$.scope 0 A {.while var_less A 4 {e printed; .set A 4}}
 printed
 0
-$.while tf 4 {e skipped}
+$.scope 4 A {.while var_less A 4 {e skipped}}
 
 -1
 $.while .return 0 {.throw .echo exception within while}
@@ -6501,30 +6691,214 @@ exception within condition .throw .collect_errors_only silent_throw .while
 $.while .throw .false because {e body skipped}
 
 -1
-$.set A 0
+$.scope 0 A {.while .throw .break {echo condition cannot break}}
+.break thrown outside of control flow body
+call stack: .throw .while .scope
+A was unused with call stack .scope
+
+-1
+$.scope 0 A {.while .throw .continue {echo condition cannot continue}}
+.continue thrown outside of control flow body
+call stack: .throw .while .scope
+A was unused with call stack .scope
+
+-1
+$.scope 0 A {.while var_less A 4 {echo body can break; .throw .break}}
+body can break
 
 0
-$.while tf 4 {e in .while argfunction $A $nl; .var_add A 1}
+$.scope 0 A {.while var_less A 4 {e in .while argfunction $A $nl; .var_add A 1}}
 in .while argfunction 0 
 in .while argfunction 1 
 in .while argfunction 2 
 in .while argfunction 3 
 
 0
-$.set A 0
+$.scope 0 A {.while var_in A 1 2 {echo A is $A; .var_add A 1}}
+
+-1
+$.scope 0 A {do_while var_in A 1 2 {echo A is $A; .var_add A 1}}
+A is 0
+A is 1
+A is 2
 
 0
-$.while tf 4 {.if .test_number_equal 0 $A {.set A 1}
-           .else {.function_all_flags tf N {.throw .false $N}}
-           e in overwriting argfunction $nl}
-in overwriting argfunction 
-in overwriting argfunction 
+$.scope 1 A {.while var_in A 1 2 {echo A is $A; .var_add A 1}}
+A is 1
+A is 2
+
+0
+$.scope 1 A {while_and_one_more var_in A 1 2 {echo A is $A; .var_add A 1}}
+A is 1
+A is 2
+A is 3
+
+0
+$fn throw_the_kitchen_sink cmd ... {
+  $cmd$ {
+    echo early in argfunction $A
+    .var_add A 1
+    if_only .test_less $A 3 {.throw .continue}
+    .collect_errors_except .nop {
+      .throw .continue
+      .throw .break
+      .throw .continue}
+    echo late in .while argfunction $A}
+  echo after $cmd$0
+  .throw .break
+  echo do not echo after a .break thrown outside control flow}
+
+0
+$.scope 0 A {throw_the_kitchen_sink .while var_less A 4}
+early in argfunction 0
+early in argfunction 1
+early in argfunction 2
+after .while
+.break thrown outside of control flow body
+call stack: .throw throw_the_kitchen_sink .scope
+
+-1
+$.scope 0 A {throw_the_kitchen_sink do_while var_less A 4}
+early in argfunction 0
+.continue thrown outside of control flow body
+call stack: .throw .mapped_argfunction .if if_only .try_catch_recursive(body)
+early in argfunction 1
+early in argfunction 2
+after do_while
+.break thrown outside of control flow body
+call stack: .throw throw_the_kitchen_sink .scope
+
+-1
+$.scope 3 A {throw_the_kitchen_sink do_while var_less A 6}
+early in argfunction 3
+.continue thrown outside of control flow body
+call stack: .throw .collect_errors_except .try_catch_recursive(body)
+.continue thrown outside of control flow body
+call stack: .throw .collect_errors_except .try_catch_recursive(body)
+.break thrown outside of control flow body
+call stack: .throw .collect_errors_except .try_catch_recursive(body) .try_catch_recursive .try_catch_recursive(body)
+after do_while
+.break thrown outside of control flow body
+call stack: .throw throw_the_kitchen_sink .scope
+
+-1
+$.scope 0 A {throw_the_kitchen_sink while_and_one_more var_less A 4}
+early in argfunction 0
+early in argfunction 1
+early in argfunction 2
+early in argfunction 3
+.continue thrown outside of control flow body
+call stack: .throw .collect_errors_except .try_catch_recursive(body)
+.continue thrown outside of control flow body
+call stack: .throw .collect_errors_except .try_catch_recursive(body)
+.break thrown outside of control flow body
+call stack: .throw .collect_errors_except .try_catch_recursive(body) .try_catch_recursive .try_catch_recursive(body)
+after while_and_one_more
+.break thrown outside of control flow body
+call stack: .throw throw_the_kitchen_sink .scope
+
+-1
+$.function_all_flags tf N {.test_less $A $N}
+
+0
+$.scope 0 A {.while tf 4 {
+  .if .test_number_equal 0 $A {.set A 1}
+  .else {.function_all_flags tf N {.throw .false $N}}
+  echo in overwriting argfunction}}
+in overwriting argfunction
+in overwriting argfunction
+
+0
+$.set_max_nesting 30
+
+0
+$fn IJK outer middle inner {
+  .scope 0 I {
+    .local sum 0
+    .nop $sum
+    $outer var_less I 5 {
+      .var_add I 1
+      .scope 0 J {
+        $middle var_less J 2 {
+          .var_add J 1
+          if_only_not .test_string_equal ${e $I $J} (1 1) {.combine $nl}
+          .combine $I . $J :
+          .scope 0 K {
+            $inner var_less K 30 {
+              .var_add K 1
+              if_only .test_less 1 $K {.echo ,}
+              .echo $K
+              .set sum ${+ $I + $J $K}
+              .if .test_less 5 $sum$ {.throw outer_break}
+              .else_if .test_less 4 $sum$ {.throw outer_continue}
+              .else {}}}}}}}
+  .echo $nl}
+
+0
+$IJK      .while      .while      .while
+1.1:1,2,3Exception for failed handler. Original exception with call stack:
+outer_continue .throw .mapped_argfunction .else_if .mapped_argfunction .while .scope .mapped_argfunction .while .scope .mapped_argfunction .while .scope IJK
+.continue thrown outside of control flow body
+call stack: .throw .mapped_argfunction .else_if .mapped_argfunction .while .scope .mapped_argfunction .while .scope .mapped_argfunction .while .scope IJK .replace_exception outer_continue
+
+-1
+$IJK outer_while      .while      .while
+1.1:1,2,3
+2.1:1,2
+3.1:1
+4.1:1
+
+0
+$IJK      .while outer_while      .while
+1.1:1,2,3
+1.2:1,2
+2.1:1,2
+2.2:1
+3.1:1
+3.2:1
+4.1:1
+5.1:1
+
+0
+$IJK      .while      .while outer_while
+1.1:1,2,3,4
+1.2:1,2,3
+2.1:1,2,3
+2.2:1,2
+3.1:1,2
+3.2:1
+4.1:1
+4.2:1
+5.1:1
+5.2:1
+
+0
+$IJK outer_while outer_while outer_while
+1.1:1,2,3,4
+1.2:1,2,3
+2.1:1,2,3
+2.2:1,2
+3.1:1,2
+3.2:1
+4.1:1
+4.2:1
+5.1:1
+5.2:1
+
+0
+$.else {}
+
+0
+$.set_max_nesting 20
 
 0
 $
 
 0
 $# .var_add
+
+0
+$.set A 4
 
 0
 $.var_add
@@ -7184,6 +7558,75 @@ failing successfully .throw .try_catch_recursive(body)
 third
 
 0
+$fn tribble [args ...] {
+  .replace_exception tribble $args$
+  .replace_exception tribble $args$
+  echo the multiplication has begun $#}
+
+0
+$.try_catch_recursive tribble {.throw tribble}
+the multiplication has begun 3
+the multiplication has begun 5
+the multiplication has begun 5
+the multiplication has begun 8
+Exception for failed handler. Original exception with call stack:
+tribble .throw .try_catch_recursive(body) .replace_exception tribble .replace_exception tribble .try_catch_recursive
+Exception for failed handler. Original exception with call stack:
+tribble .throw .try_catch_recursive(body) .replace_exception tribble .replace_exception tribble .try_catch_recursive .replace_exception tribble
+Exception for failed handler. Original exception with call stack:
+tribble .throw .try_catch_recursive(body) .replace_exception tribble .replace_exception tribble .try_catch_recursive
+Exception for failed handler. Original exception with call stack:
+tribble .throw .try_catch_recursive(body) .replace_exception tribble .replace_exception tribble .try_catch_recursive
+Exception for failed handler. Original exception with call stack:
+tribble .throw .try_catch_recursive(body) .replace_exception tribble .replace_exception tribble .try_catch_recursive
+exceeded maximum number of exceptions ( 5 ) in try_catch.
+call stack: .try_catch_recursive
+Exception for failed handler. Original exception with call stack:
+tribble .throw .try_catch_recursive(body) .replace_exception tribble .replace_exception tribble .try_catch_recursive .replace_exception tribble
+
+-1
+$.throw tribble
+the multiplication has begun 2
+Exception for failed handler. Original exception with call stack:
+tribble .throw
+Exception for failed handler. Original exception with call stack:
+tribble .throw .replace_exception tribble
+Exception for failed handler. Original exception with call stack:
+tribble .throw .replace_exception tribble
+
+-1
+$fn neverending [args ...] {.replace_exception neverending $args$}
+
+0
+$.throw neverending
+Exception for failed handler. Original exception with call stack:
+neverending .throw
+Exception for failed handler. Original exception with call stack:
+neverending .throw .replace_exception neverending
+
+-1
+$.try_catch_recursive neverending {.throw neverending}
+Exception for failed handler. Original exception with call stack:
+neverending .throw .try_catch_recursive(body) .replace_exception neverending .replace_exception neverending .replace_exception neverending .replace_exception neverending .replace_exception neverending .try_catch_recursive
+Exception for failed handler. Original exception with call stack:
+neverending .throw .try_catch_recursive(body) .replace_exception neverending .replace_exception neverending .replace_exception neverending .replace_exception neverending .replace_exception neverending .try_catch_recursive .replace_exception neverending
+exceeded maximum number of exceptions ( 5 ) in try_catch.
+call stack: .try_catch_recursive
+
+-1
+$fn sneaky [args ...] {
+  .try_catch_recursive sneaky {.replace_exception sneaky $args$}}
+
+0
+$.try_catch_recursive sneaky {.throw sneaky}
+Exception for failed handler. Original exception with call stack:
+sneaky .throw .try_catch_recursive(body) .replace_exception .try_catch_recursive(body) .try_catch_recursive sneaky .replace_exception .try_catch_recursive(body) .try_catch_recursive sneaky .replace_exception .try_catch_recursive(body) .try_catch_recursive sneaky .replace_exception .try_catch_recursive(body) .try_catch_recursive sneaky .replace_exception .try_catch_recursive(body) .try_catch_recursive sneaky .try_catch_recursive
+Exception for failed handler. Original exception with call stack:
+sneaky .throw .try_catch_recursive(body) .replace_exception .try_catch_recursive(body) .try_catch_recursive sneaky .replace_exception .try_catch_recursive(body) .try_catch_recursive sneaky .replace_exception .try_catch_recursive(body) .try_catch_recursive sneaky .replace_exception .try_catch_recursive(body) .try_catch_recursive sneaky .replace_exception .try_catch_recursive(body) .try_catch_recursive sneaky .try_catch_recursive .replace_exception .try_catch_recursive(body) .try_catch_recursive sneaky
+exceeded maximum number of exceptions ( 5 ) in try_catch.
+call stack: .try_catch_recursive
+
+-1
 $
 
 0

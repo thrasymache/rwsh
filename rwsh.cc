@@ -39,9 +39,8 @@ bool Base_executable::execution_handler_excess_thrown = false;
 struct timezone Clock::no_timezone_v = {0, 0};
 int Base_executable::global_nesting(0);
 bool Base_executable::unwind_stack_v(false);
-bool Base_executable::in_exception_handler(false);
+bool Base_executable::in_exception_handler_v(false);
 unsigned Base_executable::current_exception_count(0);
-unsigned Base_executable::dropped_catches(0);
 std::string Argm::exception_names[Argm::Exception_count] = {
   "no exception",
   ".ambiguous_prototype_dash_dash",
@@ -53,6 +52,8 @@ std::string Argm::exception_names[Argm::Exception_count] = {
   ".bad_if_nest",
   ".binary_does_not_exist",
   ".binary_not_found",
+  ".break",
+  ".continue",
   ".dash_dash_argument",
   ".dash_star_argument",
   ".directory_not_found",
@@ -90,6 +91,7 @@ std::string Argm::exception_names[Argm::Exception_count] = {
   ".not_a_directory",
   ".not_a_function",
   ".not_a_number",
+  ".not_catching_exception",
   ".not_executable",
   ".not_soon_enough",
   ".raw_command",

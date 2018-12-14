@@ -5,11 +5,10 @@ class Base_executable {
 
  protected:
   static int global_nesting;
-  static bool in_exception_handler;
+  static bool in_exception_handler_v;
   static bool unwind_stack_v;
   static bool collect_excess_thrown;
   static unsigned current_exception_count;
-  static unsigned dropped_catches;
   static bool execution_handler_excess_thrown;
 
  public:
@@ -31,6 +30,7 @@ class Base_executable {
     total_execution_time_v.tv_sec = 0;
     total_execution_time_v.tv_usec = 0;};
   virtual ~Base_executable(void) {}
+  static bool in_exception_handler(void) {return in_exception_handler_v;}
   bool is_running(void) const {return !!executable_nesting;};
   static void exception_handler(Error_list& exceptions);
   static void catch_blocks(const Argm& argm, Error_list& exceptions);
@@ -43,6 +43,7 @@ class Base_executable {
   struct timeval last_execution_time(void) const {
     return last_execution_time_v;};
   int last_ret(void) const {return last_return;};
+  static void replace_error(void);
   static void reset(void);
   struct timeval total_execution_time(void) const {
     return total_execution_time_v;};

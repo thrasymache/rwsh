@@ -43,6 +43,7 @@ int b_local(const Argm& argm, Error_list& exceptions);
 int b_ls(const Argm& argm, Error_list& exceptions);
 int b_nop(const Argm& argm, Error_list& exceptions);
 int b_return(const Argm& argm, Error_list& exceptions);
+int b_replace_exception(const Argm& argm, Error_list& exceptions);
 int b_rm_executable(const Argm& argm, Error_list& exceptions);
 int b_scope(const Argm& argm, Error_list& exceptions);
 int b_selection_set(const Argm& argm, Error_list& exceptions);

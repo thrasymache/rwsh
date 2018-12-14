@@ -105,6 +105,7 @@ void internal_init(Error_list& exceptions) {
   executable_map.set(new Builtin(".local", b_local));
   executable_map.set(new Builtin(".ls", b_ls));
   executable_map.set(new Builtin(".nop", b_nop));
+  executable_map.set(new Builtin(".replace_exception", b_replace_exception));
   executable_map.set(new Builtin(".return", b_return));
   executable_map.set(new Builtin(".rm_executable", b_rm_executable));
   executable_map.set(new Builtin(".scope", b_scope));

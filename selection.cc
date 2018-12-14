@@ -54,7 +54,7 @@ bool Simple_pattern::match(const std::string& s) const {
     if (j == std::string::npos) return false;
     j += cur_term.length();}
   auto lstart = s.size() - last.size();
-  if (only_text && j != lstart ||
+  if ((only_text && j != lstart) ||
       j + last.size() > s.size() ||
       s.substr(lstart) != last) return false;         // C++20 ends_with
   else return true;}
@@ -73,18 +73,18 @@ Entry_pattern::Entry_pattern(const std::string& src) {
   for (auto j: temp) options.push_back(Simple_pattern(j));
   only_text = options.size() == 1 && options[0].is_only_text();}
 
+// you still can't encapsulate outer_for in a function....
+class OuterContinue : public std::exception {};
+
 bool Entry_pattern::match_with_ignore(const Entry_pattern& ignore_pattern,
                                       const std::string& s) const {
-  for (auto j: options) if (j.match(s))
-    if (ignore_pattern.specific_match(s, j)) continue;
-    else return true;
-  return false;}
-
-// My kingdom for a better continue!
-bool Entry_pattern::specific_match(const std::string& s,
-                          const Simple_pattern& competition) const {
-  for (auto j: options) if (j.match(s) && j.isnt_contained(competition))
-    return true;
+  for (auto competition: options) if (competition.match(s))
+    try {
+      for (auto j: ignore_pattern.options)
+        if (j.match(s) && j.isnt_contained(competition)) throw OuterContinue();
+      return true;}
+    catch (OuterContinue) {}
+  else;
   return false;}
 
 std::string Entry_pattern::str(void) const {
@@ -103,8 +103,7 @@ void str_to_entry_pattern_list(const std::string& src,
   if (src.empty());
   else if (*i == "") {
     res.clear();
-    res.push_back(*i);
-    ;}
+    res.push_back(*i);}
   else if (*i == "..")
     if (res.size() > 1) {res.pop_back(); res.pop_back();}
     else {res.clear(); ++updir;}

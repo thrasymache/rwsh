@@ -37,6 +37,8 @@ class Argm {
     Bad_if_nest,
     Binary_does_not_exist,
     Binary_not_found,
+    Break,
+    Continue,
     Dash_dash_argument,
     Dash_star_argument,
     Directory_not_found,
@@ -74,6 +76,7 @@ class Argm {
     Not_a_directory,
     Not_a_function,
     Not_a_number,
+    Not_catching_exception,
     Not_executable,
     Not_soon_enough,
     Raw_command,
@@ -158,6 +161,7 @@ class Argm {
 
 struct Error_list : public std::list<Argm> {
   void add_error(const Argm& error);
+  void replace_error(const Argm& error);
   void reset(void); };
 
 struct Exception : public Argm {

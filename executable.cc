@@ -81,6 +81,8 @@ void Base_executable::add_error(void) {
   unwind_stack_v = true;
   ++current_exception_count;}
 
+void Base_executable::replace_error(void) {++current_exception_count;}
+
 void Base_executable::reset(void) {
   unwind_stack_v = false;
   current_exception_count = 0;}
@@ -97,14 +99,15 @@ void Base_executable::unix_signal_handler(int sig) {
    main does not need to do this handling, because anything that it calls
    directly will have an initial nesting of 0.*/
 void Base_executable::exception_handler(Error_list& exceptions) {
-  in_exception_handler = true;
+  in_exception_handler_v = true;
   unwind_stack_v = false;
   std::set<std::string> failed_handlers;
   for(;exceptions.size(); exceptions.pop_front(), --current_exception_count){
     Argm& focus(exceptions.front());
     if (failed_handlers.find(focus[0]) == failed_handlers.end()) {
+      unsigned previous_count = current_exception_count;
       executable_map.run(focus, exceptions);
-      if (unwind_stack()) {
+      if (unwind_stack() || current_exception_count > previous_count) {
         failed_handlers.insert(focus[0]);
         exceptions.insert(++exceptions.begin(), exceptions.back());
         exceptions.pop_back();
@@ -115,12 +118,12 @@ void Base_executable::exception_handler(Error_list& exceptions) {
                               focus.input, focus.output, focus.error),
                          exceptions);}
   Variable_map::dollar_question = -1;
-  dropped_catches = 0;
   collect_excess_thrown = execution_handler_excess_thrown = false;
-  in_exception_handler = false;}
+  in_exception_handler_v = false;}
 
 // code to call exception handlers when requested within a function
 void Base_executable::catch_blocks(const Argm& argm, Error_list& exceptions) {
+  unsigned dropped_catches = 0;
   for (auto focus = exceptions.begin(); focus != exceptions.end();)
     if (find(argm.begin() + 1, argm.end(), (*focus)[0]) != argm.end()) {
       if (dropped_catches >= max_extra) {
@@ -130,10 +133,10 @@ void Base_executable::catch_blocks(const Argm& argm, Error_list& exceptions) {
          execution_handler_excess_thrown = true;
          return;}
       unsigned previous_count = current_exception_count;
-      in_exception_handler = true;
+      in_exception_handler_v = true;
       unwind_stack_v = false;
       executable_map.run(*focus, exceptions);
-      in_exception_handler = false;
+      in_exception_handler_v = false;
       dropped_catches += current_exception_count - previous_count;
       if (!unwind_stack()) {
         focus = exceptions.erase(focus);
@@ -143,7 +146,7 @@ void Base_executable::catch_blocks(const Argm& argm, Error_list& exceptions) {
   if (current_exception_count) unwind_stack_v = true;
   else unwind_stack_v = false;
   Variable_map::dollar_question = -1;
-  in_exception_handler = false;}
+  in_exception_handler_v = false;}
 
 bool Base_executable::remove_exceptions(const std::string &name,
                                         Error_list& exceptions) {
@@ -160,10 +163,10 @@ bool Base_executable::remove_exceptions(const std::string &name,
 
 // run one exception handler restoring unwind_stack afterwards
 void Base_executable::catch_one(Argm& argm, Error_list& exceptions) {
-  in_exception_handler = true;
+  in_exception_handler_v = true;
   unwind_stack_v = false;
   executable_map.run(argm, exceptions);
-  in_exception_handler = false;
+  in_exception_handler_v = false;
   unwind_stack_v = true;}
 
 Binary::Binary(const std::string& impl) : implementation(impl) {}

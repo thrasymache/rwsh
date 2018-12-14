@@ -313,6 +313,15 @@ se {se >outfile {e line 1 $nl; e line 2 longer $nl; .echo $nl; e ending}}
 .for_each_line x {}
 .for_each_line <outfile
 .for_each_line <outfile <another A{}
+.for_each_line <outfile {
+  echo current line $*
+  if_only .test_greater $2 1 {
+    .collect_errors_except .nop {
+      .throw .continue
+      .throw .break
+      .throw .continue}}
+  .throw .continue
+  echo not printed}
 .for_each_line <outfile {e line of $# \( $* \) $nl}
 /bin/rm outfile
 
@@ -421,6 +430,34 @@ x {x {x {x {
 .for {e no arguments $1}
 .for no_argfunction
 .for 1 {e one argument $1}
+.for 1 2 3 4 {
+  echo current arg $1
+  if_only .test_greater $1 2 {
+    .collect_errors_except .nop {
+      .throw .continue
+      .throw .break
+      .throw .continue}}
+  .throw .continue
+  echo not printed}
+fn fIJ outer inner {
+  .local sum 0
+  .nop $sum
+  $outer I 1 2 3 4 5 6 {
+    if_only_not .test_string_equal $I 1 {.combine $nl}
+    .combine $I :
+    $inner J 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 {
+      if_only .test_less 1 $J {.echo ,}
+      .echo $J
+      .set sum ${+ $I $J}
+      .if .test_less 5 $sum$ {.throw outer_break}
+      .else_if .test_less 3 $sum$ {.throw outer_continue}
+      .else {}}}
+  .echo $nl}
+fIJ scope_for scope_for
+fIJ outer_for scope_for
+fIJ scope_for outer_for
+fIJ outer_for outer_for
+.else {}
 .for 1 2 3 4 {e four arguments $1 $nl}
 
 # .function_all_flags .rm_executable
@@ -822,19 +859,32 @@ se {.collect_errors_only .function_not_found {
 .set_max_collectible_exceptions 7
 .get_max_collectible_exceptions
 
-# .getpid .getppid
+# .getpid .getppid .sighup
 .getpid excess
 .getpid {excess argfunc}
 .getppid excess
 .getppid {excess argfunc}
-.fork se {/bin/kill ${.getppid}}
-.fork se {/bin/kill ${.getpid}}
-se {.fork se {/bin/kill ${.getppid}
-            echo after the signal in subshell}
-   echo after the signal in parent}
-se {.fork se {/bin/kill ${.getpid}
-            echo after the signal in subshell}
-   echo after the signal in parent}
+se {.fork se {
+      /bin/kill -HUP ${.getppid}
+      echo after the signal in subshell}
+    echo after the signal in parent}
+se {.fork se {
+      /bin/kill -HUP ${.getpid}
+      echo after the signal in subshell}
+    echo after the signal in parent}
+.while .return 0 {
+  echo before signals
+  /bin/kill -PIPE ${.getpid}
+  echo after sigpipe
+  /bin/kill ${.getpid}
+  echo should not continue beyond SIGTERM}
+.while .return 0 {
+  echo before signals
+  /bin/kill -USR1 ${.getpid}
+  echo after sigusr1
+  /bin/kill -INT ${.getpid}
+  echo should not continue beyond SIGINT}
+.return 0
 
 # .global .local .unset .var_exists 
 .global
@@ -1181,6 +1231,13 @@ se {.is_default_error}
 .nop {optional argfunc}
 .nop 1 2 3 4 5
 
+# .replace_exception
+.replace_exception
+.replace_exception echo not in exception handler
+.try_catch_recursive .replace_exception {
+  .throw .replace_exception echo now in exception handler}
+.return 0
+
 # .return
 .return
 .return 1 1
@@ -1350,6 +1407,15 @@ e_after {sa echo hi {.try_catch_recursive ${.internal_functions}$ {&&&args$}}}
   a $args$ two; a $args$ three}
 wrapper 1 2
 .stepwise wrapper 1 2 {d $*}
+.stepwise wrapper 1 2 {
+  echo current line: $*
+  if_only .test_string_equal $4 two {
+    .collect_errors_except .nop {
+      .throw .continue
+      .throw .break
+      .throw .continue}}
+  .throw .continue
+  echo not printed}
 .stepwise wrapper 1 2 {e $* $nl}
 
 # .test_file_exists
@@ -1570,23 +1636,76 @@ whence .mapped_argfunction {>dummy_file}
 .which_path rwsh /usr/bin:.
 
 # .while
-.function_all_flags tf N {.test_string_unequal $A $N}
-.set A 0
 .while {e ARGS}
-.while tf 4 
-.while tf 4 {e printed; .set A 4}
-.while tf 4 {e skipped}
+.while var_less A 4 
+.scope 0 A {.while var_less A 4 {echo printed; .throw .break; echo skipped}}
+.scope 0 A {.while var_less A 4 {e printed; .set A 4}}
+.scope 4 A {.while var_less A 4 {e skipped}}
 .while .return 0 {.throw .echo exception within while}
 .while silent_throw within condition {e body skipped}
 .while .throw .false because {e body skipped}
-.set A 0
-.while tf 4 {e in .while argfunction $A $nl; .var_add A 1}
-.set A 0
-.while tf 4 {.if .test_number_equal 0 $A {.set A 1}
-           .else {.function_all_flags tf N {.throw .false $N}}
-           e in overwriting argfunction $nl}
+.scope 0 A {.while .throw .break {echo condition cannot break}}
+.scope 0 A {.while .throw .continue {echo condition cannot continue}}
+.scope 0 A {.while var_less A 4 {echo body can break; .throw .break}}
+.scope 0 A {.while var_less A 4 {e in .while argfunction $A $nl; .var_add A 1}}
+.scope 0 A {.while var_in A 1 2 {echo A is $A; .var_add A 1}}
+.scope 0 A {do_while var_in A 1 2 {echo A is $A; .var_add A 1}}
+.scope 1 A {.while var_in A 1 2 {echo A is $A; .var_add A 1}}
+.scope 1 A {while_and_one_more var_in A 1 2 {echo A is $A; .var_add A 1}}
+fn throw_the_kitchen_sink cmd ... {
+  $cmd$ {
+    echo early in argfunction $A
+    .var_add A 1
+    if_only .test_less $A 3 {.throw .continue}
+    .collect_errors_except .nop {
+      .throw .continue
+      .throw .break
+      .throw .continue}
+    echo late in .while argfunction $A}
+  echo after $cmd$0
+  .throw .break
+  echo do not echo after a .break thrown outside control flow}
+.scope 0 A {throw_the_kitchen_sink .while var_less A 4}
+.scope 0 A {throw_the_kitchen_sink do_while var_less A 4}
+.scope 3 A {throw_the_kitchen_sink do_while var_less A 6}
+.scope 0 A {throw_the_kitchen_sink while_and_one_more var_less A 4}
+.function_all_flags tf N {.test_less $A $N}
+.scope 0 A {.while tf 4 {
+  .if .test_number_equal 0 $A {.set A 1}
+  .else {.function_all_flags tf N {.throw .false $N}}
+  echo in overwriting argfunction}}
+.set_max_nesting 30
+fn IJK outer middle inner {
+  .scope 0 I {
+    .local sum 0
+    .nop $sum
+    $outer var_less I 5 {
+      .var_add I 1
+      .scope 0 J {
+        $middle var_less J 2 {
+          .var_add J 1
+          if_only_not .test_string_equal ${e $I $J} (1 1) {.combine $nl}
+          .combine $I . $J :
+          .scope 0 K {
+            $inner var_less K 30 {
+              .var_add K 1
+              if_only .test_less 1 $K {.echo ,}
+              .echo $K
+              .set sum ${+ $I + $J $K}
+              .if .test_less 5 $sum$ {.throw outer_break}
+              .else_if .test_less 4 $sum$ {.throw outer_continue}
+              .else {}}}}}}}
+  .echo $nl}
+IJK      .while      .while      .while
+IJK outer_while      .while      .while
+IJK      .while outer_while      .while
+IJK      .while      .while outer_while
+IJK outer_while outer_while outer_while
+.else {}
+.set_max_nesting 20
 
 # .var_add
+.set A 4
 .var_add
 .var_add A 1 2
 .var_add A 1 {excess argfunc}
@@ -1752,6 +1871,18 @@ se {.try_catch_recursive echo {
       .throw echo failing successfully
       echo second}
    echo third}
+fn tribble [args ...] {
+  .replace_exception tribble $args$
+  .replace_exception tribble $args$
+  echo the multiplication has begun $#}
+.try_catch_recursive tribble {.throw tribble}
+.throw tribble
+fn neverending [args ...] {.replace_exception neverending $args$}
+.throw neverending
+.try_catch_recursive neverending {.throw neverending}
+fn sneaky [args ...] {
+  .try_catch_recursive sneaky {.replace_exception sneaky $args$}}
+.try_catch_recursive sneaky {.throw sneaky}
 
 # .run_logic
 fn .run_logic flag cmd ... {

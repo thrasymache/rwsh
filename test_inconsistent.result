@@ -61,6 +61,12 @@ call stack .source .try_catch_recursive(body)
 .function_all_flags .binary_not_found name path stack ... {
   echo $name : binary not found in $path
   echo call stack: $stack$}
+.function_all_flags .break stack ... {
+  echo .break thrown outside of control flow body
+  echo call stack: $stack$}
+.function_all_flags .continue stack ... {
+  echo .continue thrown outside of control flow body
+  echo call stack: $stack$}
 .function_all_flags .dash_dash_argument args stack ... {
   echo optional -- parameter cannot take arguments \( $args \) with call stack: $stack$}
 .function_all_flags .dash_star_argument args stack ... {
@@ -166,6 +172,9 @@ call stack .source .try_catch_recursive(body)
 .function_all_flags .not_a_number -- nan stack ... {
   echo $nan is not a number
   echo call stack: $stack$}
+.function_all_flags .not_catching_exception stack ... {
+  echo .replace_exception called outside of an exception handler
+  echo call stack: $stack$}
 .function_all_flags .not_executable file stack ... {
   echo $file is not executable
   echo call stack: $stack$}
@@ -190,30 +199,30 @@ call stack .source .try_catch_recursive(body)
   .echo $nl
   if_only .var_exists stack {echo call stack: $stack$}
   .return -1}
-.function_all_flags .sigcont [args ...] {
-  echo received SIGCONT: $args$; .return -1}
-.function_all_flags .sigchld [args ...] {
-  echo received SIGCHLD: $args$; .return -1}
-.function_all_flags .sighup [args ...] {
-  echo received SIGHUP: $args$; .return -1}
-.function_all_flags .sigint [args ...] {
-  echo received SIGINT: $args$; .return -1}
-.function_all_flags .sigquit [args ...] {
-  echo received SIGQUIT: $args$; .return -1}
-.function_all_flags .sigpipe [args ...] {
-  echo received SIGPIPE: $args$; .return -1}
-.function_all_flags .sigterm [args ...] {
-  echo received SIGTERM: $args$; .return -1}
-.function_all_flags .sigtstp [args ...] {
-  echo received SIGTSTP: $args$; .return -1}
-.function_all_flags .siginfo [args ...] {
-  echo received SIGINFO: $args$; .return -1}
-.function_all_flags .sigusr1 [args ...] {
-  echo received SIGUSR1: $args$; .return -1}
-.function_all_flags .sigusr2 [args ...] {
-  echo received SIGUSR2: $args$; .return -1}
-.function_all_flags .sigunknown [args ...] {
-  echo received unknown unix signal: $args$; .return -1}
+.function_all_flags .sigcont {
+  echo received SIGCONT; .return -1}
+.function_all_flags .sigchld {
+  echo received SIGCHLD; .return -1}
+.function_all_flags .sighup {
+  echo received SIGHUP; .return -1}
+.function_all_flags .sigint {
+  .throw echo $nl received SIGINT}
+.function_all_flags .sigquit {
+  echo received SIGQUIT; .return -1}
+.function_all_flags .sigpipe {
+  echo received SIGPIPE; .return -1}
+.function_all_flags .sigterm {
+  .throw echo $nl received SIGTERM}
+.function_all_flags .sigtstp {
+  echo received SIGTSTP; .return -1}
+.function_all_flags .siginfo {
+  echo received SIGINFO; .return -1}
+.function_all_flags .sigusr1 {
+  echo received SIGUSR1; .return -1}
+.function_all_flags .sigusr2 {
+  echo received SIGUSR2; .return -1}
+.function_all_flags .sigunknown {
+  echo received unknown unix signal; .return -1}
 .function_all_flags .shutdown -- args ... {
   .nop $args
   .combine $nl (now terminating normally) $nl}
@@ -254,6 +263,11 @@ call stack .source .try_catch_recursive(body)
 .function_all_flags af -- [argv ...] {.argfunction}
 .function_all_flags c -- text ... {.combine $text$}
 .function_all_flags e -- text ... {.echo $text}
+.function_all_flags do_while argv ... {
+  .try_catch_recursive .break {
+    .nop $argv
+    .try_catch_recursive .continue {.argfunction}
+    .while $argv$ {.argfunction}}}
 .function_all_flags echo -- text ... {.echo $text; .combine $nl}
 .function_all_flags echo-comments cmd ... {
   .stepwise $cmd$ {if_only .test_in $1 .nop # #! ## {echo &&&*}}}
@@ -274,6 +288,20 @@ fn ntimes n {
   .while test_var_greater n 0 {
     .mapped_argfunction {.argfunction}
     .var_subtract n 1}}
+.function_all_flags outer_break stack ... {
+  .replace_exception .break $stack$}
+.function_all_flags outer_continue stack ... {
+  .replace_exception .continue $stack$}
+.function_all_flags scope_for var vals ... {
+  .for $vals$ {
+    .scope $1 $var {.argfunction}}}
+.function_all_flags outer_for var vals ... {
+  .for $vals$ {
+    .scope $1 $var {
+      .try_catch_recursive outer_break outer_continue {.argfunction}}}}
+.function_all_flags outer_while argv ... {
+  .while $argv$ {
+    .try_catch_recursive outer_break outer_continue {.argfunction}}}
 .function_all_flags setf var value {
   .if .var_exists $var {.set $var $value}
   .else {.global $var $value}}
@@ -289,7 +317,13 @@ fn whence command {
   .try_catch_recursive .function_not_found {
     .combine ${.whence_function $command {.argfunction}} $nl}}
 fn whichp binary {.which_path $binary $PATH}
+.function_all_flags while_and_one_more argv ... {
+  .try_catch_recursive .break {
+    .while $argv$ {.argfunction}
+    .try_catch_recursive .continue {.argfunction}}}
 .function_all_flags var_exists -- var {.var_exists $var}
+.function_all_flags var_in var set ... {.test_in $$var $set$}
+.function_all_flags var_less var N {.test_less $$var $N}
 .function_all_flags var_val -- [var ...] {
   .if .var_exists var {.for $var$ {.combine $1 \( $$1 \) \ }}
   .else {.nop}}
@@ -371,6 +405,12 @@ $.source /etc/rwshrc-basic
 .function_all_flags .binary_not_found name path stack ... {
   echo $name : binary not found in $path
   echo call stack: $stack$}
+.function_all_flags .break stack ... {
+  echo .break thrown outside of control flow body
+  echo call stack: $stack$}
+.function_all_flags .continue stack ... {
+  echo .continue thrown outside of control flow body
+  echo call stack: $stack$}
 .function_all_flags .dash_dash_argument args stack ... {
   echo optional -- parameter cannot take arguments \( $args \) with call stack: $stack$}
 .function_all_flags .dash_star_argument args stack ... {
@@ -476,6 +516,9 @@ $.source /etc/rwshrc-basic
 .function_all_flags .not_a_number -- nan stack ... {
   echo $nan is not a number
   echo call stack: $stack$}
+.function_all_flags .not_catching_exception stack ... {
+  echo .replace_exception called outside of an exception handler
+  echo call stack: $stack$}
 .function_all_flags .not_executable file stack ... {
   echo $file is not executable
   echo call stack: $stack$}
@@ -500,30 +543,30 @@ $.source /etc/rwshrc-basic
   .echo $nl
   if_only .var_exists stack {echo call stack: $stack$}
   .return -1}
-.function_all_flags .sigcont [args ...] {
-  echo received SIGCONT: $args$; .return -1}
-.function_all_flags .sigchld [args ...] {
-  echo received SIGCHLD: $args$; .return -1}
-.function_all_flags .sighup [args ...] {
-  echo received SIGHUP: $args$; .return -1}
-.function_all_flags .sigint [args ...] {
-  echo received SIGINT: $args$; .return -1}
-.function_all_flags .sigquit [args ...] {
-  echo received SIGQUIT: $args$; .return -1}
-.function_all_flags .sigpipe [args ...] {
-  echo received SIGPIPE: $args$; .return -1}
-.function_all_flags .sigterm [args ...] {
-  echo received SIGTERM: $args$; .return -1}
-.function_all_flags .sigtstp [args ...] {
-  echo received SIGTSTP: $args$; .return -1}
-.function_all_flags .siginfo [args ...] {
-  echo received SIGINFO: $args$; .return -1}
-.function_all_flags .sigusr1 [args ...] {
-  echo received SIGUSR1: $args$; .return -1}
-.function_all_flags .sigusr2 [args ...] {
-  echo received SIGUSR2: $args$; .return -1}
-.function_all_flags .sigunknown [args ...] {
-  echo received unknown unix signal: $args$; .return -1}
+.function_all_flags .sigcont {
+  echo received SIGCONT; .return -1}
+.function_all_flags .sigchld {
+  echo received SIGCHLD; .return -1}
+.function_all_flags .sighup {
+  echo received SIGHUP; .return -1}
+.function_all_flags .sigint {
+  .throw echo $nl received SIGINT}
+.function_all_flags .sigquit {
+  echo received SIGQUIT; .return -1}
+.function_all_flags .sigpipe {
+  echo received SIGPIPE; .return -1}
+.function_all_flags .sigterm {
+  .throw echo $nl received SIGTERM}
+.function_all_flags .sigtstp {
+  echo received SIGTSTP; .return -1}
+.function_all_flags .siginfo {
+  echo received SIGINFO; .return -1}
+.function_all_flags .sigusr1 {
+  echo received SIGUSR1; .return -1}
+.function_all_flags .sigusr2 {
+  echo received SIGUSR2; .return -1}
+.function_all_flags .sigunknown {
+  echo received unknown unix signal; .return -1}
 .function_all_flags .shutdown -- args ... {
   .nop $args
   .combine $nl (now terminating normally) $nl}
@@ -564,6 +607,11 @@ $.source /etc/rwshrc-basic
 .function_all_flags af -- [argv ...] {.argfunction}
 .function_all_flags c -- text ... {.combine $text$}
 .function_all_flags e -- text ... {.echo $text}
+.function_all_flags do_while argv ... {
+  .try_catch_recursive .break {
+    .nop $argv
+    .try_catch_recursive .continue {.argfunction}
+    .while $argv$ {.argfunction}}}
 .function_all_flags echo -- text ... {.echo $text; .combine $nl}
 .function_all_flags echo-comments cmd ... {
   .stepwise $cmd$ {if_only .test_in $1 .nop # #! ## {echo &&&*}}}
@@ -584,6 +632,20 @@ fn ntimes n {
   .while test_var_greater n 0 {
     .mapped_argfunction {.argfunction}
     .var_subtract n 1}}
+.function_all_flags outer_break stack ... {
+  .replace_exception .break $stack$}
+.function_all_flags outer_continue stack ... {
+  .replace_exception .continue $stack$}
+.function_all_flags scope_for var vals ... {
+  .for $vals$ {
+    .scope $1 $var {.argfunction}}}
+.function_all_flags outer_for var vals ... {
+  .for $vals$ {
+    .scope $1 $var {
+      .try_catch_recursive outer_break outer_continue {.argfunction}}}}
+.function_all_flags outer_while argv ... {
+  .while $argv$ {
+    .try_catch_recursive outer_break outer_continue {.argfunction}}}
 .function_all_flags setf var value {
   .if .var_exists $var {.set $var $value}
   .else {.global $var $value}}
@@ -599,7 +661,13 @@ fn whence command {
   .try_catch_recursive .function_not_found {
     .combine ${.whence_function $command {.argfunction}} $nl}}
 fn whichp binary {.which_path $binary $PATH}
+.function_all_flags while_and_one_more argv ... {
+  .try_catch_recursive .break {
+    .while $argv$ {.argfunction}
+    .try_catch_recursive .continue {.argfunction}}}
 .function_all_flags var_exists -- var {.var_exists $var}
+.function_all_flags var_in var set ... {.test_in $$var $set$}
+.function_all_flags var_less var N {.test_less $$var $N}
 .function_all_flags var_val -- [var ...] {
   .if .var_exists var {.for $var$ {.combine $1 \( $$1 \) \ }}
   .else {.nop}}
@@ -629,7 +697,7 @@ $.global PATH /bin:/usr/bin
 
 0
 $.getpid
-21045
+3386
 0
 $.getppid
 4926
@@ -653,22 +721,22 @@ $.function_all_flags clock-watch {
 $clock-watch
 timings:	last(0.000000)	total(0.000000)	count(0)
 clock-watch:	last(0.000000)	total(0.000000)	count(0)
-usleep overhead:	5.7e-05
-.usleep:	last(0.000657)	total(0.000657)	count(1)
-/bin/true:	last(0.002399)	total(0.002399)	count(1)
+usleep overhead:	7.6e-05
+.usleep:	last(0.000676)	total(0.000676)	count(1)
+/bin/true:	last(0.001475)	total(0.001475)	count(1)
 
 0
 $clock-watch
-timings:	last(0.000120)	total(0.000552)	count(4)
-clock-watch:	last(0.004244)	total(0.004244)	count(1)
-usleep overhead:	6.8e-05
-.usleep:	last(0.000679)	total(0.001336)	count(2)
-/bin/true:	last(0.000874)	total(0.003273)	count(2)
+timings:	last(0.000116)	total(0.000817)	count(4)
+clock-watch:	last(0.003625)	total(0.003625)	count(1)
+usleep overhead:	7.3e-05
+.usleep:	last(0.000670)	total(0.001346)	count(2)
+/bin/true:	last(0.001102)	total(0.002577)	count(2)
 
 0
 $.mapped_argfunction {timings timings; timings clock-watch}
-timings:	last(0.000111)	total(0.001076)	count(8)
-clock-watch:	last(0.002192)	total(0.006436)	count(2)
+timings:	last(0.000110)	total(0.001335)	count(8)
+clock-watch:	last(0.002396)	total(0.006021)	count(2)
 
 0
 $.error a stderr print will come before the diff $nl
