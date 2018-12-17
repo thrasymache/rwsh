@@ -83,15 +83,11 @@ void internal_init(Error_list& exceptions) {
       "    .else {.echo .help not defined (\n)}}", exceptions));
   executable_map.set(new Function(".internal_features",
       empty_prototype.begin(), empty_prototype.end(), false,
-      "{.if .test_number_equal $# 1 {"
-          ".echo .after_command .before_command .run_logic}; "
-      ".else {.echo wrong argument count; .return -1}}", exceptions));
+      "{.echo (.after_command .before_command .run_logic\n)}", exceptions));
   executable_map.set(new Builtin(".internal_functions", b_internal_functions));
   executable_map.set(new Function(".internal_vars",
       empty_prototype.begin(), empty_prototype.end(), false,
-      "{.if .test_number_equal $# 1 {"
-          ".echo FIGNORE ?}; "
-      ".else {.echo wrong argument count; .return -1}}", exceptions));
+      "{.echo (FIGNORE ?\n)}", exceptions));
   executable_map.set(new Builtin(".is_default_input", b_is_default_input));
   executable_map.set(new Builtin(".is_default_output", b_is_default_output));
   executable_map.set(new Builtin(".is_default_error", b_is_default_error));

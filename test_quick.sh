@@ -1,5 +1,5 @@
 .function_all_flags a [-*] [-x b ...] c {
-  .for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  .for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
 .nop $A $FIGNORE
 .whence_function a
 a first

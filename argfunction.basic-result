@@ -18,7 +18,7 @@ call stack .source .try_catch_recursive(body)
 .function_all_flags .after_command -- args ... {
   .nop $args
   .set last_command_return $?
-  .combine $nl $last_command_return $nl}
+  .combine $last_command_return $nl}
 .function_all_flags .prompt {.echo \$}
 .function_all_flags .vars {.internal_vars}
 .source /etc/rwshrc-basic
@@ -312,10 +312,10 @@ fn type [-t] args ... {
   .for $args$ {
     .try_catch_recursive .function_not_found {
       if_only_not .var_exists -t {.echo &&&1 is ()}
-      .combine &&&&{.type &&&1 {.argfunction}} $nl}}}
+      .type &&&1 {.argfunction}}}}
 fn whence command {
   .try_catch_recursive .function_not_found {
-    .combine ${.whence_function $command {.argfunction}} $nl}}
+    .whence_function $command {.argfunction}}}
 fn whichp binary {.which_path $binary $PATH}
 .function_all_flags while_and_one_more argv ... {
   .try_catch_recursive .break {
@@ -370,13 +370,10 @@ $.echo $nl $nl $nl $nl
  
  
  
-
 0
 $.return 0
-
 0
 $.function_all_flags # [args ...] {.nop $args$}
-
 0
 $.function_all_flags fw {
   .function_all_flags f1 name {.argfunction}
@@ -384,24 +381,23 @@ $.function_all_flags fw {
   f1 f2 {.argfunction}
   .whence_function f2; .echo $nl
   .rm_executable f1; .rm_executable f2}
-
 0
 $fw {.echo hi $nl; .function_all_flags $name {.argfunction}}
 .function_all_flags f1 name {.echo hi $nl; .function_all_flags $name {.argfunction}}
+
 hi 
 .function_all_flags f2  {.echo hi $nl; .function_all_flags $name {.argfunction}}
 
 0
 $fw {.while .throw .false {.function_all_flags &&name {.argfunction}}}
 .function_all_flags f1 name {.while .throw .false {.function_all_flags &name {.argfunction}}}
-f2 : command not found ( f2 .whence_function fw )
 
+f2 : command not found ( f2 .whence_function fw )
 -1
 $.function_all_flags f1 name {
   .echo function name $name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}
-
 0
 $f1 f2 {
   .echo noname $1 $nl
@@ -412,8 +408,8 @@ function name f2
   .echo noname $1 $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of nothing $nl}
- end of function body 
 
+ end of function body 
 0
 $fw {
   .echo function name $name $nl
@@ -423,14 +419,15 @@ $fw {
   .echo function name $name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}
+
 function name f2 
 {
   .echo function name $name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}
+
  end of function body 
 f2 : command not found ( f2 .whence_function fw )
-
 -1
 $fw {.for 1 2 3 {
   .echo function name $1 $name $nl
@@ -440,26 +437,29 @@ $fw {.for 1 2 3 {
   .echo function name $1 $name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}
+
 function name 1 f2 
 {.for 1 2 3 {
   .echo function name $1 $name $nl
   .whence_function .argfunction
   .echo $nl end of function body $nl}}
+
  end of function body 
 function name 2 f2 
 {.for 1 2 3 {
   .echo function name $1 $name $nl
   .whence_function .argfunction
   .echo $nl end of function body $nl}}
+
  end of function body 
 function name 3 f2 
 {.for 1 2 3 {
   .echo function name $1 $name $nl
   .whence_function .argfunction
   .echo $nl end of function body $nl}}
+
  end of function body 
 f2 : command not found ( f2 .whence_function fw )
-
 -1
 $fw {.for 1 2 3 {.mapped_argfunction $1 {
   .echo function name &&name $nl
@@ -469,29 +469,31 @@ $fw {.for 1 2 3 {.mapped_argfunction $1 {
   .echo function name &name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}}
+
 function name f2 
 {.for 1 2 3 {.mapped_argfunction $1 {
   .echo function name &name $nl
   .whence_function .argfunction
   .echo $nl end of function body $nl}}}
+
  end of function body 
 function name f2 
 {.for 1 2 3 {.mapped_argfunction $1 {
   .echo function name &name $nl
   .whence_function .argfunction
   .echo $nl end of function body $nl}}}
+
  end of function body 
 function name f2 
 {.for 1 2 3 {.mapped_argfunction $1 {
   .echo function name &name $nl
   .whence_function .argfunction
   .echo $nl end of function body $nl}}}
+
  end of function body 
 f2 : command not found ( f2 .whence_function fw )
-
 -1
 $# all of the above make sense, and the next should be identical to the last
-
 -1
 $fw {.mapped_argfunction $1 {.for 1 2 3 {
   .echo function name &&name $nl
@@ -501,6 +503,7 @@ $fw {.mapped_argfunction $1 {.for 1 2 3 {
   .echo function name &name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}}
+
 function name f2 
 {.mapped_argfunction $1 {.for 1 2 3 {
   .echo function name &name $nl
@@ -512,6 +515,7 @@ function name f2
   .echo $nl end of function body $nl}}}
   .echo $nl end of function body $nl}}
   .echo $nl end of function body $nl}}}
+
  end of function body 
 function name f2 
 {.mapped_argfunction $1 {.for 1 2 3 {
@@ -524,6 +528,7 @@ function name f2
   .echo $nl end of function body $nl}}}
   .echo $nl end of function body $nl}}
   .echo $nl end of function body $nl}}}
+
  end of function body 
 function name f2 
 {.mapped_argfunction $1 {.for 1 2 3 {
@@ -536,12 +541,11 @@ function name f2
   .echo $nl end of function body $nl}}}
   .echo $nl end of function body $nl}}
   .echo $nl end of function body $nl}}}
+
  end of function body 
 f2 : command not found ( f2 .whence_function fw )
-
 -1
 $# mostly as wierd
-
 -1
 $fw {.mapped_argfunction .not_a_number {
   .echo function name &&name $nl
@@ -551,6 +555,7 @@ $fw {.mapped_argfunction .not_a_number {
   .echo function name &name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}
+
 function name f2 
 {.mapped_argfunction .not_a_number {
   .echo function name &name $nl
@@ -562,12 +567,11 @@ function name f2
   .echo $nl end of function body $nl}}
   .echo $nl end of function body $nl}
   .echo $nl end of function body $nl}}
+
  end of function body 
 f2 : command not found ( f2 .whence_function fw )
-
 -1
 $# normal again
-
 -1
 $fw {.try_catch_recursive .not_a_number {
   .echo function name &&name $nl
@@ -577,14 +581,15 @@ $fw {.try_catch_recursive .not_a_number {
   .echo function name &name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}
+
 function name f2 
 {.try_catch_recursive .not_a_number {
   .echo function name &name $nl
   .whence_function .argfunction
   .echo $nl end of function body $nl}}
+
  end of function body 
 f2 : command not found ( f2 .whence_function fw )
-
 -1
 $fw {.for 1 2 3 {.try_catch_recursive .not_a_number {
   .echo function name &&name $nl
@@ -594,26 +599,29 @@ $fw {.for 1 2 3 {.try_catch_recursive .not_a_number {
   .echo function name &name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}}
+
 function name f2 
 {.for 1 2 3 {.try_catch_recursive .not_a_number {
   .echo function name &name $nl
   .whence_function .argfunction
   .echo $nl end of function body $nl}}}
+
  end of function body 
 function name f2 
 {.for 1 2 3 {.try_catch_recursive .not_a_number {
   .echo function name &name $nl
   .whence_function .argfunction
   .echo $nl end of function body $nl}}}
+
  end of function body 
 function name f2 
 {.for 1 2 3 {.try_catch_recursive .not_a_number {
   .echo function name &name $nl
   .whence_function .argfunction
   .echo $nl end of function body $nl}}}
+
  end of function body 
 f2 : command not found ( f2 .whence_function fw )
-
 -1
 $fw {.try_catch_recursive .not_a_number {.for 1 2 3 {
   .echo function name &&name $nl
@@ -623,29 +631,31 @@ $fw {.try_catch_recursive .not_a_number {.for 1 2 3 {
   .echo function name &name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}}
+
 function name f2 
 {.try_catch_recursive .not_a_number {.for 1 2 3 {
   .echo function name &name $nl
   .whence_function .argfunction
   .echo $nl end of function body $nl}}}
+
  end of function body 
 function name f2 
 {.try_catch_recursive .not_a_number {.for 1 2 3 {
   .echo function name &name $nl
   .whence_function .argfunction
   .echo $nl end of function body $nl}}}
+
  end of function body 
 function name f2 
 {.try_catch_recursive .not_a_number {.for 1 2 3 {
   .echo function name &name $nl
   .whence_function .argfunction
   .echo $nl end of function body $nl}}}
+
  end of function body 
 f2 : command not found ( f2 .whence_function fw )
-
 -1
 $# maybe weird?
-
 -1
 $fw {.mapped_argfunction $1 {
   .echo function name &&name $nl
@@ -655,6 +665,7 @@ $fw {.mapped_argfunction $1 {
   .echo function name &name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}
+
 function name f2 
 {.mapped_argfunction $1 {
   .echo function name &name $nl
@@ -666,12 +677,11 @@ function name f2
   .echo $nl end of function body $nl}}
   .echo $nl end of function body $nl}
   .echo $nl end of function body $nl}}
+
  end of function body 
 f2 : command not found ( f2 .whence_function fw )
-
 -1
 $# definitely weird
-
 -1
 $fw {.mapped_argfunction $name {.for a b {
   .echo function name &&name $nl
@@ -681,6 +691,7 @@ $fw {.mapped_argfunction $name {.for a b {
   .echo function name &name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}}
+
 function name f2 
 {.mapped_argfunction $name {.for a b {
   .echo function name &name $nl
@@ -692,6 +703,7 @@ function name f2
   .echo $nl end of function body $nl}}}
   .echo $nl end of function body $nl}}
   .echo $nl end of function body $nl}}}
+
  end of function body 
 function name f2 
 {.mapped_argfunction $name {.for a b {
@@ -704,28 +716,25 @@ function name f2
   .echo $nl end of function body $nl}}}
   .echo $nl end of function body $nl}}
   .echo $nl end of function body $nl}}}
+
  end of function body 
 f2 : command not found ( f2 .whence_function fw )
-
 -1
 $fw {.mapped_argfunction {.function_all_flags $name {.argfunction}}}
 .function_all_flags f1 name {.mapped_argfunction {.function_all_flags $name {.argfunction}}}
+
 .function_all_flags f2  {.mapped_argfunction {.function_all_flags $name {.function_all_flags $name {.mapped_argfunction {.function_all_flags $name {.argfunction}}}}}}
 
 0
 $.return 0
-
 0
 $.nop $A $FIGNORE
-
 0
 $.function_all_flags .shutdown -- args ... {
   .nop $args
   .combine $nl (now terminating normally) $nl}
-
 0
 $.exit
-
 0
 
 now terminating normally

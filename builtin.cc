@@ -438,9 +438,8 @@ int b_else(const Argm& argm, Error_list& exceptions) {
 int b_internal_functions(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
-  argm.output <<Argm::exception_names[1];
-  for (int i = 2; i < Argm::Exception_count; ++i)
-    argm.output <<"\n" <<Argm::exception_names[i];
+  for (int i = 1; i < Argm::Exception_count; ++i)
+    argm.output <<Argm::exception_names[i] <<"\n";
   return 0;}
 
 // returns one if the input stream is not the default_stream
@@ -474,7 +473,7 @@ int b_last_exception(const Argm& argm, Error_list& exceptions) {
   Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
   Base_executable* focus = executable_map.find_second(lookup);
   if (focus) {
-    argm.output <<focus->last_exception();
+    argm.output <<focus->last_exception() <<"\n";
     argm.output.flush();
     return 0;}
   else throw Exception(Argm::Function_not_found, argm[1]);}
@@ -923,10 +922,10 @@ int b_type(const Argm& argm, Error_list& exceptions) {
   if (lookup[0] == ".argfunction") lookup[0] = ".mapped_argfunction";
   Base_executable *e = executable_map.find_second(lookup);
   if (!e) exceptions.add_error(Exception(Argm::Function_not_found, argm[1]));
-  else if (dynamic_cast<Function*>(e)) argm.output <<"function";
-  else if (dynamic_cast<Binary*>(e))   argm.output <<"file";
-  else if (dynamic_cast<Builtin*>(e))  argm.output <<"builtin";
-  else if (dynamic_cast<Command_block*>(e))  argm.output <<"argfunction";
+  else if (dynamic_cast<Function*>(e)) argm.output <<"function\n";
+  else if (dynamic_cast<Binary*>(e))   argm.output <<"file\n";
+  else if (dynamic_cast<Builtin*>(e))  argm.output <<"builtin\n";
+  else if (dynamic_cast<Command_block*>(e))  argm.output <<"argfunction\n";
   else std::abort(); // successfully removed executable
   return 0;}
 
@@ -1100,7 +1099,7 @@ int b_whence_function(const Argm& argm, Error_list& exceptions) {
   if (lookup[0] == ".argfunction") lookup[0] = ".mapped_argfunction";
   Base_executable* focus = executable_map.find_second(lookup);
   if (focus) {
-    argm.output <<focus->str();
+    argm.output <<focus->str() <<"\n";
     argm.output.flush();}
   else exceptions.add_error(Exception(Argm::Function_not_found, argm[1]));
   return 0;}

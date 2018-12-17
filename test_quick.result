@@ -18,7 +18,7 @@ call stack .source .try_catch_recursive(body)
 .function_all_flags .after_command -- args ... {
   .nop $args
   .set last_command_return $?
-  .combine $nl $last_command_return $nl}
+  .combine $last_command_return $nl}
 .function_all_flags .prompt {.echo \$}
 .function_all_flags .vars {.internal_vars}
 .source /etc/rwshrc-basic
@@ -312,10 +312,10 @@ fn type [-t] args ... {
   .for $args$ {
     .try_catch_recursive .function_not_found {
       if_only_not .var_exists -t {.echo &&&1 is ()}
-      .combine &&&&{.type &&&1 {.argfunction}} $nl}}}
+      .type &&&1 {.argfunction}}}}
 fn whence command {
   .try_catch_recursive .function_not_found {
-    .combine ${.whence_function $command {.argfunction}} $nl}}
+    .whence_function $command {.argfunction}}}
 fn whichp binary {.which_path $binary $PATH}
 .function_all_flags while_and_one_more argv ... {
   .try_catch_recursive .break {
@@ -366,15 +366,13 @@ polish / .var_divide
 )
   .source /etc/rwshrc-default}
 $.function_all_flags a [-*] [-x b ...] c {
-  .for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }}
-
+  .for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
 0
 $.nop $A $FIGNORE
-
 0
 $.whence_function a
 .function_all_flags a [-?] [-x b ...] c {
-  .for &{.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+  .for &{.list_locals}$ {.combine $1 \( $$1 \) ( )}; .echo $nl}
 0
 $a first
 -*() -?() c(first) 
@@ -384,7 +382,6 @@ unacceptable arguments: for prototype [-?] [-x b ...] c,
  assigned -*=(-x first) -?=() -x=(-x first) b=first ,
  but needed (c),
 ( call) stack: a
-
 -1
 $a -x (fi rst) second
 -*(-x (fi rst)) -?() -x(-x (fi rst)) b((fi rst)) c(second) 
@@ -403,7 +400,6 @@ $.function_all_flags a [-*] [-x ... b] c {
   # if_only .var_exists b {c (b: ) $b$ $nl}
   # if_only .var_exists c {c (c: ) $c$ $nl}
 }
-
 0
 $.whence_function a
 .function_all_flags a [-?] [-x ... b] c {
@@ -417,26 +413,21 @@ $.whence_function a
 0
 $a first
 -*() -?() c(first) 
-
 0
 $a -x first
 unacceptable arguments: for prototype [-?] [-x ... b] c,
  assigned -*=(-x first) -?=() -x=(-x first) b=first ,
  but needed (c),
 ( call) stack: a
-
 -1
 $a -x (fi rst) second
 -*(-x (fi rst)) -?() -x(-x (fi rst)) b((fi rst)) c(second) 
-
 0
 $a -x first (sec ond) third
 -*(-x first (sec ond)) -?() -x(-x first (sec ond)) b((sec ond)) c(third) 
-
 0
 $a -x (fi rst) (sec ond) third fourth
 -*(-x (fi rst) (sec ond) third) -?() -x(-x (fi rst) (sec ond) third) b(third) c(fourth) 
-
 0
 $
 now terminating normally

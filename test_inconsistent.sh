@@ -1,7 +1,7 @@
 .source /etc/rwshrc-basic
 .global PATH /bin:/usr/bin
-.getpid
-.getppid
+.scope () {.getpid; .echo $nl}
+.scope () {.getppid; .echo $nl}
 .function_all_flags timings focus {
   .combine $focus (:	last\() ${.last_execution_time $focus} \) \	
   .combine (total\() ${.total_execution_time $focus} \) \	

@@ -9,17 +9,17 @@
 .nop
      .nop
 .nop 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
-.echo 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
-.echo  ()    1                2       $#
-.echo \escaped internal\ space $#
-.echo now \ external\  $#
-.echo a \  space $#
-.echo \$tokens \} \{ \; \\ \) \(
+echo 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+.echo  ()    1                2       $# $nl
+.echo \escaped internal\ space $# $nl
+.echo now \ external\  $# $nl
+.echo a \  space $# $nl
+echo \$tokens \} \{ \; \\ \) \(
 .echo a \
-line continuation
- .echo ignore leading space
-	.echo ignore leading tab
-.mapped_argfunction {	   .echo ignore leading tab in argfunction}
+line continuation (or it was supposed to be)
+ echo ignore leading space
+	echo ignore leading tab
+.mapped_argfunction {	   echo ignore leading tab in argfunction}
 .whence_function .mapped_argfunction {.nop}
 .whence_function .argfunction {
   multiple line argfunction }
@@ -54,41 +54,42 @@ line continuation
 .whence_function sa
 .whence_function se
 whence e
+whence echo
 whence ee
 whence () {}
-e text that does not have a prompt appended
-se {e again}
-if_only .test_is_number false {e not printed}
-if_only .test_is_number 0 {e printed without error}
+echo text that does not have a prompt appended
+se {echo again}
+if_only .test_is_number false {echo not printed}
+if_only .test_is_number 0 {echo printed without error}
 .function_all_flags for -- [items ...] {
   .if .var_exists items {.for $items$ {.argfunction}}
   .else {.nop}}
-for {e skipped without error}
-for 1 2 3 {e loop $* $nl}
+for {echo skipped without error}
+for 1 2 3 {echo loop $*}
 
 ## arg_script.cc and arg_spec.cc
 # Arg_spec::FIXED, Arg_script::add_quote
-e 5 4 3 2 1
-e a (tight string created by parentheses $#) $#
-e a ( spaced string created by parentheses $# ) $#
-e some escaped \) \(parentheses $#
-e some (nested (parentheses) $#) $#
-e some ((((((((((repeated))))) parentheses))))) $#
+echo 5 4 3 2 1
+e a (tight string created by parentheses $#) $# $nl
+e a ( spaced string created by parentheses $# ) $# $nl
+echo some escaped \) \(parentheses $#
+e some (nested (parentheses) $#) $# $nl
+e some ((((((((((repeated))))) parentheses))))) $# $nl
 e a (multi-line parenthesis
-  enclosed string) $#
-e a )mismatched &&parenthesis
-e a (multi-line parenthesis
+  enclosed string) $# $nl
+echo a )mismatched &&parenthesis
+echo a (multi-line parenthesis
   mismatch))
-e (internal \)parenthesis \\ escape ( \))) $#
+e (internal \)parenthesis \\ escape ( \))) $# $nl
 
 # star_var (argm_star_var)
-e 1 2 $* 3 4
-e $*2 1 2
+echo 1 2 $* 3 4
+echo $*2 1 2
 
 # star_soon
-.if .nop 1 2 3 {e &*}
+.if .nop 1 2 3 {echo &*}
 .else {}
-.if .nop 1 2 3 {e &*0}
+.if .nop 1 2 3 {echo &*0}
 .else {}
 
 # .init, rwshrc's autofunction, .binary
@@ -113,7 +114,6 @@ false add the function and the binary at once
 /bin/echo this will add /bin/echo to the hash table
 /bin/echo this will use the existing /bin/echo reference
 echo this function is already defined
-.whence_function echo
 .autofunction ./rwsh
 .whence_function ./rwsh
 ./rwsh -c (echo in a subshell)
@@ -137,55 +137,55 @@ whence test_files/../rwsh
 .binary /bin/rm
 
 # selection_read read_dir()
-e @/etc
-e @test_files/ixx
-e @test_files/i*xx
-e @test_files/i**xx
-e @test_files/ii**xx
-e @test_files/ix*xx
-e @test_files/ix*xx*
-e @test_files/ix*xxx
-e @test_files/ix*xxx*
-e @test_files/*iixxx
-e @test_files/ix*x*x
-e @test_files/ix*xx*x
-e @test_files/ix*x*xx
-.scope () {e @test_files/i*xx/f*}
-.scope () {e @/*selection_not_found*}
-e @/ur/bin/pwd
-e @test_main.cc
-se {se {.for @e*c {e $1 $nl}} >test_files/tmp}
+echo @/etc
+echo @test_files/ixx
+echo @test_files/i*xx
+echo @test_files/i**xx
+echo @test_files/ii**xx
+echo @test_files/ix*xx
+echo @test_files/ix*xx*
+echo @test_files/ix*xxx
+echo @test_files/ix*xxx*
+echo @test_files/*iixxx
+echo @test_files/ix*x*x
+echo @test_files/ix*xx*x
+echo @test_files/ix*x*xx
+.scope () {echo @test_files/i*xx/f*}
+.scope () {echo @/*selection_not_found*}
+echo @/ur/bin/pwd
+echo @test_main.cc
+se {se {.for @e*c {echo $1}} >test_files/tmp}
 .global LC_ALL C
 .nop $LC_ALL
 sort test_files/tmp
 whence sort
-e @test_files/*xx
-e @test_files/*x*x*x*x
-e @test_files/*xyxy
-e @/bin
-se {se {.for @/usr/*bin {e $1 $nl}} >test_files/tmp}
+echo @test_files/*xx
+echo @test_files/*x*x*x*x
+echo @test_files/*xyxy
+echo @/bin
+se {se {.for @/usr/*bin {echo $1}} >test_files/tmp}
 sort test_files/tmp
-se {se {.for @/etc/rwsh* {e $1 $nl}} >test_files/tmp}
+se {se {.for @/etc/rwsh* {echo $1}} >test_files/tmp}
 sort test_files/tmp
-e @/etc/rw*ic
-e @/etc/rwsh*a*
+echo @/etc/rw*ic
+echo @/etc/rwsh*a*
 .set FIGNORE rwshrc* rwshrc-bas rwshrc-default
-e @/etc/rwshrc-*
-e @/etc/rwshrc*
-e @/etc/rwshr*
+echo @/etc/rwshrc-*
+echo @/etc/rwshrc*
+echo @/etc/rwshr*
 .set FIGNORE *.cc
-e @*cc
-e @*h.cc
+echo @*cc
+echo @*h.cc
 .set FIGNORE *de*
-e @/etc/rwshrc-defa*
-e @/etc/rwshrc-d*
-e @/etc/rwsh*a*
-e @test_files/*i*x*y*y*x*
-e @/etc/rw*-basi*si*
-e @test_main.sh
-se {se {.for @test_files/*x* {e $1 $nl}} >test_files/tmp}
+echo @/etc/rwshrc-defa*
+echo @/etc/rwshrc-d*
+echo @/etc/rwsh*a*
+echo @test_files/*i*x*y*y*x*
+echo @/etc/rw*-basi*si*
+echo @test_main.sh
+se {se {.for @test_files/*x* {echo $1}} >test_files/tmp}
 sort test_files/tmp
-.scope r*h.cc sel*.h (A ...) {e @$A}
+.scope r*h.cc sel*.h (A ...) {echo @$A}
 
 # Arg_spec::REFERENCE, interpret(), evaluate_expansion(), evaluate_var()
 .nop $A
@@ -193,13 +193,13 @@ sort test_files/tmp
 .global B ( (zero   zero) ((one one  ) one   ) two three)
 .global C ((external) () ( ) internal(parenthesis))
 .global broken (extra_close\) \(extra_open)
-e $A $0 @$A
-e A $1 1 $$3 $$$3
-e A $1a
-e A 1 2 3 4 5 6 7 $$$$$$$$$8
+echo $A $0 @$A
+echo A $1 1 $$3 $$$3
+echo A $1a
+echo A 1 2 3 4 5 6 7 $$$$$$$$$8
 sa $UNDECLARED $ALSO_UNDECLARED {}
-sa {e $UNDECLARED $ALSO_UNDECLARED}
-e &UNDECLARED &ALSO_UNDECLARED
+sa {echo $UNDECLARED $ALSO_UNDECLARED}
+echo &UNDECLARED &ALSO_UNDECLARED
 .scope [undefined] {echo $undefined and also unchecked}
 .scope [udef] {echo but $udef$ can vanish}
 .scope ([-x foo bar]) {echo along with specific $-x$ flags}
@@ -207,48 +207,48 @@ e &UNDECLARED &ALSO_UNDECLARED
 .scope [also_undefined] {echo even &&also_undefined$ in a soon}
 .scope undeclared ([leading_ud] ref) {echo references $$ref$ can throw}
 .scope leading_ud ([leading_ud] ref) {echo good $$ref$ ones are checked}
-sa $B$$1x {e $# $args$}
-sa $B$$1$ {e $# $args$}
-sa $B {e $# $args$}
-sa $B$ {e $# $args$}
-sa $B$$ {e $# $args$}
-sa $B$$$$ {e $# $args$}
-se {sa $B$$$$ {e $# $args$}}
-sa $B$10 {e $# $args$}
-sa $B$1 {e $# $args$}
-sa $B$$1 {e $# $args$}
-om $broken {e $# $*}
-sa $broken$ {e $# $args$}
-sa $broken$$ {e $# $args$}
-sa $C {e $# $args$}
-sa $C$ {e $# $args$}
-sa $C$$ {e $# $args$}
+sa $B$$1x {echo $# $args$}
+sa $B$$1$ {echo $# $args$}
+sa $B {e $# $args$ $nl}
+sa $B$ {e $# $args$ $nl}
+sa $B$$ {e $# $args$ $nl}
+sa $B$$$$ {echo $# $args$}
+se {sa $B$$$$ {echo $# $args$}}
+sa $B$10 {echo $# $args$}
+sa $B$1 {e $# $args$ $nl}
+sa $B$$1 {echo $# $args$}
+om $broken {e $# $* $nl}
+sa $broken$ {echo $# $args$}
+sa $broken$$ {echo $# $args$}
+sa $C {e $# $args$ $nl}
+sa $C$ {e $# $args$ $nl}
+sa $C$$ {echo $# $args$}
 
 # Arg_spec::SOON, apply()
-e A &1 1 &$3 &$$3
-e &&A
+echo A &1 1 &$3 &$$3
+echo &&A
 se {e &&&A}
 se {@{} e &&&without$A $.{mismatched} {.argfunction brace} &&&{thrown}B
 }
-e &{e &&A}
-e &&{e &A}
-e &A
-.scope not_bin A {e &A &&A $A $nl; .scope otherwise A {e &A &&A &&&A $A}}
+echo &{e &&A}
+echo &&{e &A}
+echo &A
+.scope not_bin A {e &A &&A $A $nl; .scope otherwise A {echo &A &&A &&&A $A}}
 se {sa &B$10 {e $# $args$}}
-se {sa &B$$$$ {e $# $args$}}
-se {sa &B$1 {e $# $args$}}
-se {sa &B$$1 {e $# $args$}}
+se {sa &B$$$$ {echo $# $args$}}
+se {sa &B$1 {e $# $args$} $nl}
+se {sa &B$$1 {echo $# $args$}}
 
 # Arg_spec::SUBSTITUTION and Arg_spec::SOON_SUBSTITUTION, apply(), interpret(),
 # evaluate_substitution()
-e ${e $A}
+echo ${e $A}
 whence .argfunction {e ${e $A}}
 .scope not_bin A {
    e &{.echo $A} &&{.echo $A} $A $nl
    .scope otherwise A {
-      e &{.echo $A} &&{.echo $A} &&&{.echo $A} ${.echo $A} $A}}
-.scope not_bin A {e &{.echo &A $A} &&{.echo &A &&A} ${.echo &A $A}}
-sa &{.echo $A} {e $args &1}
+      echo &{.echo $A} &&{.echo $A} &&&{.echo $A} ${.echo $A} $A}}
+.scope not_bin A {e &{.echo &A $A} &&{.echo &A &&A} ${.echo &A $A} $nl}
+sa &{.echo $A} {echo $args &1$}
 sa &{.return 1} {}
 sa ${.return 1} {}
 se {e &{.return 1}}
@@ -266,49 +266,49 @@ e &&${e x}
 .return &{.return 0}
 .return ${e 0 $nl}
 .return &{.echo 0}
-e nevermore &{/bin/echo quoth the raven} 
-sa ${e $B}$@1 ${e $B}$1 ${e $B}XYZ {e $# $args$}
-sa ${e $B} {e $# $args$}
-sa &{e $B} {e $# $args$}
-sa ${e $B}$ {e $# $args$}
-sa &{e $B}$ {e $# $args$}
-e $# &{e $B}$
-se {e $# &{e $B}$}
-sa &{e $B}$$ {e $# $args$}
-sa ${e $B}$$ {e $# $args$}
-se {sa ${e $B}$1 {e $# $args$}}
-se {sa &{e $B}$1 {e $# $args$}}
-se {sa ${e $B}$$$1 {e $# $args$}}
-se {sa &{e $B}$$$1 {e $# $args$}}
+.echo nevermore &{/bin/echo quoth the raven} 
+sa ${e $B}$@1 ${e $B}$1 ${e $B}XYZ {echo $# $args$}
+sa ${e $B} {e $# $args$ $nl}
+sa &{e $B} {e $# $args$ $nl}
+sa ${e $B}$ {e $# $args$ $nl}
+sa &{e $B}$ {e $# $args$ $nl}
+e $# &{.echo $B}$ $nl
+se {e $# &{e $B}$ $nl}
+sa &{e $B}$$ {e $# $args$ $nl}
+sa ${e $B}$$ {e $# $args$ $nl}
+se {sa ${e $B}$1 {e $# $args$ $nl}}
+se {sa &{e $B}$1 {.echo $# $args$ $nl}}
+se {sa ${e $B}$$$1 {echo $# $args$}}
+se {sa &{e $B}$$$1 {echo $# $args$}}
 .unset A
 .unset B
-sa &{e ((zero zero) (one one) two three)}$10 {e $# $args$}
-sa ${e (zero zero) \)one one two three}$1 {e $# $args$}
-sa &{e (zero zero) \(one one two three}$1 {e $# $args$}
-om ${e (zero zero) \)one one two three} {e $# $*}
-c x &{.echo (y y)}$ x
-c x ${.echo ( y y )}$ x
-c x &{.echo (( y) (y ))}$ x
-c x ${.echo (    )}$ x
+sa &{e ((zero zero) (one one) two three)}$10 {echo $# $args$}
+sa ${e (zero zero) \)one one two three}$1 {echo $# $args$}
+sa &{e (zero zero) \(one one two three}$1 {echo $# $args$}
+om ${e (zero zero) \)one one two three} {e $# $* $nl}
+c x &{.echo (y y)}$ x $nl
+c x ${.echo ( y y )}$ x $nl
+c x &{.echo (( y) (y ))}$ x $nl
+c x ${.echo (    )}$ x $nl
 c x &{.echo (
 y
 y
-)}$ x
+)}$ x $nl
 
 # file redirection (but don't overwrite files that exist)
 # .for_each_line
 /bin/cat <non_existent_file
-.for_each_line <non_existent_file {e line of $# \( $* \)}
-se {sa {e hi >one >two} {cat <three <four}
+.for_each_line <non_existent_file {echo line of $# \( $* \)}
+se {sa {echo hi >one >two} {cat <three <four}
 }
-.if .test_file_exists outfile {.echo failed to remove outfile}
-.else {.echo outfile properly removed}
-se {e hi >outfile}
+.if .test_file_exists outfile {echo failed to remove outfile}
+.else {echo outfile properly removed}
+se {echo hi >outfile}
 /bin/cat outfile
 .if .test_is_number 0 {>outfile /bin/echo there}
 .else {.nop}
 /bin/cat outfile
-se {se >outfile {e line 1 $nl; e line 2 longer $nl; .echo $nl; e ending}}
+se {se >outfile {e line 1 $nl; e line 2 longer $nl; .echo $nl; echo ending}}
 /bin/cat <outfile
 .for_each_line x {}
 .for_each_line <outfile
@@ -335,16 +335,16 @@ fn x {.var_add A 1
            se {.var_add A 1
               se {.var_add A 1
                  se {.argfunction}}}}}}
-.scope 00 A {x {e &A &&A &&&A $A}}
-.scope 00 A {x {x {x {x {e &A &&A &&&A &&&&A &&&&&A &&&&&&A $A}}}}}
+.scope 00 A {x {echo &A &&A &&&A $A}}
+.scope 00 A {x {x {x {x {echo &A &&A &&&A &&&&A &&&&&A &&&&&&A $A}}}}}
 .scope 00 A {
   x {e &{.echo &A $A} . &&{.echo &A &&A $A} . &&&{.echo &A &&A &&&A $A} . ${
-  .echo &A &&A &&&A $A} . $A}}
+  .echo &A &&A &&&A $A} . $A $nl}}
 .set A 0
 x {x {x {x {
   e &{.echo &A $A} . &&{.echo &A &&A $A} . &&&{.echo &A &&A &&&A $A} . &&&&{
   .echo &A &&A &&&A &&&&A $A} . &&&&&{.echo &A &&A &&&A &&&&A &&&&&A $A} . ${
-  .echo &A &&A &&&A &&&&A &&&&&A $A} . $A}}}}
+  .echo &A &&A &&&A &&&&A &&&&&A $A} . $A $nl}}}}
 .rm_executable x
 .function_all_flags not soon {&&&enough}
 .set_max_nesting $OLD_NESTING
@@ -354,9 +354,9 @@ x {x {x {x {
 ## builtin tests
 # .argc
 .argc {excess argfunc}
-.argc
-.argc ()
-.argc (1 a) (2 b (c d)) (3 ((e () f)))
+.scope () {.argc; .echo $nl}
+.scope () {.argc (); .echo $nl}
+.scope () {.argc (1 a) (2 b (c d)) (3 ((e () f))); .echo $nl}
 
 # .cd (.which_path ../)
 .cd
@@ -371,12 +371,12 @@ x {x {x {x {
   echo directory is now ${/bin/pwd}$ in subshell
   .try_catch_recursive .binary_not_found {.which_path ../bin/rwsh /bin}
   .try_catch_recursive .binary_not_found {.which_path ../bin/rwsh /bin:.}
-  }
+  .combine $nl}
 
 # .combine
 .combine
 .combine something {excess argfunc}
-.combine on () e \ two ( ) $#
+.combine on () e \ two ( ) $# $nl
 
 # .echo .error
 .error
@@ -384,11 +384,11 @@ x {x {x {x {
 .nop .error cannot test error with a diff until you can redirect it $nl
 .echo
 .echo something {excess argfunc}
-.echo these are fixed strings
+.echo these are fixed strings $nl
 
 # .exec .fork Binary Old_argv_t .binary_not_found
 .fork
-.fork e text
+.fork echo text
 .fork .return 127
 .fork sa 126 {sa $args$ {echo about to return $args$; .return $args$}}
 .exec
@@ -427,9 +427,9 @@ x {x {x {x {
 .set_fallback_message $original_message
 
 # .for
-.for {e no arguments $1}
+.for {echo no arguments $1}
 .for no_argfunction
-.for 1 {e one argument $1}
+.for 1 {echo one argument $1}
 .for 1 2 3 4 {
   echo current arg $1
   if_only .test_greater $1 2 {
@@ -473,8 +473,8 @@ a 1 2 3
 .rm_executable a
 .whence_function a
 .global A \
-.echo () A () A () $#
-.function_all_flags a arg {e 9 $A $arg @/usr}
+.echo () A () A () $# $nl
+.function_all_flags a arg {e 9 $A $arg @/usr $nl}
 .whence_function a
 a \
 a 1
@@ -520,13 +520,13 @@ ntimes 2 {ntimes 3 {e &&n and $n remaining $nl}}
 .function_all_flags a [-x] [--] foo {.list_locals}
 .function_all_flags a [-?] -- foo {.list_locals}
 .function_all_flags a [-x] -- {.list_locals}
-.function_all_flags a [--] {.list_locals}
+.function_all_flags a [--] {.list_locals; .echo $nl}
 whence a
 a
 a --
 a foo
 .function_all_flags a [-x] [--long-opt y] second {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
 whence a
 a
 a single
@@ -535,7 +535,7 @@ a --long-opt arg single
 a --long-opt single
 a --long-opt first -x --long-opt second single
 .function_all_flags a [-q option1 option2] [-x o1 o2 o3 o4] required {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
 whence a
 a
 a single
@@ -548,7 +548,7 @@ a -x one two three four -q five six seven
 a -x one two three four five -q six seven
 a one -x two three four five -q six seven
 .function_all_flags a [optional0] -- [optional1 optional2 optional3] required {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
 whence a
 a
 a single
@@ -557,14 +557,14 @@ a one two three
 a one two three four five
 a one two three four five six seven eight nine
 .function_all_flags a -y [second] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
 whence a
 a
 a 1
 a 1 2
 a 1 2 3
 .function_all_flags a [-x] -y [--long-opt] second [--] [-] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
 whence a
 a --long-opt -xx over-long flag
 a -xx --long-opt over-long flag
@@ -602,7 +602,7 @@ a -x --long-opt -x --long-opt -x one_doubled one_tripled
 a --long-opt -x -x - --long-opt all_flags doubled
 .function_all_flags a [-first] [-to] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
-  e nothing_required}
+  echo nothing_required}
 whence a
 a
 a excess
@@ -613,7 +613,7 @@ a -to -- -first -- stops flag parsing rather than being a flag
 a -to -first
 .function_all_flags a [-?] [-first] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
-  e nothing_required}
+  echo nothing_required}
 whence a
 a
 a excess
@@ -624,14 +624,14 @@ a -to -- -first
 a -to -first
 .function_all_flags a [-*] [-first] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
-  e nothing_required}
+  echo nothing_required}
 whence a
 a
 a -to -- -first
 a -to -first
 .function_all_flags a [-?] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
-  e nothing_required}
+  echo nothing_required}
 whence a
 a
 .function_all_flags a ... y {}
@@ -652,17 +652,17 @@ whence a
 .function_all_flags a [x ... a ... b] {}
 .function_all_flags a [-x ...] b [c] {}
 .function_all_flags a -? x ... y {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
 whence a
 a -c -a -b first second third
 a -c first -a second -b third
 .function_all_flags a -* x ... y {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
 whence a
 a -c -a -b first second third
 a -c first -a second -b third
 .function_all_flags a [-?] x ... y {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
 whence a
 a 
 a first
@@ -670,12 +670,12 @@ a first (se cond)
 a first (se cond) third
 a first (se cond) third fourth (fi fth)
 .function_all_flags a [-?] x [...] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
 whence a
 a
 a first second third fourth fifth
 .function_all_flags a [-?] x [--] [y ...] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
 whence a
 a
 a first
@@ -683,7 +683,7 @@ a first second
 a first second third
 a first second third fourth fifth
 .function_all_flags a [-?] a [b ... c] d {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
 whence a
 a first
 a first second
@@ -692,7 +692,7 @@ a first second third fourth
 a first second third fourth fifth
 a first second third fourth fifth sixth
 .function_all_flags a [-x ...] b c {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
 whence a
 a first second
 a -x first
@@ -700,7 +700,7 @@ a -x first second
 a -x first second third
 a -x first second third fourth
 .function_all_flags a [-x b ...] c {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
 whence a
 a first
 a -x first
@@ -737,7 +737,7 @@ a (fi rst) (sec ond) third fourth
 a () (sec ond) third fourth
 a (fi rst) (sec ond) (thi rd) (fou rth) (fi fth)
 .function_all_flags a [-?] [x] [... y] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
 whence a
 a
 a (fi rst)
@@ -760,7 +760,7 @@ a (fi rst) (sec ond) third (fou rth)
 a (fi rst) (sec ond) (thi rd) (fou rth) (fi fth)
 .function_all_flags a -- [-x] y z {}
 .function_all_flags a -- [x y] z {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
 whence a
 a
 a --file
@@ -773,9 +773,9 @@ a -x second -
 .get_max_collectible_exceptions {excess}
 .set_max_collectible_exceptions 1 {excess}
 .set_max_collectible_exceptions NaN
-.get_max_collectible_exceptions
+.scope () {.get_max_collectible_exceptions; .echo $nl}
 .set_max_collectible_exceptions 0
-.get_max_collectible_exceptions
+.scope () {.get_max_collectible_exceptions; .echo $nl}
 .set_max_collectible_exceptions 7
 .collect_errors_except
 .collect_errors_only
@@ -834,7 +834,7 @@ se {.collect_errors_only .function_not_found {
 .function_all_flags collecting_handler args ... {
   echo $args$
 }
-.get_max_extra_exceptions
+.scope () {.get_max_extra_exceptions; .echo $nl}
 .set_max_extra_exceptions 1
 .try_catch_recursive collecting_handler {
   .collect_errors_except .echo {
@@ -857,7 +857,7 @@ se {.collect_errors_only .function_not_found {
     echo almost nothing}}
 .set_max_extra_exceptions 1
 .set_max_collectible_exceptions 7
-.get_max_collectible_exceptions
+.scope () {.get_max_collectible_exceptions; .echo $nl}
 
 # .getpid .getppid .sighup
 .getpid excess
@@ -902,7 +902,7 @@ se {.fork se {
 .global 100 nihilism
 .local 0 nihilism
 .global .var_exists (must be requested to be checked)
-e $.var_exists
+echo $.var_exists$
 .unset #
 .unset #
 .unset *
@@ -920,7 +920,7 @@ e $.var_exists
 .global x nihilism
 .var_exists x
 .var_exists x y
-e $x
+echo $x
 .global x nihilism
 .global x ubernihilism
 .function_all_flags a {if_only .var_exists x {e in a x \( $x \) $nl}
@@ -951,7 +951,7 @@ e $x
 a
 # demonstrating that final values are not retained
 a
-e $x
+echo $x
 .var_exists y
 .unset x
 .var_exists x
@@ -959,13 +959,13 @@ e $x
 
 # .store_output
 .store_output x
-.store_output {e some text}
-.store_output # {e some text}
-.store_output x {e some text}
+.store_output {echo some text}
+.store_output # {echo some text}
+.store_output x {echo some text}
 .global x ()
-.store_output x {e some text; .return 1}
+.store_output x {echo some text; .return 1}
 e $x
-.store_output x {e some text}
+.store_output x {echo some text}
 e $x
 .unset x
 
@@ -1051,22 +1051,22 @@ fn conditional_echo first second {
 !x !x !x !  .test_in 0 0
 
 # properly sequenced un-nested conditionals where everything succeeds
-if_true {e if_true printing}
-else_if_true {e else_if_true not printing when condition true}
-else_if_not_false {e else_if_not_false not printing when condition true}
-else_if_false {e else_if_false not printing when condition true}
-else_if_not_true {e else_if_not_false not printing when condition true}
-obscured_else {e obscured_else not printing when condition true}
-if_false {e if_false not printing}
-else_if_false {e else_if_false not printing when condition false}
-else_if_not_true {e else_if_not_true not printing when condition false}
-obscured_else {e obscured_else is printing when condition false}
-if_false {e if_false not printing}
-else_if_true {e else_if_true printing when condition false}
-obscured_else {e obscured_else not printing when condition true}
-if_false {e if_false not printing}
-else_if_not_false {e else_if_not_false printing when condition false}
-obscured_else {e obscured_else not printing when condition true}
+if_true {echo if_true printing}
+else_if_true {echo else_if_true not printing when condition true}
+else_if_not_false {echo else_if_not_false not printing when condition true}
+else_if_false {echo else_if_false not printing when condition true}
+else_if_not_true {echo else_if_not_false not printing when condition true}
+obscured_else {echo obscured_else not printing when condition true}
+if_false {echo if_false not printing}
+else_if_false {echo else_if_false not printing when condition false}
+else_if_not_true {echo else_if_not_true not printing when condition false}
+obscured_else {echo obscured_else is printing when condition false}
+if_false {echo if_false not printing}
+else_if_true {echo else_if_true printing when condition false}
+obscured_else {echo obscured_else not printing when condition true}
+if_false {echo if_false not printing}
+else_if_not_false {echo else_if_not_false printing when condition false}
+obscured_else {echo obscured_else not printing when condition true}
 if_with_body .test_not_empty a
 else_if_with_body .test_not_empty a
 else_with_body
@@ -1078,18 +1078,18 @@ else_if_with_body .test_not_empty a
 else_with_body text
 
 # nested conditionals
-.if conditional_true {e conditional_true printing}
-.else {e else not printing when condition true}
-.if conditional_false {e conditional_false not printing}
-.else {e else is printing when condition false}
-.if ${conditional_echo .test_is_number 71}$ {e conditional_echo printing}
-.else {e else not printing when condition true}
-.if ${conditional_echo .test_is_number pi}$ {e conditional_echo not printing}
-.else {e else is printing when condition false}
+.if conditional_true {echo conditional_true printing}
+.else {echo else not printing when condition true}
+.if conditional_false {echo conditional_false not printing}
+.else {echo else is printing when condition false}
+.if ${conditional_echo .test_is_number 71}$ {echo conditional_echo printing}
+.else {echo else not printing when condition true}
+.if ${conditional_echo .test_is_number pi}$ {echo conditional_echo not printing}
+.else {echo else is printing when condition false}
 if_true {echo ${conditional_echo print this}}
-.else {e else not printing when condition true}
+.else {echo else not printing when condition true}
 if_false {echo ${conditional_echo .test_not_empty ()}}
-.else {e else is printing when condition false}
+.else {echo else is printing when condition false}
 .if conditional_true {echo ${conditional_echo print this}}
 .else {echo ${conditional_echo not printing}}
 .if conditional_false {echo ${conditional_echo not printing}}
@@ -1160,35 +1160,35 @@ if_false {echo ${conditional_echo .test_not_empty ()}}
     .else {echo not skipped because only .false were thrown earlier}}}
 
 # exception thrown in argfunction
-.if ${conditional_echo unfindable anywhere}$ {e also a failed substitution}
-.else {e else skipped when condition threw an exception}
+.if ${conditional_echo unfindable anywhere}$ {echo also a failed substitution}
+.else {echo else skipped when condition threw an exception}
 if_true {echo &&{unfindable anywhere}}
-.else {e else not printing when condition true and if body threw}
+.else {echo else not printing when condition true and if body threw}
 if_true {echo &{unfindable anywhere}}
-.else {e else throws an exception because we never got into the if}
+.else {echo else throws an exception because we never got into the if}
 
 # .if .else_if .else_if_not .else
 .if
-.else_if .test_is_number 0 {e do not run after an exception}
-.else_if_not .test_is_number false {e do not run after an exception}
+.else_if .test_is_number 0 {echo do not run after an exception}
+.else_if_not .test_is_number false {echo do not run after an exception}
 .else_if
 .else_if_not
-.else {e do not run after an exception}
+.else {echo do not run after an exception}
 .if missing argfunction
 .else_if missing argfunction
 .else_if_not missing argfunction
 .else
 .if .test_is_number 0 {}
-.else {e first else for if}
-.else {e second else for if}
-.if .test_is_number 0 {e if true}
-.else {e else true; .return 3}
-.if .test_is_number false {e if false}
-.else {e else false; .return 5}
+.else {echo first else for if}
+.else {echo second else for if}
+.if .test_is_number 0 {echo if true}
+.else {echo else true; .return 3}
+.if .test_is_number false {echo if false}
+.else {echo else false; .return 5}
 .else {}
-.else_if .test_is_number 0 {e not this one}
+.else_if .test_is_number 0 {echo not this one}
 .else {}
-.else_if_not .test_is_number false {e nor this}
+.else_if_not .test_is_number false {echo nor this}
 .else {}
 
 # .internal_features .internal_functions .internal_vars
@@ -1254,36 +1254,42 @@ se {.is_default_error}
 # .scope
 .scope {e $foo}
 .scope () {.scope foo}
-.scope a (y y) {e illegal duplicate required parameter}
-.scope a ([-x] [-x]) {e illegal duplicate flag parameter}
-.scope a ([x x]) {e illegal duplicate optional parameter}
-.scope a ([-x arg bar] [-y arg]) {e illegal duplicate flag argument}
-.scope a (-x [-x]) {e evil duplication between flags positional}
-.scope -- -- {e -- as a prototype forbids even -- as arguments}
-.scope -- () {e but ${.list_locals} is acceptable for empty prototype}
-.scope () {e no arguments are also good for empty prototype}
-.scope a (-- --) {e -- cannot be a duplicate parameter}
-.scope a ([--] [--]) {e [--] cannot be a duplicate flag parameter}
-.scope a ([--] --) {e -- and [--] cannot both be parameters}
-.scope a ([-- arg]) {e -- cannot take arguments}
-.scope a ([arg -- foo]) {e -- cannot be an argument}
-.scope -x -y a b ([-?] args ...) {for ${.list_locals}$ {.combine $1 = $$1 \ }}
+.scope a (y y) {echo illegal duplicate required parameter}
+.scope a ([-x] [-x]) {echo illegal duplicate flag parameter}
+.scope a ([x x]) {echo illegal duplicate optional parameter}
+.scope a ([-x arg bar] [-y arg]) {echo illegal duplicate flag argument}
+.scope a (-x [-x]) {echo evil duplication between flags positional}
+.scope -- -- {echo -- as a prototype forbids even -- as arguments}
+.scope -- () {echo but ${.list_locals} is acceptable for empty prototype}
+.scope () {echo no arguments are also good for empty prototype}
+.scope a (-- --) {echo -- cannot be a duplicate parameter}
+.scope a ([--] [--]) {echo [--] cannot be a duplicate flag parameter}
+.scope a ([--] --) {echo -- and [--] cannot both be parameters}
+.scope a ([-- arg]) {echo -- cannot take arguments}
+.scope a ([arg -- foo]) {echo -- cannot be an argument}
+.scope -x -y a b ([-?] args ...) {
+  for ${.list_locals}$ {.combine $1 = $$1 \ }; .echo $nl}
 .scope a ([-? bad] arg) {e -? cannot currently take arguments}
 .scope a ([-* bad] arg) {e -* (aka -?) cannot currently take arguments}
-.scope -a -* -b a ([-?] a) {for ${.list_locals}$ {.combine $1 = $$1 \ }}
-.scope bar foo {e aa $foo bb}
-.scope baz bax (foo bar) {for ${.list_locals}$ {.combine $1 = $$1 \ }}
-.scope foo bar baz bax (args ...) {e aa $args$2 bb $args$1 cc}
-.scope single ([-x] [--long-opt y] second) {var_val ${.list_locals}$}
+.scope -a -* -b a ([-?] a) {
+  for ${.list_locals}$ {.combine $1 = $$1 \ }; .echo $nl}
+.scope bar foo {echo aa $foo bb}
+.scope baz bax (foo bar) {
+  for ${.list_locals}$ {.combine $1 = $$1 \ }; .echo $nl}
+.scope foo bar baz bax (args ...) {echo aa $args$2 bb $args$1 cc}
+.scope single ([-x] [--long-opt y] second) {
+  var_val ${.list_locals}$; .echo $nl}
 .function_all_flags a [-x] [--long-opt y] second {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
+  .combine $nl}
 whence a
 .function_all_flags pt -- args ... {
   .scope $args$ ([-x] [--long-opt y] second) {
     for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
   .combine $nl
   .scope $args$ ( [-?] [--long-opt y] second) {
-    for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}}
+    for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
+  .combine $nl}
 whence pt
 a
 a single
@@ -1298,16 +1304,16 @@ a --long-opt first -x --long-opt second single
 pt --long-opt first -x --long-opt second single
 .function_all_flags a [-?] [-first] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
-  e nothing_required}
+  echo nothing_required}
 whence a
 .function_all_flags pts -- [args ...] {
   .if var_exists args {
     .scope $args$ ([-first] [-?]) {
       .for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
-      e nothing_required}
+      echo nothing_required}
   else {.scope ([-first] [-?]) {
       .for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
-      e nothing_required}}
+      echo nothing_required}}
 whence pts
 a
 pts
@@ -1329,19 +1335,19 @@ pts -to -first
 .selection_set A
 .selection_set A /usr {excess argfunc}
 .selection_set A /usr
-e $A
+echo $A$
 .selection_set A ./
-e $A
+echo $A$
 .selection_set A local/include
-e $A
+echo $A$
 .selection_set A ..
-e $A
+echo $A$
 .selection_set A ()
-e $A
+echo $A$
 .selection_set A ./local/../../bin
-e $A
+echo $A$
 .selection_set A sbin etc
-e $A
+echo $A$
 
 # .set
 .set A
@@ -1363,7 +1369,7 @@ e $A
   echo $undefined}}
 .set B x {excess argfunc}
 .set A x
-e $A
+echo $A
 
 # .try_catch_recursive .get_max_extra_exceptions .set_max_extra_exceptions
 .try_catch_recursive .function_not_found 
@@ -1384,14 +1390,14 @@ e_after {sa echo hi {.try_catch_recursive ${.internal_functions}$ {&&&args$}}}
 .set_max_extra_exceptions 1 {excess}
 .set_max_extra_exceptions NaN
 .set_max_extra_exceptions -1
-.get_max_extra_exceptions
+.scope () {.get_max_extra_exceptions; .echo $nl}
 .set_max_extra_exceptions 0
-.get_max_extra_exceptions
+.scope () {.get_max_extra_exceptions; .echo $nl}
 e_after {.try_catch_recursive .not_a_number {.try_catch_recursive .not_a_number {.return A}}}
 e_after {.try_catch_recursive .not_a_number {.try_catch_recursive .not_a_number {.return A}}}
 e_after {sa echo hi {.try_catch_recursive ${.internal_functions}$ {&&&args$}}}
 .set_max_extra_exceptions 5
-.get_max_extra_exceptions
+.scope () {.get_max_extra_exceptions; .echo $nl}
 
 # .stepwise
 .function_all_flags wrapper args ... {a $args$ two; a $args$ three}
@@ -1537,10 +1543,10 @@ whence .mapped_argfunction {$A $$A $0 $$$1 $# $* $*2 $A$$$ $A$10 $$*$ $$$*12$}
 .whence_function .mapped_argfunction {&&A &&0 &&* &&*3 &&$A$$$ &&$A$10 &&*$ &&*6$ {&&&A$ &&&A$10}}
 .function_all_flags wm [args ...] {
    .whence_function .mapped_argfunction {.argfunction}
-   .echo $nl
    .scope $args$ (a1 a2 a3) {.argfunction}}
 wm (aa ab ac) bb cc {
-  e x &&a1 &2 $a3 y &&a1$1 z &&a1$2; .nop $a2; sa &&a1$ {e () w $args$ $#}}
+  e x &&a1 &2 $a3 y &&a1$1 z &&a1$2; .nop $a2
+  sa &&a1$ {e () w $args$ $#; e $nl}}
 .scope (aa ab ac) bb cc (args more ...) {.scope $args $more$ (args more ...) {
   sa &1 {echo $args$ $#}
   sa &&args {echo $args$ $#}
@@ -1550,9 +1556,9 @@ wm (aa ab ac) bb cc {
   sa $more$ {echo $args$ $#}}}
 .function_all_flags wm [args ...] {
    whence .mapped_argfunction {.argfunction}
-   .echo $nl
    .nop $args
-   se {.argfunction}}
+   se {.argfunction}
+   .echo $nl}
 wm () {.echo \\\ \ \\\ \\\\ \ \\|\\\ \  \  \\ \( \) \\\)}
 wm () {.echo (\\  \\ \\\\) ( \\|\\  ) ( ) (\\) (\() (\)) (\\\))}
 wm () {.echo a\\bc\\d\\\\e fg\\|\\hij klm \\ \) \( \\\(}
@@ -1607,43 +1613,47 @@ whence .mapped_argfunction {>dummy_file}
 # .usleep_overhead 
 .execution_count
 .execution_count j
-.execution_count .mapped_argfunction {echo not tracked}
-.execution_count .usleep
+.scope () {
+  .execution_count .mapped_argfunction {echo not tracked}; .echo $nl}
+.scope () {
+  .execution_count .usleep; .echo $nl}
 .last_execution_time
 .last_execution_time j
-.last_execution_time .mapped_argfunction {echo not tracked}
+.scope () {
+  .last_execution_time .mapped_argfunction {echo not tracked}; .echo $nl}
 # .last_execution_time .usleep
 .total_execution_time
-.total_execution_time .mapped_argfunction {echo not tracked}
+.scope () {
+  .total_execution_time .mapped_argfunction {echo not tracked}; .echo $nl}
 .total_execution_time j
 # .total_execution_time .usleep
 
 # .which_path
-.which_path cat
-.which_path cat /bin {excess argfunc}
-.which_path cat \
-.which_path does<not>exist /bin:/usr/bin
-.which_path cat :/bin:/usr/bin
-.which_path cat /usr/bin/:/bin/:
-.which_path /bin/cat /usr/bin/:/bin/:
-.which_path rwsh /usr/bin:/bin
-.which_path rwsh .:/usr/bin:/bin
-.which_path rwsh /usr/bin:/bin:.
-.which_path ./rwsh /usr/bin:/bin
-.which_path ./rwsh /bin:.
-.which_path ../bin/rwsh /usr/bin:/bin
-.which_path rwsh :/usr/bin::/usr/bin:
-.which_path rwsh /usr/bin:.
+echo ${.which_path cat}
+echo ${.which_path cat /bin {excess argfunc}}
+.scope () {.which_path cat \ }
+.scope () {.which_path does<not>exist /bin:/usr/bin}
+echo ${.which_path cat :/bin:/usr/bin}
+echo ${.which_path cat /usr/bin/:/bin/:}
+echo ${.which_path /bin/cat /usr/bin/:/bin/:}
+echo ${.which_path rwsh /usr/bin:/bin}
+echo ${.which_path rwsh .:/usr/bin:/bin}
+echo ${.which_path rwsh /usr/bin:/bin:.}
+.scope () {.which_path ./rwsh /usr/bin:/bin}
+echo ${.which_path ./rwsh /bin:.}
+.scope () {.which_path ../bin/rwsh /usr/bin:/bin}
+.scope () {.which_path rwsh :/usr/bin::/usr/bin:}
+echo ${.which_path rwsh /usr/bin:.}
 
 # .while
 .while {e ARGS}
 .while var_less A 4 
 .scope 0 A {.while var_less A 4 {echo printed; .throw .break; echo skipped}}
-.scope 0 A {.while var_less A 4 {e printed; .set A 4}}
-.scope 4 A {.while var_less A 4 {e skipped}}
-.while .return 0 {.throw .echo exception within while}
+.scope 0 A {.while var_less A 4 {echo printed; .set A 4}}
+.scope 4 A {.while var_less A 4 {echo skipped}}
+.while .return 0 {.throw echo exception within while}
 .while silent_throw within condition {e body skipped}
-.while .throw .false because {e body skipped}
+.while .throw .false because {echo body skipped}
 .scope 0 A {.while .throw .break {echo condition cannot break}}
 .scope 0 A {.while .throw .continue {echo condition cannot continue}}
 .scope 0 A {.while var_less A 4 {echo body can break; .throw .break}}
@@ -1721,12 +1731,12 @@ IJK outer_while outer_while outer_while
 .var_add A -1e308
 .var_add A 1e308
 .var_add A 1e308
-e $A
+echo $A
 .var_add A 1e308
 .var_add A -1e308
-e $A
+echo $A
 .var_add A \
-e $A
+echo $A
 
 # .var_divide
 .var_divide A
@@ -1743,12 +1753,12 @@ e $A
 .var_divide A 1e3000000000
 .var_divide A 0 
 .var_divide A 4.2 
-e $A
+echo $A
 .set A 1.8e-20
 .var_divide A 1e308
 .set A 0
 .var_divide A 1e308
-e $A
+echo $A
 
 # .var_subtract
 .var_subtract
@@ -1762,22 +1772,22 @@ e $A
 .var_subtract A 2 
 .set A 1e308
 .var_subtract A -1e308
-e $A
+echo $A
 .set A -1e308
 .scope () {.var_subtract A 1e308}
-e $A
+echo $A
 .set A -2147483648
 .var_subtract A A
 .var_subtract A 3000000000
 .var_subtract A -2147483648
 .var_subtract A 2147483647
 .var_subtract A 2147483647
-e $A
+echo $A
 .var_subtract A 2147483647
 .var_subtract A -2147483648
-e $A
+echo $A
 .var_subtract A \
-e $A
+echo $A
 
 # .version .version_compatible
 .version 1.0
@@ -1785,7 +1795,7 @@ e $A
 .version_compatible
 .version_compatible 1.0 1.0
 .version_compatible 1.0 {excess argfunc}
-.version
+echo ${.version}
 .version_compatible 1.0
 .version_compatible 0.3+
 
@@ -1820,12 +1830,10 @@ not_a_thing
 
 # .mapped_argfunction .unescaped_argfunction .argfunction
 # .escaped_argfunction
-.mapped_argfunction 1 2 3 {e a $* a}
+.mapped_argfunction 1 2 3 {echo a $* a}
 .mapped_argfunction
 fn g {.whence_function .argfunction {.unescaped_argfunction}
-     .combine $nl
      .whence_function .argfunction {.argfunction}
-     .combine $nl
      .whence_function .argfunction {.escaped_argfunction}}
 g {}
 
@@ -1889,8 +1897,8 @@ fn .run_logic flag cmd ... {
   .if .test_number_equal 0 $flag {.nop}
   .else_if $cmd$ {.nop}
   .else {.nop}}
-0 e don't print nuthin'
-1 e do print
+0 echo don't print nuthin'
+1 echo do print
 1 .rm_executable .run_logic
 1 e executable not found
 
@@ -1931,13 +1939,13 @@ for ${.list_environment}$ {
   .scope $1$ (var val) {
     .if .test_in $var ? FIGNORE SHELL {echo $var : $$var to $val}
     .else {.global $var $val}}}
-e $TESTABILITY
-e $SHELL
+.combine $TESTABILITY $nl
+echo $SHELL
 .unset TESTABILITY
 for ${.list_environment}$ {
   .scope $1$ (var val) {setf $var $val; .nop $$var}}
-e $TESTABILITY
-e $SHELL
+.combine $TESTABILITY $nl
+echo $SHELL
 printenv
 .collect_errors_except .nop {${.throw echo exception from inside substitution}}
 .collect_errors_only .nop {${.throw echo exception from inside substitution}}
@@ -1974,7 +1982,7 @@ printenv
 .scope ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {}
 .scope ([-a a1 a2 a3] [-b] [-c] [-d d1]) {.var_exists -a -b -c -d}
 .scope ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {echo $-?; .var_exists -a -b -c -d}
-.scope ([-a a1 a2 a3] [-b] [-c] [-d d1]) {.list_locals}
+.scope ([-a a1 a2 a3] [-b] [-c] [-d d1]) {.list_locals; .echo $nl}
 .scope -b -d darg ([-a a1 a2 a3] [-b] [-c] [-d d1]) {.list_locals; echo ()}
 .scope ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {echo ${.list_locals} $-?}
 .scope -b -d darg -v ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {echo ${.list_locals} $-?}

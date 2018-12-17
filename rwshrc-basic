@@ -288,10 +288,10 @@ fn type [-t] args ... {
   .for $args$ {
     .try_catch_recursive .function_not_found {
       if_only_not .var_exists -t {.echo &&&1 is ()}
-      .combine &&&&{.type &&&1 {.argfunction}} $nl}}}
+      .type &&&1 {.argfunction}}}}
 fn whence command {
   .try_catch_recursive .function_not_found {
-    .combine ${.whence_function $command {.argfunction}} $nl}}
+    .whence_function $command {.argfunction}}}
 fn whichp binary {.which_path $binary $PATH}
 .function_all_flags while_and_one_more argv ... {
   .try_catch_recursive .break {

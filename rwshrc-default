@@ -188,23 +188,22 @@ fn ret {.return $*}
   echo for user ${.waiting_for_user}
   echo for binary ${.waiting_for_binary}
   echo for shell ${.waiting_for_shell}}
-fn ist [-?] [-nc] {
+fn st-core [-?] [-nc] binary filter {
   if_only .var_exists -nc {.set -? $-?$ --suppress-common-lines}
   .collect_errors_except .nop {
-    /bin/rwsh -to <test_main.sh >last.test.result
+    $binary -to <test_main.sh >last.test.result
     .if .test_not_empty $-? {
-      &{whichp diff} $-?$ test.result last.test.result}
-    .else {&{whichp diff} -c test.result last.test.result}}}
-fn st [-?] [-nc] {
-  if_only .var_exists -nc {.set -? $-?$ --suppress-common-lines}
-  .collect_errors_except .nop {
-    to <test_main.sh >last.test.result
-    .if .test_not_empty $-? {
-      &{whichp diff} $-?$ test.result last.test.result}
-    .else {&{whichp diff} -c test.result last.test.result}}}
-fn bless-t {&{whichp cp} last.test.result test.result}
-fn to {./rwsh -to}
+      &{whichp diff} $-?$ test.result last.test.result >last.test.result.diff}
+    .else {
+      &{whichp diff} -c test.result last.test.result >last.test.result.diff}
+    $filter$ last.test.result.diff}}
 fn mst [-?] {make; st $-*$}
+fn to {./rwsh -to}
+fn st [-?] {st-core $-*$ ./rwsh /bin/cat}
+fn ist [-?] {st-core $-*$ /bin/rwsh /bin/cat}
+fn st-diffstat [-?] {st-core $-*$ ./rwsh &{whichp diffstat}}
+fn st-vis [-?] {st-core $-*$ ./rwsh (/bin/cat -A)}
+fn bless-t {&{whichp cp} last.test.result test.result}
 fn ti [-?] [-nc] {
   if_only .var_exists -nc {.set -? $-?$ --suppress-common-lines}
   .collect_errors_except .nop {

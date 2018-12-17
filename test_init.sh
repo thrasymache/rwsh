@@ -20,7 +20,7 @@
 .function_all_flags .after_command -- args ... {
   .nop $args
   .set last_command_return $?
-  .combine $nl $last_command_return $nl}
+  .combine $last_command_return $nl}
 .function_all_flags .prompt {.echo \$}
 .function_all_flags .vars {.internal_vars}
 .source /etc/rwshrc-basic
