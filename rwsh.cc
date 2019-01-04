@@ -7,7 +7,6 @@
 #include <list>
 #include <map>
 #include <set>
-#include <signal.h>
 #include <string>
 #include <sys/time.h>
 #include <vector>
@@ -18,6 +17,7 @@
 
 #include "argm.h"
 #include "arg_script.h"
+#include "call_stack.h"
 #include "clock.h"
 #include "command_stream.h"
 #include "default_stream.h"
@@ -32,15 +32,7 @@
 
 // static initializers of basic types
 const char* WSPACE = " \t";
-bool Base_executable::collect_excess_thrown = false;
-unsigned Base_executable::max_collect = 1;
-unsigned Base_executable::max_extra = 1;
-bool Base_executable::execution_handler_excess_thrown = false;
 struct timezone Clock::no_timezone_v = {0, 0};
-int Base_executable::global_nesting(0);
-bool Base_executable::unwind_stack_v(false);
-bool Base_executable::in_exception_handler_v(false);
-unsigned Base_executable::current_exception_count(0);
 std::string Argm::exception_names[Argm::Exception_count] = {
   "no exception",
   ".ambiguous_prototype_dash_dash",
@@ -117,6 +109,7 @@ std::string Argm::exception_names[Argm::Exception_count] = {
   ".unchecked_variable",
   ".undeclared_variable",
   ".undefined_variable",
+  ".unfinished_if_block",
   ".unreadable_dir",
   ".unrecognized_flag",
   ".unused_before_set",
@@ -124,34 +117,19 @@ std::string Argm::exception_names[Argm::Exception_count] = {
   ".variable_already_exists",
   ".version_incompatible"};
 bool readline_enabled = false;
-Variable_map root_variable_map(nullptr);
-int Base_executable::max_nesting = 0;
 int Variable_map::dollar_question = -1;
-bool Variable_map::exit_requested = false;
 
 // static initializers without dependancies
+Call_stack global_stack;
 Clock rwsh_clock;
+Conditional_state gc_state;
 Executable_map executable_map;
 Plumber plumber;
 Rwsh_istream_p default_input(new Default_istream(0), true, true);
 Rwsh_ostream_p default_output(new Default_ostream(1), true, true),
   default_error(new Default_ostream(2), true, true);
+Variable_map root_variable_map(nullptr);
 Variable_map* Variable_map::global_map = &root_variable_map;
-
-// static initializers with cross-component dependancies
-Argm::Exception_t Base_executable::caught_signal = Argm::No_exception;
-
-namespace {
-void register_signals(void) {
-  signal(SIGHUP, Named_executable::unix_signal_handler);
-  signal(SIGINT, Named_executable::unix_signal_handler);
-  signal(SIGQUIT, Named_executable::unix_signal_handler);
-  signal(SIGPIPE, Named_executable::unix_signal_handler);
-  signal(SIGTERM, Named_executable::unix_signal_handler);
-  signal(SIGTSTP, Named_executable::unix_signal_handler);
-  signal(SIGUSR1, Named_executable::unix_signal_handler);
-  signal(SIGUSR2, Named_executable::unix_signal_handler);}
-} // end unnamed namespace
 
 int main(int argc, char *argv[]) {
   Error_list exceptions;
@@ -175,7 +153,7 @@ int main(int argc, char *argv[]) {
     try {
       command_stream.getline(script, exceptions);
       if (exceptions.size()) {
-        Base_executable::exception_handler(exceptions);
+        global_stack.exception_handler(exceptions);
         continue;}
       else if (command_stream.fail()) break;
       else command = script.base_interpret(script.argm(), exceptions);}
@@ -189,4 +167,4 @@ int main(int argc, char *argv[]) {
                         default_input, default_output, default_error);
   executable_map.base_run(shutdown_command, exceptions);
   executable_map.unused_var_check_at_exit();
-  return Variable_map::dollar_question;}
+  return global_stack.exit_value();}

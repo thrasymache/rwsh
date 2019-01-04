@@ -17,6 +17,7 @@
 
 #include "argm.h"
 #include "arg_script.h"
+#include "call_stack.h"
 #include "executable.h"
 #include "executable_map.h"
 #include "prototype.h"
@@ -59,15 +60,26 @@ bool Executable_map::run_if_exists(const std::string& key, Argm& argm_i) {
   if (i) {
     Error_list exceptions;
     (*i)(temp_argm, exceptions);
-    if (exceptions.size()) Base_executable::exception_handler(exceptions);
+    if (global_stack.unwind_stack())
+      global_stack.exception_handler(exceptions);
     return true;}
   else {
     return false;}}
 
 int Executable_map::base_run(Argm& argm, Error_list& exceptions) {
   int ret = run(argm, exceptions);
-  if (exceptions.size()) {
-    Base_executable::exception_handler(exceptions);
+  if (gc_state.in_if_block && !gc_state.exception_thrown) {
+    gc_state.in_if_block = false;
+    exceptions.add_error(Exception(Argm::Unfinished_if_block));}
+  if (global_stack.unwind_stack()) {
+    global_stack.exception_handler(exceptions);
+    return -1;}
+  else return ret;}
+
+int Executable_map::run_handling_exceptions(Argm& argm, Error_list& exceptions){
+  int ret = run(argm, exceptions);
+  if (global_stack.unwind_stack()) {
+    global_stack.exception_handler(exceptions);
     return -1;}
   else return ret;}
 
@@ -75,7 +87,7 @@ void Executable_map::unused_var_check_at_exit(void) {
   Error_list exceptions;
   Prototype shell_invocation(true);
   shell_invocation.unused_var_check(Variable_map::global_map, exceptions);
-  if (exceptions.size()) Base_executable::exception_handler(exceptions);}
+  if (exceptions.size()) global_stack.exception_handler(exceptions);}
 
 int Executable_map::run(Argm& argm, Error_list& exceptions) {
   try {
@@ -99,7 +111,7 @@ int Executable_map::run(Argm& argm, Error_list& exceptions) {
 
 bool Executable_map::run_condition(Argm& argm, Error_list& exceptions) {
   run(argm, exceptions);
-  return !Base_executable::remove_exceptions(".false", exceptions) &&
+  return !global_stack.remove_exceptions(".false", exceptions) &&
          !exceptions.size();}  // optional
 
 int Executable_map::not_found(Argm& argm_i, Error_list& exceptions) {

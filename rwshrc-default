@@ -170,7 +170,7 @@ fn unselect {.set s ()}
 .function_all_flags . -- command ... {.source $command$}
 .function_all_flags ex_count -- cmd {.execution_count $cmd; c $nl}
 .function_all_flags exec -- command ... {.exec $command$ }
-.function_all_flags exit {.exit}
+.function_all_flags exit value {.exit $value}
 .function_all_flags last_time cmd {.last_execution_time $cmd; c $nl}
 fn local {. &{c $HOME /.rwshrc}}
 fn mark {ntimes 4 {.echo ####################}; c $nl}

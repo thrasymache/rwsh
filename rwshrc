@@ -16,7 +16,7 @@
   .global SHELL /bin/rwsh
   .global TESTABILITY (an=external var(iable))
   .exec ./rwsh test_init.sh
-  .exit}
+  .exit 0}
 .else_if .test_number_equal $# 3 {
   .nop .source /etc/rwshrc-default
   .source &2}
@@ -29,11 +29,13 @@
         .nop $$var}}}
   .source /etc/rwshrc-basic
   .nop $FIGNORE
-  .function_all_flags .if_before_else stack ... {.nop $stack}
-  .function_all_flags .shutdown -- args ... {.nop $args; .return 0}
+  .function_all_flags .shutdown -- [args ...] {.nop $args}
+  .function_all_flags .return_code code cmd [add_stack ...] {
+    echo $cmd returned $code : call stack $cmd $add_stack$
+    .exit $code}
   .collect_errors_except .nop {
     .mapped_argfunction &3 {$1$}
-    .exit}}
+    .exit 0}}
 .else {
   .echo unexpected command line: &* (
 )

@@ -4,6 +4,7 @@
 #include <list>
 #include <map>
 #include <set>
+#include <signal.h>
 #include <string>
 #include <vector>
 
@@ -15,6 +16,7 @@
 #include "argm.h"
 #include "rwsh_init.h"
 #include "builtin.h"
+#include "call_stack.h"
 #include "executable.h"
 #include "executable_map.h"
 #include "prototype.h"
@@ -114,6 +116,9 @@ void internal_init(Error_list& exceptions) {
   executable_map.set(new Builtin(".set_max_extra_exceptions",
                                  b_set_max_extra_exceptions));
   executable_map.set(new Builtin(".set_max_nesting", b_set_max_nesting));
+  executable_map.set(new Function(".shutdown",
+      any_args.begin(), any_args.end(), false,
+      "{.nop $args; .exit 10}", exceptions));
   executable_map.set(new Builtin(".source", b_source));
   executable_map.set(new Builtin(".stepwise", b_stepwise));
   executable_map.set(new Builtin(".store_output", b_store_output));
@@ -152,3 +157,29 @@ void internal_init(Error_list& exceptions) {
   executable_map.set(new Builtin(".version", b_version));
   executable_map.set(new Builtin(".version_compatible", b_version_compatible));}
 
+inline Argm::Exception_t unix2rwsh(int sig) {
+  switch (sig) {
+    case SIGHUP: return Argm::Sighup;
+    case SIGINT: return Argm::Sigint;
+    case SIGQUIT: return Argm::Sigquit;
+    case SIGPIPE: return Argm::Sigpipe;
+    case SIGTERM: return Argm::Sigterm;
+    case SIGTSTP: return Argm::Sigtstp;
+    case SIGCONT: return Argm::Sigcont;
+    case SIGCHLD: return Argm::Sigchld;
+    case SIGUSR1: return Argm::Sigusr1;
+    case SIGUSR2: return Argm::Sigusr2;
+    default: return Argm::Sigunknown;}}
+
+void unix_signal_handler(int sig) {
+  global_stack.caught_signal = unix2rwsh(sig);}
+
+void register_signals(void) {
+  signal(SIGHUP, unix_signal_handler);
+  signal(SIGINT, unix_signal_handler);
+  signal(SIGQUIT, unix_signal_handler);
+  signal(SIGPIPE, unix_signal_handler);
+  signal(SIGTERM, unix_signal_handler);
+  signal(SIGTSTP, unix_signal_handler);
+  signal(SIGUSR1, unix_signal_handler);
+  signal(SIGUSR2, unix_signal_handler);}

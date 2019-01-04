@@ -18,6 +18,7 @@
 
 #include "argm.h"
 #include "arg_script.h"
+#include "call_stack.h"
 #include "executable.h"
 #include "prototype.h"
 
@@ -228,15 +229,15 @@ Exception::Exception(Exception_t exception_i, const Argm& src) :
 
 void Error_list::reset(void) {
   clear();
-  Base_executable::reset();}
+  global_stack.reset();}
 
 void Error_list::add_error(const Argm& error){
   push_back(error);
-  Base_executable::add_error();}
+  global_stack.add_error();}
 
 void Error_list::replace_error(const Argm& error){
   push_back(error);
-  Base_executable::replace_error();}
+  global_stack.replace_error();}
 
 Old_argv::Old_argv(const Argm::Argv& src) : argc_v(src.size()) {
   focus = new char*[src.size()+1];

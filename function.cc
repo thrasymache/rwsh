@@ -19,6 +19,7 @@
 
 #include "argm.h"
 #include "arg_script.h"
+#include "call_stack.h"
 #include "clock.h"
 #include "executable.h"
 #include "executable_map.h"
@@ -43,37 +44,13 @@ Command_block* Command_block::apply(const Argm& argm, unsigned nesting,
     result->trailing = trailing;
     return result;}}
 
-int Command_block::collect_errors_core(const Argm& src_argm,
-                                   const std::vector<std::string>& exceptional,
-                                   bool logic, Error_list& parent_exceptions) {
-  int ret;
-  for (auto j: *this) {
-    if (current_exception_count > max_collect) {
-      if (!collect_excess_thrown)
-        parent_exceptions.add_error(
-                  Exception(Argm::Excessive_exceptions_collected, max_collect));
-      unwind_stack_v = collect_excess_thrown = true;
-      return ret;}
-    Error_list children;
-    Argm statement_argm = j.interpret(src_argm, children);
-    ret = executable_map.run(statement_argm, children);
-    if (children.size()) {
-      unwind_stack_v = false;
-      for (auto k: children) {
-        parent_exceptions.push_back(k);
-        if (logic == (find(exceptional.begin(), exceptional.end(),
-                          (k)[0]) != exceptional.end()))
-          unwind_stack_v = true;}}} // will cause subsequent j to not run
-  if (parent_exceptions.size()) unwind_stack_v = true;
-  return ret;}
-
 int Command_block::execute(const Argm& src_argm,
                            Error_list& exceptions) const {
   int ret;
   for (auto j: *this) {
     Argm statement_argm = j.interpret(src_argm, exceptions);
     ret = executable_map.run(statement_argm, exceptions);
-    if (unwind_stack()) break;}
+    if (global_stack.unwind_stack()) break;}
   return ret;}
 
 int Command_block::prototype_execute(const Argm& argm,

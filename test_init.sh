@@ -20,7 +20,8 @@
 .function_all_flags .after_command -- args ... {
   .nop $args
   .set last_command_return $?
-  .combine $last_command_return $nl}
+  if_only .test_string_unequal $last_command_return 0 {
+    .combine $last_command_return $nl}}
 .function_all_flags .prompt {.echo \$}
 .function_all_flags .vars {.internal_vars}
 .source /etc/rwshrc-basic

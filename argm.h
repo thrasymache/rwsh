@@ -102,6 +102,7 @@ class Argm {
     Unchecked_variable,
     Undeclared_variable,
     Undefined_variable,
+    Unfinished_if_block,
     Unreadable_dir,
     Unrecognized_flag,
     Unused_before_set,

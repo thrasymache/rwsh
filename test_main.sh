@@ -87,10 +87,12 @@ echo 1 2 $* 3 4
 echo $*2 1 2
 
 # star_soon
-.if .nop 1 2 3 {echo &*}
-.else {}
-.if .nop 1 2 3 {echo &*0}
-.else {}
+sa .nop 1 2 3 {
+  .if $args$ {echo &*}
+  .else {}}
+sa .nop 1 2 3 {
+  .if $args$ {echo &*0}
+  .else {}}
 
 # .init, rwshrc's autofunction, .binary
 whence .init
@@ -117,6 +119,7 @@ echo this function is already defined
 .autofunction ./rwsh
 .whence_function ./rwsh
 ./rwsh -c (echo in a subshell)
+false
 ./rwsh -c (false)
 ./rwsh -c (.get_pid)
 ./rwsh /non-existent/file/to/test/failure <test_files/pause_hello.rwsh
@@ -301,12 +304,14 @@ y
 .for_each_line <non_existent_file {echo line of $# \( $* \)}
 se {sa {echo hi >one >two} {cat <three <four}
 }
-.if .test_file_exists outfile {echo failed to remove outfile}
-.else {echo outfile properly removed}
+se {
+  .if .test_file_exists outfile {echo failed to remove outfile}
+  .else {echo outfile properly removed}}
 se {echo hi >outfile}
 /bin/cat outfile
-.if .test_is_number 0 {>outfile /bin/echo there}
-.else {.nop}
+se {
+  .if .test_is_number 0 {>outfile /bin/echo there}
+  .else {.nop}}
 /bin/cat outfile
 se {se >outfile {e line 1 $nl; e line 2 longer $nl; .echo $nl; echo ending}}
 /bin/cat <outfile
@@ -457,7 +462,6 @@ fIJ scope_for scope_for
 fIJ outer_for scope_for
 fIJ scope_for outer_for
 fIJ outer_for outer_for
-.else {}
 .for 1 2 3 4 {e four arguments $1 $nl}
 
 # .function_all_flags .rm_executable
@@ -1051,49 +1055,64 @@ fn conditional_echo first second {
 !x !x !x !  .test_in 0 0
 
 # properly sequenced un-nested conditionals where everything succeeds
-if_true {echo if_true printing}
-else_if_true {echo else_if_true not printing when condition true}
-else_if_not_false {echo else_if_not_false not printing when condition true}
-else_if_false {echo else_if_false not printing when condition true}
-else_if_not_true {echo else_if_not_false not printing when condition true}
-obscured_else {echo obscured_else not printing when condition true}
-if_false {echo if_false not printing}
-else_if_false {echo else_if_false not printing when condition false}
-else_if_not_true {echo else_if_not_true not printing when condition false}
-obscured_else {echo obscured_else is printing when condition false}
-if_false {echo if_false not printing}
-else_if_true {echo else_if_true printing when condition false}
-obscured_else {echo obscured_else not printing when condition true}
-if_false {echo if_false not printing}
-else_if_not_false {echo else_if_not_false printing when condition false}
-obscured_else {echo obscured_else not printing when condition true}
-if_with_body .test_not_empty a
-else_if_with_body .test_not_empty a
-else_with_body
-if_with_body .test_not_empty ()
-else_if_with_body .test_not_empty ()
-else_with_body text expanded
-if_with_body .test_not_empty ()
-else_if_with_body .test_not_empty a
-else_with_body text
+se {
+  if_true {echo if_true printing}
+  else_if_true {echo else_if_true not printing when condition true}
+  else_if_not_false {echo else_if_not_false not printing when condition true}
+  else_if_false {echo else_if_false not printing when condition true}
+  else_if_not_true {echo else_if_not_false not printing when condition true}
+  obscured_else {echo obscured_else not printing when condition true}}
+se {
+  if_false {echo if_false not printing}
+  else_if_false {echo else_if_false not printing when condition false}
+  else_if_not_true {echo else_if_not_true not printing when condition false}
+  obscured_else {echo obscured_else is printing when condition false}}
+se {
+  if_false {echo if_false not printing}
+  else_if_true {echo else_if_true printing when condition false}
+  obscured_else {echo obscured_else not printing when condition true}}
+se {
+  if_false {echo if_false not printing}
+  else_if_not_false {echo else_if_not_false printing when condition false}
+  obscured_else {echo obscured_else not printing when condition true}}
+se {
+  if_with_body .test_not_empty a
+  else_if_with_body .test_not_empty a
+  else_with_body}
+se {
+  if_with_body .test_not_empty ()
+  else_if_with_body .test_not_empty ()
+  else_with_body text expanded}
+se {
+  if_with_body .test_not_empty ()
+  else_if_with_body .test_not_empty a
+  else_with_body text}
 
 # nested conditionals
-.if conditional_true {echo conditional_true printing}
-.else {echo else not printing when condition true}
-.if conditional_false {echo conditional_false not printing}
-.else {echo else is printing when condition false}
-.if ${conditional_echo .test_is_number 71}$ {echo conditional_echo printing}
-.else {echo else not printing when condition true}
-.if ${conditional_echo .test_is_number pi}$ {echo conditional_echo not printing}
-.else {echo else is printing when condition false}
-if_true {echo ${conditional_echo print this}}
-.else {echo else not printing when condition true}
-if_false {echo ${conditional_echo .test_not_empty ()}}
-.else {echo else is printing when condition false}
-.if conditional_true {echo ${conditional_echo print this}}
-.else {echo ${conditional_echo not printing}}
-.if conditional_false {echo ${conditional_echo not printing}}
-.else {echo ${conditional_echo print this}}
+se {
+  .if conditional_true {echo conditional_true printing}
+  .else {echo else not printing when condition true}}
+se {
+  .if conditional_false {echo conditional_false not printing}
+  .else {echo else is printing when condition false}}
+se {
+  .if ${conditional_echo .test_is_number 71}$ {echo conditional_echo printing}
+  .else {echo else not printing when condition true}}
+se {
+  .if ${conditional_echo .test_is_number pi}$ {echo conditional_echo not printing}
+  .else {echo else is printing when condition false}}
+se {
+  if_true {echo ${conditional_echo print this}}
+  .else {echo else not printing when condition true}}
+se {
+  if_false {echo ${conditional_echo .test_not_empty ()}}
+  .else {echo else is printing when condition false}}
+se {
+  .if conditional_true {echo ${conditional_echo print this}}
+  .else {echo ${conditional_echo not printing}}}
+se {
+  .if conditional_false {echo ${conditional_echo not printing}}
+  .else {echo ${conditional_echo print this}}}
 
 # improperly sequenced conditionals and conditional block exception
 .else {echo top level else without if}
@@ -1138,6 +1157,7 @@ if_false {echo ${conditional_echo .test_not_empty ()}}
   else_if_not_false {
     echo else_if_not ignored after else_if that threw without else following}
   .if if_with_body if_with_body .test_in innermost if {echo is not matched}}
+if_false {echo if block not closed}
 .if if_with_body conditional_true {echo middle if is not matched}
 .if if_else_if_not_with_body .test_in else if without else {
   echo body is not run with exception in condition}
@@ -1160,36 +1180,41 @@ if_false {echo ${conditional_echo .test_not_empty ()}}
     .else {echo not skipped because only .false were thrown earlier}}}
 
 # exception thrown in argfunction
-.if ${conditional_echo unfindable anywhere}$ {echo also a failed substitution}
-.else {echo else skipped when condition threw an exception}
-if_true {echo &&{unfindable anywhere}}
-.else {echo else not printing when condition true and if body threw}
+se {
+  .if ${conditional_echo unfindable anywhere}$ {echo also a failed substitution}
+  .else {echo else skipped when condition threw an exception}}
+se {
+  if_true {echo &&&{unfindable anywhere}}
+  .else {echo else not printing when condition true and if body threw}}
 if_true {echo &{unfindable anywhere}}
 .else {echo else throws an exception because we never got into the if}
 
 # .if .else_if .else_if_not .else
-.if
-.else_if .test_is_number 0 {echo do not run after an exception}
-.else_if_not .test_is_number false {echo do not run after an exception}
-.else_if
-.else_if_not
-.else {echo do not run after an exception}
+.collect_errors_except .nop {
+  .if
+  .else_if .test_is_number 0 {echo do not run after an exception}
+  .else_if_not .test_is_number false {echo do not run after an exception}
+  .else_if
+  .else_if_not
+  .else {echo do not run after an exception}}
 .if missing argfunction
 .else_if missing argfunction
 .else_if_not missing argfunction
 .else
-.if .test_is_number 0 {}
-.else {echo first else for if}
-.else {echo second else for if}
-.if .test_is_number 0 {echo if true}
-.else {echo else true; .return 3}
-.if .test_is_number false {echo if false}
-.else {echo else false; .return 5}
+se {
+  .if .test_is_number 0 {}
+  .else {echo first else for if}
+  .else {echo second else for if}}
+se {
+  .if .test_is_number 0 {echo if true}
+  .else {echo else true; .return 3}}
+se {
+  .if .test_is_number false {echo if false}
+  .else {echo else false; .return 5}}
 .else {}
 .else_if .test_is_number 0 {echo not this one}
-.else {}
 .else_if_not .test_is_number false {echo nor this}
-.else {}
+.return 0
 
 # .internal_features .internal_functions .internal_vars
 .internal_features 1
@@ -1711,7 +1736,6 @@ IJK outer_while      .while      .while
 IJK      .while outer_while      .while
 IJK      .while      .while outer_while
 IJK outer_while outer_while outer_while
-.else {}
 .set_max_nesting 20
 
 # .var_add
@@ -2016,7 +2040,14 @@ printenv
 
 # exiting
 # .shutdown .exit
-.exit excess_argument
-.exit {excess argfunction}
 .exit
+.exit 1 {excess argfunction}
+.exit not_a_number
+fn exit_exception args ... {echo $args$; .exit 0}
+.collect_errors_except .nop {
+  .try_catch_recursive exit_exception {
+    .collect_errors_only exit_exception {
+      .throw exit_exception
+      echo print expected after having collected exit exception}}
+  echo after having run .exit (will not print)}
 .echo 1 2 3

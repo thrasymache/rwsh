@@ -204,9 +204,10 @@ Out Arg_spec::evaluate_substitution(const Argm& src, Out res,
   Substitution_stream override_stream;
   Argm temp_argm(src);
   temp_argm.output = override_stream.child_stream();
-  if ((*substitution)(temp_argm, exceptions))
-    throw Exception(Argm::Failed_substitution, str());
-  return evaluate_expansion(override_stream.value(), res);}
+  if ((*substitution)(temp_argm, exceptions)) {
+    exceptions.add_error(Exception(Argm::Failed_substitution, str()));
+    return res;}
+  else return evaluate_expansion(override_stream.value(), res);}
 
 template<class Out> Out Arg_spec::evaluate_var(const Argm& src, Out res) const {
   std::string focus = text;

@@ -32,6 +32,7 @@ extern char** environ;
 #include "argm.h"
 #include "arg_script.h"
 #include "builtin.h"
+#include "call_stack.h"
 #include "clock.h"
 #include "command_stream.h"
 #include "executable.h"
@@ -81,13 +82,8 @@ int b_collect_errors_except(const Argm& argm, Error_list& exceptions) {
     exceptions.add_error(Exception(Argm::Bad_argc, argm.argc()-1, 1, 0));
   if (!argm.argfunction())
     exceptions.add_error(Exception(Argm::Missing_argfunction));
-  if (Named_executable::unwind_stack()) return 0;
-  Argm blank(argm.parent_map(), argm.input, argm.output.child_stream(),
-             argm.error);
-  blank.push_back(".mapped_argfunction");
-  std::vector<std::string> exceptional(argm.begin()+1, argm.end());
-  return argm.argfunction()->collect_errors_core(blank, exceptional, true,
-                                                 exceptions);}
+  if (global_stack.unwind_stack()) return 0;
+  else return global_stack.collect_errors_core(argm, true, exceptions);}
 
 // run the argument function, collecting exceptions to be thrown as a group
 // at the end, but only until an exception is not one of the specified
@@ -97,13 +93,8 @@ int b_collect_errors_only(const Argm& argm, Error_list& exceptions) {
     exceptions.add_error(Exception(Argm::Bad_argc, argm.argc()-1, 1, 0));
   if (!argm.argfunction())
     exceptions.add_error(Exception(Argm::Missing_argfunction));
-  if (Named_executable::unwind_stack()) return 0;
-  Argm blank(argm.parent_map(), argm.input, argm.output.child_stream(),
-             argm.error);
-  blank.push_back(".mapped_argfunction");
-  std::vector<std::string> exceptional(argm.begin()+1, argm.end());
-  return argm.argfunction()->collect_errors_core(blank, exceptional, false,
-                                                 exceptions);}
+  if (global_stack.unwind_stack()) return 0;
+  else return global_stack.collect_errors_core(argm, false, exceptions);}
 
 // echo arguments to standard output without space separation
 int b_combine(const Argm& argm, Error_list& exceptions) {
@@ -179,11 +170,16 @@ int b_execution_count(const Argm& argm, Error_list& exceptions) {
     return 0;}
   else throw Exception(Argm::Function_not_found, argm[1]);}
 
-// exit the shell
+// exit the shell with the specified exit value
 int b_exit(const Argm& argm, Error_list& exceptions) {
-  if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
+  if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
-  Variable_map::exit_requested = true;
+  try {
+    global_stack.request_exit(my_strtoi(argm[1]));
+    if (gc_state.in_if_block) gc_state.exception_thrown = true;}
+  catch (E_generic) {throw Exception(Argm::Not_a_number, argm[1]);}
+  catch (E_nan) {throw Exception(Argm::Not_a_number, argm[1]);}
+  catch (E_range) {throw Exception(Argm::Input_range, argm[1]);}
   return 0;}
 
 /* Exception handler for exceptions that trigger exceptions in their exception
@@ -215,9 +211,9 @@ int b_for(const Argm& argm, Error_list& exceptions) {
     if (argm.argfunction()) {
       body[1] = i;
       ret  = (*argm.argfunction())(body, exceptions);
-      (void) Base_executable::remove_exceptions(".continue", exceptions);
-      if (Base_executable::remove_exceptions(".break", exceptions)) return 0;
-      else if (Named_executable::unwind_stack()) return -1;}
+      (void) global_stack.remove_exceptions(".continue", exceptions);
+      if (global_stack.remove_exceptions(".break", exceptions)) return 0;
+      else if (global_stack.unwind_stack()) return -1;}
     else ret = 0;}
   return ret;}
 
@@ -237,9 +233,9 @@ int b_for_each_line(const Argm& argm, Error_list& exceptions) {
     tokenize(line, std::back_inserter(body),
              std::bind2nd(std::equal_to<char>(), ' '));
     ret = (*argm.argfunction())(body, exceptions);
-    (void) Base_executable::remove_exceptions(".continue", exceptions);
-    if (Base_executable::remove_exceptions(".break", exceptions)) return 0;
-    else if (Named_executable::unwind_stack()) return -1;}
+    (void) global_stack.remove_exceptions(".continue", exceptions);
+    if (global_stack.remove_exceptions(".break", exceptions)) return 0;
+    else if (global_stack.unwind_stack()) return -1;}
   return ret;}
 
 int b_fork(const Argm& argm, Error_list& exceptions) {
@@ -265,7 +261,7 @@ int b_binary(const Argm& argm, Error_list& exceptions) {
     exceptions.add_error(Exception(Argm::Bad_argc, argm.argc()-1, 1, 0));
   if (argm.argfunction())
     exceptions.add_error(Exception(Argm::Excess_argfunction));
-  if (Named_executable::unwind_stack()) return 0;
+  if (global_stack.unwind_stack()) return 0;
   Argm lookup(argm.subrange(1), nullptr, argm.parent_map());
   struct stat sb;
   if (stat(lookup[0].c_str(), &sb))
@@ -316,7 +312,7 @@ int b_get_fallback_message(const Argm& argm, Error_list& exceptions) {
 int b_get_max_collectible_exceptions(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
-  argm.output <<Base_executable::max_collect;
+  argm.output <<global_stack.max_collect;
   return 0;}
 
 // Get the number of exceptions that can be thrown by catch blocks after
@@ -324,7 +320,7 @@ int b_get_max_collectible_exceptions(const Argm& argm, Error_list& exceptions) {
 int b_get_max_extra_exceptions(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
-  argm.output <<Base_executable::max_extra;
+  argm.output <<global_stack.max_extra;
   return 0;}
 
 // Get the maximum number of nesting levels where functions call functions
@@ -332,7 +328,7 @@ int b_get_max_extra_exceptions(const Argm& argm, Error_list& exceptions) {
 int b_get_max_nesting(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
-  argm.output <<Base_executable::max_nesting;
+  argm.output <<global_stack.max_nesting;
   return 0;}
 
 // add a variable to the variable map that will remain after the enclosing
@@ -344,24 +340,22 @@ int b_global(const Argm& argm, Error_list& exceptions) {
   return 0;}
 
 namespace {
-bool in_if_block = false, successful_condition = false,
-  conditional_block_exception = false;
-
-int if_core(const Argm& argm, Error_list& exceptions, bool logic, bool is_else){
-  if (!in_if_block) throw Exception(Argm::Else_without_if);
-  else if (successful_condition) return Variable_map::dollar_question;
+int if_core(const Argm& argm, Error_list& exceptions,
+            Conditional_state& state, bool logic, bool is_else) {
+  if (!state.in_if_block) throw Exception(Argm::Else_without_if);
+  else if (state.successful_condition) return Variable_map::dollar_question;
   else {
     int ret = 0;
     Argm lookup(argm.subrange(1), nullptr, argm.parent_map(),
                   argm.input, argm.output.child_stream(), argm.error);
-    in_if_block = false;
+    state.in_if_block = false;
     bool run = true;
     if (!is_else) {
       run = logic == executable_map.run_condition(lookup, exceptions);
-      if (Base_executable::unwind_stack())
-        run = false, conditional_block_exception = true;
-      else if (in_if_block) {
-        in_if_block = false;
+      if (global_stack.unwind_stack())
+        run = false, state.exception_thrown = true;
+      else if (state.in_if_block) {
+        state.in_if_block = false;
         // if only .false was thrown, then ignore any .if without .else
         if (logic == run) throw Exception(Argm::Bad_if_nest);}}
     if (run) {
@@ -370,13 +364,13 @@ int if_core(const Argm& argm, Error_list& exceptions, bool logic, bool is_else){
                          argm.input, argm.output.child_stream(), argm.error);
         mapped_argm.push_back(".mapped_argfunction");
         ret = (*argm.argfunction())(mapped_argm, exceptions);}
-      if (Base_executable::unwind_stack())
-        conditional_block_exception = ! is_else;
-      else if (in_if_block) {
-        in_if_block = false;
+      if (global_stack.unwind_stack())
+        state.exception_thrown = ! is_else;
+      else if (state.in_if_block) {
+        state.in_if_block = false;
         throw Exception(Argm::Bad_if_nest);}
-      else in_if_block = successful_condition = true;}
-    in_if_block = true;
+      else state.in_if_block = state.successful_condition = true;}
+    state.in_if_block = true;
     return ret;}}
 }
 
@@ -386,13 +380,13 @@ int b_if(const Argm& argm, Error_list& exceptions) {
   try {
     if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
     else if (!argm.argfunction()) throw Exception(Argm::Missing_argfunction);
-    else if (conditional_block_exception)
-      successful_condition = conditional_block_exception = false;
-    else if (in_if_block) throw Exception(Argm::If_before_else);
-    in_if_block = true;
-    return if_core(argm, exceptions, true, false);}
+    else if (gc_state.exception_thrown)
+      gc_state.successful_condition = gc_state.exception_thrown = false;
+    else if (gc_state.in_if_block) throw Exception(Argm::If_before_else);
+    gc_state.in_if_block = true;
+    return if_core(argm, exceptions, gc_state, true, false);}
   catch (Exception exception) {
-    conditional_block_exception = true;
+    gc_state.exception_thrown = true;
     throw exception;}}
 
 // run argfunction if successful_condition is false and $* returns true
@@ -401,10 +395,10 @@ int b_else_if(const Argm& argm, Error_list& exceptions) {
   try {
     if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
     else if (!argm.argfunction()) throw Exception(Argm::Missing_argfunction);
-    else if (conditional_block_exception) return 0;
-    else return if_core(argm, exceptions, true, false);}
+    else if (gc_state.exception_thrown) return 0;
+    else return if_core(argm, exceptions, gc_state, true, false);}
   catch (Exception exception) {
-    conditional_block_exception = true;
+    gc_state.exception_thrown = true;
     throw exception;}}
 
 // run argfunction if successful_condition is false and $* returns false
@@ -413,10 +407,10 @@ int b_else_if_not(const Argm& argm, Error_list& exceptions) {
   try {
     if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
     else if (!argm.argfunction()) throw Exception(Argm::Missing_argfunction);
-    else if (conditional_block_exception) return 0;
-    else return if_core(argm, exceptions, false, false);}
+    else if (gc_state.exception_thrown) return 0;
+    else return if_core(argm, exceptions, gc_state, false, false);}
   catch (Exception exception) {
-    conditional_block_exception = true;
+    gc_state.exception_thrown = true;
     throw exception;}}
 
 // run argfunction if successful_condition is false
@@ -426,12 +420,12 @@ int b_else(const Argm& argm, Error_list& exceptions) {
     int ret = 0;
     if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
     else if (!argm.argfunction()) throw Exception(Argm::Missing_argfunction);
-    else if (conditional_block_exception) conditional_block_exception = false;
-    else ret = if_core(argm, exceptions, false, true);
-    successful_condition = in_if_block = false;
+    else if (gc_state.exception_thrown) gc_state.exception_thrown = false;
+    else ret = if_core(argm, exceptions, gc_state, false, true);
+    gc_state.successful_condition = gc_state.in_if_block = false;
     return ret;}
   catch (Exception exception) {
-    successful_condition = in_if_block = false;
+    gc_state.successful_condition = gc_state.in_if_block = false;
     throw exception;}}
 
 // prints a list of all internal functions
@@ -567,7 +561,7 @@ int b_getppid(const Argm& argm, Error_list& exceptions) {
 // afterwards fails)
 int b_replace_exception(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
-  if (!Base_executable::in_exception_handler())
+  if (!global_stack.in_exception_handler())
     throw Exception(Argm::Not_catching_exception);
   Argm new_exception(argm.subrange(1), argm.argfunction(),
                      Variable_map::global_map,
@@ -590,7 +584,7 @@ int b_rm_executable(const Argm& argm, Error_list& exceptions) {
     exceptions.add_error(Exception(Argm::Bad_argc, argm.argc()-1, 1, 0));
   if (argm.argfunction())
     exceptions.add_error(Exception(Argm::Excess_argfunction));
-  if (Named_executable::unwind_stack()) return 0;
+  if (global_stack.unwind_stack()) return 0;
   Argm lookup(argm.subrange(1), nullptr, argm.parent_map());
   Base_executable *e = executable_map.find_second(lookup);
   if (dynamic_cast<Builtin*>(e))
@@ -612,7 +606,7 @@ int b_scope(const Argm& argm, Error_list& exceptions) {
                      argm.input, argm.output, argm.error);
   int ret = (*argm.argfunction()).prototype_execute(invoking_argm, prototype,
                                                     exceptions);
-  if (Named_executable::unwind_stack()) return -1;
+  if (global_stack.unwind_stack()) return -1;
   else return ret;}
 
 // modify variable $1 as a selection according to $2
@@ -655,7 +649,7 @@ int b_set_max_collectible_exceptions(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   try {
-    Base_executable::max_collect = my_strtoi(argm[1], 1,INT_MAX);
+    global_stack.max_collect = my_strtoi(argm[1], 1,INT_MAX);
     return 0;}
   catch (E_generic) {throw Exception(Argm::Not_a_number, argm[1]);}
   catch (E_nan) {throw Exception(Argm::Not_a_number, argm[1]);}
@@ -667,7 +661,7 @@ int b_set_max_extra_exceptions(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   try {
-    Base_executable::max_extra = my_strtoi(argm[1], 0, INT_MAX);
+    global_stack.max_extra = my_strtoi(argm[1], 0, INT_MAX);
     return 0;}
   catch (E_generic) {throw Exception(Argm::Not_a_number, argm[1]);}
   catch (E_nan) {throw Exception(Argm::Not_a_number, argm[1]);}
@@ -679,7 +673,7 @@ int b_set_max_nesting(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   try {
-    Base_executable::max_nesting = my_strtoi(argm[1], 0, INT_MAX);
+    global_stack.max_nesting = my_strtoi(argm[1], 0, INT_MAX);
     return 0;}
   catch (E_generic) {throw Exception(Argm::Not_a_number, argm[1]);}
   catch (E_nan) {throw Exception(Argm::Not_a_number, argm[1]);}
@@ -701,7 +695,7 @@ int b_source(const Argm& argm, Error_list& exceptions) {
   Command_stream command_stream(src, false);
   Arg_script script("", 0, exceptions);
   int ret = -1;
-  while (!command_stream.fail() && !Named_executable::unwind_stack())
+  while (!command_stream.fail() && !global_stack.unwind_stack())
     try {
       command_stream.getline(script, exceptions);
       if (command_stream.fail()) break;
@@ -731,9 +725,9 @@ int b_stepwise(const Argm& argm, Error_list& exceptions) {
     Argm body(".mapped_argfunction", body_i.argv(), nullptr,
               body_i.parent_map(), body_i.input, body_i.output, body_i.error);
     ret  = (*argm.argfunction())(body, exceptions);
-    (void) Base_executable::remove_exceptions(".continue", exceptions);
-    if (Base_executable::remove_exceptions(".break", exceptions)) break;
-    else if (Named_executable::unwind_stack()) break;}
+    (void) global_stack.remove_exceptions(".continue", exceptions);
+    if (global_stack.remove_exceptions(".break", exceptions)) break;
+    else if (global_stack.unwind_stack()) break;}
   f->unused_var_check(&locals, exceptions);
   return ret;} // last return value from argfunction
 
@@ -748,7 +742,7 @@ int b_store_output(const Argm& argm, Error_list& exceptions) {
                    argm.input, text.child_stream(), argm.error);
   mapped_argm.push_back(".mapped_argfunction");
   int ret = (*argm.argfunction())(mapped_argm, exceptions);
-  if (Named_executable::unwind_stack() || ret) return ret;
+  if (global_stack.unwind_stack() || ret) return ret;
   argm.set_var(argm[1], text.value());
   return 0;}
 
@@ -875,8 +869,8 @@ int b_test_string_unequal(const Argm& argm, Error_list& exceptions) {
 int b_throw(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   Argm new_exception(argm.subrange(1), argm.argfunction(),
-                     Variable_map::global_map,
-                     argm.input, argm.output.child_stream(), argm.error);
+                     Variable_map::global_map, default_input, default_output,
+                     default_error);
   exceptions.add_error(new_exception);
   return -1;}
 
@@ -908,8 +902,8 @@ int b_try_catch_recursive(const Argm& argm, Error_list& exceptions) {
                    argm.input, argm.output.child_stream(), argm.error);
   mapped_argm.push_back(".try_catch_recursive(body)");
   int ret = (*argm.argfunction())(mapped_argm, exceptions);
-  if (Named_executable::unwind_stack()) {
-    Base_executable::catch_blocks(argm, exceptions);
+  if (global_stack.unwind_stack()) {
+    global_stack.catch_blocks(argm, exceptions);
     return -1;}
   return ret;}
 
@@ -917,7 +911,7 @@ int b_try_catch_recursive(const Argm& argm, Error_list& exceptions) {
 int b_type(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2)
     exceptions.add_error(Exception(Argm::Bad_argc, argm.argc()-1, 1, 0));
-  if (Named_executable::unwind_stack()) return 0;
+  if (global_stack.unwind_stack()) return 0;
   Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
   if (lookup[0] == ".argfunction") lookup[0] = ".mapped_argfunction";
   Base_executable *e = executable_map.find_second(lookup);
@@ -1140,7 +1134,7 @@ int b_while(const Argm& argm, Error_list& exceptions) {
                      argm.error);
     mapped_argm.push_back(".mapped_argfunction");
     ret = (*argm.argfunction())(mapped_argm, exceptions);
-    (void) Base_executable::remove_exceptions(".continue", exceptions);
-    if (Base_executable::remove_exceptions(".break", exceptions)) return 0;
-    else if (Named_executable::unwind_stack()) return -1;}
+    (void) global_stack.remove_exceptions(".continue", exceptions);
+    if (global_stack.remove_exceptions(".break", exceptions)) return 0;
+    else if (global_stack.unwind_stack()) return -1;}
   return ret;}

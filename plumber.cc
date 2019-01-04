@@ -16,8 +16,8 @@
 #include "variable_map.h"
 
 #include "argm.h"
+#include "call_stack.h"
 #include "clock.h"
-#include "executable.h"
 #include "plumber.h"
 
 class read_handler :
@@ -30,7 +30,7 @@ class read_handler :
     buffer(buffer_i), buffer_size(buffer_size_i) {};
   bool operator()(const std::pair<Rwsh_istream*, Rwsh_ostream*>& focus) {
     int n = focus.first->read(buffer, buffer_size);
-    if (n <= 0 || Named_executable::unwind_stack()) {
+    if (n <= 0 || global_stack.unwind_stack()) {
       focus.first->close();
       return true;}
     else {
@@ -59,7 +59,7 @@ void Plumber::wait(int *ret) {
                                         output_handlers.end(),
                                         read_handler(buffer, sizeof buffer)));
   output_handlers.clear();
-  if (Named_executable::unwind_stack()) return;
+  if (global_stack.unwind_stack()) return;
   struct timeval before, after;
   gettimeofday(&before, rwsh_clock.no_timezone);
   int wait_return = ::wait(ret);

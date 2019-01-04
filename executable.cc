@@ -2,15 +2,12 @@
 // external programs, the latter executes commands that are implemented by
 // functions in builtin.cc.
 //
-// Copyright (C) 2005-2017 Samuel Newbold
+// Copyright (C) 2005-2019 Samuel Newbold
 
-#include <algorithm>
-#include <cstdlib>
 #include <list>
 #include <map>
 #include <set>
 #include <string>
-#include <signal.h>
 #include <sys/time.h>
 #include <unistd.h>
 #include <vector>
@@ -19,34 +16,18 @@
 #include "variable_map.h"
 
 #include "argm.h"
-#include "builtin.h"
+#include "call_stack.h"
 #include "clock.h"
 #include "executable.h"
 #include "executable_map.h"
 #include "plumber.h"
 
-namespace {
-Argm::Exception_t unix2rwsh(int sig) {
-  switch (sig) {
-    case SIGHUP: return Argm::Sighup;
-    case SIGINT: return Argm::Sigint;
-    case SIGQUIT: return Argm::Sigquit;
-    case SIGPIPE: return Argm::Sigpipe;
-    case SIGTERM: return Argm::Sigterm;
-    case SIGTSTP: return Argm::Sigtstp;
-    case SIGCONT: return Argm::Sigcont;
-    case SIGCHLD: return Argm::Sigchld;
-    case SIGUSR1: return Argm::Sigusr1;
-    case SIGUSR2: return Argm::Sigusr2;
-    default: return Argm::Sigunknown;}}
-} // end unnamed namespace
-
 int Base_executable::operator() (const Argm& argm,
                                  Error_list& parent_exceptions) {
-  if (global_nesting > max_nesting+1)
+  if (global_stack.global_nesting > global_stack.max_nesting+1)
     parent_exceptions.add_error(Exception(Argm::Excessive_nesting));
-  if (unwind_stack()) return Variable_map::dollar_question;
-  else ++executable_nesting, ++global_nesting;
+  if (global_stack.unwind_stack()) return Variable_map::dollar_question;
+  else ++executable_nesting, ++global_stack.global_nesting;
   Error_list children;
   struct timeval start_time;
   gettimeofday(&start_time, rwsh_clock.no_timezone);
@@ -61,10 +42,10 @@ int Base_executable::operator() (const Argm& argm,
   Clock::timeval_add(total_execution_time_v, last_execution_time_v);
   ++execution_count_v;
   Variable_map::dollar_question = last_return = ret;
-  --global_nesting;
-  if (caught_signal) {
-    Exception focus(caught_signal);
-    caught_signal = Argm::No_exception;
+  --global_stack.global_nesting;
+  if (global_stack.caught_signal) {
+    Exception focus(global_stack.caught_signal);
+    global_stack.caught_signal = Argm::No_exception;
     executable_map.run(focus, children);}
   if (children.size()) {
     last_exception_v = "";
@@ -76,98 +57,6 @@ int Base_executable::operator() (const Argm& argm,
   --executable_nesting;
   if (del_on_term && !executable_nesting) delete this;
   return ret;}
-
-void Base_executable::add_error(void) {
-  unwind_stack_v = true;
-  ++current_exception_count;}
-
-void Base_executable::replace_error(void) {++current_exception_count;}
-
-void Base_executable::reset(void) {
-  unwind_stack_v = false;
-  current_exception_count = 0;}
-
-void Base_executable::unix_signal_handler(int sig) {
-  caught_signal = unix2rwsh(sig);}
-
-/* code to call exception handlers, separated out of operator() for clarity.
-   The requirements for stack unwinding to work properly are as
-   follows: any code that runs more than one other executable must test
-   unwind_stack() in between each executable, which must be of an Executable
-   rather than a direct call to the function that implements a builtin (the
-   code below to run the fallback_handler is the only exception to this rule).
-   main does not need to do this handling, because anything that it calls
-   directly will have an initial nesting of 0.*/
-void Base_executable::exception_handler(Error_list& exceptions) {
-  in_exception_handler_v = true;
-  unwind_stack_v = false;
-  std::set<std::string> failed_handlers;
-  for(;exceptions.size(); exceptions.pop_front(), --current_exception_count){
-    Argm& focus(exceptions.front());
-    if (failed_handlers.find(focus[0]) == failed_handlers.end()) {
-      unsigned previous_count = current_exception_count;
-      executable_map.run(focus, exceptions);
-      if (unwind_stack() || current_exception_count > previous_count) {
-        failed_handlers.insert(focus[0]);
-        exceptions.insert(++exceptions.begin(), exceptions.back());
-        exceptions.pop_back();
-        unwind_stack_v = false;}}
-    if (failed_handlers.find(focus[0]) != failed_handlers.end())
-      b_fallback_handler(Argm(".fallback_handler", focus.argv(),
-                              focus.argfunction(), Variable_map::global_map,
-                              focus.input, focus.output, focus.error),
-                         exceptions);}
-  Variable_map::dollar_question = -1;
-  collect_excess_thrown = execution_handler_excess_thrown = false;
-  in_exception_handler_v = false;}
-
-// code to call exception handlers when requested within a function
-void Base_executable::catch_blocks(const Argm& argm, Error_list& exceptions) {
-  unsigned dropped_catches = 0;
-  for (auto focus = exceptions.begin(); focus != exceptions.end();)
-    if (find(argm.begin() + 1, argm.end(), (*focus)[0]) != argm.end()) {
-      if (dropped_catches >= max_extra) {
-         if (!execution_handler_excess_thrown)
-           exceptions.add_error(
-                     Exception(Argm::Excessive_exceptions_in_catch, max_extra));
-         execution_handler_excess_thrown = true;
-         return;}
-      unsigned previous_count = current_exception_count;
-      in_exception_handler_v = true;
-      unwind_stack_v = false;
-      executable_map.run(*focus, exceptions);
-      in_exception_handler_v = false;
-      dropped_catches += current_exception_count - previous_count;
-      if (!unwind_stack()) {
-        focus = exceptions.erase(focus);
-        --current_exception_count;}
-      else focus++;}
-    else focus++;
-  if (current_exception_count) unwind_stack_v = true;
-  else unwind_stack_v = false;
-  Variable_map::dollar_question = -1;
-  in_exception_handler_v = false;}
-
-bool Base_executable::remove_exceptions(const std::string &name,
-                                        Error_list& exceptions) {
-  bool ret = false;
-  bool unwind_stack_before = unwind_stack_v;
-  for (auto focus = exceptions.begin(); focus != exceptions.end();)
-    if ((*focus)[0] == name) {
-      ret = true;
-      focus = exceptions.erase(focus);
-      --current_exception_count;}
-    else focus++;
-  if (unwind_stack_before && !exceptions.size()) unwind_stack_v = false;
-  return ret;}
-
-// run one exception handler restoring unwind_stack afterwards
-void Base_executable::catch_one(Argm& argm, Error_list& exceptions) {
-  in_exception_handler_v = true;
-  unwind_stack_v = false;
-  executable_map.run(argm, exceptions);
-  in_exception_handler_v = false;
-  unwind_stack_v = true;}
 
 Binary::Binary(const std::string& impl) : implementation(impl) {}
 
@@ -188,7 +77,7 @@ int Binary::execute(const Argm& argm_i, Error_list& exceptions) const {
     argm_i.export_env(env);
     ret = execve(implementation.c_str(), argv.argv(), &env[0]);
     exceptions.add_error(Exception(Argm::Binary_does_not_exist, argm_i[0]));
-    Named_executable::exception_handler(exceptions);
+    global_stack.exception_handler(exceptions);
     executable_map.unused_var_check_at_exit();
     exit(ret);}
   else plumber.wait(&ret);

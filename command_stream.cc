@@ -19,6 +19,7 @@
 
 #include "argm.h"
 #include "arg_script.h"
+#include "call_stack.h"
 #include "clock.h"
 #include "command_stream.h"
 #include "executable.h"
@@ -48,15 +49,15 @@ Command_stream& Command_stream::getline(Arg_script& dest, Error_list& errors) {
     if (fail())
       if (cmd.size())  {                 // EOF without a complete command
         Exception raw_command(Argm::Raw_command, cmd);
-        executable_map.base_run(raw_command, errors);
+        executable_map.run_handling_exceptions(raw_command, errors);
         Arg_script(cmd, 0, errors);}     // this will throw the right exception
       else return *this;
     else cmd += line;
     try {
       dest = Arg_script(cmd, 0, errors);
-      if (Named_executable::unwind_stack()) {
+      if (global_stack.unwind_stack()) {
         Exception raw_command(Argm::Raw_command, cmd);
-        Base_executable::catch_one(raw_command, errors);
+        global_stack.catch_one(raw_command, errors);
         return *this;}
       cmd_is_incomplete = false;}
     catch (Unclosed_parenthesis exception) {
@@ -64,9 +65,9 @@ Command_stream& Command_stream::getline(Arg_script& dest, Error_list& errors) {
     catch (Unclosed_brace exception) {
       cmd += '\n';}}
   Exception raw_command(Argm::Raw_command, cmd);
-  executable_map.base_run(raw_command, errors);
+  executable_map.run_handling_exceptions(raw_command, errors);
   return *this;}
 
 // returns true if the last command could not be read
 bool Command_stream::fail() const {
-  return Variable_map::exit_requested || src.fail();}
+  return global_stack.exit_requested || src.fail();}

@@ -213,6 +213,9 @@
 .function_all_flags .undefined_variable -- name [stack ...] {
   echo optional variable $name was not defined
   echo call stack: $stack$}
+.function_all_flags .unfinished_if_block [stack ...] {
+  echo conditional not finished within preceeding block
+  if_only .var_exists stack {echo call stack: $stack$}}
 .function_all_flags .unreadable_dir dir errno [stack ...] {
   .combine (cannot read directory ) $dir \ \(errno\  $errno \) $nl
   echo call stack: $stack$

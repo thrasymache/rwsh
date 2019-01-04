@@ -18,7 +18,8 @@ call stack .source .try_catch_recursive(body)
 .function_all_flags .after_command -- args ... {
   .nop $args
   .set last_command_return $?
-  .combine $last_command_return $nl}
+  if_only .test_string_unequal $last_command_return 0 {
+    .combine $last_command_return $nl}}
 .function_all_flags .prompt {.echo \$}
 .function_all_flags .vars {.internal_vars}
 .source /etc/rwshrc-basic
@@ -237,6 +238,9 @@ call stack .source .try_catch_recursive(body)
 .function_all_flags .undefined_variable -- name [stack ...] {
   echo optional variable $name was not defined
   echo call stack: $stack$}
+.function_all_flags .unfinished_if_block [stack ...] {
+  echo conditional not finished within preceeding block
+  if_only .var_exists stack {echo call stack: $stack$}}
 .function_all_flags .unreadable_dir dir errno [stack ...] {
   .combine (cannot read directory ) $dir \ \(errno\  $errno \) $nl
   echo call stack: $stack$
@@ -356,82 +360,60 @@ polish / .var_divide
         .nop $$var}}}
   .source /etc/rwshrc-basic
   .nop $FIGNORE
-  .function_all_flags .if_before_else stack ... {.nop $stack}
-  .function_all_flags .shutdown -- args ... {.nop $args; .return 0}
+  .function_all_flags .shutdown -- [args ...] {.nop $args}
+  .function_all_flags .return_code code cmd [add_stack ...] {
+    echo $cmd returned $code : call stack $cmd $add_stack$
+    .exit $code}
   .collect_errors_except .nop {
     .mapped_argfunction &3 {$1$}
-    .exit}}
+    .exit 0}}
 .else {
   .echo unexpected command line: &* (
 )
   .source /etc/rwshrc-default}
 $.binary /bin/cat
-0
 $/bin/cat /tmp/lcl
 /etc/rwshrc ./rwsh test_init.sh 
-0
 $.function_all_flags ## [args ...] {.nop $args}
-0
 $#
-0
 $.nop beware the empty comment
-0
 $
-0
 $## argm
-0
 $# .source
-0
 $.nop
-0
 $     .nop
-0
 $.nop 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
-0
 $echo 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
-0
 $.echo  ()    1                2       $# $nl
  1 2 6 
-0
 $.echo \escaped internal\ space $# $nl
 escaped internal space 5 
-0
 $.echo now \ external\  $# $nl
 now  external  5 
-0
 $.echo a \  space $# $nl
 a   space 6 
-0
 $echo \$tokens \} \{ \; \\ \) \(
 $tokens } { ; \ ) (
-0
 $.echo a \
-a 0
-$line continuation (or it was supposed to be)
+a $line continuation (or it was supposed to be)
 PATH was not declared
 call stack: .autofunction .autofunction
 substitution (${.which_path $cmd $PATH}) failed
 call stack .autofunction
 line : command not found ( line continuation (or it was supposed to be) )
--1
 $ echo ignore leading space
 ignore leading space
-0
 $	echo ignore leading tab
 ignore leading tab
-0
 $.mapped_argfunction {	   echo ignore leading tab in argfunction}
 ignore leading tab in argfunction
-0
 $.whence_function .mapped_argfunction {.nop}
 {.nop}
-0
 $.whence_function .argfunction {
   multiple line argfunction }
 {
   multiple line argfunction}
-0
 $.nop .argfunction .mismatched_brace } &&&is$not$all
 mismatched brace: (.nop .argfunction .mismatched_brace })
 $not$all is not a valid word selection
@@ -439,28 +421,22 @@ call stack
 &&&is$not$all attempts to substitute after the command has been run
 $.source
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .source
--1
 $.source /etc/hosts {excess argfunc}
 .source does not accept an argfunction with call stack: .source
--1
 $.source test_files/*fu*bar*
 could not open file test_files/*fu*bar*
 call stack .source
--1
 $.source /etc/hosts
 /etc/hosts is not executable
 call stack: .source
--1
 $.source test_files/unclosed_brace_newline.rwsh
 fn bar {echo baz
 
 mismatched brace: (fn bar) .source
--1
 $.source test_files/unclosed_brace.rwsh
 fn bar {echo baz
 
 mismatched brace: (fn bar) .source
--1
 $.source test_files/unclosed_parenthesis_newline.rwsh
 echo bar (baz
 
@@ -485,9 +461,7 @@ call stack .source
 call stack .source
 double redirection is not supported at this time: >something and >else
 call stack: .source
--1
 $.nop multiple statements \; on a line
--1
 $.whence_function .argfunction {.multiple_argfunctions} {}
 multiple argfunctions not supported at this time
 $.whence_function .argfunction {.argfunction with text args}
@@ -498,103 +472,70 @@ $.whence_function x {.escaped_argfunction me}
 cannot specify arguments for (.escaped_argfunction me!) directly
 $.whence_function .argfunction {{{{{{{{{{{}}}}}}}}}}}
 {{{{{{{{{{{}}}}}}}}}}}
-0
 $.whence_function .argfunction {
   .function_all_flags  x  { ${ .which_path  echo  $PATH }  something } }
 {
   .function_all_flags x { ${ .which_path echo $PATH} something}}
-0
 $
-0
 $## ability of functions to perform custom control flow
-0
 $# rwshrc-basic
-0
 $.function e {.echo $*}
-0
 $.function om {.argfunction}
-0
 $.function_all_flags sa [args ...] {
   .scope $args$ ([args ...]) {.argfunction}}
-0
 $.function_all_flags se {.scope () {.argfunction}}
-0
 $.whence_function e
 .function e {.echo $*}
-0
 $.whence_function om
 .function om {.argfunction}
-0
 $.whence_function sa
 .function_all_flags sa [args ...] {
   .scope $args$ ([args ...]) {.argfunction}}
-0
 $.whence_function se
 .function_all_flags se  {.scope () {.argfunction}}
-0
 $whence e
 .function e {.echo $*}
-0
 $whence echo
 .function_all_flags echo -- text ... {.echo $text; .combine $nl}
-0
 $whence ee
 ee : command not found ( ee .whence_function .try_catch_recursive(body) )
 -1
 $whence () {}
 .function_all_flags ()  {.nop}
-0
 $echo text that does not have a prompt appended
 text that does not have a prompt appended
-0
 $se {echo again}
 again
-0
 $if_only .test_is_number false {echo not printed}
-0
 $if_only .test_is_number 0 {echo printed without error}
 printed without error
-0
 $.function_all_flags for -- [items ...] {
   .if .var_exists items {.for $items$ {.argfunction}}
   .else {.nop}}
-0
 $for {echo skipped without error}
-0
 $for 1 2 3 {echo loop $*}
 loop 1
 loop 2
 loop 3
-0
 $
-0
 $## arg_script.cc and arg_spec.cc
-0
 $# Arg_spec::FIXED, Arg_script::add_quote
-0
 $echo 5 4 3 2 1
 5 4 3 2 1
-0
 $e a (tight string created by parentheses $#) $# $nl
 a tight string created by parentheses $# 5 
-0
 $e a ( spaced string created by parentheses $# ) $# $nl
 a  spaced string created by parentheses $#  5 
-0
 $echo some escaped \) \(parentheses $#
 some escaped ) (parentheses 6
-0
 $e some (nested (parentheses) $#) $# $nl
 some nested (parentheses) $# 5 
-0
 $e some ((((((((((repeated))))) parentheses))))) $# $nl
 some (((((((((repeated))))) parentheses)))) 5 
-0
 $e a (multi-line parenthesis
   enclosed string) $# $nl
 a multi-line parenthesis
   enclosed string 5 
-0
 $echo a )mismatched &&parenthesis
 signal triggered: .mismatched_parenthesis ( echo a ) )
 mismatched parenthesis: (echo a ))
@@ -609,35 +550,24 @@ mismatched parenthesis: (echo a (multi-line parenthesis
 call stack:
 $e (internal \)parenthesis \\ escape ( \))) $# $nl
 internal )parenthesis \ escape ( )) 4 
-0
 $
-0
 $# star_var (argm_star_var)
-0
 $echo 1 2 $* 3 4
 1 2 1 2 $* 3 4 3 4
-0
 $echo $*2 1 2
 1 2 1 2
-0
 $
-0
 $# star_soon
-0
-$.if .nop 1 2 3 {echo &*}
+$sa .nop 1 2 3 {
+  .if $args$ {echo &*}
+  .else {}}
 .nop 1 2 3
-0
-$.else {}
-0
-$.if .nop 1 2 3 {echo &*0}
-.if .nop 1 2 3
-0
-$.else {}
-0
+$sa .nop 1 2 3 {
+  .if $args$ {echo &*0}
+  .else {}}
+sa .nop 1 2 3
 $
-0
 $# .init, rwshrc's autofunction, .binary
-0
 $whence .init
 .function_all_flags .init -- [args ...] {.set_max_nesting 10
     .function_all_flags .file_open_failure name stack ... {        .combine (init file ) $name ( does not exist
@@ -653,7 +583,6 @@ call stack ) $stack (
 )}}
     .else {.echo .help not defined (
 )}}
-0
 $whence .autofunction
 .function_all_flags .autofunction -- cmd [args ...] {
   .nop $args$
@@ -663,87 +592,65 @@ $whence .autofunction
     .function_all_flags $cmd -- [args ...] {
       &full_path $args$}}
   .error added $cmd to executable map $nl}
-0
 $.binary {e excess argfunction}
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .binary
 .binary does not accept an argfunction with call stack: .binary
--1
 $.binary /bin/rzwsh
 /bin/rzwsh : binary does not exist
 call stack: .binary
--1
 $.binary /bin/cat
 /bin/cat is already an executable in the hash table (
 )
 call stack .binary
--1
 $.global PATH /usr/bin
-0
 $/bin/true
 /bin/true : binary not found in /usr/bin
 call stack: .which_path .autofunction .autofunction
 /bin/true : command not found ( /bin/true )
--1
 $true
 true : binary not found in /usr/bin
 call stack: .which_path .autofunction .autofunction
 true : command not found ( true )
--1
 $.binary /bin/true
-0
 $true
 true : binary not found in /usr/bin
 call stack: .which_path .autofunction .autofunction
 true : command not found ( true )
--1
 $.rm_executable /bin/true
-0
 $.set PATH /bin:/usr/bin:.
-0
 $fals
 fals : binary not found in /bin:/usr/bin:.
 call stack: .which_path .autofunction .autofunction
 fals : command not found ( fals )
--1
 $/bin/true add the binary by itself
-0
 $true add the function using existing binary
-0
 $.whence_function /bin/false
 /bin/false : command not found ( /bin/false .whence_function )
--1
 $false add the function and the binary at once
 /bin/false returned 1 : call stack /bin/false false
--1
 $.whence_function true
 .function_all_flags true -- [args ...] {
       /bin/true $args$}
-0
 $/bin/echo this will add /bin/echo to the hash table
 this will add /bin/echo to the hash table
-0
 $/bin/echo this will use the existing /bin/echo reference
 this will use the existing /bin/echo reference
-0
 $echo this function is already defined
 this function is already defined
-0
 $.autofunction ./rwsh
-0
 $.whence_function ./rwsh
 ./rwsh
-0
 $./rwsh -c (echo in a subshell)
 in a subshell
-0
+$false
+/bin/false returned 1 : call stack /bin/false false
 $./rwsh -c (false)
 /bin/false returned 1 : call stack /bin/false false .mapped_argfunction .collect_errors_except .mapped_argfunction .else_if .source .init
-0
+./rwsh returned 1 : call stack ./rwsh
 $./rwsh -c (.get_pid)
 .get_pid : binary not found in /bin:/usr/bin:.
 call stack: .which_path .autofunction .autofunction .mapped_argfunction .collect_errors_except .mapped_argfunction .else_if .source .init
 .get_pid : command not found ( .get_pid .mapped_argfunction .collect_errors_except .mapped_argfunction .else_if .source .init )
-0
 $./rwsh /non-existent/file/to/test/failure <test_files/pause_hello.rwsh
 init file /non-existent/file/to/test/failure does not exist
 call stack .source .mapped_argfunction .else_if .source .init
@@ -809,21 +716,6 @@ Exception for failed handler. Original exception with call stack:
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.which_path $cmd $PATH} .autofunction
 Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
-.undeclared_variable : command not found ( .undeclared_variable PATH .autofunction .autofunction )
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-.failed_substitution : command not found ( .failed_substitution ${.which_path $cmd $PATH} .autofunction )
-.shutdown : command not found ( .shutdown ./rwsh /non-existent/file/to/test/failure )
-Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-Exception for failed handler. Original exception with call stack:
 .unused_variable FIGNORE
 .unused_variable : command not found ( .unused_variable FIGNORE )
 Exception for failed handler. Original exception with call stack:
@@ -840,8 +732,7 @@ Exception for failed handler. Original exception with call stack:
 .undeclared_variable PATH .autofunction .autofunction
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.which_path $cmd $PATH} .autofunction
-./rwsh returned 255 : call stack ./rwsh
--1
+./rwsh returned 10 : call stack ./rwsh
 $./rwsh test_files/pause_hello.rwsh <test_files/pause_hello.rwsh
 hello world 
 .ambiguous_prototype_dash_dash not defined 
@@ -898,7 +789,6 @@ hello world
 .post_dash_dash_flag not defined 
 .prompt not defined 
 .selection_not_found not defined 
-.shutdown not defined 
 .sighup not defined 
 .sigint not defined 
 .sigquit not defined 
@@ -914,6 +804,7 @@ hello world
 .unchecked_variable not defined 
 .undeclared_variable not defined 
 .undefined_variable not defined 
+.unfinished_if_block not defined 
 .unreadable_dir not defined 
 .unrecognized_flag not defined 
 .unused_before_set not defined 
@@ -983,21 +874,6 @@ Exception for failed handler. Original exception with call stack:
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.which_path $cmd $PATH} .autofunction
 Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
-.undeclared_variable : command not found ( .undeclared_variable PATH .autofunction .autofunction )
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-.failed_substitution : command not found ( .failed_substitution ${.which_path $cmd $PATH} .autofunction )
-.shutdown : command not found ( .shutdown ./rwsh test_files/pause_hello.rwsh )
-Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-Exception for failed handler. Original exception with call stack:
 .unused_variable FIGNORE
 .unused_variable : command not found ( .unused_variable FIGNORE )
 Exception for failed handler. Original exception with call stack:
@@ -1014,9 +890,9 @@ Exception for failed handler. Original exception with call stack:
 .undeclared_variable PATH .autofunction .autofunction
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.which_path $cmd $PATH} .autofunction
-./rwsh returned 255 : call stack ./rwsh
--1
+./rwsh returned 10 : call stack ./rwsh
 $./rwsh test_files/signal_triggered.rwsh <test_files/pause_hello.rwsh
+signal triggered: .raw_command ( .function_all_flags .shutdown -- [args ...] {.nop $args; .exit 255} )
 signal triggered: .raw_command ( .else_if .test_string_equal $2 -c {
   .for ${.list_environment}$ {
     .scope $1$ (-- var val) {
@@ -1026,72 +902,34 @@ signal triggered: .raw_command ( .else_if .test_string_equal $2 -c {
         .nop $$var}}}
   .source /etc/rwshrc-basic
   .nop $FIGNORE
-  .function_all_flags .if_before_else stack ... {.nop $stack}
-  .function_all_flags .shutdown -- args ... {.nop $args; .return 0}
+  .function_all_flags .shutdown -- [args ...] {.nop $args}
+  .function_all_flags .return_code code cmd [add_stack ...] {
+    echo $cmd returned $code : call stack $cmd $add_stack$
+    .exit $code}
   .collect_errors_except .nop {
     .mapped_argfunction &3 {$1$}
-    .exit}} )signal triggered: .undeclared_variable ( nl .raw_command )Exception for failed handler. Original exception with call stack:
-.undeclared_variable nl .raw_command
-Exception for failed handler. Original exception with call stack:
-.undeclared_variable nl .undeclared_variable
+    .exit 0}} )
 signal triggered: .raw_command ( .else {
   .echo unexpected command line: &* (
 )
-  .source /etc/rwshrc-default} )signal triggered: .undeclared_variable ( nl .raw_command )Exception for failed handler. Original exception with call stack:
-.undeclared_variable nl .raw_command
-Exception for failed handler. Original exception with call stack:
-.undeclared_variable nl .undeclared_variable
+  .source /etc/rwshrc-default} )
 .help not defined 
-signal triggered: .prompt ( )signal triggered: .undeclared_variable ( nl .prompt )Exception for failed handler. Original exception with call stack:
-.undeclared_variable nl .prompt
-Exception for failed handler. Original exception with call stack:
-.undeclared_variable nl .undeclared_variable
-signal triggered: .raw_command ( #! /bin/rwsh )signal triggered: .undeclared_variable ( nl .raw_command )Exception for failed handler. Original exception with call stack:
-.undeclared_variable nl .raw_command
-Exception for failed handler. Original exception with call stack:
-.undeclared_variable nl .undeclared_variable
-signal triggered: .prompt ( )signal triggered: .undeclared_variable ( nl .prompt )Exception for failed handler. Original exception with call stack:
-.undeclared_variable nl .prompt
-Exception for failed handler. Original exception with call stack:
-.undeclared_variable nl .undeclared_variable
-signal triggered: .raw_command (  )signal triggered: .undeclared_variable ( nl .raw_command )Exception for failed handler. Original exception with call stack:
-.undeclared_variable nl .raw_command
-Exception for failed handler. Original exception with call stack:
-.undeclared_variable nl .undeclared_variable
-signal triggered: .prompt ( )signal triggered: .undeclared_variable ( nl .prompt )Exception for failed handler. Original exception with call stack:
-.undeclared_variable nl .prompt
-Exception for failed handler. Original exception with call stack:
-.undeclared_variable nl .undeclared_variable
+signal triggered: .prompt ( )
+signal triggered: .raw_command ( #! /bin/rwsh )
+signal triggered: .prompt ( )
+signal triggered: .raw_command (  )
+signal triggered: .prompt ( )
 signal triggered: .raw_command ( .echo hello world (
-) )signal triggered: .undeclared_variable ( nl .raw_command )Exception for failed handler. Original exception with call stack:
-.undeclared_variable nl .raw_command
-Exception for failed handler. Original exception with call stack:
-.undeclared_variable nl .undeclared_variable
+) )
 hello world 
-signal triggered: .prompt ( )signal triggered: .undeclared_variable ( nl .prompt )Exception for failed handler. Original exception with call stack:
-.undeclared_variable nl .prompt
-Exception for failed handler. Original exception with call stack:
-.undeclared_variable nl .undeclared_variable
-signal triggered: .shutdown ( ./rwsh test_files/signal_triggered.rwsh )signal triggered: .undeclared_variable ( nl .shutdown )Exception for failed handler. Original exception with call stack:
-.undeclared_variable nl .shutdown
-Exception for failed handler. Original exception with call stack:
-.undeclared_variable nl .undeclared_variable
-signal triggered: .unused_variable ( FIGNORE )Exception for failed handler. Original exception with call stack:
-.unused_variable FIGNORE
-signal triggered: .undeclared_variable ( nl .unused_variable )Exception for failed handler. Original exception with call stack:
-.undeclared_variable nl .unused_variable
-Exception for failed handler. Original exception with call stack:
-.undeclared_variable nl .undeclared_variable
+signal triggered: .prompt ( )
+signal triggered: .unused_variable ( FIGNORE )
 ./rwsh returned 255 : call stack ./rwsh
--1
 $.autofunction test_files/../rwsh
-0
 $whence test_files/../rwsh
 .function_all_flags test_files/../rwsh -- [args ...] {
       ./test_files/../rwsh $args$}
-0
 $
-0
 $.function_all_flags .autofunction -- cmd [args ...] {
   # $args$ redefining .autofunction tested by subsequent usage
   .local full_path ${.which_path $cmd $PATH}
@@ -1101,34 +939,25 @@ $.function_all_flags .autofunction -- cmd [args ...] {
       &&full_path $args$
       echo this &&cmd function has been brought to you by .autofunction}}
   echo added $cmd to executable map in test suite}
-0
 $.binary /bin/rm
-0
 $
-0
 $# selection_read read_dir()
-0
 $echo @/etc
 /etc
-0
 $echo @test_files/ixx
 no file matching pattern test_files/ixx
 -1
 $echo @test_files/i*xx
 test_files/ixxx
-0
 $echo @test_files/i**xx
 test_files/ixxx
-0
 $echo @test_files/ii**xx
 no file matching pattern test_files/ii**xx
 -1
 $echo @test_files/ix*xx
 test_files/ixxx
-0
 $echo @test_files/ix*xx*
 test_files/ixxx
-0
 $echo @test_files/ix*xxx
 no file matching pattern test_files/ix*xxx
 -1
@@ -1140,7 +969,6 @@ no file matching pattern test_files/*iixxx
 -1
 $echo @test_files/ix*x*x
 test_files/ixxx
-0
 $echo @test_files/ix*xx*x
 no file matching pattern test_files/ix*xx*x
 -1
@@ -1162,169 +990,121 @@ $echo @test_main.cc
 no file matching pattern test_main.cc
 -1
 $se {se {.for @e*c {echo $1}} >test_files/tmp}
-0
 $.global LC_ALL C
-0
 $.nop $LC_ALL
-0
 $sort test_files/tmp
 added sort to executable map in test suite
 executable.cc
 executable_map.cc
 this sort function has been brought to you by .autofunction
-0
 $whence sort
 .function_all_flags sort -- [args ...] {
       /usr/bin/sort $args$
       echo this sort function has been brought to you by .autofunction}
-0
 $echo @test_files/*xx
 test_files/ixxx
-0
 $echo @test_files/*x*x*x*x
 no file matching pattern test_files/*x*x*x*x
 -1
 $echo @test_files/*xyxy
 test_files/ixyxyxy
-0
 $echo @/bin
 /bin
-0
 $se {se {.for @/usr/*bin {echo $1}} >test_files/tmp}
-0
 $sort test_files/tmp
 /usr/bin
 /usr/sbin
 this sort function has been brought to you by .autofunction
-0
 $se {se {.for @/etc/rwsh* {echo $1}} >test_files/tmp}
-0
 $sort test_files/tmp
 /etc/rwshrc
 /etc/rwshrc-basic
 /etc/rwshrc-default
 this sort function has been brought to you by .autofunction
-0
 $echo @/etc/rw*ic
 /etc/rwshrc-basic
-0
 $echo @/etc/rwsh*a*
 /etc/rwshrc-basic /etc/rwshrc-default
-0
 $.set FIGNORE rwshrc* rwshrc-bas rwshrc-default
-0
 $echo @/etc/rwshrc-*
 /etc/rwshrc-basic
-0
 $echo @/etc/rwshrc*
 /etc/rwshrc-basic /etc/rwshrc
-0
 $echo @/etc/rwshr*
 no file matching pattern /etc/rwshr*
 -1
 $.set FIGNORE *.cc
-0
 $echo @*cc
 no file matching pattern *cc
 -1
 $echo @*h.cc
 rwsh.cc
-0
 $.set FIGNORE *de*
-0
 $echo @/etc/rwshrc-defa*
 /etc/rwshrc-default
-0
 $echo @/etc/rwshrc-d*
 no file matching pattern /etc/rwshrc-d*
 -1
 $echo @/etc/rwsh*a*
 /etc/rwshrc-basic
-0
 $echo @test_files/*i*x*y*y*x*
 test_files/ixyxyxy
-0
 $echo @/etc/rw*-basi*si*
 no file matching pattern /etc/rw*-basi*si*
 -1
 $echo @test_main.sh
 test_main.sh
-0
 $se {se {.for @test_files/*x* {echo $1}} >test_files/tmp}
-0
 $sort test_files/tmp
 test_files/ixxx
 test_files/ixyxyxy
 this sort function has been brought to you by .autofunction
-0
 $.scope r*h.cc sel*.h (A ...) {echo @$A}
 rwsh.cc selection.h
-0
 $
-0
 $# Arg_spec::REFERENCE, interpret(), evaluate_expansion(), evaluate_var()
-0
 $.nop $A
-0
 $.set A /bin
-0
 $.global B ( (zero   zero) ((one one  ) one   ) two three)
-0
 $.global C ((external) () ( ) internal(parenthesis))
-0
 $.global broken (extra_close\) \(extra_open)
-0
 $echo $A $0 @$A
 /bin echo /bin
-0
 $echo A $1 1 $$3 $$$3
 A A 1 A /bin
-0
 $echo A $1a
 optional variable 1a was not defined
 call stack:
-0
 $echo A 1 2 3 4 5 6 7 $$$$$$$$$8
 A 1 2 3 4 5 6 7 /bin
-0
 $sa $UNDECLARED $ALSO_UNDECLARED {}
 UNDECLARED was not declared
 call stack:
-0
 $sa {echo $UNDECLARED $ALSO_UNDECLARED}
 args was not checked with call stack .scope sa
 UNDECLARED was not declared
 call stack: .scope sa
--1
 $echo &UNDECLARED &ALSO_UNDECLARED
 UNDECLARED was not declared
 call stack:
-0
 $.scope [undefined] {echo $undefined and also unchecked}
 undefined was not checked with call stack .scope
 optional variable undefined was not defined
 call stack: .scope
--1
 $.scope [udef] {echo but $udef$ can vanish}
 but can vanish
-0
 $.scope ([-x foo bar]) {echo along with specific $-x$ flags}
 along with specific flags
-0
 $.scope ([-x foo bar]) {echo note even one $bar$ prevents an error}
 note even one prevents an error
-0
 $.scope [also_undefined] {echo even &&also_undefined$ in a soon}
 even in a soon
-0
 $.scope undeclared ([leading_ud] ref) {echo references $$ref$ can throw}
 leading_ud was not checked with call stack .scope
 undeclared was not declared
 call stack: .scope
--1
 $.scope leading_ud ([leading_ud] ref) {echo good $$ref$ ones are checked}
 good ones are checked
-0
 $sa $B$$1x {echo $# $args$}
 $$1x is not a valid word selection
 call stack
@@ -1333,32 +1113,23 @@ $$1$ is not a valid word selection
 call stack
 $sa $B {e $# $args$ $nl}
 2  (zero   zero) ((one one  ) one   ) two three 
-0
 $sa $B$ {e $# $args$ $nl}
 5 zero   zero (one one  ) one    two three 
-0
 $sa $B$$ {e $# $args$ $nl}
 7 zero zero one one   one two three 
-0
 $sa $B$$$$ {echo $# $args$}
 8 zero zero one one one two three
-0
 $se {sa $B$$$$ {echo $# $args$}}
 8 zero zero one one one two three
-0
 $sa $B$10 {echo $# $args$}
 optional variable $B$10 was not defined
 call stack:
-0
 $sa $B$1 {e $# $args$ $nl}
 2 (one one  ) one    
-0
 $sa $B$$1 {echo $# $args$}
 2 zero
-0
 $om $broken {e $# $* $nl}
 2 extra_close) (extra_open 
-0
 $sa $broken$ {echo $# $args$}
 signal triggered: .mismatched_parenthesis ( extra_close) )
 mismatched parenthesis: extra_close)
@@ -1371,20 +1142,14 @@ call stack:
 -1
 $sa $C {e $# $args$ $nl}
 2 (external) () ( ) internal(parenthesis) 
-0
 $sa $C$ {e $# $args$ $nl}
 5 external    internal(parenthesis) 
-0
 $sa $C$$ {echo $# $args$}
 3 external internal(parenthesis)
-0
 $
-0
 $# Arg_spec::SOON, apply()
-0
 $echo A &1 1 &$3 &$$3
 A A 1 A /bin
-0
 $echo &&A
 &&A attempts to substitute after the command has been run
 $se {e &&&A}
@@ -1407,86 +1172,66 @@ $echo &&{e &A}
 (&&{e &A}) attempts to substitute after the command has been run
 $echo &A
 /bin
-0
 $.scope not_bin A {e &A &&A $A $nl; .scope otherwise A {echo &A &&A &&&A $A}}
 /bin not_bin not_bin 
 /bin not_bin otherwise otherwise
-0
 $se {sa &B$10 {e $# $args$}}
 optional variable &B$10 was not defined
 call stack:
-0
 $se {sa &B$$$$ {echo $# $args$}}
 8 zero zero one one one two three
-0
 $se {sa &B$1 {e $# $args$} $nl}
 3 (one one  ) one    
-0
 $se {sa &B$$1 {echo $# $args$}}
 2 zero
-0
 $
-0
 $# Arg_spec::SUBSTITUTION and Arg_spec::SOON_SUBSTITUTION, apply(), interpret(),
-0
 $# evaluate_substitution()
-0
 $echo ${e $A}
 /bin
-0
 $whence .argfunction {e ${e $A}}
 {e ${e $A}}
-0
 $.scope not_bin A {
    e &{.echo $A} &&{.echo $A} $A $nl
    .scope otherwise A {
       echo &{.echo $A} &&{.echo $A} &&&{.echo $A} ${.echo $A} $A}}
 /bin not_bin not_bin 
 /bin not_bin otherwise otherwise otherwise
-0
 $.scope not_bin A {e &{.echo &A $A} &&{.echo &A &&A} ${.echo &A $A} $nl}
 /bin /bin /bin not_bin /bin not_bin 
-0
 $sa &{.echo $A} {echo $args &1$}
 /bin &{.echo $A}
-0
 $sa &{.return 1} {}
 substitution (&{.return 1}) failed
 call stack
-0
+args was not checked with call stack .scope sa
 $sa ${.return 1} {}
 substitution (${.return 1}) failed
 call stack
-0
+args was not checked with call stack .scope sa
 $se {e &{.return 1}}
 substitution (&{.return 1}) failed
 call stack
-0
+unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .echo e .scope se
 $se {e &&{.return 1}; e after}
 substitution (&{.return 1}) failed
 call stack .scope se
--1
 $fn .failed_substitution [args ...] {.nop $args$; e $Z}
-0
 $.throw sa {echo even from $args$ 7 is a number}
 even from .throw 7 is a number
--1
 $.fallback_handler sa {echo even from $args$ 7 is a number}
 Exception for failed handler. Original exception with call stack:
 sa
-0
 $.throw .failed_substitution sa {echo even from $args$ 7 is a number}
 Exception for failed handler. Original exception with call stack:
 .failed_substitution sa .throw
 Z was not declared
 call stack: .failed_substitution
--1
 $se {e &&{.return 1}; e after}
 Exception for failed handler. Original exception with call stack:
 .failed_substitution &{.return 1} .scope se
 Z was not declared
 call stack: .failed_substitution
--1
 $e x{e bad argfunction style}
 x is neither an argfunction nor a substitution
 $e x&&&{e x}
@@ -1501,17 +1246,13 @@ $e &&${e x}
 $.return &{.return 0}
 () is not a number
 call stack: .return
--1
 $.return ${e 0 $nl}
 (0 
 ) is not a number
 call stack: .return
--1
 $.return &{.echo 0}
-0
 $.echo nevermore &{/bin/echo quoth the raven} 
 nevermore quoth the raven
-0
 $sa ${e $B}$@1 ${e $B}$1 ${e $B}XYZ {echo $# $args$}
 @1 is not a valid word selection
 call stack
@@ -1519,48 +1260,33 @@ XYZ is not a valid word selection
 call stack
 $sa ${e $B} {e $# $args$ $nl}
 2  (zero   zero) ((one one  ) one   ) two three 
-0
 $sa &{e $B} {e $# $args$ $nl}
 2  (zero   zero) ((one one  ) one   ) two three 
-0
 $sa ${e $B}$ {e $# $args$ $nl}
 5 zero   zero (one one  ) one    two three 
-0
 $sa &{e $B}$ {e $# $args$ $nl}
 5 zero   zero (one one  ) one    two three 
-0
 $e $# &{.echo $B}$ $nl
 4 zero   zero (one one  ) one    two three 
-0
 $se {e $# &{e $B}$ $nl}
 1 zero   zero (one one  ) one    two three 
-0
 $sa &{e $B}$$ {e $# $args$ $nl}
 7 zero zero one one   one two three 
-0
 $sa ${e $B}$$ {e $# $args$ $nl}
 7 zero zero one one   one two three 
-0
 $se {sa ${e $B}$1 {e $# $args$ $nl}}
 2 (one one  ) one    
-0
 $se {sa &{e $B}$1 {.echo $# $args$ $nl}}
 2 (one one  ) one    
-0
 $se {sa ${e $B}$$$1 {echo $# $args$}}
 2 zero
-0
 $se {sa &{e $B}$$$1 {echo $# $args$}}
 2 zero
-0
 $.unset A
-0
 $.unset B
-0
 $sa &{e ((zero zero) (one one) two three)}$10 {echo $# $args$}
 optional variable (&{e ((zero zero) (one one) two three)}$10) was not defined
 call stack:
-0
 $sa ${e (zero zero) \)one one two three}$1 {echo $# $args$}
 signal triggered: .mismatched_parenthesis ( zero zero ) )
 mismatched parenthesis: (zero zero ))
@@ -1573,75 +1299,55 @@ call stack:
 -1
 $om ${e (zero zero) \)one one two three} {e $# $* $nl}
 2 zero zero )one one two three 
-0
 $c x &{.echo (y y)}$ x $nl
 xyyx
-0
 $c x ${.echo ( y y )}$ x $nl
 xyyx
-0
 $c x &{.echo (( y) (y ))}$ x $nl
 x yy x
-0
 $c x ${.echo (    )}$ x $nl
 xx
-0
 $c x &{.echo (
 y
 y
 )}$ x $nl
 xyyx
-0
 $
-0
 $# file redirection (but don't overwrite files that exist)
-0
 $# .for_each_line
-0
 $/bin/cat <non_existent_file
 could not open file non_existent_file
 call stack /bin/cat
--1
 $.for_each_line <non_existent_file {echo line of $# \( $* \)}
 could not open file non_existent_file
 call stack .for_each_line
--1
 $se {sa {echo hi >one >two} {cat <three <four}
 }
 double redirection is not supported at this time: >one and >two
 multiple argfunctions not supported at this time
 double redirection is not supported at this time: <three and <four
-$.if .test_file_exists outfile {echo failed to remove outfile}
-0
-$.else {echo outfile properly removed}
+$se {
+  .if .test_file_exists outfile {echo failed to remove outfile}
+  .else {echo outfile properly removed}}
 outfile properly removed
-0
 $se {echo hi >outfile}
-0
 $/bin/cat outfile
 hi
-0
-$.if .test_is_number 0 {>outfile /bin/echo there}
-0
-$.else {.nop}
-0
+$se {
+  .if .test_is_number 0 {>outfile /bin/echo there}
+  .else {.nop}}
 $/bin/cat outfile
 there
-0
 $se {se >outfile {e line 1 $nl; e line 2 longer $nl; .echo $nl; echo ending}}
-0
 $/bin/cat <outfile
 line 1 
 line 2 longer 
 
 ending
-0
 $.for_each_line x {}
 unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .for_each_line
--1
 $.for_each_line <outfile
 .for_each_line requires an argfunction
--1
 $.for_each_line <outfile <another A{}
 double redirection is not supported at this time: <outfile and <another
 A is neither an argfunction nor a substitution
@@ -1656,100 +1362,68 @@ $.for_each_line <outfile {
   echo not printed}
 current line line 1
 current line line 2 longer
-0
 $.for_each_line <outfile {e line of $# \( $* \) $nl}
 line of 3 ( line 1 ) 
 line of 4 ( line 2 longer ) 
 line of 1 ( ) 
 line of 2 ( ending ) 
-0
 $/bin/rm outfile
-0
 $
-0
 $# soon level promotion
-0
 $.global A 0
-0
 $.global OLD_NESTING ${.get_max_nesting}
-0
 $.set_max_nesting 46
-0
 $fn x {.var_add A 1
      se {.var_add A 1
         se {.var_add A 1
            se {.var_add A 1
               se {.var_add A 1
                  se {.argfunction}}}}}}
-0
 $.scope 00 A {x {echo &A &&A &&&A $A}}
 0 00 5 5
-0
 $.scope 00 A {x {x {x {x {echo &A &&A &&&A &&&&A &&&&&A &&&&&&A $A}}}}}
 0 00 5 10 15 20 20
-0
 $.scope 00 A {
   x {e &{.echo &A $A} . &&{.echo &A &&A $A} . &&&{.echo &A &&A &&&A $A} . ${
   .echo &A &&A &&&A $A} . $A $nl}}
 0 0 . 0 00 00 . 0 00 5 5 . 0 00 5 5 . 5 
-0
 $.set A 0
-0
 $x {x {x {x {
   e &{.echo &A $A} . &&{.echo &A &&A $A} . &&&{.echo &A &&A &&&A $A} . &&&&{
   .echo &A &&A &&&A &&&&A $A} . &&&&&{.echo &A &&A &&&A &&&&A &&&&&A $A} . ${
   .echo &A &&A &&&A &&&&A &&&&&A $A} . $A $nl}}}}
 0 0 . 0 5 5 . 0 5 10 10 . 0 5 10 15 15 . 0 5 10 15 20 20 . 0 5 10 15 20 20 . 20 
-0
 $.rm_executable x
-0
 $.function_all_flags not soon {&&&enough}
 &&&enough attempts to substitute after the command has been run
 $.set_max_nesting $OLD_NESTING
-0
 $.unset A
-0
 $.unset OLD_NESTING
-0
 $
-0
 $## builtin tests
-0
 $# .argc
-0
 $.argc {excess argfunc}
 .argc does not accept an argfunction with call stack: .argc
--1
 $.scope () {.argc; .echo $nl}
-0
 0
 $.scope () {.argc (); .echo $nl}
 1
-0
 $.scope () {.argc (1 a) (2 b (c d)) (3 ((e () f))); .echo $nl}
 3
-0
 $
-0
 $# .cd (.which_path ../)
-0
 $.cd
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .cd
--1
 $.cd /bin {excess argfunc}
 .cd does not accept an argfunction with call stack: .cd
--1
 $.cd /bin /
 unacceptable argument count: received 2 non-optional, but needed 1 (with 0 optional) for .cd
--1
 $.cd /bn
 /bn directory does not exist
 call stack .cd
--1
 $.cd /bin/rwsh
 /bin/rwsh is not a directory
 call stack .cd
--1
 $.fork .mapped_argfunction {
   .try_catch_recursive .binary_not_found {.which_path ../bin/rwsh /bin:.}
   .cd /bin
@@ -1764,191 +1438,132 @@ directory is now /bin in subshell
 ../bin/rwsh : binary not found in /bin
 call stack: .which_path .try_catch_recursive(body)
 ../bin/rwsh
-0
 $
-0
 $# .combine
-0
 $.combine
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .combine
--1
 $.combine something {excess argfunc}
 .combine does not accept an argfunction with call stack: .combine
--1
 $.combine on () e \ two ( ) $# $nl
 one two 8
-0
 $
-0
 $# .echo .error
-0
 $.error
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .error
--1
 $.error something {excess argfunc}
 .error does not accept an argfunction with call stack: .error
--1
 $.nop .error cannot test error with a diff until you can redirect it $nl
--1
 $.echo
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .echo
--1
 $.echo something {excess argfunc}
 .echo does not accept an argfunction with call stack: .echo
--1
 $.echo these are fixed strings $nl
 these are fixed strings 
-0
 $
-0
 $# .exec .fork Binary Old_argv_t .binary_not_found
-0
 $.fork
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .fork
--1
 $.fork echo text
 text
-0
 $.fork .return 127
 .fork returned 127 : call stack .fork
--1
 $.fork sa 126 {sa $args$ {echo about to return $args$; .return $args$}}
 about to return 126
 .fork returned 126 : call stack .fork
--1
 $.exec
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .exec
--1
 $.exec something {excess argfunc}
 .exec does not accept an argfunction with call stack: .exec
--1
 $.exec /bin/ech does not exist
 /bin/ech : binary does not exist
 call stack: .exec
--1
 $.exec /etc/rwshrc-default config files are not interpreters
 /etc/rwshrc-default is not executable
 call stack: .exec
--1
 $.exec /bin cannot exec a directory
 /bin is not executable
 call stack: .exec
--1
 $.exec /bin/rwsh/insanity errno is ENOTDIR
 .exec failed for /bin/rwsh/insanity with errno 20
 call stack .exec
--1
 $.fork se {.exec /bin/rwsh/insanity errno is ENOTDIR}
 .exec failed for /bin/rwsh/insanity with errno 20
 call stack (.exec .scope se)
 .fork returned 255 : call stack .fork
--1
 $.fork se {.exec /bin/echo something; /bin/echo else}
 something
-0
 $.scope () {.fork se {.exec /bn/echo 1 2 3}}
 /bn/echo : binary does not exist
 call stack: (.exec .scope se)
 .fork returned 255 : call stack .fork .scope
--1
 $.fork se {/bn/echo 1 2 3}
 /bn/echo : binary not found in /bin:/usr/bin:.
 call stack: .which_path .autofunction .autofunction .scope se
 /bn/echo : command not found ( /bn/echo 1 2 3 .scope se )
 .fork returned 255 : call stack .fork
--1
 $.last_exception /bn/echo
 /bn/echo : command not found ( /bn/echo .last_exception )
--1
 $.exec /bn/echo 1 2 3
 /bn/echo : binary does not exist
 call stack: .exec
--1
 $/bn/echo 1 2 3
 /bn/echo : binary not found in /bin:/usr/bin:.
 call stack: .which_path .autofunction .autofunction
 /bn/echo : command not found ( /bn/echo 1 2 3 )
--1
 $.last_exception /bn/echo
 /bn/echo : command not found ( /bn/echo .last_exception )
--1
 $.fork se {/bn/echo 1 2 3}
 /bn/echo : binary not found in /bin:/usr/bin:.
 call stack: .which_path .autofunction .autofunction .scope se
 /bn/echo : command not found ( /bn/echo 1 2 3 .scope se )
 .fork returned 255 : call stack .fork
--1
 $.fork .exec /bn/echo 1 2 3
 /bn/echo : binary does not exist
 call stack: .exec
 .fork returned 255 : call stack .fork
--1
 $/bn/echo 1 2 3
 /bn/echo : binary not found in /bin:/usr/bin:.
 call stack: .which_path .autofunction .autofunction
 /bn/echo : command not found ( /bn/echo 1 2 3 )
--1
 $.exec /bn/echo 1 2 3
 /bn/echo : binary does not exist
 call stack: .exec
--1
 $/bin/echo 1 2 3
 1 2 3
-0
 $
-0
 $# .fallback_handler .get_fallback_message .set_fallback_message
-0
 $.fallback_handler
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .fallback_handler
--1
 $.fallback_handler something {excess argfunc}
 Exception for failed handler. Original exception with call stack:
 something
-0
 $.get_fallback_message something 
 unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .get_fallback_message
--1
 $.get_fallback_message {excess argfunc}
 .get_fallback_message does not accept an argfunction with call stack: .get_fallback_message
--1
 $.set_fallback_message
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .set_fallback_message
--1
 $.set_fallback_message something {excess argfunc}
 .set_fallback_message does not accept an argfunction with call stack: .set_fallback_message
--1
 $.fallback_handler pretend_error
 Exception for failed handler. Original exception with call stack:
 pretend_error
-0
 $.local original_message &{.get_fallback_message}
-0
 $.set_fallback_message spaceless fallback message
-0
 $.fallback_handler second pretend error
 spaceless fallback messagesecond pretend error
-0
 $.set_fallback_message (alternate fallback message: )
-0
 $.fallback_handler a third
 alternate fallback message: a third
-0
 $.set_fallback_message $original_message
-0
 $
-0
 $# .for
-0
 $.for {echo no arguments $1}
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .for
--1
 $.for no_argfunction
 .for requires an argfunction
--1
 $.for 1 {echo one argument $1}
 one argument 1
-0
 $.for 1 2 3 4 {
   echo current arg $1
   if_only .test_greater $1 2 {
@@ -1961,7 +1576,6 @@ $.for 1 2 3 4 {
 current arg 1
 current arg 2
 current arg 3
-0
 $fn fIJ outer inner {
   .local sum 0
   .nop $sum
@@ -1976,20 +1590,17 @@ $fn fIJ outer inner {
       .else_if .test_less 3 $sum$ {.throw outer_continue}
       .else {}}}
   .echo $nl}
-0
 $fIJ scope_for scope_for
 1:1,2,3Exception for failed handler. Original exception with call stack:
 outer_continue .throw .mapped_argfunction .else_if .scope .mapped_argfunction .for scope_for .scope .mapped_argfunction .for scope_for fIJ
 .continue thrown outside of control flow body
 call stack: .throw .mapped_argfunction .else_if .scope .mapped_argfunction .for scope_for .scope .mapped_argfunction .for scope_for fIJ .replace_exception outer_continue
--1
 $fIJ outer_for scope_for
 1:1,2,3
 2:1,2
 3:1
 4:1
 5:1
-0
 $fIJ scope_for outer_for
 1:1,2,3,4,5
 2:1,2,3,4
@@ -1997,7 +1608,6 @@ $fIJ scope_for outer_for
 4:1,2
 5:1
 6:1
-0
 $fIJ outer_for outer_for
 1:1,2,3,4,5
 2:1,2,3,4
@@ -2005,194 +1615,137 @@ $fIJ outer_for outer_for
 4:1,2
 5:1
 6:1
-0
-$.else {}
-0
 $.for 1 2 3 4 {e four arguments $1 $nl}
 four arguments 1 
 four arguments 2 
 four arguments 3 
 four arguments 4 
-0
 $
-0
 $# .function_all_flags .rm_executable
-0
 $.function_all_flags
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .function_all_flags
--1
 $.function_all_flags missing argfunction
 .function_all_flags requires an argfunction
--1
 $.rm_executable {excess argfunction}
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .rm_executable
 .rm_executable does not accept an argfunction with call stack: .rm_executable
--1
 $.function_all_flags .exit {.nop}
 $.exit cannot be a function
 call stack .function_all_flags
--1
 $.function_all_flags .escaped_argfunction {.nop}
 $.escaped_argfunction cannot be a function
 call stack .function_all_flags
--1
 $.rm_executable a
 a : command not found ( a .rm_executable )
--1
 $.function_all_flags a {.nop}
-0
 $.whence_function a
 .function_all_flags a  {.nop}
-0
 $a 1 2 3
 unacceptable arguments: for prototype ,
  found (1 2 3) excess
 ( call) stack: a
--1
 $.rm_executable a
-0
 $.whence_function a
 a : command not found ( a .whence_function )
--1
 $.global A \
-0
 $.echo () A () A () $# $nl
  A  A  8 
-0
 $.function_all_flags a arg {e 9 $A $arg @/usr $nl}
-0
 $.whence_function a
 .function_all_flags a arg {e 9 $A $arg @/usr $nl}
-0
 $a \
 9   /usr 
-0
 $a 1
 9  1 /usr 
-0
 $a 1 2
 unacceptable arguments: for prototype arg,
  assigned arg=1 ,
  but found (2) excess
 ( call) stack: a
--1
 $.function_all_flags a [args ...] {.nop $args$; e $*5 $* $*0 $nl}
-0
 $a
 a 
-0
 $a 1
 1 a 1 
-0
 $a 1 2
 1 2 a 1 2 
-0
 $fn g name {.function_all_flags $name name {
   .function_all_flags $name {.argfunction}}}
-0
 $g a {e 3 2 1 $nl}
-0
 $whence a
 .function_all_flags a name {
   .function_all_flags $name {e 3 2 1 $nl}}
-0
 $a b
-0
 $b
 3 2 1 
-0
 $# a function redefining itself doesn't seg fault
-0
 $fn g {e hi $nl; fn g {e there $nl}; fn h {e nothing here}; g}
-0
 $g
 hi 
 there 
-0
 $.function_all_flags
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .function_all_flags
--1
 $.function_all_flags .exit {e cannot redefine a builtin as a function}
 $.exit cannot be a function
 call stack .function_all_flags
--1
 $.function_all_flags .a {can define a function for non-existant builtin}
-0
 $.function_all_flags .argfunction {e cannot define .argfunction}
 $.argfunction cannot be a function
 call stack .function_all_flags
--1
 $.function_all_flags a y y {e illegal duplicate required parameter}
 duplicated parameter in function definition: y
 call stack: .function_all_flags
--1
 $.function_all_flags a [-x] [-x] {e illegal duplicate flag parameter}
 duplicated parameter in function definition: -x
 call stack: .function_all_flags
--1
 $.function_all_flags a [x x] {e illegal duplicate optional parameter}
 duplicated parameter in function definition: x
 call stack: .function_all_flags
--1
 $.function_all_flags a [-x arg bar] [-y arg] {e illegal duplicate flag argument}
 duplicated parameter in function definition: arg
 call stack: .function_all_flags
--1
 $.function_all_flags a -x [-x] {e evil duplication between flags positional}
 duplicated parameter in function definition: -x
 call stack: .function_all_flags
--1
 $.function_all_flags a -- -- {e -- cannot be a duplicate parameter}
 duplicated parameter in function definition: --
 call stack: .function_all_flags
--1
 $.function_all_flags a [--] [--] {e [--] cannot be a duplicate parameter}
 duplicated parameter in function definition: --
 call stack: .function_all_flags
--1
 $.function_all_flags a [--] -- {e -- and [--] cannot both be parameters}
 duplicated parameter in function definition: --
 call stack: .function_all_flags
--1
 $.function_all_flags a [-- arg] {e -- cannot take arguments}
 optional -- parameter cannot take arguments ( ([-- arg]) ) with call stack: .function_all_flags
--1
 $.function_all_flags a [arg -- foo] {e -- cannot take arguments}
 optional -- parameter cannot take arguments ( ([arg -- foo]) ) with call stack: .function_all_flags
--1
 $.rm_executable nonsense
 nonsense : command not found ( nonsense .rm_executable )
--1
 $whence test_var_greater
 .function_all_flags test_var_greater -- var value {.test_greater $$var $value}
-0
 $.scope 5 n {test_var_greater n}
 unacceptable arguments: for prototype -- var value,
  assigned var=n ,
  but needed (value),
 ( call) stack: (test_var_greater .scope)
 n was unused with call stack .scope
--1
 $.scope 5 n {test_var_greater n 3 12}
 unacceptable arguments: for prototype -- var value,
  assigned value=3 var=n ,
  but found (12) excess
 ( call) stack: (test_var_greater .scope)
 n was unused with call stack .scope
--1
 $.scope 5 n {test_var_greater n 3}
-0
 $whence ntimes
 .function_all_flags ntimes n {
   .while test_var_greater n 0 {
     .mapped_argfunction {.argfunction}
     .var_subtract n 1}}
-0
 $ntimes -- 3 {e $n remaining $nl}
 3 remaining 
 2 remaining 
 1 remaining 
-0
 $ntimes 2 {ntimes 3 {e &&n and $n remaining $nl}}
 2 and 3 remaining 
 2 and 2 remaining 
@@ -2200,664 +1753,490 @@ $ntimes 2 {ntimes 3 {e &&n and $n remaining $nl}}
 1 and 3 remaining 
 1 and 2 remaining 
 1 and 1 remaining 
-0
 $.function_all_flags a [-x] [-] [--long-opt y second {
   e mismatched bracket (i.e. missing close brakcet)}
 mismatched bracket: ([--long-opt y second)
 call stack: .function_all_flags
--1
 $.function_all_flags a [-?] [--] {.list_locals}
 [-?] [--] is an ambiguous location for a prototype -- (it requests reading the user's mind) (stack:.function_all_flags)
--1
 $.function_all_flags a [-x] [--] foo {.list_locals}
 [-x] [--] is an ambiguous location for a prototype -- (it requests reading the user's mind) (stack:.function_all_flags)
--1
 $.function_all_flags a [-?] -- foo {.list_locals}
 [-?] -- is an ambiguous location for a prototype -- (it requests reading the user's mind) (stack:.function_all_flags)
--1
 $.function_all_flags a [-x] -- {.list_locals}
 [-x] -- is an ambiguous location for a prototype -- (it requests reading the user's mind) (stack:.function_all_flags)
--1
 $.function_all_flags a [--] {.list_locals; .echo $nl}
-0
 $whence a
 .function_all_flags a [--] {.list_locals; .echo $nl}
-0
 $a
 
-0
 $a --
 --
-0
 $a foo
 unacceptable arguments: for prototype [--],
  found (foo) excess
 ( call) stack: a
--1
 $.function_all_flags a [-x] [--long-opt y] second {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
-0
 $whence a
 .function_all_flags a [--long-opt y] [-x] second {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}; .echo $nl}
-0
 $a
 unacceptable arguments: for prototype [--long-opt y] [-x] second,
  assigned -*=() ,
  but needed (second),
 ( call) stack: a
--1
 $a single
 -*() second(single) 
-0
 $a -x single
 -*(-x) -x(-x) second(single) 
-0
 $a --long-opt arg single
 -*(--long-opt arg) --long-opt(--long-opt arg) second(single) y(arg) 
-0
 $a --long-opt single
 unacceptable arguments: for prototype [--long-opt y] [-x] second,
  assigned -*=(--long-opt single) --long-opt=(--long-opt single) y=single ,
  but needed (second),
 ( call) stack: a
--1
 $a --long-opt first -x --long-opt second single
 -*(--long-opt first -x --long-opt second) --long-opt(--long-opt first --long-opt second) -x(-x) second(single) y(first second) 
-0
 $.function_all_flags a [-q option1 option2] [-x o1 o2 o3 o4] required {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
-0
 $whence a
 .function_all_flags a [-q option1 option2] [-x o1 o2 o3 o4] required {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}; .echo $nl}
-0
 $a
 unacceptable arguments: for prototype [-q option1 option2] [-x o1 o2 o3 o4] required,
  assigned -*=() ,
  but needed (required),
 ( call) stack: a
--1
 $a single
 -*() required(single) 
-0
 $a -q one two
 unacceptable arguments: for prototype [-q option1 option2] [-x o1 o2 o3 o4] required,
  assigned -*=(-q one two) -q=(-q one two) option1=one option2=two ,
  but needed (required),
 ( call) stack: a
--1
 $a -q opt and req
 -*(-q opt and) -q(-q opt and) option1(opt) option2(and) required(req) 
-0
 $a -x opt and
 unacceptable arguments: for prototype [-q option1 option2] [-x o1 o2 o3 o4] required,
  assigned -*=(-x opt and) -x=(-x opt and) o1=opt o2=and ,
  but needed (o3 o4 required),
 ( call) stack: a
--1
 $a -x first second third fourth req
 -*(-x first second third fourth) -x(-x first second third fourth) o1(first) o2(second) o3(third) o4(fourth) required(req) 
-0
 $a -q one two -q three four five
 -*(-q one two -q three four) -q(-q one two -q three four) option1(one three) option2(two four) required(five) 
-0
 $a -x one two three four -q five six seven
 -*(-x one two three four -q five six) -q(-q five six) -x(-x one two three four) o1(one) o2(two) o3(three) o4(four) option1(five) option2(six) required(seven) 
-0
 $a -x one two three four five -q six seven
 -*(-x one two three four -q six seven) -q(-q six seven) -x(-x one two three four) o1(one) o2(two) o3(three) o4(four) option1(six) option2(seven) required(five) 
-0
 $a one -x two three four five -q six seven
 -*(-x two three four five -q six seven) -q(-q six seven) -x(-x two three four five) o1(two) o2(three) o3(four) o4(five) option1(six) option2(seven) required(one) 
-0
 $.function_all_flags a [optional0] -- [optional1 optional2 optional3] required {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
-0
 $whence a
 .function_all_flags a [optional0] -- [optional1 optional2 optional3] required {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}; .echo $nl}
-0
 $a
 unacceptable arguments: for prototype [optional0] -- [optional1 optional2 optional3] required,
  needed (required),
 ( call) stack: a
--1
 $a single
 required(single) 
-0
 $a one two
 optional0(one) required(two) 
-0
 $a one two three
 unacceptable arguments: for prototype [optional0] -- [optional1 optional2 optional3] required,
  assigned optional0=one optional1=two optional2=three ,
  but needed (optional3 required),
 ( call) stack: a
--1
 $a one two three four five
 optional0(one) optional1(two) optional2(three) optional3(four) required(five) 
-0
 $a one two three four five six seven eight nine
 unacceptable arguments: for prototype [optional0] -- [optional1 optional2 optional3] required,
  assigned optional0=one optional1=two optional2=three optional3=four required=five ,
  but found (six seven eight nine) excess
 ( call) stack: a
--1
 $.function_all_flags a -y [second] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
-0
 $whence a
 .function_all_flags a -y [second] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}; .echo $nl}
-0
 $a
 unacceptable arguments: for prototype -y [second],
  needed (-y),
 ( call) stack: a
--1
 $a 1
 -y(1) 
-0
 $a 1 2
 -y(1) second(2) 
-0
 $a 1 2 3
 unacceptable arguments: for prototype -y [second],
  assigned -y=1 second=2 ,
  but found (3) excess
 ( call) stack: a
--1
 $.function_all_flags a [-x] -y [--long-opt] second [--] [-] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
-0
 $whence a
 .function_all_flags a [--long-opt] [-x] -y second [--] [-] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}; .echo $nl}
-0
 $a --long-opt -xx over-long flag
 -xx flag is unrecognized for a
 call stack: a
--1
 $a -xx --long-opt over-long flag
 -xx flag is unrecognized for a
 call stack: a
--1
 $a --long-op short flag
 --long-op flag is unrecognized for a
 call stack: a
--1
 $a - --long-op short flag
 --long-op flag is unrecognized for a
 call stack: a
--1
 $a no flags
 -*() -y(no) second(flags) 
-0
 $a deficient
 unacceptable arguments: for prototype [--long-opt] [-x] -y second [--] [-],
  assigned -*=() -y=deficient ,
  but needed (second),
 ( call) stack: a
--1
 $a flagless but_has excess argument
 unacceptable arguments: for prototype [--long-opt] [-x] -y second [--] [-],
  assigned -=excess -*=() -y=flagless second=but_has ,
  but found (argument) excess
 ( call) stack: a
--1
 $a -x with flag
 -*(-x) -x(-x) -y(with) second(flag) 
-0
 $a -x -x doubled flag
 -*(-x -x) -x(-x -x) -y(doubled) second(flag) 
-0
 $a accepted -x interlaced_flag -
 -(-) -*(-x) -x(-x) -y(accepted) second(interlaced_flag) 
-0
 $a tardy flags_last - -x
 -x flag comes too late in command
 call stack: a
--1
 $a -x -- - flag_made_fixed_argument
 -*(-x --) --(--) -x(-x) -y(-) second(flag_made_fixed_argument) 
-0
 $a -- - flag_again_made_fixed_argument
 -*(--) --(--) -y(-) second(flag_again_made_fixed_argument) 
-0
 $a -x -- flag_and_fixed-x -x
 -*(-x --) --(--) -x(-x) -y(flag_and_fixed-x) second(-x) 
-0
 $a -x just flags-x --long-opt
 --long-opt flag comes too late in command
 call stack: a
--1
 $a -x just flags-x -- --long-opt
 -(--long-opt) -*(-x --) --(--) -x(-x) -y(just) second(flags-x) 
-0
 $a -x just flags-x --other
 --other flag comes too late in command
 call stack: a
--1
 $a -x just flags-x -- --other
 -(--other) -*(-x --) --(--) -x(-x) -y(just) second(flags-x) 
-0
 $a -x with one excess argument
 unacceptable arguments: for prototype [--long-opt] [-x] -y second [--] [-],
  assigned -=excess -*=-x -x=-x -y=with second=one ,
  but found (argument) excess
 ( call) stack: a
--1
 $a - with flag
 -(flag) -*() -y(-) second(with) 
-0
 $a --long-opt with flag
 -*(--long-opt) --long-opt(--long-opt) -y(with) second(flag) 
-0
 $a --long-opt -x - some_flags in_order
 -(in_order) -*(--long-opt -x) --long-opt(--long-opt) -x(-x) -y(-) second(some_flags) 
-0
 $a - -x --long-opt some_flags reversed
 -(reversed) -*(-x --long-opt) --long-opt(--long-opt) -x(-x) -y(-) second(some_flags) 
-0
 $a - --long-opt some_flags in_order
 -(in_order) -*(--long-opt) --long-opt(--long-opt) -y(-) second(some_flags) 
-0
 $a --long-opt - some_flags reversed
 -(reversed) -*(--long-opt) --long-opt(--long-opt) -y(-) second(some_flags) 
-0
 $a -x --long-opt some_flags in_order
 -*(-x --long-opt) --long-opt(--long-opt) -x(-x) -y(some_flags) second(in_order) 
-0
 $a --long-opt -x some_flags reversed
 -*(--long-opt -x) --long-opt(--long-opt) -x(-x) -y(some_flags) second(reversed) 
-0
 $a -x --long-opt deficient
 unacceptable arguments: for prototype [--long-opt] [-x] -y second [--] [-],
  assigned -*=(-x --long-opt) --long-opt=--long-opt -x=-x -y=deficient ,
  but needed (second),
 ( call) stack: a
--1
 $a -x - --long-opt all_flags in_order
 -(in_order) -*(-x --long-opt) --long-opt(--long-opt) -x(-x) -y(-) second(all_flags) 
-0
 $a --long-opt - -x all_flags reversed
 -(reversed) -*(--long-opt -x) --long-opt(--long-opt) -x(-x) -y(-) second(all_flags) 
-0
 $a - --long-opt -x all_flags shuffled
 -(shuffled) -*(--long-opt -x) --long-opt(--long-opt) -x(-x) -y(-) second(all_flags) 
-0
 $a - --long-opt -x -x some_flags doubled
 -(doubled) -*(--long-opt -x -x) --long-opt(--long-opt) -x(-x -x) -y(-) second(some_flags) 
-0
 $a -x --long-opt -x --long-opt -x one_doubled one_tripled
 -*(-x --long-opt -x --long-opt -x) --long-opt(--long-opt --long-opt) -x(-x -x -x) -y(one_doubled) second(one_tripled) 
-0
 $a --long-opt -x -x - --long-opt all_flags doubled
 -(doubled) -*(--long-opt -x -x --long-opt) --long-opt(--long-opt --long-opt) -x(-x -x) -y(-) second(all_flags) 
-0
 $.function_all_flags a [-first] [-to] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   echo nothing_required}
-0
 $whence a
 .function_all_flags a [-first] [-to] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
   echo nothing_required}
-0
 $a
 -*() nothing_required
-0
 $a excess
 unacceptable arguments: for prototype [-first] [-to],
  assigned -*=() ,
  but found (excess) excess
 ( call) stack: a
--1
 $a -to
 -*(-to) -to(-to) nothing_required
-0
 $a -first --
 -*(-first --) --(--) -first(-first) nothing_required
-0
 $a -first excess
 unacceptable arguments: for prototype [-first] [-to],
  assigned -*=-first -first=-first ,
  but found (excess) excess
 ( call) stack: a
--1
 $a -to -- -first -- stops flag parsing rather than being a flag
 unacceptable arguments: for prototype [-first] [-to],
  assigned -*=(-to --) --=-- -to=-to ,
  but found (-first -- stops flag parsing rather than being a flag) excess
 ( call) stack: a
--1
 $a -to -first
 -*(-to -first) -first(-first) -to(-to) nothing_required
-0
 $.function_all_flags a [-?] [-first] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   echo nothing_required}
-0
 $whence a
 .function_all_flags a [-?] [-first] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
   echo nothing_required}
-0
 $a
 -*() -?() nothing_required
-0
 $a excess
 unacceptable arguments: for prototype [-?] [-first],
  assigned -*=() -?=() ,
  but found (excess) excess
 ( call) stack: a
--1
 $a -to
 -*(-to) -?(-to) nothing_required
-0
 $a -first --
 -*(-first --) --(--) -?() -first(-first) nothing_required
-0
 $a -first excess
 unacceptable arguments: for prototype [-?] [-first],
  assigned -*=-first -?=() -first=-first ,
  but found (excess) excess
 ( call) stack: a
--1
 $a -to -- -first
 unacceptable arguments: for prototype [-?] [-first],
  assigned -*=(-to --) --=-- -?=-to ,
  but found (-first) excess
 ( call) stack: a
--1
 $a -to -first
 -*(-to -first) -?(-to) -first(-first) nothing_required
-0
 $.function_all_flags a [-*] [-first] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   echo nothing_required}
-0
 $whence a
 .function_all_flags a [-?] [-first] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
   echo nothing_required}
-0
 $a
 -*() -?() nothing_required
-0
 $a -to -- -first
 unacceptable arguments: for prototype [-?] [-first],
  assigned -*=(-to --) --=-- -?=-to ,
  but found (-first) excess
 ( call) stack: a
--1
 $a -to -first
 -*(-to -first) -?(-to) -first(-first) nothing_required
-0
 $.function_all_flags a [-?] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   echo nothing_required}
-0
 $whence a
 .function_all_flags a [-?] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
   echo nothing_required}
-0
 $a
 -*() -?() nothing_required
-0
 $.function_all_flags a ... y {}
 ... elipsis cannot be the first argument in a prototype
 call stack: .function_all_flags
--1
 $.function_all_flags a [-x] [--file file] ... y {}
 ... elipsis cannot be the first argument in a prototype
 call stack: .function_all_flags
--1
 $.function_all_flags a [...] x {}
 [...] elipsis cannot be the first argument in a prototype
 call stack: .function_all_flags
--1
 $.function_all_flags a [... y] x {}
 ([... y]) elipsis cannot be the first argument in a prototype
 call stack: .function_all_flags
--1
 $.function_all_flags a x ... [y z] {}
 option ([y z]) coming after an elipsis has no meaning
 call stack: .function_all_flags
--1
 $.function_all_flags a x [... y] z ... {}
 duplicated parameter in function definition: ...
 call stack: .function_all_flags
--1
 $.function_all_flags a [y z] ... x {}
 ([y z]) for elipsis to apply to option it must occur within the brackets
 call stack: .function_all_flags
--1
 $.function_all_flags a [y] ... x {}
-0
 $whence a
 .function_all_flags a [y ...] x {}
-0
 $.function_all_flags a x ... y ... {}
 duplicated parameter in function definition: ...
 call stack: .function_all_flags
--1
 $.function_all_flags a [x ...] [y z] {}
 option ([y z]) coming after an elipsis has no meaning
 call stack: .function_all_flags
--1
 $.function_all_flags a [x ...] y ... {}
 duplicated parameter in function definition: ...
 call stack: .function_all_flags
--1
 $.function_all_flags a [x ... a] [y] {}
 option [y] coming after an elipsis has no meaning
 call stack: .function_all_flags
--1
 $.function_all_flags a [x ... a] y ... {}
 duplicated parameter in function definition: ...
 call stack: .function_all_flags
--1
 $.function_all_flags a [x ... a ...] {}
 duplicated parameter in function definition: ...
 call stack: .function_all_flags
--1
 $.function_all_flags a [x ... a ... b] {}
 duplicated parameter in function definition: ...
 call stack: .function_all_flags
--1
 $.function_all_flags a [-x ...] b [c] {}
 option [c] coming after an elipsis has no meaning
 call stack: .function_all_flags
--1
 $.function_all_flags a -? x ... y {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
-0
 $whence a
 .function_all_flags a [-?] x ... y {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}; .echo $nl}
-0
 $a -c -a -b first second third
 -*(-c -a -b) -?(-c -a -b) x(first second) y(third) 
-0
 $a -c first -a second -b third
 found flag -a while collecting arguments for elipsis
 call stack a
--1
 $.function_all_flags a -* x ... y {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
-0
 $whence a
 .function_all_flags a [-?] x ... y {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}; .echo $nl}
-0
 $a -c -a -b first second third
 -*(-c -a -b) -?(-c -a -b) x(first second) y(third) 
-0
 $a -c first -a second -b third
 found flag -a while collecting arguments for elipsis
 call stack a
--1
 $.function_all_flags a [-?] x ... y {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
-0
 $whence a
 .function_all_flags a [-?] x ... y {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}; .echo $nl}
-0
 $a 
 unacceptable arguments: for prototype [-?] x ... y,
  assigned -*=() -?=() ,
  but needed (x y),
 ( call) stack: a
--1
 $a first
 unacceptable arguments: for prototype [-?] x ... y,
  assigned -*=() -?=() x=first ,
  but needed (y),
 ( call) stack: a
--1
 $a first (se cond)
 -*() -?() x(first) y(se cond) 
-0
 $a first (se cond) third
 -*() -?() x(first (se cond)) y(third) 
-0
 $a first (se cond) third fourth (fi fth)
 -*() -?() x(first (se cond) third fourth) y(fi fth) 
-0
 $.function_all_flags a [-?] x [...] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
-0
 $whence a
 .function_all_flags a [-?] x ... {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}; .echo $nl}
-0
 $a
 unacceptable arguments: for prototype [-?] x ...,
  assigned -*=() -?=() ,
  but needed (x),
 ( call) stack: a
--1
 $a first second third fourth fifth
 -*() -?() x(first second third fourth fifth) 
-0
 $.function_all_flags a [-?] x [--] [y ...] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
-0
 $whence a
 .function_all_flags a [-?] x [--] [y ...] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}; .echo $nl}
-0
 $a
 unacceptable arguments: for prototype [-?] x [--] [y ...],
  assigned -*=() -?=() ,
  but needed (x),
 ( call) stack: a
--1
 $a first
 -*() -?() x(first) 
-0
 $a first second
 -*() -?() x(first) y(second) 
-0
 $a first second third
 -*() -?() x(first) y(second third) 
-0
 $a first second third fourth fifth
 -*() -?() x(first) y(second third fourth fifth) 
-0
 $.function_all_flags a [-?] a [b ... c] d {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
-0
 $whence a
 .function_all_flags a [-?] a [b ... c] d {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}; .echo $nl}
-0
 $a first
 unacceptable arguments: for prototype [-?] a [b ... c] d,
  assigned -*=() -?=() a=first ,
  but needed (d),
 ( call) stack: a
--1
 $a first second
 -*() -?() a(first) d(second) 
-0
 $a first second third
 unacceptable arguments: for prototype [-?] a [b ... c] d,
  assigned -*=() -?=() a=first b=second c=third ,
  but needed (d),
 ( call) stack: a
--1
 $a first second third fourth
 -*() -?() a(first) b(second) c(third) d(fourth) 
-0
 $a first second third fourth fifth
 -*() -?() a(first) b(second third) c(fourth) d(fifth) 
-0
 $a first second third fourth fifth sixth
 -*() -?() a(first) b(second third fourth) c(fifth) d(sixth) 
-0
 $.function_all_flags a [-x ...] b c {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
-0
 $whence a
 .function_all_flags a [-x ...] b c {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}; .echo $nl}
-0
 $a first second
 -*() b(first) c(second) 
-0
 $a -x first
 unacceptable arguments: for prototype [-x ...] b c,
  assigned -*=-x -x=-x b=first ,
  but needed (c),
 ( call) stack: a
--1
 $a -x first second
 -*(-x) -x(-x) b(first) c(second) 
-0
 $a -x first second third
 -*(-x first) -x(-x first) b(second) c(third) 
-0
 $a -x first second third fourth
 -*(-x first second) -x(-x first second) b(third) c(fourth) 
-0
 $.function_all_flags a [-x b ...] c {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
-0
 $whence a
 .function_all_flags a [-x b ...] c {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}; .echo $nl}
-0
 $a first
 -*() c(first) 
-0
 $a -x first
 unacceptable arguments: for prototype [-x b ...] c,
  assigned -*=(-x first) -x=(-x first) b=first ,
  but needed (c),
 ( call) stack: a
--1
 $a -x (fi rst) second
 -*(-x (fi rst)) -x(-x (fi rst)) b((fi rst)) c(second) 
-0
 $a -x first (sec ond) third
 -*(-x first (sec ond)) -x(-x first (sec ond)) b(first (sec ond)) c(third) 
-0
 $a -x first -x (sec ond) third
 found flag -x while collecting arguments for elipsis
 call stack a
--1
 $a -x first -y (sec ond) third
 found flag -y while collecting arguments for elipsis
 call stack a
--1
 $a -x (fi rst) (sec ond) third fourth
 -*(-x (fi rst) (sec ond) third) -x(-x (fi rst) (sec ond) third) b((fi rst) (sec ond) third) c(fourth) 
-0
 $.function_all_flags a [-x ... b] c {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   .combine $nl
@@ -2866,7 +2245,6 @@ $.function_all_flags a [-x ... b] c {
   if_only .var_exists b {c (b: ) $b$ $nl}
   if_only .var_exists c {c (c: ) $c$ $nl}
 }
-0
 $whence a
 .function_all_flags a [-x ... b] c {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
@@ -2876,120 +2254,95 @@ $whence a
   if_only .var_exists b {c (b: ) $b$ $nl}
   if_only .var_exists c {c (c: ) $c$ $nl}
 }
-0
 $a first
 -*() c(first) 
 c: first
-0
 $a -x first
 unacceptable arguments: for prototype [-x ... b] c,
  assigned -*=(-x first) -x=(-x first) b=first ,
  but needed (c),
 ( call) stack: a
--1
 $a -x (fi rst) second
 -*(-x (fi rst)) -x(-x (fi rst)) b((fi rst)) c(second) 
 -*: -xfi rst
 -x: -xfi rst
 b: fi rst
 c: second
-0
 $a -x () (fi rst) second
 -*(-x () (fi rst)) -x(-x () (fi rst)) b((fi rst)) c(second) 
 -*: -xfi rst
 -x: -xfi rst
 b: fi rst
 c: second
-0
 $a -x first (sec ond) third
 -*(-x first (sec ond)) -x(-x first (sec ond)) b((sec ond)) c(third) 
 -*: -xfirstsec ond
 -x: -xfirstsec ond
 b: sec ond
 c: third
-0
 $a -x (fi rst) (sec ond) third fourth
 -*(-x (fi rst) (sec ond) third) -x(-x (fi rst) (sec ond) third) b(third) c(fourth) 
 -*: -xfi rstsec ondthird
 -x: -xfi rstsec ondthird
 b: third
 c: fourth
-0
 $.function_all_flags a x [-?] [... y z] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   .combine $nl
   if_only .var_exists x {c (x: ) $x$ $nl}}
-0
 $whence a
 .function_all_flags a [-?] x [... y z] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
   .combine $nl
   if_only .var_exists x {c (x: ) $x$ $nl}}
-0
 $a
 unacceptable arguments: for prototype [-?] x [... y z],
  assigned -*=() -?=() ,
  but needed (x),
 ( call) stack: a
--1
 $a (fi rst)
 -*() -?() x((fi rst)) 
 x: fi rst
-0
 $a (fi rst) second
 unacceptable arguments: for prototype [-?] x [... y z],
  assigned -*=() -?=() x=(fi rst) y=second ,
  but needed (z),
 ( call) stack: a
--1
 $a first (sec ond) third
 -*() -?() x(first) y(sec ond) z(third) 
 x: first
-0
 $a (fi rst) (sec ond) third fourth
 -*() -?() x((fi rst) (sec ond)) y(third) z(fourth) 
 x: fi rstsec ond
-0
 $a () (sec ond) third fourth
 -*() -?() x(() (sec ond)) y(third) z(fourth) 
 x: sec ond
-0
 $a (fi rst) (sec ond) (thi rd) (fou rth) (fi fth)
 -*() -?() x((fi rst) (sec ond) (thi rd)) y(fou rth) z(fi fth) 
 x: fi rstsec ondthi rd
-0
 $.function_all_flags a [-?] [x] [... y] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
-0
 $whence a
 .function_all_flags a [-?] [x] [... y] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}; .echo $nl}
-0
 $a
 -*() -?() 
-0
 $a (fi rst)
 -*() -?() x((fi rst)) 
-0
 $a (fi rst) second
 -*() -?() x((fi rst)) y(second) 
-0
 $a first (sec ond) third
 -*() -?() x(first (sec ond)) y(third) 
-0
 $a (fi rst) (sec ond) third fourth
 -*() -?() x((fi rst) (sec ond) third) y(fourth) 
-0
 $a (fi rst) (sec ond) (thi rd) (fou rth) (fi fth)
 -*() -?() x((fi rst) (sec ond) (thi rd) (fou rth)) y(fi fth) 
-0
 $.function_all_flags a [-?] [x y] [... z] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   .combine $nl
   if_only .var_exists x {c (x: ) $x $nl}
   if_only .var_exists y {c (y: ) $y$ $nl}
   if_only .var_exists z {c (z: ) $z$ $nl}}
-0
 $whence a
 .function_all_flags a [-?] [x y] [... z] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
@@ -2997,104 +2350,77 @@ $whence a
   if_only .var_exists x {c (x: ) $x $nl}
   if_only .var_exists y {c (y: ) $y$ $nl}
   if_only .var_exists z {c (z: ) $z$ $nl}}
-0
 $a
 -*() -?() 
-0
 $a (fi rst)
 unacceptable arguments: for prototype [-?] [x y] [... z],
  assigned -*=() -?=() x=(fi rst) ,
  but needed (y),
 ( call) stack: a
--1
 $a (fi rst) second
 -*() -?() x(fi rst) y(second) 
 x: fi rst
 y: second
-0
 $a (fi rst) (sec ond) (thi rd)
 -*() -?() x(fi rst) y((sec ond)) z(thi rd) 
 x: fi rst
 y: sec ond
 z: third
-0
 $a (fi rst) (sec ond) third (fou rth)
 -*() -?() x(fi rst) y((sec ond) third) z(fou rth) 
 x: fi rst
 y: sec ondthird
 z: fourth
-0
 $a (fi rst) (sec ond) (thi rd) (fou rth) (fi fth)
 -*() -?() x(fi rst) y((sec ond) (thi rd) (fou rth)) z(fi fth) 
 x: fi rst
 y: sec ondthi rdfou rth
 z: fifth
-0
 $.function_all_flags a -- [-x] y z {}
 flag option [-x] occurs after -- in the prototype
 call stack: .function_all_flags
--1
 $.function_all_flags a -- [x y] z {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
-0
 $whence a
 .function_all_flags a -- [x y] z {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}; .echo $nl}
-0
 $a
 unacceptable arguments: for prototype -- [x y] z,
  needed (z),
 ( call) stack: a
--1
 $a --file
 z(--file) 
-0
 $a first second third
 x(first) y(second) z(third) 
-0
 $a -x second -
 x(-x) y(second) z(-) 
-0
 $
-0
 $# .get_max_collectible_exceptions .set_max_collectible_exceptions
-0
 $.get_max_collectible_exceptions excess
 unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .get_max_collectible_exceptions
--1
 $.set_max_collectible_exceptions
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .set_max_collectible_exceptions
--1
 $.get_max_collectible_exceptions {excess}
 .get_max_collectible_exceptions does not accept an argfunction with call stack: .get_max_collectible_exceptions
--1
 $.set_max_collectible_exceptions 1 {excess}
 .set_max_collectible_exceptions does not accept an argfunction with call stack: .set_max_collectible_exceptions
--1
 $.set_max_collectible_exceptions NaN
 NaN is not a number
 call stack: .set_max_collectible_exceptions
--1
 $.scope () {.get_max_collectible_exceptions; .echo $nl}
 10
-0
 $.set_max_collectible_exceptions 0
 value 0 is out of usable numeric range
 call stack .set_max_collectible_exceptions
--1
 $.scope () {.get_max_collectible_exceptions; .echo $nl}
 10
-0
 $.set_max_collectible_exceptions 7
-0
 $.collect_errors_except
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .collect_errors_except
 .collect_errors_except requires an argfunction
--1
 $.collect_errors_only
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .collect_errors_only
 .collect_errors_only requires an argfunction
--1
 $se {.collect_errors_except .nop {
      se {echo before exception
         .throw .not_a_number 7
@@ -3109,7 +2435,6 @@ inside collect
 7 is not a number
 call stack: .throw .scope se .collect_errors_except .scope se
 foo : command not found ( foo .throw .scope .collect_errors_except .scope se )
--1
 $se {.collect_errors_except echo {
      .throw .function_not_found foo
      echo between exceptions
@@ -3119,9 +2444,7 @@ $se {.collect_errors_except echo {
 between exceptions
 foo : command not found ( foo .throw .collect_errors_except .scope se )
 7 .throw .collect_errors_except .scope se
--1
 $# .collect_errors_except .echo {${.throw .echo exception thrown directly}}
--1
 $se {.collect_errors_only .function_not_found {
      .throw .function_not_found foo
      echo between exceptions
@@ -3131,7 +2454,6 @@ $se {.collect_errors_only .function_not_found {
 between exceptions
 foo : command not found ( foo .throw .collect_errors_only .scope se )
 7 .throw .collect_errors_only .scope se
--1
 $.collect_errors_except echo {
  .collect_errors_except echo {
   .collect_errors_except echo {
@@ -3171,18 +2493,13 @@ inside 10 .throw .collect_errors_except .collect_errors_except .collect_errors_e
 inside 15 .throw .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except
 inside 20 .throw .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except
 function exceeded max nesting ( 20 ). call stack: (echo .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except)
--1
 $.set_max_collectible_exceptions 1
-0
 $.function_all_flags collecting_handler args ... {
   echo $args$
 }
-0
 $.scope () {.get_max_extra_exceptions; .echo $nl}
 5
-0
 $.set_max_extra_exceptions 1
-0
 $.try_catch_recursive collecting_handler {
   .collect_errors_except .echo {
     .throw collecting_handler 1
@@ -3199,9 +2516,7 @@ $.try_catch_recursive collecting_handler {
 2 .throw .collect_errors_except .try_catch_recursive(body)
 exceeded maximum number of exceptions ( 1 ) in collect_errors.
 call stack: .collect_errors_except .try_catch_recursive(body) .try_catch_recursive
--1
 $.set_max_extra_exceptions 0
-0
 $.try_catch_recursive collecting_handler {
   .collect_errors_except .echo {
     .throw collecting_handler 1
@@ -3210,7 +2525,6 @@ $.try_catch_recursive collecting_handler {
 2 .throw .collect_errors_except .try_catch_recursive(body) .try_catch_recursive
 exceeded maximum number of exceptions ( 0 ) in try_catch.
 call stack: .try_catch_recursive
--1
 $.try_catch_recursive collecting_handler {
   .collect_errors_except .echo {
     .throw collecting_handler 1
@@ -3222,30 +2536,20 @@ exceeded maximum number of exceptions ( 1 ) in collect_errors.
 call stack: .collect_errors_except .try_catch_recursive(body) .try_catch_recursive
 exceeded maximum number of exceptions ( 0 ) in try_catch.
 call stack: .try_catch_recursive
--1
 $.set_max_extra_exceptions 1
-0
 $.set_max_collectible_exceptions 7
-0
 $.scope () {.get_max_collectible_exceptions; .echo $nl}
 7
-0
 $
-0
 $# .getpid .getppid .sighup
-0
 $.getpid excess
 unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .getpid
--1
 $.getpid {excess argfunc}
 .getpid does not accept an argfunction with call stack: .getpid
--1
 $.getppid excess
 unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .getppid
--1
 $.getppid {excess argfunc}
 .getppid does not accept an argfunction with call stack: .getppid
--1
 $se {.fork se {
       /bin/kill -HUP ${.getppid}
       echo after the signal in subshell}
@@ -3254,7 +2558,6 @@ added /bin/kill to executable map in test suite
 after the signal in subshell
 received SIGHUP
 after the signal in parent
-0
 $se {.fork se {
       /bin/kill -HUP ${.getpid}
       echo after the signal in subshell}
@@ -3263,7 +2566,6 @@ added /bin/kill to executable map in test suite
 received SIGHUP
 after the signal in subshell
 after the signal in parent
-0
 $.while .return 0 {
   echo before signals
   /bin/kill -PIPE ${.getpid}
@@ -3276,7 +2578,6 @@ received SIGPIPE
 after sigpipe
 (
 ) received SIGTERM .throw .sigterm /bin/kill .mapped_argfunction .while
--1
 $.while .return 0 {
   echo before signals
   /bin/kill -USR1 ${.getpid}
@@ -3288,126 +2589,86 @@ received SIGUSR1
 after sigusr1
 (
 ) received SIGINT .throw .sigint /bin/kill .mapped_argfunction .while
--1
 $.return 0
-0
 $
-0
 $# .global .local .unset .var_exists 
-0
 $.global
 unacceptable argument count: received 0 non-optional, but needed 2 (with 0 optional) for .global
--1
 $.global x y z
 unacceptable argument count: received 3 non-optional, but needed 2 (with 0 optional) for .global
--1
 $.global x y {excess argfunc}
 .global does not accept an argfunction with call stack: .global
--1
 $.local
 unacceptable argument count: received 0 non-optional, but needed 2 (with 0 optional) for .local
--1
 $.local x y z
 unacceptable argument count: received 3 non-optional, but needed 2 (with 0 optional) for .local
--1
 $.local x y {excess argfunc}
 .local does not accept an argfunction with call stack: .local
--1
 $.unset
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .unset
--1
 $.unset x {excess argfunc}
 .unset does not accept an argfunction with call stack: .unset
--1
 $.unset x y
 unacceptable argument count: received 2 non-optional, but needed 1 (with 0 optional) for .unset
--1
 $.unset ?
 $? cannot be set
 call stack .unset
--1
 $.var_exists
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .var_exists
--1
 $.var_exists x {excess argfunc}
 .var_exists does not accept an argfunction with call stack: .var_exists
--1
 $.global 100 nihilism
 $100 cannot be set
 call stack .global
--1
 $.local 0 nihilism
 $0 cannot be set
 call stack .local
--1
 $.global .var_exists (must be requested to be checked)
-0
 $echo $.var_exists$
 must be requested to be checked
-0
 $.unset #
 $# cannot be set
 call stack .unset
--1
 $.unset #
 $# cannot be set
 call stack .unset
--1
 $.unset *
 $* cannot be set
 call stack .unset
--1
 $.unset 1
 $1 cannot be set
 call stack .unset
--1
 $.unset MAX_NESTING
 MAX_NESTING was not declared
 call stack: .unset
--1
 $.var_exists #
-0
 $.var_exists *
-0
 $.var_exists 0
-0
 $.var_exists 2
 assertion (var exists: 2) failed
 call stack .var_exists
--1
 $.var_exists x
 assertion (var exists: x) failed
 call stack .var_exists
--1
 $.var_exists x y
 assertion (var exists: x y) failed
 call stack .var_exists
--1
 $.var_exists # y
-0
 $.var_exists y x
 assertion (var exists: y x) failed
 call stack .var_exists
--1
 $.unset x
 x was not declared
 call stack: .unset
--1
 $.global x nihilism
-0
 $.var_exists x
-0
 $.var_exists x y
-0
 $echo $x
 nihilism
-0
 $.global x nihilism
-0
 $.global x ubernihilism
 variable x already exists
 call stack .global
--1
 $.function_all_flags a {if_only .var_exists x {e in a x \( $x \) $nl}
              if_only .var_exists y {e in a y \( $y \) $nl}
              .local x (first level not global)
@@ -3415,7 +2676,6 @@ $.function_all_flags a {if_only .var_exists x {e in a x \( $x \) $nl}
              b
              if_only .var_exists x {e out a x \( $x \) $nl}
              if_only .var_exists y {e out a y \( $y \) $nl}}
-0
 $.function_all_flags b {if_only .var_exists x {e in b x \( $x \) $nl}
              if_only .var_exists y {e in b y \( $y \) $nl}
              .local x (second level masks first)
@@ -3423,7 +2683,6 @@ $.function_all_flags b {if_only .var_exists x {e in b x \( $x \) $nl}
              c
              if_only .var_exists x {e out b x \( $x \) $nl}
              if_only .var_exists y {e out b y \( $y \) $nl}}
-0
 $.function_all_flags c {if_only .var_exists x {e in c x \( $x \) $nl}
              if_only .var_exists y {e in c y \( $y \) $nl}
              # can unset a local, but only one at a time
@@ -3435,7 +2694,6 @@ $.function_all_flags c {if_only .var_exists x {e in c x \( $x \) $nl}
              .set y (level three overwrites one)
              if_only .var_exists x {e out c x \( $x \) $nl}
              if_only .var_exists y {e out c y \( $y \) $nl}}
-0
 $a
 in a x ( nihilism ) 
 in b x ( first level not global ) 
@@ -3450,9 +2708,7 @@ out b x ( third level overwrites first )
 out b y ( level three overwrites one ) 
 out a x ( third level overwrites first ) 
 out a y ( level three overwrites one ) 
-0
 $# demonstrating that final values are not retained
-0
 $a
 in a x ( nihilism ) 
 in b x ( first level not global ) 
@@ -3467,353 +2723,244 @@ out b x ( third level overwrites first )
 out b y ( level three overwrites one ) 
 out a x ( third level overwrites first ) 
 out a y ( level three overwrites one ) 
-0
 $echo $x
 nihilism
-0
 $.var_exists y
 assertion (var exists: y) failed
 call stack .var_exists
--1
 $.unset x
-0
 $.var_exists x
 assertion (var exists: x) failed
 call stack .var_exists
--1
 $.return 0
-0
 $
-0
 $# .store_output
-0
 $.store_output x
 .store_output requires an argfunction
--1
 $.store_output {echo some text}
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .store_output
--1
 $.store_output # {echo some text}
 $# cannot be set
 call stack .store_output
--1
 $.store_output x {echo some text}
 x was not declared
 call stack: .store_output
--1
 $.global x ()
-0
 $.store_output x {echo some text; .return 1}
 1
 $e $x
-0
 $.store_output x {echo some text}
-0
 $e $x
 some text
-0
 $.unset x
-0
 $
-0
 $## if_core
-0
 $# helper functions
-0
 $.function_all_flags silent_throw [text ...] {
   .collect_errors_only .false echo {
     .throw .false first
     .throw echo exception $text$
     .throw .false second
     .return 0}}
-0
 $.function_all_flags caught_silent_throw [text ...] {
   .try_catch_recursive echo {silent_throw $text$}}
-0
 $silent_throw on its own
 assertion first failed
 call stack .throw .collect_errors_only silent_throw
 exception on its own .throw .collect_errors_only silent_throw
 assertion second failed
 call stack .throw .collect_errors_only silent_throw
--1
 $caught_silent_throw on its own
 exception on its own .throw .collect_errors_only silent_throw .try_catch_recursive(body)
 assertion first failed
 call stack .throw .collect_errors_only silent_throw .try_catch_recursive(body) .try_catch_recursive caught_silent_throw
 assertion second failed
 call stack .throw .collect_errors_only silent_throw .try_catch_recursive(body) .try_catch_recursive caught_silent_throw
--1
 $fn if_true {.if .test_not_empty ( ) {.argfunction}}
-0
 $fn if_false {.if .test_not_empty ()  {.argfunction}}
-0
 $fn else_if_true {.else_if .test_string_unequal q w {.argfunction}}
-0
 $fn else_if_false {.else_if .test_string_unequal q q {.argfunction}}
-0
 $fn else_if_not_true {.else_if_not .test_string_equal x x {.argfunction}}
-0
 $fn else_if_not_false {.else_if_not .test_string_equal y z {.argfunction}}
-0
 $fn obscured_else {.scope () {.scope () {.else {.argfunction}}}}
-0
 $fn if_with_body args ... {.if $args$ {echo the afore-mentioned body}}
-0
 $fn if_else_if_not_with_body args ... {
   .if $args$ {echo the first body}
   .else_if_not $args$ {echo the second body}}
-0
 $fn double_if_with_body args ... {
   .if $args$ {echo the first body}
   .if $args$ {echo the second body}}
-0
 $fn else_if_with_body args ... {.else_if $args$ {echo the afore-mentioned body}}
-0
 $fn else_with_body [args ...] {.else {echo the afore-mentioned &&args$}}
-0
 $fn conditional_true {
   .if .test_in . . {echo in_conditional_if}
   .else {echo in_conditional_else}
   .test_in . .}
-0
 $fn conditional_false {
   .if .test_in . {echo in_conditional_if}
   .else {echo in_conditional_else}
   .test_in .}
-0
 $fn conditional_echo first second {
   .if .test_in () {echo not printed if empty string in null set}
   .else_if_not .echo $first {echo not printed else if echo fails}
   .else {.echo () $second}}
-0
 $
-0
 $# ! negation: if_core workout
-0
 $.function_all_flags !x args ... {
   .if .throw .false anyway {}
   .else_if_not $args$ {.return 0}
   .else {.throw .false ${.echo ! $args}}}
-0
 $.test_string_equal 42 420e-1
 assertion (42 == 420e-1) failed
 call stack .test_string_equal
--1
 $.test_number_equal 42 420e-1
-0
 $!  .test_greater 50 230
-0
 $!x .test_greater 50 230
-0
 $!  .test_less 5 2.3e1
 assertion (! .test_less 5 2.3e1) failed
 call stack .throw .mapped_argfunction .if !
--1
 $!x .test_less 5 2.3e1
 assertion (! .test_less 5 2.3e1) failed
 call stack .throw .mapped_argfunction .else !x
--1
 $!  !  .test_executable_exists !!!
 assertion (! ! .test_executable_exists !!!) failed
 call stack .throw .mapped_argfunction .if !
--1
 $!  !x .test_executable_exists !!!
 assertion (! !x .test_executable_exists !!!) failed
 call stack .throw .mapped_argfunction .if !
--1
 $!x !  .test_executable_exists !!!
 assertion (! ! .test_executable_exists !!!) failed
 call stack .throw .mapped_argfunction .else !x
--1
 $!x !x .test_executable_exists !!!
 assertion (! !x .test_executable_exists !!!) failed
 call stack .throw .mapped_argfunction .else !x
--1
 $!  !  .whence_function !!!
 !!! : command not found ( !!! .whence_function .if ! .if ! )
--1
 $!x !x .whence_function !!!
 !!! : command not found ( !!! .whence_function .else_if_not !x .else_if_not !x )
--1
 $!  !  .test_not_empty 0
-0
 $!  !x .test_not_empty 0
-0
 $!x !  .test_not_empty 0
-0
 $!x !x .test_not_empty 0
-0
 $!  !  !  .test_in 0 0
 assertion (! ! ! .test_in 0 0) failed
 call stack .throw .mapped_argfunction .if !
--1
 $!  !  !  .test_in 0
-0
 $!  !  !  !  .test_in 0
 assertion (! ! ! ! .test_in 0) failed
 call stack .throw .mapped_argfunction .if !
--1
 $!  !  !x !  .test_in 0
 assertion (! ! !x ! .test_in 0) failed
 call stack .throw .mapped_argfunction .if !
--1
 $!  !x !  !  .test_in 0
 assertion (! !x ! ! .test_in 0) failed
 call stack .throw .mapped_argfunction .if !
--1
 $!  !x !x !  .test_in 0
 assertion (! !x !x ! .test_in 0) failed
 call stack .throw .mapped_argfunction .if !
--1
 $!x !  !  !  .test_in 0
 assertion (! ! ! ! .test_in 0) failed
 call stack .throw .mapped_argfunction .else !x
--1
 $!x !  !x !  .test_in 0
 assertion (! ! !x ! .test_in 0) failed
 call stack .throw .mapped_argfunction .else !x
--1
 $!x !x !  !  .test_in 0
 assertion (! !x ! ! .test_in 0) failed
 call stack .throw .mapped_argfunction .else !x
--1
 $!x !x !x !  .test_in 0
 assertion (! !x !x ! .test_in 0) failed
 call stack .throw .mapped_argfunction .else !x
--1
 $!  !  !  !  .test_in 0 0
-0
 $!  !  !x !  .test_in 0 0
-0
 $!  !x !  !  .test_in 0 0
-0
 $!  !x !x !  .test_in 0 0
-0
 $!x !  !  !  .test_in 0 0
-0
 $!x !  !x !  .test_in 0 0
-0
 $!x !x !  !  .test_in 0 0
-0
 $!x !x !x !  .test_in 0 0
-0
 $
-0
 $# properly sequenced un-nested conditionals where everything succeeds
-0
-$if_true {echo if_true printing}
+$se {
+  if_true {echo if_true printing}
+  else_if_true {echo else_if_true not printing when condition true}
+  else_if_not_false {echo else_if_not_false not printing when condition true}
+  else_if_false {echo else_if_false not printing when condition true}
+  else_if_not_true {echo else_if_not_false not printing when condition true}
+  obscured_else {echo obscured_else not printing when condition true}}
 if_true printing
-0
-$else_if_true {echo else_if_true not printing when condition true}
-0
-$else_if_not_false {echo else_if_not_false not printing when condition true}
-0
-$else_if_false {echo else_if_false not printing when condition true}
-0
-$else_if_not_true {echo else_if_not_false not printing when condition true}
-0
-$obscured_else {echo obscured_else not printing when condition true}
-0
-$if_false {echo if_false not printing}
-0
-$else_if_false {echo else_if_false not printing when condition false}
-0
-$else_if_not_true {echo else_if_not_true not printing when condition false}
-0
-$obscured_else {echo obscured_else is printing when condition false}
+$se {
+  if_false {echo if_false not printing}
+  else_if_false {echo else_if_false not printing when condition false}
+  else_if_not_true {echo else_if_not_true not printing when condition false}
+  obscured_else {echo obscured_else is printing when condition false}}
 obscured_else is printing when condition false
-0
-$if_false {echo if_false not printing}
-0
-$else_if_true {echo else_if_true printing when condition false}
+$se {
+  if_false {echo if_false not printing}
+  else_if_true {echo else_if_true printing when condition false}
+  obscured_else {echo obscured_else not printing when condition true}}
 else_if_true printing when condition false
-0
-$obscured_else {echo obscured_else not printing when condition true}
-0
-$if_false {echo if_false not printing}
-0
-$else_if_not_false {echo else_if_not_false printing when condition false}
+$se {
+  if_false {echo if_false not printing}
+  else_if_not_false {echo else_if_not_false printing when condition false}
+  obscured_else {echo obscured_else not printing when condition true}}
 else_if_not_false printing when condition false
-0
-$obscured_else {echo obscured_else not printing when condition true}
-0
-$if_with_body .test_not_empty a
+$se {
+  if_with_body .test_not_empty a
+  else_if_with_body .test_not_empty a
+  else_with_body}
 the afore-mentioned body
-0
-$else_if_with_body .test_not_empty a
-0
-$else_with_body
-0
-$if_with_body .test_not_empty ()
-0
-$else_if_with_body .test_not_empty ()
-0
-$else_with_body text expanded
+$se {
+  if_with_body .test_not_empty ()
+  else_if_with_body .test_not_empty ()
+  else_with_body text expanded}
 the afore-mentioned text expanded
-0
-$if_with_body .test_not_empty ()
-0
-$else_if_with_body .test_not_empty a
+$se {
+  if_with_body .test_not_empty ()
+  else_if_with_body .test_not_empty a
+  else_with_body text}
 the afore-mentioned body
-0
-$else_with_body text
-0
 $
-0
 $# nested conditionals
-0
-$.if conditional_true {echo conditional_true printing}
+$se {
+  .if conditional_true {echo conditional_true printing}
+  .else {echo else not printing when condition true}}
 in_conditional_if
 conditional_true printing
-0
-$.else {echo else not printing when condition true}
-0
-$.if conditional_false {echo conditional_false not printing}
+$se {
+  .if conditional_false {echo conditional_false not printing}
+  .else {echo else is printing when condition false}}
 in_conditional_else
-0
-$.else {echo else is printing when condition false}
 else is printing when condition false
-0
-$.if ${conditional_echo .test_is_number 71}$ {echo conditional_echo printing}
+$se {
+  .if ${conditional_echo .test_is_number 71}$ {echo conditional_echo printing}
+  .else {echo else not printing when condition true}}
 conditional_echo printing
-0
-$.else {echo else not printing when condition true}
-0
-$.if ${conditional_echo .test_is_number pi}$ {echo conditional_echo not printing}
-0
-$.else {echo else is printing when condition false}
+$se {
+  .if ${conditional_echo .test_is_number pi}$ {echo conditional_echo not printing}
+  .else {echo else is printing when condition false}}
 else is printing when condition false
-0
-$if_true {echo ${conditional_echo print this}}
+$se {
+  if_true {echo ${conditional_echo print this}}
+  .else {echo else not printing when condition true}}
 (print this)
-0
-$.else {echo else not printing when condition true}
-0
-$if_false {echo ${conditional_echo .test_not_empty ()}}
-0
-$.else {echo else is printing when condition false}
+$se {
+  if_false {echo ${conditional_echo .test_not_empty ()}}
+  .else {echo else is printing when condition false}}
 else is printing when condition false
-0
-$.if conditional_true {echo ${conditional_echo print this}}
+$se {
+  .if conditional_true {echo ${conditional_echo print this}}
+  .else {echo ${conditional_echo not printing}}}
 in_conditional_if
 (print this)
-0
-$.else {echo ${conditional_echo not printing}}
-0
-$.if conditional_false {echo ${conditional_echo not printing}}
+$se {
+  .if conditional_false {echo ${conditional_echo not printing}}
+  .else {echo ${conditional_echo print this}}}
 in_conditional_else
-0
-$.else {echo ${conditional_echo print this}}
 (print this)
-0
 $
-0
 $# improperly sequenced conditionals and conditional block exception
-0
 $.else {echo top level else without if}
 else without if with call stack: .else
--1
 $.collect_errors_except .nop {
   .if else_with_body {echo else without if in condition}
   else_if_true {echo else_if ignored after exception}
@@ -3824,19 +2971,16 @@ $.collect_errors_except .nop {
   echo end collect errors}
 end collect errors
 else without if with call stack: .else else_with_body .if .collect_errors_except
--1
 $.collect_errors_except .nop {
   if_true {.else {echo else without if in body}}
   echo else is skipped without issue (expecting exception avoided it)}
 else is skipped without issue (expecting exception avoided it)
 else without if with call stack: .else .mapped_argfunction .if if_true .collect_errors_except
--1
 $.collect_errors_except .nop {
   if_false {echo set up}
   else_if_true {else_if_true {else_if without if}}
   else_with_body}
 else without if with call stack: .else_if else_if_true .mapped_argfunction .else_if else_if_true .collect_errors_except
--1
 $.collect_errors_except .nop {
   double_if_with_body .test_in if following another top-level if
   if_true {echo if_true printing though it is the third if}
@@ -3844,12 +2988,10 @@ $.collect_errors_except .nop {
 the first body
 if_true printing though it is the third if
 two .if commands without a .else between them with call stack : .if double_if_with_body .collect_errors_except
--1
 $.collect_errors_except .nop {
   if_with_body double_if_with_body .test_in double if in condition
   obscured_else {echo else skipped when properly closing block}}
 two .if commands without a .else between them with call stack : .if double_if_with_body .if if_with_body .collect_errors_except
--1
 $.collect_errors_except .nop {
   if_false {}
   .else {double_if_with_body .test_in double if in body}
@@ -3859,7 +3001,6 @@ $.collect_errors_except .nop {
 if_true printing immediately after an else that threw
 two .if commands without a .else between them with call stack : .if double_if_with_body .mapped_argfunction .else .collect_errors_except
 else without if with call stack: .else .collect_errors_except
--1
 $.collect_errors_except .nop {
   if_true {.else {echo else without if}}
   .else {echo ignored because it is at the level of the if
@@ -3868,7 +3009,6 @@ $.collect_errors_except .nop {
   else {echo else run after the properly closed if-else}}
 else run after the properly closed if-else
 else without if with call stack: .else .mapped_argfunction .if if_true .collect_errors_except
--1
 $.collect_errors_except .nop {
   if_false {}
   obscured_else {if_false {echo bad_if_nest in condition body}}
@@ -3879,34 +3019,30 @@ $.collect_errors_except .nop {
 nested .if without .else with call stack: .else .scope .scope obscured_else .collect_errors_except
 else without if with call stack: .else_if else_if_true .collect_errors_except
 nested .if without .else with call stack: .if if_with_body .if .collect_errors_except
--1
+$if_false {echo if block not closed}
+conditional not finished within preceeding block
 $.if if_with_body conditional_true {echo middle if is not matched}
 in_conditional_if
 the afore-mentioned body
 nested .if without .else with call stack: .if
--1
 $.if if_else_if_not_with_body .test_in else if without else {
   echo body is not run with exception in condition}
 the first body
 nested .if without .else with call stack: .if
--1
 $.collect_errors_except .nop {
   if_false {}
   obscured_else {if_else_if_not_with_body .test_in else_if without else in body}}
 the second body
 nested .if without .else with call stack: .else .scope .scope obscured_else .collect_errors_except
--1
 $.collect_errors_except .nop {
   if_false {}
   .else {if_true {if_true {echo unmatched if doubled in body}}}}
 unmatched if doubled in body
 nested .if without .else with call stack: .if if_true .mapped_argfunction .else .collect_errors_except
--1
 $.collect_errors_except .nop {
   if_false {}
   .else {.if if_with_body .test_in unmatched {echo if in condition of body}}}
 nested .if without .else with call stack: .if .mapped_argfunction .else .collect_errors_except
--1
 $.collect_errors_except .nop {
   .try_catch_recursive echo {
     .if silent_throw in if {echo definitely should not print}
@@ -3919,121 +3055,94 @@ $.collect_errors_except .nop {
     .else {echo not skipped because only .false were thrown earlier}}}
 exception in if .throw .collect_errors_only silent_throw .try_catch_recursive(body)
 not skipped because only .false were thrown earlier
-0
 $
-0
 $# exception thrown in argfunction
-0
-$.if ${conditional_echo unfindable anywhere}$ {echo also a failed substitution}
+$se {
+  .if ${conditional_echo unfindable anywhere}$ {echo also a failed substitution}
+  .else {echo else skipped when condition threw an exception}}
 unfindable : binary not found in /bin:/usr/bin:.
-call stack: .which_path .autofunction .autofunction .if
-unfindable : command not found ( unfindable anywhere .if )
--1
-$.else {echo else skipped when condition threw an exception}
-0
-$if_true {echo &&{unfindable anywhere}}
+call stack: .which_path .autofunction .autofunction .if .scope se
+unfindable : command not found ( unfindable anywhere .if .scope se )
+$se {
+  if_true {echo &&&{unfindable anywhere}}
+  .else {echo else not printing when condition true and if body threw}}
 unfindable : binary not found in /bin:/usr/bin:.
-call stack: .which_path .autofunction .autofunction .mapped_argfunction .mapped_argfunction .if if_true
-unfindable : command not found ( unfindable anywhere .mapped_argfunction .mapped_argfunction .if if_true )
+call stack: .which_path .autofunction .autofunction .mapped_argfunction .mapped_argfunction .if if_true .scope se
+unfindable : command not found ( unfindable anywhere .mapped_argfunction .mapped_argfunction .if if_true .scope se )
 Exception for failed handler. Original exception with call stack:
-.failed_substitution &{unfindable anywhere} .mapped_argfunction .if if_true
+.failed_substitution &{unfindable anywhere} .mapped_argfunction .if if_true .scope se
 Z was not declared
 call stack: .failed_substitution
--1
-$.else {echo else not printing when condition true and if body threw}
-0
 $if_true {echo &{unfindable anywhere}}
 unfindable : binary not found in /bin:/usr/bin:.
 call stack: .which_path .autofunction .autofunction if_true
 unfindable : command not found ( unfindable anywhere if_true )
--1
+Exception for failed handler. Original exception with call stack:
+.failed_substitution &{unfindable anywhere}
+Z was not declared
+call stack: .failed_substitution
+unacceptable arguments: for prototype -- text ...,
+ needed (text),
+( call) stack: (echo .mapped_argfunction .if if_true)
 $.else {echo else throws an exception because we never got into the if}
 else without if with call stack: .else
--1
 $
--1
 $# .if .else_if .else_if_not .else
--1
-$.if
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .if
--1
-$.else_if .test_is_number 0 {echo do not run after an exception}
-0
-$.else_if_not .test_is_number false {echo do not run after an exception}
-0
-$.else_if
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .else_if
--1
-$.else_if_not
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .else_if_not
--1
-$.else {echo do not run after an exception}
-0
+$.collect_errors_except .nop {
+  .if
+  .else_if .test_is_number 0 {echo do not run after an exception}
+  .else_if_not .test_is_number false {echo do not run after an exception}
+  .else_if
+  .else_if_not
+  .else {echo do not run after an exception}}
+unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .if .collect_errors_except
+unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .else_if .collect_errors_except
+unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .else_if_not .collect_errors_except
 $.if missing argfunction
 .if requires an argfunction
--1
 $.else_if missing argfunction
 .else_if requires an argfunction
--1
 $.else_if_not missing argfunction
 .else_if_not requires an argfunction
--1
 $.else
 .else requires an argfunction
--1
-$.if .test_is_number 0 {}
-0
-$.else {echo first else for if}
-0
-$.else {echo second else for if}
-else without if with call stack: .else
--1
-$.if .test_is_number 0 {echo if true}
+$se {
+  .if .test_is_number 0 {}
+  .else {echo first else for if}
+  .else {echo second else for if}}
+else without if with call stack: .else .scope se
+$se {
+  .if .test_is_number 0 {echo if true}
+  .else {echo else true; .return 3}}
 if true
-0
-$.else {echo else true; .return 3}
-0
-$.if .test_is_number false {echo if false}
-0
-$.else {echo else false; .return 5}
+$se {
+  .if .test_is_number false {echo if false}
+  .else {echo else false; .return 5}}
 else false
 5
 $.else {}
 else without if with call stack: .else
--1
 $.else_if .test_is_number 0 {echo not this one}
 else without if with call stack: .else_if
--1
-$.else {}
-0
 $.else_if_not .test_is_number false {echo nor this}
 else without if with call stack: .else_if_not
--1
-$.else {}
-0
+$.return 0
 $
-0
 $# .internal_features .internal_functions .internal_vars
-0
 $.internal_features 1
 unacceptable arguments: for prototype ,
  found (1) excess
 ( call) stack: .internal_features
--1
 $.internal_functions 1
 unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .internal_functions
--1
 $.internal_functions {excess argfunc}
 .internal_functions does not accept an argfunction with call stack: .internal_functions
--1
 $.internal_vars 1
 unacceptable arguments: for prototype ,
  found (1) excess
 ( call) stack: .internal_vars
--1
 $.internal_features
 .after_command .before_command .run_logic
-0
 $.internal_functions
 .ambiguous_prototype_dash_dash
 .arguments_for_argfunction
@@ -4108,66 +3217,47 @@ $.internal_functions
 .unchecked_variable
 .undeclared_variable
 .undefined_variable
+.unfinished_if_block
 .unreadable_dir
 .unrecognized_flag
 .unused_before_set
 .unused_variable
 .variable_already_exists
 .version_incompatible
-0
 $.internal_vars
 FIGNORE ?
-0
 $
-0
 $# .is_default_input .is_default_output .is_default_error
-0
 $.is_default_input 1
 unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .is_default_input
--1
 $.is_default_input {excess argfunc}
 .is_default_input does not accept an argfunction with call stack: .is_default_input
--1
 $se {.is_default_input <dummy_file}
 assertion is_default_input failed
 call stack .is_default_input .scope se
--1
 $se {.is_default_input}
-0
 $.is_default_output 1
 unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .is_default_output
--1
 $.is_default_output {excess argfunc}
 .is_default_output does not accept an argfunction with call stack: .is_default_output
--1
 $e ${.is_default_output; .echo $?}
 assertion is_default_output failed
 call stack .is_default_output e
-0
 $se {.is_default_output >dummy_file}
 assertion is_default_output failed
 call stack .is_default_output .scope se
--1
 $se {.is_default_output}
-0
 $.is_default_error 1
 unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .is_default_error
--1
 $.is_default_error {excess argfunc}
 .is_default_error does not accept an argfunction with call stack: .is_default_error
--1
 $se {.is_default_error}
-0
 $
-0
 $# .list_executables
-0
 $.list_executables excess
 unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .list_executables
--1
 $.list_executables {excess argfunc}
 .list_executables does not accept an argfunction with call stack: .list_executables
--1
 $.for ${.list_executables}$ {.combine $1 $nl}
 !
 !x
@@ -4329,6 +3419,7 @@ $.for ${.list_executables}$ {.combine $1 $nl}
 .unchecked_variable
 .undeclared_variable
 .undefined_variable
+.unfinished_if_block
 .unreadable_dir
 .unrecognized_flag
 .unset
@@ -4424,192 +3515,135 @@ var_val
 whence
 whichp
 while_and_one_more
-0
 $
-0
 $# .ls
-0
 $.ls
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .ls
--1
 $.ls /bin {excess argfunc}
 .ls does not accept an argfunction with call stack: .ls
--1
 $.ls /bin/usr/
 could not find file /bin/usr/
 call stack .ls
--1
 $.ls /bi  /us /nr
 could not find file (/bi /us /nr)
 call stack .ls
--1
 $.ls /bin /usr/
 /bin
 /usr/
-0
 $
-0
 $# .nop
-0
 $.nop
-0
 $.nop {optional argfunc}
-0
 $.nop 1 2 3 4 5
-0
 $
-0
 $# .replace_exception
-0
 $.replace_exception
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .replace_exception
--1
 $.replace_exception echo not in exception handler
 .replace_exception called outside of an exception handler
 call stack: .replace_exception
--1
 $.try_catch_recursive .replace_exception {
   .throw .replace_exception echo now in exception handler}
 now in exception handler .throw .try_catch_recursive(body) .replace_exception .try_catch_recursive
--1
 $.return 0
-0
 $
-0
 $# .return
-0
 $.return
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .return
--1
 $.return 1 1
 unacceptable argument count: received 2 non-optional, but needed 1 (with 0 optional) for .return
--1
 $.return 0 {excess argfunc}
 .return does not accept an argfunction with call stack: .return
--1
 $.return 0
-0
 $.return 1
 1
 $.return \
 () is not a number
 call stack: .return
--1
 $.return O
 O is not a number
 call stack: .return
--1
 $.return 1E2
 1E2 is not a number
 call stack: .return
--1
 $.return 2147483647
 2147483647
 $.return 2147483649
 value 2147483649 is out of usable numeric range
 call stack .return
--1
 $.return -2147483649
 value -2147483649 is out of usable numeric range
 call stack .return
--1
 $
--1
 $# .scope
--1
 $.scope {e $foo}
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .scope
--1
 $.scope () {.scope foo}
 .scope requires an argfunction
 stack .scope
--1
 $.scope a (y y) {echo illegal duplicate required parameter}
 duplicated parameter in function definition: y
 call stack: .scope
--1
 $.scope a ([-x] [-x]) {echo illegal duplicate flag parameter}
 duplicated parameter in function definition: -x
 call stack: .scope
--1
 $.scope a ([x x]) {echo illegal duplicate optional parameter}
 duplicated parameter in function definition: x
 call stack: .scope
--1
 $.scope a ([-x arg bar] [-y arg]) {echo illegal duplicate flag argument}
 duplicated parameter in function definition: arg
 call stack: .scope
--1
 $.scope a (-x [-x]) {echo evil duplication between flags positional}
 duplicated parameter in function definition: -x
 call stack: .scope
--1
 $.scope -- -- {echo -- as a prototype forbids even -- as arguments}
 unacceptable arguments: for prototype --,
  found (--) excess
 ( call) stack: .scope
--1
 $.scope -- () {echo but ${.list_locals} is acceptable for empty prototype}
 but -- is acceptable for empty prototype
-0
 $.scope () {echo no arguments are also good for empty prototype}
 no arguments are also good for empty prototype
-0
 $.scope a (-- --) {echo -- cannot be a duplicate parameter}
 duplicated parameter in function definition: --
 call stack: .scope
--1
 $.scope a ([--] [--]) {echo [--] cannot be a duplicate flag parameter}
 duplicated parameter in function definition: --
 call stack: .scope
--1
 $.scope a ([--] --) {echo -- and [--] cannot both be parameters}
 duplicated parameter in function definition: --
 call stack: .scope
--1
 $.scope a ([-- arg]) {echo -- cannot take arguments}
 optional -- parameter cannot take arguments ( ([-- arg]) ) with call stack: .scope
--1
 $.scope a ([arg -- foo]) {echo -- cannot be an argument}
 optional -- parameter cannot take arguments ( ([arg -- foo]) ) with call stack: .scope
--1
 $.scope -x -y a b ([-?] args ...) {
   for ${.list_locals}$ {.combine $1 = $$1 \ }; .echo $nl}
 -*=-x -y -?=-x -y args=a b 
-0
 $.scope a ([-? bad] arg) {e -? cannot currently take arguments}
 optional -* parameter cannot take arguments ( ([-? bad]) ) with call stack: .scope
--1
 $.scope a ([-* bad] arg) {e -* (aka -?) cannot currently take arguments}
 optional -* parameter cannot take arguments ( ([-* bad]) ) with call stack: .scope
--1
 $.scope -a -* -b a ([-?] a) {
   for ${.list_locals}$ {.combine $1 = $$1 \ }; .echo $nl}
 -*=-a -* -b -?=-a -* -b a=a 
-0
 $.scope bar foo {echo aa $foo bb}
 aa bar bb
-0
 $.scope baz bax (foo bar) {
   for ${.list_locals}$ {.combine $1 = $$1 \ }; .echo $nl}
 bar=bax foo=baz 
-0
 $.scope foo bar baz bax (args ...) {echo aa $args$2 bb $args$1 cc}
 aa baz bb bar cc
-0
 $.scope single ([-x] [--long-opt y] second) {
   var_val ${.list_locals}$; .echo $nl}
 -*() second(single) 
-0
 $.function_all_flags a [-x] [--long-opt y] second {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   .combine $nl}
-0
 $whence a
 .function_all_flags a [--long-opt y] [-x] second {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
   .combine $nl}
-0
 $.function_all_flags pt -- args ... {
   .scope $args$ ([-x] [--long-opt y] second) {
     for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
@@ -4617,7 +3651,6 @@ $.function_all_flags pt -- args ... {
   .scope $args$ ( [-?] [--long-opt y] second) {
     for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
   .combine $nl}
-0
 $whence pt
 .function_all_flags pt -- args ... {
   .scope $args$ ([-x] [--long-opt y] second) {
@@ -4626,62 +3659,48 @@ $whence pt
   .scope $args$ ( [-?] [--long-opt y] second) {
     for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
   .combine $nl}
-0
 $a
 unacceptable arguments: for prototype [--long-opt y] [-x] second,
  assigned -*=() ,
  but needed (second),
 ( call) stack: a
--1
 $a single
 -*() second(single) 
-0
 $pt single
 -*() second(single) 
 -*() -?() second(single) 
-0
 $a -x single
 -*(-x) -x(-x) second(single) 
-0
 $pt -x single
 -*(-x) -x(-x) second(single) 
 -*(-x) -?(-x) second(single) 
-0
 $a --long-opt arg single
 -*(--long-opt arg) --long-opt(--long-opt arg) second(single) y(arg) 
-0
 $pt --long-opt arg single
 -*(--long-opt arg) --long-opt(--long-opt arg) second(single) y(arg) 
 -*(--long-opt arg) --long-opt(--long-opt arg) -?() second(single) y(arg) 
-0
 $a --long-opt single
 unacceptable arguments: for prototype [--long-opt y] [-x] second,
  assigned -*=(--long-opt single) --long-opt=(--long-opt single) y=single ,
  but needed (second),
 ( call) stack: a
--1
 $pt --long-opt single
 unacceptable arguments: for prototype [--long-opt y] [-x] second,
  assigned -*=(--long-opt single) --long-opt=(--long-opt single) y=single ,
  but needed (second),
 ( call) stack: (.scope pt)
--1
 $a --long-opt first -x --long-opt second single
 -*(--long-opt first -x --long-opt second) --long-opt(--long-opt first --long-opt second) -x(-x) second(single) y(first second) 
-0
 $pt --long-opt first -x --long-opt second single
 -*(--long-opt first -x --long-opt second) --long-opt(--long-opt first --long-opt second) -x(-x) second(single) y(first second) 
 -*(--long-opt first -x --long-opt second) --long-opt(--long-opt first --long-opt second) -?(-x) second(single) y(first second) 
-0
 $.function_all_flags a [-?] [-first] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   echo nothing_required}
-0
 $whence a
 .function_all_flags a [-?] [-first] {
   for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
   echo nothing_required}
-0
 $.function_all_flags pts -- [args ...] {
   .if var_exists args {
     .scope $args$ ([-first] [-?]) {
@@ -4690,7 +3709,6 @@ $.function_all_flags pts -- [args ...] {
   else {.scope ([-first] [-?]) {
       .for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
       echo nothing_required}}
-0
 $whence pts
 .function_all_flags pts -- [args ...] {
   .if var_exists args {
@@ -4700,125 +3718,87 @@ $whence pts
   else {.scope ([-first] [-?]) {
       .for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
       echo nothing_required}}
-0
 $a
 -*() -?() nothing_required
-0
 $pts
 -*() -?() nothing_required
-0
 $a excess
 unacceptable arguments: for prototype [-?] [-first],
  assigned -*=() -?=() ,
  but found (excess) excess
 ( call) stack: a
--1
 $pts excess
 unacceptable arguments: for prototype [-?] [-first],
  assigned -*=() -?=() ,
  but found (excess) excess
 ( call) stack: (.scope .mapped_argfunction .if pts)
--1
 $a -to
 -*(-to) -?(-to) nothing_required
-0
 $pts -to
 -*(-to) -?(-to) nothing_required
-0
 $a -first --
 -*(-first --) --(--) -?() -first(-first) nothing_required
-0
 $pts -first --
 -*(-first --) --(--) -?() -first(-first) nothing_required
-0
 $a -first excess
 unacceptable arguments: for prototype [-?] [-first],
  assigned -*=-first -?=() -first=-first ,
  but found (excess) excess
 ( call) stack: a
--1
 $pts -first excess
 unacceptable arguments: for prototype [-?] [-first],
  assigned -*=-first -?=() -first=-first ,
  but found (excess) excess
 ( call) stack: (.scope .mapped_argfunction .if pts)
--1
 $a -to -- -first
 unacceptable arguments: for prototype [-?] [-first],
  assigned -*=(-to --) --=-- -?=-to ,
  but found (-first) excess
 ( call) stack: a
--1
 $pts -to -- -first
 unacceptable arguments: for prototype [-?] [-first],
  assigned -*=(-to --) --=-- -?=-to ,
  but found (-first) excess
 ( call) stack: (.scope .mapped_argfunction .if pts)
--1
 $a -to -first
 -*(-to -first) -?(-to) -first(-first) nothing_required
-0
 $pts -to -first
 -*(-to -first) -?(-to) -first(-first) nothing_required
-0
 $.return 0
-0
 $
-0
 $# .selection_set
-0
 $.selection_set A
 unacceptable argument count: received 1 non-optional, but needed 2 (with 0 optional) for .selection_set
--1
 $.selection_set A /usr {excess argfunc}
 .selection_set does not accept an argfunction with call stack: .selection_set
--1
 $.selection_set A /usr
-0
 $echo $A$
 /usr
-0
 $.selection_set A ./
-0
 $echo $A$
 /usr/*
-0
 $.selection_set A local/include
-0
 $echo $A$
 /usr/local/include
-0
 $.selection_set A ..
-0
 $echo $A$
 /usr
-0
 $.selection_set A ()
-0
 $echo $A$
 /usr
-0
 $.selection_set A ./local/../../bin
-0
 $echo $A$
 /bin
-0
 $.selection_set A sbin etc
-0
 $echo $A$
 /sbin etc
-0
 $
-0
 $# .set
-0
 $.set A
 unacceptable argument count: received 1 non-optional, but needed 2 (with 0 optional) for .set
--1
 $.set 1 x
 $1 cannot be set
 call stack .set
--1
 $.scope [undefined] {.collect_errors_except .nop {
   .set undeclared is an error
   echo $undeclared}}
@@ -4827,55 +3807,41 @@ call stack: .set .collect_errors_except .scope
 undeclared was not declared
 call stack: .collect_errors_except .scope
 undefined was not checked with call stack .scope
--1
 $.scope [undefined] {.collect_errors_except .nop {
   .set undefined and also unchecked
   echo $undefined}}
 (and also unchecked)
-0
 $.scope but_ignored [defined] {.collect_errors_except .nop {
   .set defined but also unchecked
   echo $defined}}
 but_ignored
 attempt to set defined before making use of its initial value
 call stack .set .collect_errors_except .scope
--1
 $.scope unchanged [defined] {.collect_errors_except .nop {
   .set defined unchanged
   echo variable $defined by a set does not throw}}
 variable unchanged by a set does not throw
-0
 $.scope [undefined] {.collect_errors_except .nop {
   if_only_not .var_exists undefined {.set undefined is checked}
   echo $undefined}}
 (is checked)
-0
 $.set B x {excess argfunc}
 .set does not accept an argfunction with call stack: .set
--1
 $.set A x
-0
 $echo $A
 x
-0
 $
-0
 $# .try_catch_recursive .get_max_extra_exceptions .set_max_extra_exceptions
-0
 $.try_catch_recursive .function_not_found 
 .try_catch_recursive requires an argfunction
--1
 $.try_catch_recursive {.return A}
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .try_catch_recursive
--1
 $fn e_after {se {.argfunction}; echo after}
-0
 $e_after {.try_catch_recursive .not_a_number .function_not_found {
   .return A}}
 A is not a number
 call stack: .return .try_catch_recursive(body)
 after
-0
 $e_after {
   .try_catch_recursive .function_not_found .binary_not_found {
     ..return A}}
@@ -4883,103 +3849,73 @@ $e_after {
 call stack: .which_path .autofunction .autofunction .try_catch_recursive(body)
 ..return : command not found ( ..return A .try_catch_recursive(body) )
 after
-0
 $e_after {.try_catch_recursive .not_a_number {.return A}}
 A is not a number
 call stack: .return .try_catch_recursive(body)
 after
-0
 $e_after {.try_catch_recursive .not_a_number {.cho A}}
 .cho : binary not found in /bin:/usr/bin:.
 call stack: .which_path .autofunction .autofunction .try_catch_recursive(body) .try_catch_recursive .scope se e_after
 .cho : command not found ( .cho A .try_catch_recursive(body) .try_catch_recursive .scope se e_after )
--1
 $e_after {.try_catch_recursive .not_a_number .function_not_found {echo A}}
 A
 after
-0
 $e_after {sa echo hi {.try_catch_recursive ${.internal_functions}$ {&&&args$}}}
 hi
 after
-0
 $.get_max_extra_exceptions excess
 unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .get_max_extra_exceptions
--1
 $.set_max_extra_exceptions
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .set_max_extra_exceptions
--1
 $.get_max_extra_exceptions {excess}
 .get_max_extra_exceptions does not accept an argfunction with call stack: .get_max_extra_exceptions
--1
 $.set_max_extra_exceptions 1 {excess}
 .set_max_extra_exceptions does not accept an argfunction with call stack: .set_max_extra_exceptions
--1
 $.set_max_extra_exceptions NaN
 NaN is not a number
 call stack: .set_max_extra_exceptions
--1
 $.set_max_extra_exceptions -1
 value -1 is out of usable numeric range
 call stack .set_max_extra_exceptions
--1
 $.scope () {.get_max_extra_exceptions; .echo $nl}
 1
-0
 $.set_max_extra_exceptions 0
-0
 $.scope () {.get_max_extra_exceptions; .echo $nl}
 0
-0
 $e_after {.try_catch_recursive .not_a_number {.try_catch_recursive .not_a_number {.return A}}}
 A is not a number
 call stack: .return .try_catch_recursive(body) .try_catch_recursive .try_catch_recursive(body) .try_catch_recursive .scope se e_after
 exceeded maximum number of exceptions ( 0 ) in try_catch.
 call stack: .try_catch_recursive .try_catch_recursive(body) .try_catch_recursive .scope se e_after
--1
 $e_after {.try_catch_recursive .not_a_number {.try_catch_recursive .not_a_number {.return A}}}
 A is not a number
 call stack: .return .try_catch_recursive(body) .try_catch_recursive .try_catch_recursive(body) .try_catch_recursive .scope se e_after
 exceeded maximum number of exceptions ( 0 ) in try_catch.
 call stack: .try_catch_recursive .try_catch_recursive(body) .try_catch_recursive .scope se e_after
--1
 $e_after {sa echo hi {.try_catch_recursive ${.internal_functions}$ {&&&args$}}}
 hi
 after
-0
 $.set_max_extra_exceptions 5
-0
 $.scope () {.get_max_extra_exceptions; .echo $nl}
 5
-0
 $
-0
 $# .stepwise
-0
 $.function_all_flags wrapper args ... {a $args$ two; a $args$ three}
-0
 $.function_all_flags a args ... {e $args$ one $nl; e $args$ two $nl
   e $args$ three $nl}
-0
 $.function_all_flags d args ... {e $args$ $nl; .stepwise $args$ {d $*}}
-0
 $.stepwise {e $* $nl}
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .stepwise
--1
 $.stepwise wrapper 1 2
 .stepwise requires an argfunction
--1
 $.stepwise stepwise {e $* $nl}
 stepwise : command not found ( stepwise .stepwise )
--1
 $.stepwise .stepwise {e $* $nl}
-0
 $.stepwise wrapper 1 2 {e $* $nl}
 a 1 2 two 
 a 1 2 three 
-0
 $.function_all_flags wrapper args ... {a $args$ one
   a $args$ two; a $args$ three}
-0
 $wrapper 1 2
 1 2 one one 
 1 2 one two 
@@ -4990,7 +3926,6 @@ $wrapper 1 2
 1 2 three one 
 1 2 three two 
 1 2 three three 
-0
 $.stepwise wrapper 1 2 {d $*}
 a 1 2 one 
 e 1 2 one one 
@@ -5031,7 +3966,6 @@ e 1 2 three three
  
 .echo 1 2 three three 
  
-0
 $.stepwise wrapper 1 2 {
   echo current line: $*
   if_only .test_string_equal $4 two {
@@ -5048,365 +3982,245 @@ $.stepwise wrapper 1 2 {e $* $nl}
 a 1 2 one 
 a 1 2 two 
 a 1 2 three 
-0
 $
-0
 $# .test_file_exists
-0
 $.test_file_exists
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .test_file_exists
--1
 $.test_file_exists dummy_file {excess argfunc}
 .test_file_exists does not accept an argfunction with call stack: .test_file_exists
--1
 $.test_file_exists /b /in
 assertion ( -e /b -e /in) failed
 call stack .test_file_exists
--1
 $.test_file_exists /b /bin /in
-0
 $
-0
 $# .test_string_equal .test_string_unequal .test_not_empty .test_in
-0
 $.test_string_equal x
 unacceptable argument count: received 1 non-optional, but needed 2 (with 0 optional) for .test_string_equal
--1
 $.test_string_equal x x x
 unacceptable argument count: received 3 non-optional, but needed 2 (with 0 optional) for .test_string_equal
--1
 $.test_string_equal x x {excess argfunc}
 .test_string_equal does not accept an argfunction with call stack: .test_string_equal
--1
 $.test_string_unequal x 
 unacceptable argument count: received 1 non-optional, but needed 2 (with 0 optional) for .test_string_unequal
--1
 $.test_string_unequal x x x
 unacceptable argument count: received 3 non-optional, but needed 2 (with 0 optional) for .test_string_unequal
--1
 $.test_string_unequal x x {excess argfunc}
 .test_string_unequal does not accept an argfunction with call stack: .test_string_unequal
--1
 $.test_not_empty 
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .test_not_empty
--1
 $.test_not_empty x x
 unacceptable argument count: received 2 non-optional, but needed 1 (with 0 optional) for .test_not_empty
--1
 $.test_not_empty x {excess argfunc}
 .test_not_empty does not accept an argfunction with call stack: .test_not_empty
--1
 $.test_string_equal x y
 assertion (x == y) failed
 call stack .test_string_equal
--1
 $.test_string_equal x x
-0
 $.test_string_unequal x y
-0
 $.test_string_unequal x x
 assertion (x != x) failed
 call stack .test_string_unequal
--1
 $.test_not_empty \
 assertion ( -n ) failed
 call stack .test_not_empty
--1
 $.test_not_empty x
-0
 $.test_in
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .test_in
--1
 $.test_in x
 assertion (x in) failed
 call stack .test_in
--1
 $.test_in x x
-0
 $.test_in z y z
-0
 $.test_in w x y z
 assertion (w in x y z) failed
 call stack .test_in
--1
 $.test_in y x y z
-0
 $
-0
 $# .test_is_number .test_number_equal .test_greater .test_less
-0
 $.test_is_number
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .test_is_number
--1
 $.test_is_number 42 {excess argfunc}
 .test_is_number does not accept an argfunction with call stack: .test_is_number
--1
 $.test_is_number ()
 assertion (is_number  - NaN) failed
 call stack .test_is_number
--1
 $.test_is_number 42a
 assertion (is_number 42a - NaN) failed
 call stack .test_is_number
--1
 $.test_is_number 42
-0
 $.test_is_number -0.314
-0
 $.test_is_number 6.022e9000000000
 assertion (is_number 6.022e9000000000 - range) failed
 call stack .test_is_number
--1
 $.test_is_number 6.022e23
-0
 $.test_number_equal 42
 unacceptable argument count: received 1 non-optional, but needed 2 (with 0 optional) for .test_number_equal
--1
 $.test_number_equal 42 42 {excess argfunc}
 .test_number_equal does not accept an argfunction with call stack: .test_number_equal
--1
 $.test_number_equal 42 42a
 42a is not a number
 call stack: .test_number_equal
--1
 $.test_number_equal 42b 42
 42b is not a number
 call stack: .test_number_equal
--1
 $.test_number_equal 0 0.000000000000000000000000001
 assertion (0 -eq 0.000000000000000000000000001) failed
 call stack .test_number_equal
--1
 $.test_number_equal 1e-9000000000 1e-9000000001
 value 1e-9000000000 is out of usable numeric range
 call stack .test_number_equal
--1
 $.test_number_equal 0 0.0
-0
 $.test_number_equal 42 42.01
 assertion (42 -eq 42.01) failed
 call stack .test_number_equal
--1
 $.test_number_equal 42 42
-0
 $.test_number_equal 6.022e9000000000 .6022e24
 value 6.022e9000000000 is out of usable numeric range
 call stack .test_number_equal
--1
 $.test_number_equal 6.022e23 .6022e9000000001
 value .6022e9000000001 is out of usable numeric range
 call stack .test_number_equal
--1
 $.test_number_equal 6.022e23 6.022e2
 assertion (6.022e23 -eq 6.022e2) failed
 call stack .test_number_equal
--1
 $.test_number_equal 6.022e23 .6022e24
-0
 $.test_greater 6.022e23
 unacceptable argument count: received 1 non-optional, but needed 2 (with 0 optional) for .test_greater
--1
 $.test_greater 6.022e23c 6.022e23 {excess argfunc}
 .test_greater does not accept an argfunction with call stack: .test_greater
--1
 $.test_greater 6.022e23c 6.022e23
 6.022e23c is not a number
 call stack: .test_greater
--1
 $.test_greater 6.022e23 6.022e23e
 6.022e23e is not a number
 call stack: .test_greater
--1
 $.test_greater 6.022e9000000000 .6022e23
 value 6.022e9000000000 is out of usable numeric range
 call stack .test_greater
--1
 $.test_greater 6.022e23 .6022e9000000001
 value .6022e9000000001 is out of usable numeric range
 call stack .test_greater
--1
 $.test_greater 6.022e2 6.022e23
 assertion (6.022e2 -gt 6.022e23) failed
 call stack .test_greater
--1
 $.test_greater 6.022e23 .6022e24
 assertion (6.022e23 -gt .6022e24) failed
 call stack .test_greater
--1
 $.test_greater 6.022e23 6.022e2
-0
 $.test_less 6.022e23
 unacceptable argument count: received 1 non-optional, but needed 2 (with 0 optional) for .test_less
--1
 $.test_less 6.022b23 6.022e23 {excess argfunc}
 .test_less does not accept an argfunction with call stack: .test_less
--1
 $.test_less 6.022b23 6.022e23
 6.022b23 is not a number
 call stack: .test_less
--1
 $.test_less 6.022e23 6.022a23
 6.022a23 is not a number
 call stack: .test_less
--1
 $.test_less 6.022e9000000000 .6022e23
 value 6.022e9000000000 is out of usable numeric range
 call stack .test_less
--1
 $.test_less 6.022e23 .6022e9000000001
 value .6022e9000000001 is out of usable numeric range
 call stack .test_less
--1
 $.test_less 6.022e23 6.022e2
 assertion (6.022e23 -lt 6.022e2) failed
 call stack .test_less
--1
 $.test_less 6.022e23 .6022e24
 assertion (6.022e23 -lt .6022e24) failed
 call stack .test_less
--1
 $.test_less 6.022e2 6.022e23
-0
 $
-0
 $# .enable_readline .disable_readline .toggle_readline
-0
 $.toggle_readline excess
 unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .toggle_readline
--1
 $.toggle_readline {excess}
 .toggle_readline does not accept an argfunction with call stack: .toggle_readline
--1
 $.enable_readline excess
 unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .enable_readline
--1
 $.enable_readline {excess}
 .enable_readline does not accept an argfunction with call stack: .enable_readline
--1
 $.disable_readline excess
 unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .disable_readline
--1
 $.disable_readline {excess}
 .disable_readline does not accept an argfunction with call stack: .disable_readline
--1
 $.return 0
-0
 $.nop .enable_readline
-0
 $.nop .disable_readline
-0
 $.nop .toggle_readline
-0
 $.nop .toggle_readline
-0
 $
-0
 $# .test_executable_exists .type .whence_function 
-0
 $# Arg_script::str() but only an unknown fraction of the lines
-0
 $# Arg_spec::str() (except trailing whitespace) only through SOON case
-0
 $.test_executable_exists
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .test_executable_exists
--1
 $.test_executable_exists j
 assertion (executable exists: j) failed
 call stack .test_executable_exists
--1
 $.test_executable_exists #
-0
 $.test_executable_exists .nop
-0
 $.test_executable_exists /bin/cat
-0
 $.test_executable_exists .mapped_argfunction
 assertion (executable exists: .mapped_argfunction) failed
 call stack .test_executable_exists
--1
 $.test_executable_exists .mapped_argfunction {.argfunction}
-0
 $.type
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .type
--1
 $.type j
 j : command not found ( j .type )
--1
 $.type #
 function
-0
 $.type .nop
 builtin
-0
 $.type /bin/cat
 file
-0
 $.type .mapped_argfunction
 .mapped_argfunction : command not found ( .mapped_argfunction .type )
--1
 $.type .mapped_argfunction {.argfunction}
 argfunction
-0
 $type .nop .mapped_argfunction j # {.argfunction}
 .nop is builtin
 .mapped_argfunction is .mapped_argfunction : command not found ( .mapped_argfunction .type .try_catch_recursive(body) )
 j is j : command not found ( j .type .try_catch_recursive(body) )
 # is function
-0
 $type -t .nop .mapped_argfunction j # {.argfunction}
 builtin
 .mapped_argfunction : command not found ( .mapped_argfunction .type .try_catch_recursive(body) )
 j : command not found ( j .type .try_catch_recursive(body) )
 function
-0
 $.whence_function
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .whence_function
--1
 $.whence_function j
 j : command not found ( j .whence_function )
--1
 $.whence_function #
 .function_all_flags # -- [ignored ...] {.nop $ignored$}
-0
 $.whence_function .nop
 .nop
-0
 $.whence_function /bin/cat
 /bin/cat
-0
 $.whence_function .mapped_argfunction
 .mapped_argfunction : command not found ( .mapped_argfunction .whence_function )
--1
 $.whence_function .mapped_argfunction {.argfunction}
 {.argfunction}
-0
 $whence .mapped_argfunction {.nop 1 () \ \\ \$ \@ \) \(}
 {.nop 1 () ( \\) \$ \@ \) \(}
-0
 $whence .mapped_argfunction {.nop 1 () \  \\ \$ \@ \) \(}
 {.nop 1 () ( ) \\ \$ \@ \) \(}
-0
 $whence .mapped_argfunction {@a @$a @$1 @$* @$*2}
 {@a @$a @$1 @$*1 @$*2}
-0
 $whence .mapped_argfunction {>dummy_file}
 {>dummy_file}
-0
 $# new tests here
-0
 $.whence_function .mapped_argfunction {{&&{&&x &&{e}}$$$ ${&&x ${e}}$$$ {&&&x &&&{e} {&&&&x &&&&{e}}}}}
 {{&{&x &{e}}$$$ ${&x ${e}}$$$ {&&x &&{e} {&&&x &&&{e}}}}}
-0
 $whence .mapped_argfunction {$A $$A $0 $$$1 $# $* $*2 $A$$$ $A$10 $$*$ $$$*12$}
 {$A $$A $0 $$$1 $# $* $*2 $A$$$ $A$10 $$*$ $$$*12$}
-0
 $.whence_function .mapped_argfunction {&&A &&0 &&* &&*3 &&$A$$$ &&$A$10 &&*$ &&*6$ {&&&A$ &&&A$10}}
 {&A &0 &* &*3 &$A$$$ &$A$10 &*$ &*6$ {&&A$ &&A$10}}
-0
 $.function_all_flags wm [args ...] {
    .whence_function .mapped_argfunction {.argfunction}
    .scope $args$ (a1 a2 a3) {.argfunction}}
-0
 $wm (aa ab ac) bb cc {
   e x &&a1 &2 $a3 y &&a1$1 z &&a1$2; .nop $a2
   sa &&a1$ {e () w $args$ $#; e $nl}}
@@ -5414,7 +4228,6 @@ $wm (aa ab ac) bb cc {
   e x &a1 bb $a3 y &a1$1 z &a1$2; .nop $a2
   sa &a1$ {e () w $args$ $#; e $nl}}
 x aa ab ac bb cc y ab z ac w aa ab ac 4
-0
 $.scope (aa ab ac) bb cc (args more ...) {.scope $args $more$ (args more ...) {
   sa &1 {echo $args$ $#}
   sa &&args {echo $args$ $#}
@@ -5428,317 +4241,236 @@ $.scope (aa ab ac) bb cc (args more ...) {.scope $args $more$ (args more ...) {
 (aa ab ac) 2
 aa ab ac 4
 bb cc 3
-0
 $.function_all_flags wm [args ...] {
    whence .mapped_argfunction {.argfunction}
    .nop $args
    se {.argfunction}
    .echo $nl}
-0
 $wm () {.echo \\\ \ \\\ \\\\ \ \\|\\\ \  \  \\ \( \) \\\)}
 {.echo (\\  \\ \\\\) ( \\|\\  ) ( ) \\ \( \) \\)}
 \  \ \\  \|\     \ ( ) \)
-0
 $wm () {.echo (\\  \\ \\\\) ( \\|\\  ) ( ) (\\) (\() (\)) (\\\))}
 {.echo (\\  \\ \\\\) ( \\|\\  ) ( ) \\ \( \) \\)}
 \  \ \\  \|\     \ ( ) \)
-0
 $wm () {.echo a\\bc\\d\\\\e fg\\|\\hij klm \\ \) \( \\\(}
 {.echo a\\bc\\d\\\\e fg\\|\\hij klm \\ \) \( \\(}
 a\bc\d\\e fg\|\hij klm \ ) ( \(
-0
 $wm () {
 .echo \( \) \\( \\) \\\( \\\) \\\\( \\\\) \\\\\( \\\\\)}
 {
 .echo \( \) \\( \\) \\( \\) \\\\( \\\\) \\\\( \\\\)}
 ( ) \( \) \( \) \\( \\) \\( \\)
-0
 $wm () {
 .echo \) \( \\) \\( \\\) \\\( \\\\) \\\\( \\\\\) \\\\\(}
 {
 .echo \) \( \\) \\( \\) \\( \\\\) \\\\( \\\\) \\\\(}
 ) ( \) \( \) \( \\) \\( \\) \\(
-0
 $wm () {.echo () xx(yy \$ \@ \$$ \@@ }
 {.echo () xx(yy \$ \@ $$ @@}
  xx(yy $ @ $$ @@
-0
 $wm () {.echo (  ) (	) (
 )}
 {.echo (  ) (	) (
 )}
    	 
 
-0
 $whence .mapped_argfunction {.nop 1}
 {.nop 1}
-0
 $whence .mapped_argfunction {@a @$a @$1 @$* @$*2}
 {@a @$a @$1 @$*1 @$*2}
-0
 $whence .mapped_argfunction {>dummy_file}
 {>dummy_file}
-0
 $
-0
 $# .waiting_for_shell .waiting_for_user .waiting_for_binary
-0
 $# actual use of these builtins is in test_inconsistent.sh
-0
 $.waiting_for_shell j
 unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .waiting_for_shell
--1
 $.waiting_for_shell {excess argfunc}
 .waiting_for_shell does not accept an argfunction with call stack: .waiting_for_shell
--1
 $# .waiting_for_shell
--1
 $.waiting_for_user j
 unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .waiting_for_user
--1
 $.waiting_for_user {excess argfunc}
 .waiting_for_user does not accept an argfunction with call stack: .waiting_for_user
--1
 $# .waiting_for_user
--1
 $.waiting_for_binary j
 unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .waiting_for_binary
--1
 $.waiting_for_binary {excess argfunc}
 .waiting_for_binary does not accept an argfunction with call stack: .waiting_for_binary
--1
 $# .waiting_for_binary
--1
 $
--1
 $# .last_exception
--1
 $.last_exception .last_exception
 .function_not_found /bn/echo .last_exception /bn/echo
-0
 $.last_exception .nop
 
-0
 $.last_exception
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .last_exception
--1
 $.last_exception .try_catch_recursive {excess argfunc}
 .last_exception does not accept an argfunction with call stack: .last_exception
--1
 $.last_exception .last_exception
 .excess_argfunction .last_exception .try_catch_recursive {excess argfunc}
-0
 $.last_exception function_that_does_not_exist
 function_that_does_not_exist : command not found ( function_that_does_not_exist .last_exception )
--1
 $.last_exception .try_catch_recursive
 .not_a_number A .return .try_catch_recursive(body) .try_catch_recursive .try_catch_recursive(body) .try_catch_recursive .not_a_number {.try_catch_recursive .not_a_number {.return A}}; .excessive_exceptions_in_catch 0 .try_catch_recursive .try_catch_recursive(body) .try_catch_recursive .not_a_number {.try_catch_recursive .not_a_number {.return A}}
-0
 $.last_exception .last_execution_time
 
-0
 $.last_exception /bin/which
 /bin/which : command not found ( /bin/which .last_exception )
--1
 $.last_exception /bin/cat
 .file_open_failure non_existent_file /bin/cat <non_existent_file
-0
 $.last_exception /bin/echo
 
-0
 $.last_exception e
-
-0
+.bad_argc 0 1 0 .echo e
 $.last_exception test_var_greater
 .false 0 -gt 0 .test_greater test_var_greater n 0
-0
 $
-0
 $# .usleep .execution_count .last_execution_time
-0
 $# .total_execution_time
-0
 $.usleep_overhead excess
 unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .usleep_overhead
--1
 $.usleep_overhead {excess argfunc}
 .usleep_overhead does not accept an argfunction with call stack: .usleep_overhead
--1
 $.usleep_overhead 
 () is not a number
 call stack: .usleep_overhead
--1
 $.usleep
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .usleep
--1
 $.usleep 800 {excess argfunc}
 .usleep does not accept an argfunction with call stack: .usleep
--1
 $.usleep -6
 value -6 is out of usable numeric range
 call stack .usleep
--1
 $.usleep 5i
 5i is not a number
 call stack: .usleep
--1
 $.usleep 800
-0
 $# .usleep_overhead 
-0
 $.execution_count
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .execution_count
--1
 $.execution_count j
 j : command not found ( j .execution_count )
--1
 $.scope () {
   .execution_count .mapped_argfunction {echo not tracked}; .echo $nl}
-0
 0
 $.scope () {
   .execution_count .usleep; .echo $nl}
 5
-0
 $.last_execution_time
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .last_execution_time
--1
 $.last_execution_time j
 j : command not found ( j .last_execution_time )
--1
 $.scope () {
   .last_execution_time .mapped_argfunction {echo not tracked}; .echo $nl}
 0.000000
-0
 $# .last_execution_time .usleep
-0
 $.total_execution_time
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .total_execution_time
--1
 $.scope () {
   .total_execution_time .mapped_argfunction {echo not tracked}; .echo $nl}
 0.000000
-0
 $.total_execution_time j
 j : command not found ( j .total_execution_time )
--1
 $# .total_execution_time .usleep
--1
 $
--1
 $# .which_path
--1
 $echo ${.which_path cat}
 unacceptable argument count: received 1 non-optional, but needed 2 (with 0 optional) for .which_path echo
--1
+Exception for failed handler. Original exception with call stack:
+.failed_substitution ${.which_path cat}
+Z was not declared
+call stack: .failed_substitution
+unacceptable arguments: for prototype -- text ...,
+ needed (text),
+( call) stack: echo
 $echo ${.which_path cat /bin {excess argfunc}}
 .which_path does not accept an argfunction with call stack: .which_path echo
--1
+Exception for failed handler. Original exception with call stack:
+.failed_substitution ${.which_path cat /bin {excess argfunc}}
+Z was not declared
+call stack: .failed_substitution
+unacceptable arguments: for prototype -- text ...,
+ needed (text),
+( call) stack: echo
 $.scope () {.which_path cat \ }
 cat : binary not found in ( )
 call stack: .which_path .scope
--1
 $.scope () {.which_path does<not>exist /bin:/usr/bin}
 does<not>exist : binary not found in /bin:/usr/bin
 call stack: .which_path .scope
--1
 $echo ${.which_path cat :/bin:/usr/bin}
 /bin/cat
-0
 $echo ${.which_path cat /usr/bin/:/bin/:}
 /bin/cat
-0
 $echo ${.which_path /bin/cat /usr/bin/:/bin/:}
 /bin/cat
-0
 $echo ${.which_path rwsh /usr/bin:/bin}
 /bin/rwsh
-0
 $echo ${.which_path rwsh .:/usr/bin:/bin}
 ./rwsh
-0
 $echo ${.which_path rwsh /usr/bin:/bin:.}
 /bin/rwsh
-0
 $.scope () {.which_path ./rwsh /usr/bin:/bin}
 ./rwsh : binary not found in /usr/bin:/bin
 call stack: .which_path .scope
--1
 $echo ${.which_path ./rwsh /bin:.}
 ./rwsh
-0
 $.scope () {.which_path ../bin/rwsh /usr/bin:/bin}
 ../bin/rwsh : binary not found in /usr/bin:/bin
 call stack: .which_path .scope
--1
 $.scope () {.which_path rwsh :/usr/bin::/usr/bin:}
 rwsh : binary not found in :/usr/bin::/usr/bin:
 call stack: .which_path .scope
--1
 $echo ${.which_path rwsh /usr/bin:.}
 ./rwsh
-0
 $
-0
 $# .while
-0
 $.while {e ARGS}
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .while
--1
 $.while var_less A 4 
 .while requires an argfunction
--1
 $.scope 0 A {.while var_less A 4 {echo printed; .throw .break; echo skipped}}
 printed
-0
 $.scope 0 A {.while var_less A 4 {echo printed; .set A 4}}
 printed
-0
 $.scope 4 A {.while var_less A 4 {echo skipped}}
 -1
 $.while .return 0 {.throw echo exception within while}
 exception within while .throw .mapped_argfunction .while
--1
 $.while silent_throw within condition {e body skipped}
 exception within condition .throw .collect_errors_only silent_throw .while
--1
 $.while .throw .false because {echo body skipped}
 -1
 $.scope 0 A {.while .throw .break {echo condition cannot break}}
 .break thrown outside of control flow body
 call stack: .throw .while .scope
 A was unused with call stack .scope
--1
 $.scope 0 A {.while .throw .continue {echo condition cannot continue}}
 .continue thrown outside of control flow body
 call stack: .throw .while .scope
 A was unused with call stack .scope
--1
 $.scope 0 A {.while var_less A 4 {echo body can break; .throw .break}}
 body can break
-0
 $.scope 0 A {.while var_less A 4 {e in .while argfunction $A $nl; .var_add A 1}}
 in .while argfunction 0 
 in .while argfunction 1 
 in .while argfunction 2 
 in .while argfunction 3 
-0
 $.scope 0 A {.while var_in A 1 2 {echo A is $A; .var_add A 1}}
 -1
 $.scope 0 A {do_while var_in A 1 2 {echo A is $A; .var_add A 1}}
 A is 0
 A is 1
 A is 2
-0
 $.scope 1 A {.while var_in A 1 2 {echo A is $A; .var_add A 1}}
 A is 1
 A is 2
-0
 $.scope 1 A {while_and_one_more var_in A 1 2 {echo A is $A; .var_add A 1}}
 A is 1
 A is 2
 A is 3
-0
 $fn throw_the_kitchen_sink cmd ... {
   $cmd$ {
     echo early in argfunction $A
@@ -5752,7 +4484,6 @@ $fn throw_the_kitchen_sink cmd ... {
   echo after $cmd$0
   .throw .break
   echo do not echo after a .break thrown outside control flow}
-0
 $.scope 0 A {throw_the_kitchen_sink .while var_less A 4}
 early in argfunction 0
 early in argfunction 1
@@ -5760,7 +4491,6 @@ early in argfunction 2
 after .while
 .break thrown outside of control flow body
 call stack: .throw throw_the_kitchen_sink .scope
--1
 $.scope 0 A {throw_the_kitchen_sink do_while var_less A 4}
 early in argfunction 0
 .continue thrown outside of control flow body
@@ -5770,7 +4500,6 @@ early in argfunction 2
 after do_while
 .break thrown outside of control flow body
 call stack: .throw throw_the_kitchen_sink .scope
--1
 $.scope 3 A {throw_the_kitchen_sink do_while var_less A 6}
 early in argfunction 3
 .continue thrown outside of control flow body
@@ -5782,7 +4511,6 @@ call stack: .throw .collect_errors_except .try_catch_recursive(body) .try_catch_
 after do_while
 .break thrown outside of control flow body
 call stack: .throw throw_the_kitchen_sink .scope
--1
 $.scope 0 A {throw_the_kitchen_sink while_and_one_more var_less A 4}
 early in argfunction 0
 early in argfunction 1
@@ -5797,18 +4525,14 @@ call stack: .throw .collect_errors_except .try_catch_recursive(body) .try_catch_
 after while_and_one_more
 .break thrown outside of control flow body
 call stack: .throw throw_the_kitchen_sink .scope
--1
 $.function_all_flags tf N {.test_less $A $N}
-0
 $.scope 0 A {.while tf 4 {
   .if .test_number_equal 0 $A {.set A 1}
   .else {.function_all_flags tf N {.throw .false $N}}
   echo in overwriting argfunction}}
 in overwriting argfunction
 in overwriting argfunction
-0
 $.set_max_nesting 30
-0
 $fn IJK outer middle inner {
   .scope 0 I {
     .local sum 0
@@ -5830,19 +4554,16 @@ $fn IJK outer middle inner {
               .else_if .test_less 4 $sum$ {.throw outer_continue}
               .else {}}}}}}}
   .echo $nl}
-0
 $IJK      .while      .while      .while
 1.1:1,2,3Exception for failed handler. Original exception with call stack:
 outer_continue .throw .mapped_argfunction .else_if .mapped_argfunction .while .scope .mapped_argfunction .while .scope .mapped_argfunction .while .scope IJK
 .continue thrown outside of control flow body
 call stack: .throw .mapped_argfunction .else_if .mapped_argfunction .while .scope .mapped_argfunction .while .scope .mapped_argfunction .while .scope IJK .replace_exception outer_continue
--1
 $IJK outer_while      .while      .while
 1.1:1,2,3
 2.1:1,2
 3.1:1
 4.1:1
-0
 $IJK      .while outer_while      .while
 1.1:1,2,3
 1.2:1,2
@@ -5852,7 +4573,6 @@ $IJK      .while outer_while      .while
 3.2:1
 4.1:1
 5.1:1
-0
 $IJK      .while      .while outer_while
 1.1:1,2,3,4
 1.2:1,2,3
@@ -5864,7 +4584,6 @@ $IJK      .while      .while outer_while
 4.2:1
 5.1:1
 5.2:1
-0
 $IJK outer_while outer_while outer_while
 1.1:1,2,3,4
 1.2:1,2,3
@@ -5876,311 +4595,202 @@ $IJK outer_while outer_while outer_while
 4.2:1
 5.1:1
 5.2:1
-0
-$.else {}
-0
 $.set_max_nesting 20
-0
 $
-0
 $# .var_add
-0
 $.set A 4
-0
 $.var_add
 unacceptable argument count: received 0 non-optional, but needed 2 (with 0 optional) for .var_add
--1
 $.var_add A 1 2
 unacceptable argument count: received 3 non-optional, but needed 2 (with 0 optional) for .var_add
--1
 $.var_add A 1 {excess argfunc}
 .var_add does not accept an argfunction with call stack: .var_add
--1
 $.var_add B 1
 B was not declared
 call stack: .var_add
--1
 $.scope [undefined] {.var_add undefined 1}
 optional variable undefined was not defined
 call stack: .var_add .scope
 undefined was not checked with call stack .scope
--1
 $.set A A
-0
 $.var_add A 2 
 A is not a number
 call stack: .var_add
--1
 $.set A 1e309
-0
 $.var_add A 2 
 value 1e309 is out of usable numeric range
 call stack .var_add
--1
 $.set A -1e308
-0
 $.var_add A A
 A is not a number
 call stack: .var_add
--1
 $.var_add A 1e309
 value 1e309 is out of usable numeric range
 call stack .var_add
--1
 $.var_add A -1e308
 result of .var_add with arguments -1e308 and -1e308 is out of range
 call stack: .var_add
--1
 $.var_add A 1e308
-0
 $.var_add A 1e308
-0
 $echo $A
 1e+308
-0
 $.var_add A 1e308
 result of .var_add with arguments 1e+308 and 1e308 is out of range
 call stack: .var_add
--1
 $.var_add A -1e308
-0
 $echo $A
-0
 0
 $.var_add A \
 () is not a number
 call stack: .var_add
--1
 $echo $A
 0
-0
 $
-0
 $# .var_divide
-0
 $.var_divide A
 unacceptable argument count: received 1 non-optional, but needed 2 (with 0 optional) for .var_divide
--1
 $.var_divide A 1 2
 unacceptable argument count: received 3 non-optional, but needed 2 (with 0 optional) for .var_divide
--1
 $.var_divide A 1 {excess argfunc}
 .var_divide does not accept an argfunction with call stack: .var_divide
--1
 $.var_divide B 1
 B was not declared
 call stack: .var_divide
--1
 $.scope [undefined] {.var_divide undefined 1}
 optional variable undefined was not defined
 call stack: .var_divide .scope
 undefined was not checked with call stack .scope
--1
 $.set A A
-0
 $.var_divide A 2 
 A is not a number
 call stack: .var_divide
--1
 $.set A 1e3000000000
-0
 $.var_divide A 2 
 value 1e3000000000 is out of usable numeric range
 call stack .var_divide
--1
 $.set A 16.8
-0
 $.var_divide A A
 A is not a number
 call stack: .var_divide
--1
 $.var_divide A 1e3000000000
 value 1e3000000000 is out of usable numeric range
 call stack .var_divide
--1
 $.var_divide A 0 
 attempt to divide 16.8 by 0 with call stack: .var_divide
--1
 $.var_divide A 4.2 
-0
 $echo $A
 4
-0
 $.set A 1.8e-20
-0
 $.var_divide A 1e308
 result of .var_divide with arguments 1.8e-20 and 1e308 is out of range
 call stack: .var_divide
--1
 $.set A 0
-0
 $.var_divide A 1e308
-0
 $echo $A
 0
-0
 $
-0
 $# .var_subtract
-0
 $.var_subtract
 unacceptable argument count: received 0 non-optional, but needed 2 (with 0 optional) for .var_subtract
--1
 $.var_subtract A 1 2
 unacceptable argument count: received 3 non-optional, but needed 2 (with 0 optional) for .var_subtract
--1
 $.var_subtract A 1 {excess argfunc}
 .var_subtract does not accept an argfunction with call stack: .var_subtract
--1
 $.var_subtract B 1
 B was not declared
 call stack: .var_subtract
--1
 $.scope [undefined] {.var_subtract undefined 1}
 optional variable undefined was not defined
 call stack: .var_subtract .scope
 undefined was not checked with call stack .scope
--1
 $.set A A
-0
 $.var_subtract A 2 
 A is not a number
 call stack: .var_subtract
--1
 $.set A 3000000000
-0
 $.var_subtract A 2 
-0
 $.set A 1e308
-0
 $.var_subtract A -1e308
 result of .var_subtract with arguments 1e308 and -1e308 is out of range
 call stack: .var_subtract
--1
 $echo $A
 1e308
-0
 $.set A -1e308
-0
 $.scope () {.var_subtract A 1e308}
 result of .var_subtract with arguments -1e308 and 1e308 is out of range
 call stack: .var_subtract .scope
--1
 $echo $A
 -1e308
-0
 $.set A -2147483648
-0
 $.var_subtract A A
 A is not a number
 call stack: .var_subtract
--1
 $.var_subtract A 3000000000
-0
 $.var_subtract A -2147483648
-0
 $.var_subtract A 2147483647
-0
 $.var_subtract A 2147483647
-0
 $echo $A
 -7.29496e+09
-0
 $.var_subtract A 2147483647
-0
 $.var_subtract A -2147483648
-0
 $echo $A
 -7.29496e+09
-0
 $.var_subtract A \
 () is not a number
 call stack: .var_subtract
--1
 $echo $A
 -7.29496e+09
-0
 $
-0
 $# .version .version_compatible
-0
 $.version 1.0
 unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .version
--1
 $.version {excess argfunc}
 .version does not accept an argfunction with call stack: .version
--1
 $.version_compatible
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .version_compatible
--1
 $.version_compatible 1.0 1.0
 unacceptable argument count: received 2 non-optional, but needed 1 (with 0 optional) for .version_compatible
--1
 $.version_compatible 1.0 {excess argfunc}
 .version_compatible does not accept an argfunction with call stack: .version_compatible
--1
 $echo ${.version}
 0.3+
-0
 $.version_compatible 1.0
 this shell is not compatible with requested version 1.0
 call stack: .version_compatible
--1
 $.version_compatible 0.3+
-0
 $
-0
 $# internal functions 
-0
 $# .after_command .raw_command .prompt
-0
 $# all of these are used as part of the test itself. If this changes, then the 
-0
 $# following tests will fail.
-0
 $whence .after_command
 .function_all_flags .after_command -- args ... {
   .nop $args
   .set last_command_return $?
-  .combine $last_command_return $nl}
-0
+  if_only .test_string_unequal $last_command_return 0 {
+    .combine $last_command_return $nl}}
 $whence .prompt
 .function_all_flags .prompt  {.echo \$}
-0
 $whence .raw_command
 .function_all_flags .raw_command -- cmd {.echo $cmd; .echo (
 )}
-0
 $
-0
 $# .before_command
-0
 $fn .before_command args ... {.echo $0 $args$; .echo $nl}
-0
 $.rm_executable .before_command
 .before_command .rm_executable .before_command
-0
 $
-0
 $# .double_redirection
-0
 $# se {e hi #>dummy_file >dummy_file}
-0
 $# se {e hi >dummy_file}
-0
 $# se {e &{e hi #>dummy_file}}
-0
 $
-0
 $# .function_not_found
-0
 $se {se {not_a_thing; e should not be printed}}
 not_a_thing : binary not found in /bin:/usr/bin:.
 call stack: .which_path .autofunction .autofunction .scope se .scope se
 not_a_thing : command not found ( not_a_thing .scope se .scope se )
--1
 $.rm_executable .function_not_found
-0
 $.whence_function .function_not_found
 Exception for failed handler. Original exception with call stack:
 .function_not_found .function_not_found .whence_function
@@ -6188,7 +4798,6 @@ Exception for failed handler. Original exception with call stack:
 .function_not_found .function_not_found .function_not_found .whence_function
 .function_not_found : binary not found in /bin:/usr/bin:.
 call stack: .which_path .autofunction .autofunction
--1
 $whence not_a_thing
 not_a_thing : command not found ( not_a_thing .whence_function .try_catch_recursive(body) )
 -1
@@ -6201,26 +4810,18 @@ $.whence_function .function_not_found
 .function_all_flags .function_not_found cmd [args ...] {.echo $cmd (: command not found) \( $cmd $args$ \); .echo (
 )
 .return -1}
-0
 $
-0
 $# .help .internal_error
-0
 $.help
 this is the default configuration for rwsh (or something copied from it), documentation should be available at rwsh.sf.net or rwsh.org
-0
 $.internal_error techincally this is untestable
 internal error: techincally this is untestable
 -1
 $
-0
 $# .mapped_argfunction .unescaped_argfunction .argfunction
-0
 $# .escaped_argfunction
-0
 $.mapped_argfunction 1 2 3 {echo a $* a}
 a 1 2 3 a
-0
 $.mapped_argfunction
 .mapped_argfunction : binary not found in /bin:/usr/bin:.
 call stack: .which_path .autofunction .autofunction
@@ -6229,41 +4830,29 @@ call stack: .which_path .autofunction .autofunction
 $fn g {.whence_function .argfunction {.unescaped_argfunction}
      .whence_function .argfunction {.argfunction}
      .whence_function .argfunction {.escaped_argfunction}}
-0
 $g {}
 {.whence_function .argfunction {}
      .whence_function .argfunction {.argfunction}
      .whence_function .argfunction {.escaped_argfunction}}
 {}
 {.argfunction}
-0
 $
-0
 $# .excessive_nesting Base_executable::exception_handler
-0
 $fn g {h}
-0
 $fn h {g}
-0
 $g
 function exceeded max nesting ( 20 ). call stack: (h g h g h g h g h g h g h g h g h g h g h g)
--1
 $.stepwise g {e $* $nl; $*}
 h 
 function exceeded max nesting ( 20 ). call stack: (g h g h g h g h g h g h g h g h g h g h .mapped_argfunction .stepwise)
--1
 $fn .excessive_nesting args ... {.nop $args; h}
-0
 $g
 Exception for failed handler. Original exception with call stack:
 .excessive_nesting h g h g h g h g h g h g h g h g h g h g h g
 Exception for failed handler. Original exception with call stack:
 .excessive_nesting h g h g h g h g h g h g h g h g h g h g h .excessive_nesting
--1
 $fn .excessive_nesting args ... {.nop $args; e &&{.return 1}}
-0
 $fn .failed_substitution args ... {.nop $args; e $Z}
-0
 $g
 Exception for failed handler. Original exception with call stack:
 .excessive_nesting h g h g h g h g h g h g h g h g h g h g h g
@@ -6271,9 +4860,7 @@ Exception for failed handler. Original exception with call stack:
 .failed_substitution &{.return 1} .excessive_nesting
 Z was not declared
 call stack: .failed_substitution
--1
 $.set_max_extra_exceptions 0
-0
 $e_after {.try_catch_recursive .undeclared_variable .excessive_nesting .failed_substitution {g}}
 Exception for failed handler. Original exception with call stack:
 .excessive_nesting g h g h g h g h g h g h g h g h g .try_catch_recursive(body) .try_catch_recursive .scope se e_after
@@ -6283,9 +4870,7 @@ Z was not declared
 call stack: .failed_substitution
 exceeded maximum number of exceptions ( 0 ) in try_catch.
 call stack: .try_catch_recursive .scope se e_after
--1
 $.set_max_extra_exceptions 5
-0
 $e_after {.try_catch_recursive .undeclared_variable .excessive_nesting .failed_substitution {g}}
 Z was not declared
 call stack: .failed_substitution
@@ -6297,7 +4882,6 @@ Z was not declared
 call stack: .failed_substitution
 Exception for failed handler. Original exception with call stack:
 .failed_substitution &{.return 1} .excessive_nesting .try_catch_recursive .scope se e_after
--1
 $e_after {.try_catch_recursive .undeclared_variable .failed_substitution {
   e ${.return 1}}}
 Z was not declared
@@ -6306,9 +4890,7 @@ Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.return 1} .try_catch_recursive(body) .try_catch_recursive .scope se e_after
 Z was not declared
 call stack: .failed_substitution
--1
 $fn .else_without_if args ... {.nop $args; e ${.return 1}}
-0
 $e_after {.try_catch_recursive .undeclared_variable .else_without_if {
   .else {}}}
 Exception for failed handler. Original exception with call stack:
@@ -6319,9 +4901,7 @@ Z was not declared
 call stack: .failed_substitution
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.return 1} .else_without_if .try_catch_recursive .scope se e_after
--1
 $fn .failed_substitution args ... {.nop $args; e ${.return 2}}
-0
 $e_after {.try_catch_recursive .undeclared_variable .failed_substitution {
   e ${.return 1}}}
 Exception for failed handler. Original exception with call stack:
@@ -6340,9 +4920,7 @@ Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.return 2} .failed_substitution .try_catch_recursive .scope se e_after
 exceeded maximum number of exceptions ( 5 ) in try_catch.
 call stack: .try_catch_recursive .scope se e_after
--1
 $fn .else_without_if args ... {.nop $args; e $Z}
-0
 $e_after {.try_catch_recursive .undeclared_variable .else_without_if {
   .else {}}}
 Z was not declared
@@ -6351,9 +4929,7 @@ Exception for failed handler. Original exception with call stack:
 .else_without_if .else .try_catch_recursive(body) .try_catch_recursive .scope se e_after
 Z was not declared
 call stack: .else_without_if
--1
 $fn .failed_substitution args ... {.nop $args; .return Z}
-0
 $e_after {.try_catch_recursive .not_a_number .failed_substitution {
   e ${.return 1}}}
 Z is not a number
@@ -6362,29 +4938,22 @@ Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.return 1} .try_catch_recursive(body) .try_catch_recursive .scope se e_after
 Z is not a number
 call stack: .return .failed_substitution
--1
 $
-0
 $# .throw
-0
 $.throw
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .throw
--1
 $.throw .nop
 -1
 $.throw .not_a_number 7
 7 is not a number
 call stack: .throw
--1
 $se {if_only .test_is_number 0 {
   .throw sa {echo even from $args$ 7 is a number}}}
 even from .throw .mapped_argfunction .if if_only .scope se 7 is a number
--1
 $.throw .throw echo innocently
 Exception for failed handler. Original exception with call stack:
 .throw echo innocently .throw
 innocently .throw .throw
--1
 $.throw .throw exception_bomb
 Exception for failed handler. Original exception with call stack:
 .throw exception_bomb .throw
@@ -6393,7 +4962,6 @@ exception_bomb .throw .throw
 exception_bomb : command not found ( exception_bomb .throw .throw )
 exception_bomb : binary not found in /bin:/usr/bin:.
 call stack: .which_path .autofunction .autofunction
--1
 $se {.try_catch_recursive echo {
       echo first
       .throw echo failing successfully
@@ -6402,12 +4970,10 @@ $se {.try_catch_recursive echo {
 first
 failing successfully .throw .try_catch_recursive(body)
 third
-0
 $fn tribble [args ...] {
   .replace_exception tribble $args$
   .replace_exception tribble $args$
   echo the multiplication has begun $#}
-0
 $.try_catch_recursive tribble {.throw tribble}
 the multiplication has begun 3
 the multiplication has begun 5
@@ -6427,7 +4993,6 @@ exceeded maximum number of exceptions ( 5 ) in try_catch.
 call stack: .try_catch_recursive
 Exception for failed handler. Original exception with call stack:
 tribble .throw .try_catch_recursive(body) .replace_exception tribble .replace_exception tribble .try_catch_recursive .replace_exception tribble
--1
 $.throw tribble
 the multiplication has begun 2
 Exception for failed handler. Original exception with call stack:
@@ -6436,15 +5001,12 @@ Exception for failed handler. Original exception with call stack:
 tribble .throw .replace_exception tribble
 Exception for failed handler. Original exception with call stack:
 tribble .throw .replace_exception tribble
--1
 $fn neverending [args ...] {.replace_exception neverending $args$}
-0
 $.throw neverending
 Exception for failed handler. Original exception with call stack:
 neverending .throw
 Exception for failed handler. Original exception with call stack:
 neverending .throw .replace_exception neverending
--1
 $.try_catch_recursive neverending {.throw neverending}
 Exception for failed handler. Original exception with call stack:
 neverending .throw .try_catch_recursive(body) .replace_exception neverending .replace_exception neverending .replace_exception neverending .replace_exception neverending .replace_exception neverending .try_catch_recursive
@@ -6452,10 +5014,8 @@ Exception for failed handler. Original exception with call stack:
 neverending .throw .try_catch_recursive(body) .replace_exception neverending .replace_exception neverending .replace_exception neverending .replace_exception neverending .replace_exception neverending .try_catch_recursive .replace_exception neverending
 exceeded maximum number of exceptions ( 5 ) in try_catch.
 call stack: .try_catch_recursive
--1
 $fn sneaky [args ...] {
   .try_catch_recursive sneaky {.replace_exception sneaky $args$}}
-0
 $.try_catch_recursive sneaky {.throw sneaky}
 Exception for failed handler. Original exception with call stack:
 sneaky .throw .try_catch_recursive(body) .replace_exception .try_catch_recursive(body) .try_catch_recursive sneaky .replace_exception .try_catch_recursive(body) .try_catch_recursive sneaky .replace_exception .try_catch_recursive(body) .try_catch_recursive sneaky .replace_exception .try_catch_recursive(body) .try_catch_recursive sneaky .replace_exception .try_catch_recursive(body) .try_catch_recursive sneaky .try_catch_recursive
@@ -6463,58 +5023,42 @@ Exception for failed handler. Original exception with call stack:
 sneaky .throw .try_catch_recursive(body) .replace_exception .try_catch_recursive(body) .try_catch_recursive sneaky .replace_exception .try_catch_recursive(body) .try_catch_recursive sneaky .replace_exception .try_catch_recursive(body) .try_catch_recursive sneaky .replace_exception .try_catch_recursive(body) .try_catch_recursive sneaky .replace_exception .try_catch_recursive(body) .try_catch_recursive sneaky .try_catch_recursive .replace_exception .try_catch_recursive(body) .try_catch_recursive sneaky
 exceeded maximum number of exceptions ( 5 ) in try_catch.
 call stack: .try_catch_recursive
--1
 $
-0
 $# .run_logic
-0
 $fn .run_logic flag cmd ... {
   .if .test_number_equal 0 $flag {.nop}
   .else_if $cmd$ {.nop}
   .else {.nop}}
-0
 $0 echo don't print nuthin'
-0
 $1 echo do print
 do print
-0
 $1 .rm_executable .run_logic
-0
 $1 e executable not found
 1 : binary not found in /bin:/usr/bin:.
 call stack: .which_path .autofunction .autofunction
 1 : command not found ( 1 e executable not found )
 -1
 $
-0
 $# .vars
-0
 $.vars
 FIGNORE ?
-0
 $
-0
 $## recursive function testing
-0
 $fn -n -- [args ...] {$args$; echo after $args$}
-0
 $-n -n -n -n
 after
 after -n
 after -n -n
 after -n -n -n
-0
 $-n -n -n echo -n
 -n
 after echo -n
 after -n echo -n
 after -n -n echo -n
-0
 $fn -n [-x] ignored -- [args ...] {
   echo before $args flags $-x$
   $args$
   .nop $ignored}
-0
 $-n -x -x a -n -x a -n a -n -x a
 before (-n -x a -n a -n -x a) flags -x -x
 before (-n a -n -x a) flags -x
@@ -6528,55 +5072,41 @@ call stack: -n -n -n -n
 ignored was unused with call stack -n -n -n
 ignored was unused with call stack -n -n
 ignored was unused with call stack -n
--1
 $-n -x -x a -n -x a -n a echo -n -x a
 before (-n -x a -n a echo -n -x a) flags -x -x
 before (-n a echo -n -x a) flags -x
 before (echo -n -x a) flags
 -n -x a
-0
 $single .nop
 unacceptable arguments: for prototype result,
  needed (result),
 ( call) stack: (.scope single)
--1
 $single - - 40 10 - 7 2 1
 unacceptable arguments: for prototype result,
  assigned result=25 ,
  but found (1) excess
 ( call) stack: (.scope single)
--1
 $single - 40 10
 30
-0
 $single - 40 - 10 2
 32
-0
 $single / - + 40 10 2 2
 24
-0
 $single - 40 - 10 - 7 2
 35
-0
 $.function_all_flags excessive-commentary arg {#! shebang
   $arg first comment
   echo not a $arg; .nop second; echo either}
-0
 $excessive-commentary #
 not a #
 either
-0
 $echo-comments excessive-commentary #
 #! shebang
 # first comment
 .nop second
-0
 $
-0
 $## environment testing i don't want to mess up everything else
-0
 $# check for extraneous variables and that export_env doesn't bless
-0
 $.scope M val (N necessary) {printenv; .nop $necessary}
 added printenv to executable map in test suite
 .var_exists=must be requested to be checked
@@ -6596,19 +5126,13 @@ N=M
 necessary=val
 this printenv function has been brought to you by .autofunction
 N was unused with call stack .scope
--1
 $
-0
 $# .list_environment
-0
 $.global SHELL unmodified
-0
 $.list_environment x
 unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .list_environment
--1
 $.list_environment {excess argfunc}
 .list_environment does not accept an argfunction with call stack: .list_environment
--1
 $for ${.list_environment}$ {
   .scope $1$ (var val) {
     .if .test_in $var ? FIGNORE SHELL {echo $var : $$var to $val}
@@ -6616,24 +5140,17 @@ $for ${.list_environment}$ {
 ? : 0 to 0
 FIGNORE : *de* to ()
 SHELL : unmodified to /bin/rwsh
-0
 $.combine $TESTABILITY $nl
 an=external var(iable)
-0
 $echo $SHELL
 unmodified
-0
 $.unset TESTABILITY
-0
 $for ${.list_environment}$ {
   .scope $1$ (var val) {setf $var $val; .nop $$var}}
-0
 $.combine $TESTABILITY $nl
 an=external var(iable)
-0
 $echo $SHELL
 /bin/rwsh
-0
 $printenv
 .var_exists=must be requested to be checked
 ?=0
@@ -6652,47 +5169,37 @@ nl=
 original_message=Exception for failed handler. Original exception with call stack:
 
 this printenv function has been brought to you by .autofunction
-0
 $.collect_errors_except .nop {${.throw echo exception from inside substitution}}
+exception from inside substitution .throw .mapped_argfunction .collect_errors_except
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.throw echo exception from inside substitution} .collect_errors_except
 Z is not a number
 call stack: .return .failed_substitution
--1
 $.collect_errors_only .nop {${.throw echo exception from inside substitution}}
+exception from inside substitution .throw .mapped_argfunction .collect_errors_only
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.throw echo exception from inside substitution} .collect_errors_only
 Z is not a number
 call stack: .return .failed_substitution
--1
 $
-0
 $## unused variables
-0
 $# bless_unused_variables
-0
 $.scope () {}
-0
 $.scope -- () {}
-0
 $.scope -- () {echo $--}
 --
-0
 $.scope -- (-- [a]) {}
 a was unused with call stack .scope
--1
 $.scope () {.local a n; .local b o; .local c p}
 a was unused with call stack .scope
 b was unused with call stack .scope
 c was unused with call stack .scope
--1
 $.scope () {
   .local a n; .local b o; .local c p
   echo $a $b $c $d
   .local d too_late}
 d was not declared
 call stack: .scope
--1
 $.scope () {
   .local a n; .local b o; .local c p
   echo $d $a $b $c
@@ -6702,35 +5209,29 @@ b was unused with call stack .scope
 c was unused with call stack .scope
 d was not declared
 call stack: .scope
--1
 $.scope n o p q (a b c d) {echo $a $b $c $d}
 n o p q
-0
 $.scope n o p q (a b c d) {echo a b c d}
 a b c d
 a was unused with call stack .scope
 b was unused with call stack .scope
 c was unused with call stack .scope
 d was unused with call stack .scope
--1
 $.scope n o (a [b] c [d]) {echo $a $c }
 n o
 b was not checked with call stack .scope
 d was not checked with call stack .scope
--1
 $.scope n o ([a] b [c] d) {echo $b $d; .var_exists a}
 n o
 assertion (var exists: a) failed
 call stack .var_exists .scope
 c was not checked with call stack .scope
--1
 $.scope n o ([a] b [c] d) {echo $b; .var_exists c}
 n
 assertion (var exists: c) failed
 call stack .var_exists .scope
 a was not checked with call stack .scope
 d was unused with call stack .scope
--1
 $.scope n ([a1 a2 a3 a4] b [c] [d1 d2] [e ...]) {echo $b}
 n
 a1 was not checked with call stack .scope
@@ -6741,22 +5242,18 @@ c was not checked with call stack .scope
 d1 was not checked with call stack .scope
 d2 was not checked with call stack .scope
 e was not checked with call stack .scope
--1
 $.scope n ([a1 a2 a3 a4] b [c] [d1 d2] [e ...]) {echo $b; .var_exists a4 d2 e c}
 n
 assertion (var exists: a4 d2 e c) failed
 call stack .var_exists .scope
--1
 $.scope n ([a1 a2 a3 a4] b [c] [d1 d2] [e ...]) {echo $b; .var_exists a3 d1}
 n
 assertion (var exists: a3 d1) failed
 call stack .var_exists .scope
 c was not checked with call stack .scope
 e was not checked with call stack .scope
--1
 $.scope n ([a1 a2 a3 a4] b [c] [d1 d2] [e ...]) {echo ${.list_locals} $b}
 b n
-0
 $.scope n o p q r s ([a1 a2 a3 a4] b [c] [d1 d2] [e ...]) {echo ${.list_locals} $b}
 (a1 a2 a3 a4 b c) r
 a1 was unused with call stack .scope
@@ -6764,7 +5261,6 @@ a2 was unused with call stack .scope
 a3 was unused with call stack .scope
 a4 was unused with call stack .scope
 c was unused with call stack .scope
--1
 $.scope n o p q r s t u ([a1 a2 a3 a4] b [c] [d1 d2]) {echo $a1 $d2}
 n u
 a2 was unused with call stack .scope
@@ -6773,12 +5269,10 @@ a4 was unused with call stack .scope
 b was unused with call stack .scope
 c was unused with call stack .scope
 d1 was unused with call stack .scope
--1
 $.scope n o p q r s t u ([a1 a2 a3 a4] b [c] [d1 d2]) {
   echo $a1 $a2 $a3 $a4 $c $d1 $d2}
 n o p q s t u
 b was unused with call stack .scope
--1
 $.scope ([-a a1 a2 a3] [-b] [-c] [-d d1]) {}
 -a was not checked with call stack .scope
 a1 was not checked with call stack .scope
@@ -6789,7 +5283,6 @@ a3 was not checked with call stack .scope
 -d was not checked with call stack .scope
 d1 was not checked with call stack .scope
 -* was unused with call stack .scope
--1
 $.scope ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {}
 -a was not checked with call stack .scope
 a1 was not checked with call stack .scope
@@ -6801,54 +5294,42 @@ a3 was not checked with call stack .scope
 d1 was not checked with call stack .scope
 -? was unused with call stack .scope
 -* was unused with call stack .scope
--1
 $.scope ([-a a1 a2 a3] [-b] [-c] [-d d1]) {.var_exists -a -b -c -d}
 assertion (var exists: -a -b -c -d) failed
 call stack .var_exists .scope
--1
 $.scope ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {echo $-?; .var_exists -a -b -c -d}
 ()
 assertion (var exists: -a -b -c -d) failed
 call stack .var_exists .scope
--1
 $.scope ([-a a1 a2 a3] [-b] [-c] [-d d1]) {.list_locals; .echo $nl}
 -*
-0
 $.scope -b -d darg ([-a a1 a2 a3] [-b] [-c] [-d d1]) {.list_locals; echo ()}
 -* -b -d d1()
 d1 was unused with call stack .scope
 -d was unused with call stack .scope
 -* was unused with call stack .scope
--1
 $.scope ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {echo ${.list_locals} $-?}
 (-* -?) ()
-0
 $.scope -b -d darg -v ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {echo ${.list_locals} $-?}
 (-* -? -b -d d1) -v
 d1 was unused with call stack .scope
 -d was unused with call stack .scope
 -* was unused with call stack .scope
--1
 $.scope ([-a a1 a2 a3] [-d d1 d2]) {.var_exists a2 d2}
 assertion (var exists: a2 d2) failed
 call stack .var_exists .scope
--1
 $.scope ([-?] [-a a1 a2 a3] [-d d1 d2]) {.var_exists -? a3 d1}
 -? was unused with call stack .scope
 -* was unused with call stack .scope
--1
 $.scope ([-a a1 a2 a3] [-b] [-c] [-d d1]) {echo $-*}
 ()
-0
 $.scope ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {echo $-*}
 ()
-0
 $.scope n ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1] [e] f) {.local loc lval; echo $-*}
 ()
 e was not checked with call stack .scope
 f was unused with call stack .scope
 loc was unused with call stack .scope
--1
 $.scope -c ([-a a1 a2 a3] [-b] [-c] [-d d1]) {echo $-c}
 -c
 -a was not checked with call stack .scope
@@ -6859,27 +5340,22 @@ a3 was not checked with call stack .scope
 -d was not checked with call stack .scope
 d1 was not checked with call stack .scope
 -* was unused with call stack .scope
--1
 $.scope -b -c ([-a a1 a2 a3] [-b] [-c] [-d d1]) {echo $-c; .var_exists -a -b -d}
 -c
-0
 $.scope -b -c ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {
   echo $-c; .var_exists -a -b -d -?}
 -c
 -? was unused with call stack .scope
 -* was unused with call stack .scope
--1
 $.scope -b -c ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {
   echo $-c $-?; .var_exists -a -b -d}
 -c ()
-0
 $.scope -b -c ([-a a1 a2 a3] [-b] [-c] [-d d1]) {echo $-b; .var_exists a2 d1}
 -b
 assertion (var exists: a2 d1) failed
 call stack .var_exists .scope
 -c was unused with call stack .scope
 -* was unused with call stack .scope
--1
 $.scope -a n o p -b -c -d q ([-a a1 a2 a3] [-b] [-c] [-d d1]) {
   echo $-c; .var_exists -a -b -d}
 -c
@@ -6890,7 +5366,6 @@ a3 was unused with call stack .scope
 d1 was unused with call stack .scope
 -d was unused with call stack .scope
 -* was unused with call stack .scope
--1
 $.scope -a n o p -b -c -d q ([-a a1 a2 a3] [-b] [-c] [-d d1]) {
   echo $-b; .var_exists a2 d1}
 -b
@@ -6902,25 +5377,20 @@ a3 was unused with call stack .scope
 d1 was unused with call stack .scope
 -d was unused with call stack .scope
 -* was unused with call stack .scope
--1
 $.scope -a n o p -b -c -d q ([-a a1 a2 a3] [-b] [-c] [-d d1]) {
   echo $-a $-b $-c $-d}
 (-a n o p) -b -c (-d q)
-0
 $.scope -a n o p -b -c -d q ([-a a1 a2 a3] [-b] [-c] [-d d1]) {
   echo $a1 $a2 $a3 $d1; .var_exists -b -c}
 n o p q
-0
 $.scope -a n o p -b -c -d q ([-a a1 a2 a3] [-b] [-c] [-d d1]) {
   echo $-*}
 (-a n o p -b -c -d q)
-0
 $.scope -v -a n o p -b -c -d q ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {
   echo $a1 $a2 $a3 $d1; .var_exists -b -c}
 n o p q
 -? was unused with call stack .scope
 -* was unused with call stack .scope
--1
 $.scope -v -a n o p -b -c -d q ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {echo $-?}
 -v
 a1 was unused with call stack .scope
@@ -6932,29 +5402,32 @@ a3 was unused with call stack .scope
 d1 was unused with call stack .scope
 -d was unused with call stack .scope
 -* was unused with call stack .scope
--1
 $.scope -v -a n o p -b -c -d q ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {echo $-*}
 (-v -a n o p -b -c -d q)
-0
 $.scope -a n o p ([-a a1 a2 a3]) {echo $a1 $a3}
 n p
 a2 was unused with call stack .scope
 -a was unused with call stack .scope
 -* was unused with call stack .scope
--1
 $
-0
 $# exiting
-0
 $# .shutdown .exit
-0
-$.exit excess_argument
-unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .exit
--1
-$.exit {excess argfunction}
-.exit does not accept an argfunction with call stack: .exit
--1
 $.exit
-0
+unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .exit
+$.exit 1 {excess argfunction}
+.exit does not accept an argfunction with call stack: .exit
+$.exit not_a_number
+not_a_number is not a number
+call stack: .exit
+$fn exit_exception args ... {echo $args$; .exit 0}
+$.collect_errors_except .nop {
+  .try_catch_recursive exit_exception {
+    .collect_errors_only exit_exception {
+      .throw exit_exception
+      echo print expected after having collected exit exception}}
+  echo after having run .exit (will not print)}
+print expected after having collected exit exception
+.throw .collect_errors_only .try_catch_recursive(body)
+-1
 
 now terminating normally

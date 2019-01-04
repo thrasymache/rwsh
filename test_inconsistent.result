@@ -18,7 +18,8 @@ call stack .source .try_catch_recursive(body)
 .function_all_flags .after_command -- args ... {
   .nop $args
   .set last_command_return $?
-  .combine $last_command_return $nl}
+  if_only .test_string_unequal $last_command_return 0 {
+    .combine $last_command_return $nl}}
 .function_all_flags .prompt {.echo \$}
 .function_all_flags .vars {.internal_vars}
 .source /etc/rwshrc-basic
@@ -237,6 +238,9 @@ call stack .source .try_catch_recursive(body)
 .function_all_flags .undefined_variable -- name [stack ...] {
   echo optional variable $name was not defined
   echo call stack: $stack$}
+.function_all_flags .unfinished_if_block [stack ...] {
+  echo conditional not finished within preceeding block
+  if_only .var_exists stack {echo call stack: $stack$}}
 .function_all_flags .unreadable_dir dir errno [stack ...] {
   .combine (cannot read directory ) $dir \ \(errno\  $errno \) $nl
   echo call stack: $stack$
@@ -356,11 +360,13 @@ polish / .var_divide
         .nop $$var}}}
   .source /etc/rwshrc-basic
   .nop $FIGNORE
-  .function_all_flags .if_before_else stack ... {.nop $stack}
-  .function_all_flags .shutdown -- args ... {.nop $args; .return 0}
+  .function_all_flags .shutdown -- [args ...] {.nop $args}
+  .function_all_flags .return_code code cmd [add_stack ...] {
+    echo $cmd returned $code : call stack $cmd $add_stack$
+    .exit $code}
   .collect_errors_except .nop {
     .mapped_argfunction &3 {$1$}
-    .exit}}
+    .exit 0}}
 .else {
   .echo unexpected command line: &* (
 )
@@ -581,6 +587,9 @@ $.source /etc/rwshrc-basic
 .function_all_flags .undefined_variable -- name [stack ...] {
   echo optional variable $name was not defined
   echo call stack: $stack$}
+.function_all_flags .unfinished_if_block [stack ...] {
+  echo conditional not finished within preceeding block
+  if_only .var_exists stack {echo call stack: $stack$}}
 .function_all_flags .unreadable_dir dir errno [stack ...] {
   .combine (cannot read directory ) $dir \ \(errno\  $errno \) $nl
   echo call stack: $stack$
@@ -691,20 +700,15 @@ fn polish -- operator builtin {
 polish - .var_subtract
 polish + .var_add
 polish / .var_divide
-0
 $.global PATH /bin:/usr/bin
-0
 $.scope () {.getpid; .echo $nl}
-9071
-0
+8988
 $.scope () {.getppid; .echo $nl}
-4926
-0
+14815
 $.function_all_flags timings focus {
   .combine $focus (:	last\() ${.last_execution_time $focus} \) \	
   .combine (total\() ${.total_execution_time $focus} \) \	
   .combine (count\() ${.execution_count $focus} \) $nl}
-0
 $.function_all_flags clock-watch {
   .usleep 600
   /bin/true
@@ -713,30 +717,23 @@ $.function_all_flags clock-watch {
   .combine (usleep overhead:	) ${.usleep_overhead} $nl
   timings .usleep
   timings /bin/true}
-0
 $clock-watch
 timings:	last(0.000000)	total(0.000000)	count(0)
 clock-watch:	last(0.000000)	total(0.000000)	count(0)
-usleep overhead:	8.3e-05
-.usleep:	last(0.000683)	total(0.000683)	count(1)
-/bin/true:	last(0.001298)	total(0.001298)	count(1)
-0
+usleep overhead:	8.4e-05
+.usleep:	last(0.000684)	total(0.000684)	count(1)
+/bin/true:	last(0.002166)	total(0.002166)	count(1)
 $clock-watch
-timings:	last(0.000106)	total(0.000586)	count(4)
-clock-watch:	last(0.003109)	total(0.003109)	count(1)
-usleep overhead:	8.65e-05
-.usleep:	last(0.000690)	total(0.001373)	count(2)
-/bin/true:	last(0.000833)	total(0.002131)	count(2)
-0
+timings:	last(0.000108)	total(0.000630)	count(4)
+clock-watch:	last(0.004023)	total(0.004023)	count(1)
+usleep overhead:	8.45e-05
+.usleep:	last(0.000685)	total(0.001369)	count(2)
+/bin/true:	last(0.000894)	total(0.003060)	count(2)
 $.mapped_argfunction {timings timings; timings clock-watch}
-timings:	last(0.000107)	total(0.001108)	count(8)
-clock-watch:	last(0.002161)	total(0.005270)	count(2)
-0
+timings:	last(0.000109)	total(0.001143)	count(8)
+clock-watch:	last(0.002198)	total(0.006221)	count(2)
 $.error a stderr print will come before the diff $nl
-0
 $.nop $A $FIGNORE
-0
 $
-0
 $
 now terminating normally

@@ -20,6 +20,7 @@ class Executable_map : private std::map<std::string, Base_executable*> {
   int run(Argm& argm, Error_list& exceptions);         // doesn't catch unwind
   bool run_condition(Argm& argm, Error_list& exceptions);    // only .false
   int base_run(Argm& argm, Error_list& exceptions);          // catches unwind
+  int run_handling_exceptions(Argm& argm, Error_list& exceptions);    // ditto
   void unused_var_check_at_exit(void);                       // catches unwind
   bool run_if_exists(const std::string& key, Argm& argm);    // catches unwind
 

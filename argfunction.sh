@@ -68,5 +68,5 @@ fw {.mapped_argfunction {.function_all_flags $name {.argfunction}}}
 .function_all_flags .shutdown -- args ... {
   .nop $args
   .combine $nl (now terminating normally) $nl}
-.exit
+.exit 0
 

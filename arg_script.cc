@@ -21,6 +21,7 @@
 
 #include "argm.h"
 #include "arg_script.h"
+#include "call_stack.h"
 #include "executable.h"
 #include "file_stream.h"
 #include "prototype.h"
@@ -134,7 +135,8 @@ std::string::size_type Arg_script::constructor(const std::string& src,
     else if (args.front().str() == ".argfunction") argfunction_level = 2;
     else if (args.front().str() == ".escaped_argfunction")
       argfunction_level = 3;
-    else std::abort();                           // unhandled argfunction level
+    else std::abort();                          // unhandled argfunction level
+  else;
   if (src[point] == '}') terminator = *"";
   else terminator = src[point];
   return point;}
@@ -185,7 +187,8 @@ Arg_script& Arg_script::operator=(const Arg_script& src) {
   output = src.output;
   error = src.error;
   indent = src.indent;
-  terminator = src.terminator;}
+  terminator = src.terminator;
+  return *this;}
 
 Arg_script::~Arg_script(void) {
   delete argfunction;}
@@ -220,7 +223,7 @@ std::string Arg_script::str(void) const {
 
 Argm Arg_script::base_interpret(const Argm& src, Error_list& errors) const {
   Argm ret = interpret(src, errors);
-  if (errors.size()) Base_executable::exception_handler(errors);
+  if (errors.size()) global_stack.exception_handler(errors);
   return ret;}
 
 // produce a destination Argm from the source Argm according to this script

@@ -1,26 +1,14 @@
-// Copyright (C) 2005-2017 Samuel Newbold
+// Copyright (C) 2005-2018 Samuel Newbold
 
 class Base_executable {
   unsigned executable_nesting;
 
- protected:
-  static int global_nesting;
-  static bool in_exception_handler_v;
-  static bool unwind_stack_v;
-  static bool collect_excess_thrown;
-  static unsigned current_exception_count;
-  static bool execution_handler_excess_thrown;
-
  public:
-  static Argm::Exception_t caught_signal;
   bool del_on_term;
   unsigned execution_count_v;
   int last_return;
   std::string last_exception_v;
   struct timeval last_execution_time_v;
-  static unsigned max_collect;
-  static unsigned max_extra;
-  static int max_nesting;
   struct timeval total_execution_time_v;
 
   Base_executable(void) : executable_nesting(0), del_on_term(false),
@@ -30,25 +18,14 @@ class Base_executable {
     total_execution_time_v.tv_sec = 0;
     total_execution_time_v.tv_usec = 0;};
   virtual ~Base_executable(void) {}
-  static bool in_exception_handler(void) {return in_exception_handler_v;}
   bool is_running(void) const {return !!executable_nesting;};
-  static void exception_handler(Error_list& exceptions);
-  static void catch_blocks(const Argm& argm, Error_list& exceptions);
-  static void catch_one(Argm& argm, Error_list& exceptions);
-  static bool remove_exceptions(const std::string &name,
-                                Error_list& exceptions);
-  static void add_error(void);
   unsigned execution_count(void) const {return execution_count_v;};
   const std::string& last_exception(void) const {return last_exception_v;};
   struct timeval last_execution_time(void) const {
     return last_execution_time_v;};
   int last_ret(void) const {return last_return;};
-  static void replace_error(void);
-  static void reset(void);
   struct timeval total_execution_time(void) const {
     return total_execution_time_v;};
-  static void unix_signal_handler(int sig);
-  static bool unwind_stack(void) {return unwind_stack_v;}
 
   int operator() (const Argm& argm, Error_list& parent_exceptions);
   virtual int execute(const Argm& argm, Error_list& exceptions) const = 0;
