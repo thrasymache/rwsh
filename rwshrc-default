@@ -174,7 +174,6 @@ fn unselect {.set s ()}
 .function_all_flags last_time cmd {.last_execution_time $cmd; c $nl}
 fn local {. &{c $HOME /.rwshrc}}
 fn mark {ntimes 4 {.echo ####################}; c $nl}
-fn ret {.return $*}
 .function_all_flags timings cmd {
   .echo last time (); .last_execution_time $cmd; c $nl
   .echo total time (); .total_execution_time $cmd; c $nl

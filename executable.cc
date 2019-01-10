@@ -26,7 +26,7 @@ int Base_executable::operator() (const Argm& argm,
                                  Error_list& parent_exceptions) {
   if (global_stack.global_nesting > global_stack.max_nesting+1)
     parent_exceptions.add_error(Exception(Argm::Excessive_nesting));
-  if (global_stack.unwind_stack()) return Variable_map::dollar_question;
+  if (global_stack.unwind_stack()) return 0;
   else ++executable_nesting, ++global_stack.global_nesting;
   Error_list children;
   struct timeval start_time;

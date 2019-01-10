@@ -49,6 +49,7 @@ int Command_block::execute(const Argm& src_argm,
   int ret;
   for (auto j: *this) {
     Argm statement_argm = j.interpret(src_argm, exceptions);
+    if (global_stack.unwind_stack()) break;
     ret = executable_map.run(statement_argm, exceptions);
     if (global_stack.unwind_stack()) break;}
   return ret;}

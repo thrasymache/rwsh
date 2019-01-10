@@ -34,7 +34,7 @@
 const char* WSPACE = " \t";
 struct timezone Clock::no_timezone_v = {0, 0};
 std::string Argm::exception_names[Argm::Exception_count] = {
-  "no exception",
+  ".nop",
   ".ambiguous_prototype_dash_dash",
   ".arguments_for_argfunction",
   ".autofunction",
@@ -73,6 +73,7 @@ std::string Argm::exception_names[Argm::Exception_count] = {
   ".illegal_variable_name",
   ".input_range",
   ".internal_error",
+  ".interrupted_sleep",
   ".invalid_word_selection",
   // ".line_continuation",
   ".mismatched_brace",
@@ -156,10 +157,11 @@ int main(int argc, char *argv[]) {
         global_stack.exception_handler(exceptions);
         continue;}
       else if (command_stream.fail()) break;
-      else command = script.base_interpret(script.argm(), exceptions);}
+      else command = script.interpret(script.argm(), exceptions);}
     catch (Exception exception) {command = exception;}
     executable_map.run_if_exists(".before_command", command);
-    if (!executable_map.run_if_exists(".run_logic", command))
+    if (exceptions.size()) global_stack.exception_handler(exceptions);
+    else if (!executable_map.run_if_exists(".run_logic", command))
        executable_map.base_run(command, exceptions);
     executable_map.run_if_exists(".after_command", command);}
   Argm shutdown_command(Argm::exception_names[Argm::Shutdown],

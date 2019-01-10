@@ -21,6 +21,7 @@
 
 #include "argm.h"
 #include "arg_script.h"
+#include "call_stack.h"
 #include "executable.h"
 #include "executable_map.h"
 #include "pipe_stream.h"
@@ -193,7 +194,7 @@ Out Arg_spec::evaluate_expansion(const std::string& value, Out res)
      if (word_selection == -1)
        for (unsigned j=0; j<intermediate.size(); ++j)
          tokenize_words(intermediate[j], res);
-     else if (word_selection >= intermediate.size())
+     else if (word_selection >= (int)intermediate.size())
        throw Exception(Argm::Undefined_variable, str());
      else *res++ = intermediate[word_selection];}
   return res;}
@@ -204,10 +205,13 @@ Out Arg_spec::evaluate_substitution(const Argm& src, Out res,
   Substitution_stream override_stream;
   Argm temp_argm(src);
   temp_argm.output = override_stream.child_stream();
-  if ((*substitution)(temp_argm, exceptions)) {
-    exceptions.add_error(Exception(Argm::Failed_substitution, str()));
-    return res;}
-  else return evaluate_expansion(override_stream.value(), res);}
+  int ret = (*substitution)(temp_argm, exceptions);
+  if (global_stack.unwind_stack())
+      exceptions.add_error(Exception(Argm::Failed_substitution, str()));
+  else if (ret) exceptions.add_error(Exception(Argm::Internal_error,
+                              "return-based failed substitution: " + str()));
+  else return evaluate_expansion(override_stream.value(), res);
+  return res;}
 
 template<class Out> Out Arg_spec::evaluate_var(const Argm& src, Out res) const {
   std::string focus = text;
@@ -243,7 +247,9 @@ void Arg_spec::promote_soons(unsigned nesting) {
     case SUBSTITUTION: case SOON_SUBSTITUTION:
       soon_level += nesting;
       substitution->promote_soons(nesting);
-      break;}}
+      break;
+    case FIXED: case REFERENCE: case SELECTION: case SELECT_VAR:
+    case SELECT_STAR_VAR: case STAR_REF:;}}                     // not relevant
 
 // create a string from Arg_spec. inverse of constructor.
 std::string Arg_spec::str(void) const {

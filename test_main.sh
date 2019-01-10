@@ -33,6 +33,7 @@ line continuation (or it was supposed to be)
 .source test_files/unclosed_parenthesis_newline.rwsh
 .source test_files/unclosed_parenthesis.rwsh
 .source test_files/multiple_errors.rwsh
+.source test_files/bad_substitution.rwsh
 .nop multiple statements \; on a line
 .whence_function .argfunction {.multiple_argfunctions} {}
 .whence_function .argfunction {.argfunction with text args}
@@ -110,8 +111,8 @@ true
 fals
 /bin/true add the binary by itself
 true add the function using existing binary
-.whence_function /bin/false
-false add the function and the binary at once
+.whence_function /usr/bin/env
+env false add the function and the binary at once
 .whence_function true
 /bin/echo this will add /bin/echo to the hash table
 /bin/echo this will use the existing /bin/echo reference
@@ -120,7 +121,8 @@ echo this function is already defined
 .whence_function ./rwsh
 ./rwsh -c (echo in a subshell)
 false
-./rwsh -c (false)
+if_only_not false {echo false throwing a .false exception}
+./rwsh -c (env false)
 ./rwsh -c (.get_pid)
 ./rwsh /non-existent/file/to/test/failure <test_files/pause_hello.rwsh
 ./rwsh test_files/pause_hello.rwsh <test_files/pause_hello.rwsh
@@ -252,15 +254,21 @@ whence .argfunction {e ${e $A}}
       echo &{.echo $A} &&{.echo $A} &&&{.echo $A} ${.echo $A} $A}}
 .scope not_bin A {e &{.echo &A $A} &&{.echo &A &&A} ${.echo &A $A} $nl}
 sa &{.echo $A} {echo $args &1$}
-sa &{.return 1} {}
+sa &{.throw .nop} {}
+sa ${.throw .nop} {}
 sa ${.return 1} {}
-se {e &{.return 1}}
-se {e &&{.return 1}; e after}
-fn .failed_substitution [args ...] {.nop $args$; e $Z}
-.throw sa {echo even from $args$ 7 is a number}
-.fallback_handler sa {echo even from $args$ 7 is a number}
-.throw .failed_substitution sa {echo even from $args$ 7 is a number}
-se {e &&{.return 1}; e after}
+se {e &{.throw .nop}}
+se {e &&{.throw .nop}; e after}
+se {e &&{.throw .nop}; e after}
+.collect_errors_except .nop {
+  ${.throw echo exception from inside substitution}
+  echo after failed substitution}
+.collect_errors_only .failed_substitution echo {
+  ${.throw echo exception from inside substitution}
+  echo after failed substitution}
+.collect_errors_only .nop {
+  ${.throw echo exception from inside substitution}
+  echo after failed substitution}
 e x{e bad argfunction style}
 e x&&&{e x}
 e $+{e x}
@@ -327,6 +335,8 @@ se {se >outfile {e line 1 $nl; e line 2 longer $nl; .echo $nl; echo ending}}
       .throw .continue}}
   .throw .continue
   echo not printed}
+.for_each_line <outfile {
+  e line of $# \( $* \) $nl; .throw echo exception in for_each_line}
 .for_each_line <outfile {e line of $# \( $* \) $nl}
 /bin/rm outfile
 
@@ -394,8 +404,8 @@ x {x {x {x {
 # .exec .fork Binary Old_argv_t .binary_not_found
 .fork
 .fork echo text
-.fork .return 127
-.fork sa 126 {sa $args$ {echo about to return $args$; .return $args$}}
+.fork .exit 127
+.fork sa 126 {sa $args$ {echo about to return $args$; .exit $args$}}
 .exec
 .exec something {excess argfunc}
 .exec /bin/ech does not exist
@@ -430,11 +440,15 @@ x {x {x {x {
 .set_fallback_message (alternate fallback message: )
 .fallback_handler a third
 .set_fallback_message $original_message
+.throw sa .throw {echo even from $args$ 7 is a number}
+.fallback_handler .throw sa .throw {echo even from $args$ 7 is a number}
+.throw .throw sa {echo even from $args$ 7 is a number}
 
 # .for
 .for {echo no arguments $1}
 .for no_argfunction
 .for 1 {echo one argument $1}
+.for 1 2 {echo one argument $1; .throw echo exception in for}
 .for 1 2 3 4 {
   echo current arg $1
   if_only .test_greater $1 2 {
@@ -967,7 +981,7 @@ echo $x
 .store_output # {echo some text}
 .store_output x {echo some text}
 .global x ()
-.store_output x {echo some text; .return 1}
+.store_output x {echo some text; .throw echo exception}
 e $x
 .store_output x {echo some text}
 e $x
@@ -1403,7 +1417,8 @@ fn e_after {se {.argfunction}; echo after}
 e_after {.try_catch_recursive .not_a_number .function_not_found {
   .return A}}
 e_after {
-  .try_catch_recursive .function_not_found .binary_not_found {
+  .try_catch_recursive .function_not_found .binary_not_found \
+                       .failed_substitution {
     ..return A}}
 e_after {.try_catch_recursive .not_a_number {.return A}}
 e_after {.try_catch_recursive .not_a_number {.cho A}}
@@ -1656,18 +1671,18 @@ whence .mapped_argfunction {>dummy_file}
 # .which_path
 echo ${.which_path cat}
 echo ${.which_path cat /bin {excess argfunc}}
-.scope () {.which_path cat \ }
-.scope () {.which_path does<not>exist /bin:/usr/bin}
+echo ${.which_path cat \ }
+echo ${.which_path does<not>exist /bin:/usr/bin}
 echo ${.which_path cat :/bin:/usr/bin}
 echo ${.which_path cat /usr/bin/:/bin/:}
 echo ${.which_path /bin/cat /usr/bin/:/bin/:}
 echo ${.which_path rwsh /usr/bin:/bin}
 echo ${.which_path rwsh .:/usr/bin:/bin}
 echo ${.which_path rwsh /usr/bin:/bin:.}
-.scope () {.which_path ./rwsh /usr/bin:/bin}
+echo ${.which_path ./rwsh /usr/bin:/bin}
 echo ${.which_path ./rwsh /bin:.}
-.scope () {.which_path ../bin/rwsh /usr/bin:/bin}
-.scope () {.which_path rwsh :/usr/bin::/usr/bin:}
+echo ${.which_path ../bin/rwsh /usr/bin:/bin}
+echo ${.which_path rwsh :/usr/bin::/usr/bin:}
 echo ${.which_path rwsh /usr/bin:.}
 
 # .while
@@ -1861,35 +1876,6 @@ fn g {.whence_function .argfunction {.unescaped_argfunction}
      .whence_function .argfunction {.escaped_argfunction}}
 g {}
 
-# .excessive_nesting Base_executable::exception_handler
-fn g {h}
-fn h {g}
-g
-.stepwise g {e $* $nl; $*}
-fn .excessive_nesting args ... {.nop $args; h}
-g
-fn .excessive_nesting args ... {.nop $args; e &&{.return 1}}
-fn .failed_substitution args ... {.nop $args; e $Z}
-g
-.set_max_extra_exceptions 0
-e_after {.try_catch_recursive .undeclared_variable .excessive_nesting .failed_substitution {g}}
-.set_max_extra_exceptions 5
-e_after {.try_catch_recursive .undeclared_variable .excessive_nesting .failed_substitution {g}}
-e_after {.try_catch_recursive .undeclared_variable .failed_substitution {
-  e ${.return 1}}}
-fn .else_without_if args ... {.nop $args; e ${.return 1}}
-e_after {.try_catch_recursive .undeclared_variable .else_without_if {
-  .else {}}}
-fn .failed_substitution args ... {.nop $args; e ${.return 2}}
-e_after {.try_catch_recursive .undeclared_variable .failed_substitution {
-  e ${.return 1}}}
-fn .else_without_if args ... {.nop $args; e $Z}
-e_after {.try_catch_recursive .undeclared_variable .else_without_if {
-  .else {}}}
-fn .failed_substitution args ... {.nop $args; .return Z}
-e_after {.try_catch_recursive .not_a_number .failed_substitution {
-  e ${.return 1}}}
-
 # .throw
 .throw
 .throw .nop
@@ -1971,8 +1957,8 @@ for ${.list_environment}$ {
 .combine $TESTABILITY $nl
 echo $SHELL
 printenv
-.collect_errors_except .nop {${.throw echo exception from inside substitution}}
-.collect_errors_only .nop {${.throw echo exception from inside substitution}}
+
+if_only_not test -z z {echo test throwing a .false exception}
 
 ## unused variables
 # bless_unused_variables
@@ -2037,6 +2023,35 @@ printenv
 .scope -v -a n o p -b -c -d q ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {echo $-?}
 .scope -v -a n o p -b -c -d q ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {echo $-*}
 .scope -a n o p ([-a a1 a2 a3]) {echo $a1 $a3}
+
+# .excessive_nesting Base_executable::exception_handler
+fn g {h}
+fn h {g}
+g
+.stepwise g {e $* $nl; $*}
+fn .excessive_nesting args ... {.nop $args; h}
+g
+fn .excessive_nesting args ... {.nop $args; e &&{.throw .nop}}
+fn .failed_substitution args ... {.nop $args; e $Z}
+g
+.set_max_extra_exceptions 0
+e_after {.try_catch_recursive .undeclared_variable .excessive_nesting .failed_substitution {g}}
+.set_max_extra_exceptions 5
+e_after {.try_catch_recursive .undeclared_variable .excessive_nesting .failed_substitution {g}}
+e_after {.try_catch_recursive .undeclared_variable .failed_substitution {
+  e ${.throw .nop}}}
+fn .else_without_if args ... {.nop $args; e ${.throw .nop}}
+e_after {.try_catch_recursive .undeclared_variable .else_without_if {
+  .else {}}}
+fn .failed_substitution args ... {.nop $args; e ${.throw echo foo}}
+e_after {.try_catch_recursive .undeclared_variable .failed_substitution {
+  e ${.throw .nop}}}
+fn .else_without_if args ... {.nop $args; e $Z}
+e_after {.try_catch_recursive .undeclared_variable .else_without_if {
+  .else {}}}
+fn .failed_substitution args ... {.nop $args; .return Z}
+e_after {.try_catch_recursive .not_a_number .failed_substitution {
+  e ${.throw .nop}}}
 
 # exiting
 # .shutdown .exit

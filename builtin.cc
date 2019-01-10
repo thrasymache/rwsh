@@ -203,7 +203,7 @@ int b_fallback_handler(const Argm& argm, Error_list& exceptions) {
 int b_for(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (!argm.argfunction()) throw Exception(Argm::Missing_argfunction);
-  int ret = -1;
+  int ret = 0;
   Argm body(argm.parent_map(), argm.input, argm.output, argm.error);
   body.push_back(".mapped_argfunction");
   body.push_back("");
@@ -212,8 +212,8 @@ int b_for(const Argm& argm, Error_list& exceptions) {
       body[1] = i;
       ret  = (*argm.argfunction())(body, exceptions);
       (void) global_stack.remove_exceptions(".continue", exceptions);
-      if (global_stack.remove_exceptions(".break", exceptions)) return 0;
-      else if (global_stack.unwind_stack()) return -1;}
+      if (global_stack.remove_exceptions(".break", exceptions) ||
+          global_stack.unwind_stack()) return 0;}
     else ret = 0;}
   return ret;}
 
@@ -222,7 +222,7 @@ int b_for(const Argm& argm, Error_list& exceptions) {
 int b_for_each_line(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 1) throw Exception(Argm::Bad_argc, argm.argc()-1, 0, 0);
   if (!argm.argfunction()) throw Exception(Argm::Missing_argfunction);
-  int ret = -1;
+  int ret = 0;
   while(!argm.input.fail()) {
     std::string line;
     // shouldn't interfere with input being consumed by this builtin
@@ -234,8 +234,8 @@ int b_for_each_line(const Argm& argm, Error_list& exceptions) {
              std::bind2nd(std::equal_to<char>(), ' '));
     ret = (*argm.argfunction())(body, exceptions);
     (void) global_stack.remove_exceptions(".continue", exceptions);
-    if (global_stack.remove_exceptions(".break", exceptions)) return 0;
-    else if (global_stack.unwind_stack()) return -1;}
+    if (global_stack.remove_exceptions(".break", exceptions) ||
+        global_stack.unwind_stack()) return 0;}
   return ret;}
 
 int b_fork(const Argm& argm, Error_list& exceptions) {
@@ -247,9 +247,12 @@ int b_fork(const Argm& argm, Error_list& exceptions) {
     Argm lookup(argm.subrange(1), argm.argfunction(),
                 argm.parent_map(),
                 argm.input, argm.output.child_stream(), argm.error);
-    status = executable_map.base_run(lookup, exceptions);
+    status = executable_map.run(lookup, exceptions);
+    if (global_stack.unwind_stack()) {
+      global_stack.exception_handler(exceptions);
+      if (!global_stack.exit_value()) global_stack.request_exit(-1);}
     executable_map.unused_var_check_at_exit();
-    std::exit(status);}
+    std::exit(global_stack.exit_value());}
   else plumber.wait(&status);
   if (WIFEXITED(status) && WEXITSTATUS(status))
     exceptions.add_error(Exception(Argm::Return_code, WEXITSTATUS(status)));
@@ -343,7 +346,7 @@ namespace {
 int if_core(const Argm& argm, Error_list& exceptions,
             Conditional_state& state, bool logic, bool is_else) {
   if (!state.in_if_block) throw Exception(Argm::Else_without_if);
-  else if (state.successful_condition) return Variable_map::dollar_question;
+  else if (state.successful_condition) return 0;
   else {
     int ret = 0;
     Argm lookup(argm.subrange(1), nullptr, argm.parent_map(),
@@ -604,10 +607,8 @@ int b_scope(const Argm& argm, Error_list& exceptions) {
   Prototype prototype(prototype_argm.begin(), prototype_argm.end(), false);
   Argm invoking_argm(argm.subrange(0, 1), nullptr, argm.parent_map(),
                      argm.input, argm.output, argm.error);
-  int ret = (*argm.argfunction()).prototype_execute(invoking_argm, prototype,
-                                                    exceptions);
-  if (global_stack.unwind_stack()) return -1;
-  else return ret;}
+  return (*argm.argfunction()).prototype_execute(invoking_argm, prototype,
+                                                    exceptions);}
 
 // modify variable $1 as a selection according to $2
 int b_selection_set(const Argm& argm, Error_list& exceptions) {
@@ -681,7 +682,6 @@ int b_set_max_nesting(const Argm& argm, Error_list& exceptions) {
 
 // run the first argument as if it was a script, passing additional arguments
 // to that script
-// returns last return value from script, -1 if empty
 int b_source(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
@@ -694,12 +694,13 @@ int b_source(const Argm& argm, Error_list& exceptions) {
                   argm.input, argm.output.child_stream(), argm.error);
   Command_stream command_stream(src, false);
   Arg_script script("", 0, exceptions);
-  int ret = -1;
+  int ret = 0;
   while (!command_stream.fail() && !global_stack.unwind_stack())
     try {
       command_stream.getline(script, exceptions);
       if (command_stream.fail()) break;
       Argm command(script.interpret(script_arg, exceptions));
+      if (global_stack.unwind_stack()) break;
       ret = executable_map.run(command, exceptions);}
     catch (Exception exception) {exceptions.add_error(exception);}
   return ret;}
@@ -719,15 +720,16 @@ int b_stepwise(const Argm& argm, Error_list& exceptions) {
   Variable_map locals(f->arg_to_param(lookup));
   Argm params(lookup.argv(), lookup.argfunction(), &locals,
               lookup.input, lookup.output, lookup.error);
-  int ret = -1;
+  int ret = 0;
   for (auto j: f->body) {
     Argm body_i(j.interpret(params, exceptions));
+    if (global_stack.unwind_stack()) break;
     Argm body(".mapped_argfunction", body_i.argv(), nullptr,
               body_i.parent_map(), body_i.input, body_i.output, body_i.error);
     ret  = (*argm.argfunction())(body, exceptions);
     (void) global_stack.remove_exceptions(".continue", exceptions);
-    if (global_stack.remove_exceptions(".break", exceptions)) break;
-    else if (global_stack.unwind_stack()) break;}
+    if (global_stack.remove_exceptions(".break", exceptions) ||
+        global_stack.unwind_stack()) break;}
   f->unused_var_check(&locals, exceptions);
   return ret;} // last return value from argfunction
 
@@ -872,7 +874,7 @@ int b_throw(const Argm& argm, Error_list& exceptions) {
                      Variable_map::global_map, default_input, default_output,
                      default_error);
   exceptions.add_error(new_exception);
-  return -1;}
+  return 0;}
 
 // enable readline if disabled, disable if enabled
 int b_toggle_readline(const Argm& argm, Error_list& exceptions) {
@@ -902,9 +904,7 @@ int b_try_catch_recursive(const Argm& argm, Error_list& exceptions) {
                    argm.input, argm.output.child_stream(), argm.error);
   mapped_argm.push_back(".try_catch_recursive(body)");
   int ret = (*argm.argfunction())(mapped_argm, exceptions);
-  if (global_stack.unwind_stack()) {
-    global_stack.catch_blocks(argm, exceptions);
-    return -1;}
+  if (global_stack.unwind_stack()) global_stack.catch_blocks(argm, exceptions);
   return ret;}
 
 // print the type of executable with name $1 from executable map
@@ -940,9 +940,15 @@ int b_usleep(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   try {
-    int delay = my_strtoi(argm[1], 0, INT_MAX);
-    sleep_requested += delay / 1000000.0;
-    return usleep(delay);}
+    int usec = my_strtoi(argm[1], 0, INT_MAX);
+    sleep_requested += usec / 1000000.0;
+    const long mega = (long)1E6;
+    struct timespec delay = {usec / mega, (usec % mega) * 1000};
+    if (!nanosleep(&delay, nullptr)) return 0;
+    else if (errno == EINTR)                                       //not tested
+      throw Exception(Argm::Interrupted_sleep);
+    else throw Exception(Argm::Internal_error,                     //not tested
+                         "nanosleep failed with code", errno);}
   catch (E_generic) {throw Exception(Argm::Not_a_number, argm[1]);}
   catch (E_nan) {throw Exception(Argm::Not_a_number, argm[1]);}
   catch (E_range) {throw Exception(Argm::Input_range, argm[1]);}}
@@ -1126,7 +1132,7 @@ int b_which_path(const Argm& argm, Error_list& exceptions) {
 int b_while(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
   if (!argm.argfunction()) throw Exception(Argm::Missing_argfunction);
-  int ret = -1;
+  int ret = 0;
   Argm lookup(argm.subrange(1), nullptr, argm.parent_map(),
               argm.input, argm.output.child_stream(), argm.error);
   while (executable_map.run_condition(lookup, exceptions)) {
@@ -1135,6 +1141,6 @@ int b_while(const Argm& argm, Error_list& exceptions) {
     mapped_argm.push_back(".mapped_argfunction");
     ret = (*argm.argfunction())(mapped_argm, exceptions);
     (void) global_stack.remove_exceptions(".continue", exceptions);
-    if (global_stack.remove_exceptions(".break", exceptions)) return 0;
-    else if (global_stack.unwind_stack()) return -1;}
+    if (global_stack.remove_exceptions(".break", exceptions) ||
+        global_stack.unwind_stack()) return 0;}
   return ret;}

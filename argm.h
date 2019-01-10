@@ -66,6 +66,7 @@ class Argm {
     Illegal_variable_name,
     Input_range,
     Internal_error,
+    Interrupted_sleep,
     Invalid_word_selection,
     // Line_continuation,
     Mismatched_brace,

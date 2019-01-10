@@ -68,7 +68,7 @@ int Call_stack::collect_errors_core(const Argm& argm, bool logic,
   Argm blank(argm.parent_map(), argm.input, argm.output.child_stream(),
              argm.error);
   blank.push_back(".mapped_argfunction");
-  std::vector<std::string> exceptional(argm.begin()+1, argm.end());
+  std::vector<std::string> other(argm.begin()+1, argm.end());
   int ret;
   for (auto j: *argm.argfunction()) {
     if (current_exception_count > max_collect) {
@@ -79,13 +79,13 @@ int Call_stack::collect_errors_core(const Argm& argm, bool logic,
       return ret;}
     Error_list children;
     Argm statement_argm = j.interpret(blank, children);
-    ret = executable_map.run(statement_argm, children);
+    if (!global_stack.unwind_stack())
+      ret = executable_map.run(statement_argm, children);
     if (children.size()) {
       unwind_stack_v = false;
       for (auto k: children) {
         parent.push_back(k);
-        if (logic == (find(exceptional.begin(), exceptional.end(),
-                          (k)[0]) != exceptional.end()))
+        if (logic == (find(other.begin(), other.end(), k[0]) != other.end()))
           unwind_stack_v = true;}}} // will cause subsequent j to not run
   if (parent.size()) unwind_stack_v = true;
   return ret;}

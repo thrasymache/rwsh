@@ -4,9 +4,9 @@ arg_script.o: arg_script.cc arg_spec.h rwsh_stream.h variable_map.h \
  argm.h arg_script.h call_stack.h executable.h file_stream.h prototype.h \
  function.h
 arg_spec.o: arg_spec.cc arg_spec.h rwsh_stream.h variable_map.h argm.h \
- arg_script.h executable.h executable_map.h pipe_stream.h prototype.h \
- read_dir.cc rwshlib.h selection.h substitution_stream.h tokenize.cc \
- function.h argm_star_var.cc selection_read.cc
+ arg_script.h call_stack.h executable.h executable_map.h pipe_stream.h \
+ prototype.h read_dir.cc rwshlib.h selection.h substitution_stream.h \
+ tokenize.cc function.h argm_star_var.cc selection_read.cc
 builtin.o: builtin.cc arg_spec.h rwsh_stream.h variable_map.h argm.h \
  arg_script.h builtin.h call_stack.h clock.h command_stream.h \
  executable.h executable_map.h file_stream.h pipe_stream.h plumber.h \

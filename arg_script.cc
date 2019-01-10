@@ -221,11 +221,6 @@ std::string Arg_script::str(void) const {
   else if (argfunction_level == 3) return ".super_escaped_argfunction";
   else {std::abort(); return "";}} // unhandled argfunction_level
 
-Argm Arg_script::base_interpret(const Argm& src, Error_list& errors) const {
-  Argm ret = interpret(src, errors);
-  if (errors.size()) global_stack.exception_handler(errors);
-  return ret;}
-
 // produce a destination Argm from the source Argm according to this script
 Argm Arg_script::interpret(const Argm& src, Error_list& exceptions) const {
   Argm result(src.parent_map(),

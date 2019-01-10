@@ -24,12 +24,16 @@ call stack .source .try_catch_recursive(body)
 .function_all_flags .vars {.internal_vars}
 .source /etc/rwshrc-basic
 .function_all_flags # -- [ignored ...] {.nop $ignored$}
+.function_all_flags fn -- prototype ... {
+  .function_all_flags $prototype$ {.argfunction}}
 
 # set up environment
 .set_max_collectible_exceptions 10
 .set_max_extra_exceptions 5
 .global nl (
 )
+.if .var_exists ?? {}
+.else {.global ?? (); .nop $??}
 
 # internal functions
 .function_all_flags .ambiguous_prototype_dash_dash prototype stack ... {
@@ -109,7 +113,7 @@ call stack .source .try_catch_recursive(body)
   echo call stack $stack}
 .function_all_flags .failed_substitution substitution [stack ...] {
   echo substitution $substitution failed
-  echo call stack $stack$}
+  if_only .var_exists stack {echo call stack: $stack$}}
 .function_all_flags .false test [stack ...] {
   echo assertion $test failed
   echo call stack $stack$}
@@ -144,8 +148,10 @@ call stack .source .try_catch_recursive(body)
   echo value $value is out of usable numeric range
   echo call stack $stack$}
 .function_all_flags .internal_error -- [args ...] {
-  echo internal error: $args$
-  .return -1}
+  echo internal error: $args$}
+.function_all_flags .interrupted_sleep [stack ...] {
+  echo sleep was interrupted
+  echo call stack $stack$}
 .function_all_flags .invalid_word_selection selection [stack ...] {
   echo $selection is not a valid word selection
   echo call stack $stack$}
@@ -157,8 +163,7 @@ call stack .source .try_catch_recursive(body)
 .function .mismatched_parenthesis {
   .echo signal triggered: $0 \( $* \); .combine $nl
   echo mismatched parenthesis: $1
-  echo call stack: $*2
-  .return -1}
+  echo call stack: $*2}
 .function_all_flags .missing_argfunction cmd [add_stack ...] {
   echo $cmd requires an argfunction
   if_only .var_exists add_stack {echo stack $add_stack$}}
@@ -192,38 +197,42 @@ call stack .source .try_catch_recursive(body)
   echo result of $op with arguments $lhs and $rhs is out of range
   echo call stack: $op $stack$}
 .function_all_flags .return_code code cmd [add_stack ...] {
-  echo $cmd returned $code : call stack $cmd $add_stack$}
+  .if .test_in $cmd /usr/bin/test /bin/false {
+    .replace_exception .false $cmd
+    .nop $code $add_stack$}
+  .else {
+    .set ?? $cmd returned $code
+    echo $??$ : call stack $cmd $add_stack$}}
 .function_all_flags .selection_not_found not_found selection [stack ...] {
   .echo no file matching pattern $not_found
   if_only .test_string_unequal $not_found $selection {
     .echo () for selection $selection}
   .echo $nl
-  if_only .var_exists stack {echo call stack: $stack$}
-  .return -1}
+  if_only .var_exists stack {echo call stack: $stack$}}
 .function_all_flags .sigcont {
-  echo received SIGCONT; .return -1}
+  echo received SIGCONT}
 .function_all_flags .sigchld {
-  echo received SIGCHLD; .return -1}
+  echo received SIGCHLD}
 .function_all_flags .sighup {
-  echo received SIGHUP; .return -1}
+  echo received SIGHUP}
 .function_all_flags .sigint {
   .throw echo $nl received SIGINT}
 .function_all_flags .sigquit {
-  echo received SIGQUIT; .return -1}
+  echo received SIGQUIT}
 .function_all_flags .sigpipe {
-  echo received SIGPIPE; .return -1}
+  echo received SIGPIPE}
 .function_all_flags .sigterm {
   .throw echo $nl received SIGTERM}
 .function_all_flags .sigtstp {
-  echo received SIGTSTP; .return -1}
+  echo received SIGTSTP}
 .function_all_flags .siginfo {
-  echo received SIGINFO; .return -1}
+  echo received SIGINFO}
 .function_all_flags .sigusr1 {
-  echo received SIGUSR1; .return -1}
+  echo received SIGUSR1}
 .function_all_flags .sigusr2 {
-  echo received SIGUSR2; .return -1}
+  echo received SIGUSR2}
 .function_all_flags .sigunknown {
-  echo received unknown unix signal; .return -1}
+  echo received unknown unix signal}
 .function_all_flags .shutdown -- args ... {
   .nop $args
   .combine $nl (now terminating normally) $nl}
@@ -243,8 +252,7 @@ call stack .source .try_catch_recursive(body)
   if_only .var_exists stack {echo call stack: $stack$}}
 .function_all_flags .unreadable_dir dir errno [stack ...] {
   .combine (cannot read directory ) $dir \ \(errno\  $errno \) $nl
-  echo call stack: $stack$
-  .return -1}
+  echo call stack: $stack$}
 .function_all_flags .unrecognized_flag -- flag cmd [add_stack ...] {
   echo $flag flag is unrecognized for $cmd
   echo call stack: $cmd $add_stack$}
@@ -278,10 +286,7 @@ call stack .source .try_catch_recursive(body)
 .function_all_flags exec -- argv ... {.exec $argv$}
 .function_all_flags elif command ... {.else_if $command$ {.argfunction}}
 .function_all_flags else {.else {.argfunction}}
-.function_all_flags fn -- prototype ... {
-  .function_all_flags $prototype$ {.argfunction}}
-.function_all_flags fni -- name args ... {
-  .function_all_flags $name -- $args$ {.argfunction}}
+fn false {.try_catch_recursive .return_code {${whichp false}}}
 .function_all_flags fns -- name args ... {
   .function_all_flags $name [-*] $args$ {.argfunction}}
 .function_all_flags if_only -- args ... {
@@ -310,6 +315,8 @@ fn ntimes n {
   .if .var_exists $var {.set $var $value}
   .else {.global $var $value}}
 fn single -- args ... {.scope ${$args$}$ result {echo $result}}
+fn test -- args ... {
+  .try_catch_recursive .return_code {${whichp test} $args$}}
 fn test_var_not_equal var value {.test_string_unequal $$var $value}
 fn test_var_greater -- var value {.test_greater $$var $value}
 fn type [-t] args ... {
@@ -400,7 +407,7 @@ a $line continuation (or it was supposed to be)
 PATH was not declared
 call stack: .autofunction .autofunction
 substitution (${.which_path $cmd $PATH}) failed
-call stack .autofunction
+call stack: .autofunction
 line : command not found ( line continuation (or it was supposed to be) )
 $ echo ignore leading space
 ignore leading space
@@ -443,14 +450,12 @@ echo bar (baz
 signal triggered: .mismatched_parenthesis ( echo bar ( .source )
 mismatched parenthesis: (echo bar ()
 call stack: .source
--1
 $.source test_files/unclosed_parenthesis.rwsh
 echo bar (baz
 
 signal triggered: .mismatched_parenthesis ( echo bar ( .source )
 mismatched parenthesis: (echo bar ()
 call stack: .source
--1
 $.source test_files/multiple_errors.rwsh
 fn bar {echo &&&baz$$bax
   cat >something >else
@@ -460,6 +465,13 @@ call stack .source
 &&&baz$$bax attempts to substitute after the command has been run
 call stack .source
 double redirection is not supported at this time: >something and >else
+call stack: .source
+$.source test_files/bad_substitution.rwsh
+echo before error
+before error
+echo the error ${.throw echo nonexistent} was there
+nonexistent .throw test_files/bad_substitution.rwsh .source
+substitution (${.throw echo nonexistent}) failed
 call stack: .source
 $.nop multiple statements \; on a line
 $.whence_function .argfunction {.multiple_argfunctions} {}
@@ -499,7 +511,6 @@ $whence echo
 .function_all_flags echo -- text ... {.echo $text; .combine $nl}
 $whence ee
 ee : command not found ( ee .whence_function .try_catch_recursive(body) )
--1
 $whence () {}
 .function_all_flags ()  {.nop}
 $echo text that does not have a prompt appended
@@ -606,28 +617,36 @@ $.global PATH /usr/bin
 $/bin/true
 /bin/true : binary not found in /usr/bin
 call stack: .which_path .autofunction .autofunction
+substitution (${.which_path $cmd $PATH}) failed
+call stack: .autofunction
 /bin/true : command not found ( /bin/true )
 $true
 true : binary not found in /usr/bin
 call stack: .which_path .autofunction .autofunction
+substitution (${.which_path $cmd $PATH}) failed
+call stack: .autofunction
 true : command not found ( true )
 $.binary /bin/true
 $true
 true : binary not found in /usr/bin
 call stack: .which_path .autofunction .autofunction
+substitution (${.which_path $cmd $PATH}) failed
+call stack: .autofunction
 true : command not found ( true )
 $.rm_executable /bin/true
 $.set PATH /bin:/usr/bin:.
 $fals
 fals : binary not found in /bin:/usr/bin:.
 call stack: .which_path .autofunction .autofunction
+substitution (${.which_path $cmd $PATH}) failed
+call stack: .autofunction
 fals : command not found ( fals )
 $/bin/true add the binary by itself
 $true add the function using existing binary
-$.whence_function /bin/false
-/bin/false : command not found ( /bin/false .whence_function )
-$false add the function and the binary at once
-/bin/false returned 1 : call stack /bin/false false
+$.whence_function /usr/bin/env
+/usr/bin/env : command not found ( /usr/bin/env .whence_function )
+$env false add the function and the binary at once
+/usr/bin/env returned 1 : call stack /usr/bin/env env
 $.whence_function true
 .function_all_flags true -- [args ...] {
       /bin/true $args$}
@@ -643,13 +662,18 @@ $.whence_function ./rwsh
 $./rwsh -c (echo in a subshell)
 in a subshell
 $false
-/bin/false returned 1 : call stack /bin/false false
-$./rwsh -c (false)
-/bin/false returned 1 : call stack /bin/false false .mapped_argfunction .collect_errors_except .mapped_argfunction .else_if .source .init
+assertion /bin/false failed
+call stack .replace_exception .mapped_argfunction .if .return_code .try_catch_recursive false
+$if_only_not false {echo false throwing a .false exception}
+false throwing a .false exception
+$./rwsh -c (env false)
+/usr/bin/env returned 1 : call stack /usr/bin/env env .mapped_argfunction .collect_errors_except .mapped_argfunction .else_if .source .init
 ./rwsh returned 1 : call stack ./rwsh
 $./rwsh -c (.get_pid)
 .get_pid : binary not found in /bin:/usr/bin:.
 call stack: .which_path .autofunction .autofunction .mapped_argfunction .collect_errors_except .mapped_argfunction .else_if .source .init
+substitution (${.which_path $cmd $PATH}) failed
+call stack: .autofunction .mapped_argfunction .collect_errors_except .mapped_argfunction .else_if .source .init
 .get_pid : command not found ( .get_pid .mapped_argfunction .collect_errors_except .mapped_argfunction .else_if .source .init )
 $./rwsh /non-existent/file/to/test/failure <test_files/pause_hello.rwsh
 init file /non-existent/file/to/test/failure does not exist
@@ -771,6 +795,7 @@ hello world
 .illegal_variable_name not defined 
 .input_range not defined 
 .internal_error not defined 
+.interrupted_sleep not defined 
 .invalid_word_selection not defined 
 .mismatched_brace not defined 
 .mismatched_bracket not defined 
@@ -946,49 +971,38 @@ $echo @/etc
 /etc
 $echo @test_files/ixx
 no file matching pattern test_files/ixx
--1
 $echo @test_files/i*xx
 test_files/ixxx
 $echo @test_files/i**xx
 test_files/ixxx
 $echo @test_files/ii**xx
 no file matching pattern test_files/ii**xx
--1
 $echo @test_files/ix*xx
 test_files/ixxx
 $echo @test_files/ix*xx*
 test_files/ixxx
 $echo @test_files/ix*xxx
 no file matching pattern test_files/ix*xxx
--1
 $echo @test_files/ix*xxx*
 no file matching pattern test_files/ix*xxx*
--1
 $echo @test_files/*iixxx
 no file matching pattern test_files/*iixxx
--1
 $echo @test_files/ix*x*x
 test_files/ixxx
 $echo @test_files/ix*xx*x
 no file matching pattern test_files/ix*xx*x
--1
 $echo @test_files/ix*x*xx
 no file matching pattern test_files/ix*x*xx
--1
 $.scope () {echo @test_files/i*xx/f*}
 cannot read directory test_files/ixxx// (errno 20)
 call stack: .scope
--1
 $.scope () {echo @/*selection_not_found*}
 no file matching pattern /*selection_not_found*
 call stack: .scope
--1
 $echo @/ur/bin/pwd
 no file matching pattern /ur for selection /ur/bin/pwd
--1
 $echo @test_main.cc
 no file matching pattern test_main.cc
--1
 $se {se {.for @e*c {echo $1}} >test_files/tmp}
 $.global LC_ALL C
 $.nop $LC_ALL
@@ -1005,7 +1019,6 @@ $echo @test_files/*xx
 test_files/ixxx
 $echo @test_files/*x*x*x*x
 no file matching pattern test_files/*x*x*x*x
--1
 $echo @test_files/*xyxy
 test_files/ixyxyxy
 $echo @/bin
@@ -1032,11 +1045,9 @@ $echo @/etc/rwshrc*
 /etc/rwshrc-basic /etc/rwshrc
 $echo @/etc/rwshr*
 no file matching pattern /etc/rwshr*
--1
 $.set FIGNORE *.cc
 $echo @*cc
 no file matching pattern *cc
--1
 $echo @*h.cc
 rwsh.cc
 $.set FIGNORE *de*
@@ -1044,14 +1055,12 @@ $echo @/etc/rwshrc-defa*
 /etc/rwshrc-default
 $echo @/etc/rwshrc-d*
 no file matching pattern /etc/rwshrc-d*
--1
 $echo @/etc/rwsh*a*
 /etc/rwshrc-basic
 $echo @test_files/*i*x*y*y*x*
 test_files/ixyxyxy
 $echo @/etc/rw*-basi*si*
 no file matching pattern /etc/rw*-basi*si*
--1
 $echo @test_main.sh
 test_main.sh
 $se {se {.for @test_files/*x* {echo $1}} >test_files/tmp}
@@ -1134,12 +1143,10 @@ $sa $broken$ {echo $# $args$}
 signal triggered: .mismatched_parenthesis ( extra_close) )
 mismatched parenthesis: extra_close)
 call stack:
--1
 $sa $broken$$ {echo $# $args$}
 signal triggered: .mismatched_parenthesis ( extra_close) )
 mismatched parenthesis: extra_close)
 call stack:
--1
 $sa $C {e $# $args$ $nl}
 2 (external) () ( ) internal(parenthesis) 
 $sa $C$ {e $# $args$ $nl}
@@ -1201,37 +1208,40 @@ $.scope not_bin A {e &{.echo &A $A} &&{.echo &A &&A} ${.echo &A $A} $nl}
 /bin /bin /bin not_bin /bin not_bin 
 $sa &{.echo $A} {echo $args &1$}
 /bin &{.echo $A}
-$sa &{.return 1} {}
-substitution (&{.return 1}) failed
-call stack
-args was not checked with call stack .scope sa
+$sa &{.throw .nop} {}
+substitution (&{.throw .nop}) failed
+$sa ${.throw .nop} {}
+substitution (${.throw .nop}) failed
 $sa ${.return 1} {}
-substitution (${.return 1}) failed
-call stack
-args was not checked with call stack .scope sa
-$se {e &{.return 1}}
-substitution (&{.return 1}) failed
-call stack
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .echo e .scope se
-$se {e &&{.return 1}; e after}
-substitution (&{.return 1}) failed
-call stack .scope se
-$fn .failed_substitution [args ...] {.nop $args$; e $Z}
-$.throw sa {echo even from $args$ 7 is a number}
-even from .throw 7 is a number
-$.fallback_handler sa {echo even from $args$ 7 is a number}
-Exception for failed handler. Original exception with call stack:
-sa
-$.throw .failed_substitution sa {echo even from $args$ 7 is a number}
-Exception for failed handler. Original exception with call stack:
-.failed_substitution sa .throw
-Z was not declared
-call stack: .failed_substitution
-$se {e &&{.return 1}; e after}
-Exception for failed handler. Original exception with call stack:
-.failed_substitution &{.return 1} .scope se
-Z was not declared
-call stack: .failed_substitution
+internal error: (return-based failed substitution: ${.return 1})
+$se {e &{.throw .nop}}
+substitution (&{.throw .nop}) failed
+$se {e &&{.throw .nop}; e after}
+substitution (&{.throw .nop}) failed
+call stack: .scope se
+$se {e &&{.throw .nop}; e after}
+substitution (&{.throw .nop}) failed
+call stack: .scope se
+$.collect_errors_except .nop {
+  ${.throw echo exception from inside substitution}
+  echo after failed substitution}
+after failed substitution
+exception from inside substitution .throw .mapped_argfunction .collect_errors_except
+substitution (${.throw echo exception from inside substitution}) failed
+call stack: .collect_errors_except
+$.collect_errors_only .failed_substitution echo {
+  ${.throw echo exception from inside substitution}
+  echo after failed substitution}
+after failed substitution
+exception from inside substitution .throw .mapped_argfunction .collect_errors_only
+substitution (${.throw echo exception from inside substitution}) failed
+call stack: .collect_errors_only
+$.collect_errors_only .nop {
+  ${.throw echo exception from inside substitution}
+  echo after failed substitution}
+exception from inside substitution .throw .mapped_argfunction .collect_errors_only
+substitution (${.throw echo exception from inside substitution}) failed
+call stack: .collect_errors_only
 $e x{e bad argfunction style}
 x is neither an argfunction nor a substitution
 $e x&&&{e x}
@@ -1291,12 +1301,10 @@ $sa ${e (zero zero) \)one one two three}$1 {echo $# $args$}
 signal triggered: .mismatched_parenthesis ( zero zero ) )
 mismatched parenthesis: (zero zero ))
 call stack:
--1
 $sa &{e (zero zero) \(one one two three}$1 {echo $# $args$}
 signal triggered: .mismatched_parenthesis ( zero zero (one one two three )
 mismatched parenthesis: (zero zero (one one two three)
 call stack:
--1
 $om ${e (zero zero) \)one one two three} {e $# $* $nl}
 2 zero zero )one one two three 
 $c x &{.echo (y y)}$ x $nl
@@ -1362,6 +1370,10 @@ $.for_each_line <outfile {
   echo not printed}
 current line line 1
 current line line 2 longer
+$.for_each_line <outfile {
+  e line of $# \( $* \) $nl; .throw echo exception in for_each_line}
+line of 3 ( line 1 ) 
+exception in for_each_line .throw .mapped_argfunction .for_each_line
 $.for_each_line <outfile {e line of $# \( $* \) $nl}
 line of 3 ( line 1 ) 
 line of 4 ( line 2 longer ) 
@@ -1465,9 +1477,9 @@ $.fork
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .fork
 $.fork echo text
 text
-$.fork .return 127
+$.fork .exit 127
 .fork returned 127 : call stack .fork
-$.fork sa 126 {sa $args$ {echo about to return $args$; .return $args$}}
+$.fork sa 126 {sa $args$ {echo about to return $args$; .exit $args$}}
 about to return 126
 .fork returned 126 : call stack .fork
 $.exec
@@ -1499,6 +1511,8 @@ call stack: (.exec .scope se)
 $.fork se {/bn/echo 1 2 3}
 /bn/echo : binary not found in /bin:/usr/bin:.
 call stack: .which_path .autofunction .autofunction .scope se
+substitution (${.which_path $cmd $PATH}) failed
+call stack: .autofunction .scope se
 /bn/echo : command not found ( /bn/echo 1 2 3 .scope se )
 .fork returned 255 : call stack .fork
 $.last_exception /bn/echo
@@ -1509,12 +1523,16 @@ call stack: .exec
 $/bn/echo 1 2 3
 /bn/echo : binary not found in /bin:/usr/bin:.
 call stack: .which_path .autofunction .autofunction
+substitution (${.which_path $cmd $PATH}) failed
+call stack: .autofunction
 /bn/echo : command not found ( /bn/echo 1 2 3 )
 $.last_exception /bn/echo
 /bn/echo : command not found ( /bn/echo .last_exception )
 $.fork se {/bn/echo 1 2 3}
 /bn/echo : binary not found in /bin:/usr/bin:.
 call stack: .which_path .autofunction .autofunction .scope se
+substitution (${.which_path $cmd $PATH}) failed
+call stack: .autofunction .scope se
 /bn/echo : command not found ( /bn/echo 1 2 3 .scope se )
 .fork returned 255 : call stack .fork
 $.fork .exec /bn/echo 1 2 3
@@ -1524,6 +1542,8 @@ call stack: .exec
 $/bn/echo 1 2 3
 /bn/echo : binary not found in /bin:/usr/bin:.
 call stack: .which_path .autofunction .autofunction
+substitution (${.which_path $cmd $PATH}) failed
+call stack: .autofunction
 /bn/echo : command not found ( /bn/echo 1 2 3 )
 $.exec /bn/echo 1 2 3
 /bn/echo : binary does not exist
@@ -1556,6 +1576,15 @@ $.set_fallback_message (alternate fallback message: )
 $.fallback_handler a third
 alternate fallback message: a third
 $.set_fallback_message $original_message
+$.throw sa .throw {echo even from $args$ 7 is a number}
+even from .throw .throw 7 is a number
+$.fallback_handler .throw sa .throw {echo even from $args$ 7 is a number}
+Exception for failed handler. Original exception with call stack:
+.throw sa .throw
+$.throw .throw sa {echo even from $args$ 7 is a number}
+Exception for failed handler. Original exception with call stack:
+.throw sa .throw
+even from .throw .throw 7 is a number
 $
 $# .for
 $.for {echo no arguments $1}
@@ -1564,6 +1593,9 @@ $.for no_argfunction
 .for requires an argfunction
 $.for 1 {echo one argument $1}
 one argument 1
+$.for 1 2 {echo one argument $1; .throw echo exception in for}
+one argument 1
+exception in for .throw .mapped_argfunction .for
 $.for 1 2 3 4 {
   echo current arg $1
   if_only .test_greater $1 2 {
@@ -2506,7 +2538,6 @@ $.try_catch_recursive collecting_handler {
     .throw collecting_handler 2}}
 1 .throw .collect_errors_except .try_catch_recursive(body)
 2 .throw .collect_errors_except .try_catch_recursive(body)
--1
 $.try_catch_recursive collecting_handler {
   .collect_errors_except .echo {
     .throw collecting_handler 1
@@ -2746,8 +2777,8 @@ $.store_output x {echo some text}
 x was not declared
 call stack: .store_output
 $.global x ()
-$.store_output x {echo some text; .return 1}
-1
+$.store_output x {echo some text; .throw echo exception}
+exception .throw .mapped_argfunction .store_output
 $e $x
 $.store_output x {echo some text}
 $e $x
@@ -3048,7 +3079,6 @@ $.collect_errors_except .nop {
     .if silent_throw in if {echo definitely should not print}
     .else {echo skipped because non-.false exception thrown earlier}}}
 exception in if .throw .collect_errors_only silent_throw .if .try_catch_recursive(body)
--1
 $.collect_errors_except .nop {
   .try_catch_recursive echo {
     .if caught_silent_throw in if {echo still should not print}
@@ -3062,28 +3092,26 @@ $se {
   .else {echo else skipped when condition threw an exception}}
 unfindable : binary not found in /bin:/usr/bin:.
 call stack: .which_path .autofunction .autofunction .if .scope se
+substitution (${.which_path $cmd $PATH}) failed
+call stack: .autofunction .if .scope se
 unfindable : command not found ( unfindable anywhere .if .scope se )
 $se {
   if_true {echo &&&{unfindable anywhere}}
   .else {echo else not printing when condition true and if body threw}}
 unfindable : binary not found in /bin:/usr/bin:.
 call stack: .which_path .autofunction .autofunction .mapped_argfunction .mapped_argfunction .if if_true .scope se
+substitution (${.which_path $cmd $PATH}) failed
+call stack: .autofunction .mapped_argfunction .mapped_argfunction .if if_true .scope se
 unfindable : command not found ( unfindable anywhere .mapped_argfunction .mapped_argfunction .if if_true .scope se )
-Exception for failed handler. Original exception with call stack:
-.failed_substitution &{unfindable anywhere} .mapped_argfunction .if if_true .scope se
-Z was not declared
-call stack: .failed_substitution
+substitution (&{unfindable anywhere}) failed
+call stack: .mapped_argfunction .if if_true .scope se
 $if_true {echo &{unfindable anywhere}}
 unfindable : binary not found in /bin:/usr/bin:.
 call stack: .which_path .autofunction .autofunction if_true
+substitution (${.which_path $cmd $PATH}) failed
+call stack: .autofunction if_true
 unfindable : command not found ( unfindable anywhere if_true )
-Exception for failed handler. Original exception with call stack:
-.failed_substitution &{unfindable anywhere}
-Z was not declared
-call stack: .failed_substitution
-unacceptable arguments: for prototype -- text ...,
- needed (text),
-( call) stack: (echo .mapped_argfunction .if if_true)
+substitution (&{unfindable anywhere}) failed
 $.else {echo else throws an exception because we never got into the if}
 else without if with call stack: .else
 $
@@ -3182,6 +3210,7 @@ $.internal_functions
 .illegal_variable_name
 .input_range
 .internal_error
+.interrupted_sleep
 .invalid_word_selection
 .mismatched_brace
 .mismatched_bracket
@@ -3243,6 +3272,7 @@ $.is_default_output {excess argfunc}
 $e ${.is_default_output; .echo $?}
 assertion is_default_output failed
 call stack .is_default_output e
+substitution (${.is_default_output; .echo $?}) failed
 $se {.is_default_output >dummy_file}
 assertion is_default_output failed
 call stack .is_default_output .scope se
@@ -3344,6 +3374,7 @@ $.for ${.list_executables}$ {.combine $1 $nl}
 .internal_features
 .internal_functions
 .internal_vars
+.interrupted_sleep
 .invalid_word_selection
 .is_default_error
 .is_default_input
@@ -3449,6 +3480,7 @@ $.for ${.list_executables}$ {.combine $1 $nl}
 /bin/kill
 /bin/rm
 /bin/true
+/usr/bin/env
 /usr/bin/sort
 a
 af
@@ -3472,11 +3504,11 @@ else_if_not_true
 else_if_true
 else_if_with_body
 else_with_body
+env
 exec
 fIJ
 false
 fn
-fni
 fns
 for
 g
@@ -3503,6 +3535,7 @@ setf
 silent_throw
 single
 sort
+test
 test_files/../rwsh
 test_var_greater
 test_var_not_equal
@@ -3843,10 +3876,13 @@ A is not a number
 call stack: .return .try_catch_recursive(body)
 after
 $e_after {
-  .try_catch_recursive .function_not_found .binary_not_found {
+  .try_catch_recursive .function_not_found .binary_not_found \
+                       .failed_substitution {
     ..return A}}
 ..return : binary not found in /bin:/usr/bin:.
 call stack: .which_path .autofunction .autofunction .try_catch_recursive(body)
+substitution (${.which_path $cmd $PATH}) failed
+call stack: .autofunction .try_catch_recursive(body)
 ..return : command not found ( ..return A .try_catch_recursive(body) )
 after
 $e_after {.try_catch_recursive .not_a_number {.return A}}
@@ -3856,6 +3892,8 @@ after
 $e_after {.try_catch_recursive .not_a_number {.cho A}}
 .cho : binary not found in /bin:/usr/bin:.
 call stack: .which_path .autofunction .autofunction .try_catch_recursive(body) .try_catch_recursive .scope se e_after
+substitution (${.which_path $cmd $PATH}) failed
+call stack: .autofunction .try_catch_recursive(body) .try_catch_recursive .scope se e_after
 .cho : command not found ( .cho A .try_catch_recursive(body) .try_catch_recursive .scope se e_after )
 $e_after {.try_catch_recursive .not_a_number .function_not_found {echo A}}
 A
@@ -3977,7 +4015,6 @@ $.stepwise wrapper 1 2 {
   echo not printed}
 current line: a 1 2 one
 current line: a 1 2 two
--1
 $.stepwise wrapper 1 2 {e $* $nl}
 a 1 2 one 
 a 1 2 two 
@@ -4323,7 +4360,7 @@ $.last_exception /bin/cat
 $.last_exception /bin/echo
 
 $.last_exception e
-.bad_argc 0 1 0 .echo e
+
 $.last_exception test_var_greater
 .false 0 -gt 0 .test_greater test_var_greater n 0
 $
@@ -4378,28 +4415,18 @@ $
 $# .which_path
 $echo ${.which_path cat}
 unacceptable argument count: received 1 non-optional, but needed 2 (with 0 optional) for .which_path echo
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path cat}
-Z was not declared
-call stack: .failed_substitution
-unacceptable arguments: for prototype -- text ...,
- needed (text),
-( call) stack: echo
+substitution (${.which_path cat}) failed
 $echo ${.which_path cat /bin {excess argfunc}}
 .which_path does not accept an argfunction with call stack: .which_path echo
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path cat /bin {excess argfunc}}
-Z was not declared
-call stack: .failed_substitution
-unacceptable arguments: for prototype -- text ...,
- needed (text),
-( call) stack: echo
-$.scope () {.which_path cat \ }
+substitution (${.which_path cat /bin {excess argfunc}}) failed
+$echo ${.which_path cat \ }
 cat : binary not found in ( )
-call stack: .which_path .scope
-$.scope () {.which_path does<not>exist /bin:/usr/bin}
+call stack: .which_path echo
+substitution (${.which_path cat ( )}) failed
+$echo ${.which_path does<not>exist /bin:/usr/bin}
 does<not>exist : binary not found in /bin:/usr/bin
-call stack: .which_path .scope
+call stack: .which_path echo
+substitution (${.which_path does<not>exist /bin:/usr/bin}) failed
 $echo ${.which_path cat :/bin:/usr/bin}
 /bin/cat
 $echo ${.which_path cat /usr/bin/:/bin/:}
@@ -4412,17 +4439,20 @@ $echo ${.which_path rwsh .:/usr/bin:/bin}
 ./rwsh
 $echo ${.which_path rwsh /usr/bin:/bin:.}
 /bin/rwsh
-$.scope () {.which_path ./rwsh /usr/bin:/bin}
+$echo ${.which_path ./rwsh /usr/bin:/bin}
 ./rwsh : binary not found in /usr/bin:/bin
-call stack: .which_path .scope
+call stack: .which_path echo
+substitution (${.which_path ./rwsh /usr/bin:/bin}) failed
 $echo ${.which_path ./rwsh /bin:.}
 ./rwsh
-$.scope () {.which_path ../bin/rwsh /usr/bin:/bin}
+$echo ${.which_path ../bin/rwsh /usr/bin:/bin}
 ../bin/rwsh : binary not found in /usr/bin:/bin
-call stack: .which_path .scope
-$.scope () {.which_path rwsh :/usr/bin::/usr/bin:}
+call stack: .which_path echo
+substitution (${.which_path ../bin/rwsh /usr/bin:/bin}) failed
+$echo ${.which_path rwsh :/usr/bin::/usr/bin:}
 rwsh : binary not found in :/usr/bin::/usr/bin:
-call stack: .which_path .scope
+call stack: .which_path echo
+substitution (${.which_path rwsh :/usr/bin::/usr/bin:}) failed
 $echo ${.which_path rwsh /usr/bin:.}
 ./rwsh
 $
@@ -4436,13 +4466,11 @@ printed
 $.scope 0 A {.while var_less A 4 {echo printed; .set A 4}}
 printed
 $.scope 4 A {.while var_less A 4 {echo skipped}}
--1
 $.while .return 0 {.throw echo exception within while}
 exception within while .throw .mapped_argfunction .while
 $.while silent_throw within condition {e body skipped}
 exception within condition .throw .collect_errors_only silent_throw .while
 $.while .throw .false because {echo body skipped}
--1
 $.scope 0 A {.while .throw .break {echo condition cannot break}}
 .break thrown outside of control flow body
 call stack: .throw .while .scope
@@ -4459,7 +4487,6 @@ in .while argfunction 1
 in .while argfunction 2 
 in .while argfunction 3 
 $.scope 0 A {.while var_in A 1 2 {echo A is $A; .var_add A 1}}
--1
 $.scope 0 A {do_while var_in A 1 2 {echo A is $A; .var_add A 1}}
 A is 0
 A is 1
@@ -4789,6 +4816,8 @@ $# .function_not_found
 $se {se {not_a_thing; e should not be printed}}
 not_a_thing : binary not found in /bin:/usr/bin:.
 call stack: .which_path .autofunction .autofunction .scope se .scope se
+substitution (${.which_path $cmd $PATH}) failed
+call stack: .autofunction .scope se .scope se
 not_a_thing : command not found ( not_a_thing .scope se .scope se )
 $.rm_executable .function_not_found
 $.whence_function .function_not_found
@@ -4798,25 +4827,25 @@ Exception for failed handler. Original exception with call stack:
 .function_not_found .function_not_found .function_not_found .whence_function
 .function_not_found : binary not found in /bin:/usr/bin:.
 call stack: .which_path .autofunction .autofunction
+substitution (${.which_path $cmd $PATH}) failed
+call stack: .autofunction
 $whence not_a_thing
 not_a_thing : command not found ( not_a_thing .whence_function .try_catch_recursive(body) )
--1
 $not_a_thing
 not_a_thing : binary not found in /bin:/usr/bin:.
 call stack: .which_path .autofunction .autofunction
+substitution (${.which_path $cmd $PATH}) failed
+call stack: .autofunction
 not_a_thing : command not found ( not_a_thing )
--1
 $.whence_function .function_not_found
 .function_all_flags .function_not_found cmd [args ...] {.echo $cmd (: command not found) \( $cmd $args$ \); .echo (
-)
-.return -1}
+)}
 $
 $# .help .internal_error
 $.help
 this is the default configuration for rwsh (or something copied from it), documentation should be available at rwsh.sf.net or rwsh.org
 $.internal_error techincally this is untestable
 internal error: techincally this is untestable
--1
 $
 $# .mapped_argfunction .unescaped_argfunction .argfunction
 $# .escaped_argfunction
@@ -4825,8 +4854,9 @@ a 1 2 3 a
 $.mapped_argfunction
 .mapped_argfunction : binary not found in /bin:/usr/bin:.
 call stack: .which_path .autofunction .autofunction
+substitution (${.which_path $cmd $PATH}) failed
+call stack: .autofunction
 .mapped_argfunction : command not found ( .mapped_argfunction )
--1
 $fn g {.whence_function .argfunction {.unescaped_argfunction}
      .whence_function .argfunction {.argfunction}
      .whence_function .argfunction {.escaped_argfunction}}
@@ -4837,113 +4867,10 @@ $g {}
 {}
 {.argfunction}
 $
-$# .excessive_nesting Base_executable::exception_handler
-$fn g {h}
-$fn h {g}
-$g
-function exceeded max nesting ( 20 ). call stack: (h g h g h g h g h g h g h g h g h g h g h g)
-$.stepwise g {e $* $nl; $*}
-h 
-function exceeded max nesting ( 20 ). call stack: (g h g h g h g h g h g h g h g h g h g h .mapped_argfunction .stepwise)
-$fn .excessive_nesting args ... {.nop $args; h}
-$g
-Exception for failed handler. Original exception with call stack:
-.excessive_nesting h g h g h g h g h g h g h g h g h g h g h g
-Exception for failed handler. Original exception with call stack:
-.excessive_nesting h g h g h g h g h g h g h g h g h g h g h .excessive_nesting
-$fn .excessive_nesting args ... {.nop $args; e &&{.return 1}}
-$fn .failed_substitution args ... {.nop $args; e $Z}
-$g
-Exception for failed handler. Original exception with call stack:
-.excessive_nesting h g h g h g h g h g h g h g h g h g h g h g
-Exception for failed handler. Original exception with call stack:
-.failed_substitution &{.return 1} .excessive_nesting
-Z was not declared
-call stack: .failed_substitution
-$.set_max_extra_exceptions 0
-$e_after {.try_catch_recursive .undeclared_variable .excessive_nesting .failed_substitution {g}}
-Exception for failed handler. Original exception with call stack:
-.excessive_nesting g h g h g h g h g h g h g h g h g .try_catch_recursive(body) .try_catch_recursive .scope se e_after
-Exception for failed handler. Original exception with call stack:
-.failed_substitution &{.return 1} .excessive_nesting
-Z was not declared
-call stack: .failed_substitution
-exceeded maximum number of exceptions ( 0 ) in try_catch.
-call stack: .try_catch_recursive .scope se e_after
-$.set_max_extra_exceptions 5
-$e_after {.try_catch_recursive .undeclared_variable .excessive_nesting .failed_substitution {g}}
-Z was not declared
-call stack: .failed_substitution
-Exception for failed handler. Original exception with call stack:
-.excessive_nesting g h g h g h g h g h g h g h g h g .try_catch_recursive(body) .try_catch_recursive .scope se e_after
-Exception for failed handler. Original exception with call stack:
-.failed_substitution &{.return 1} .excessive_nesting
-Z was not declared
-call stack: .failed_substitution
-Exception for failed handler. Original exception with call stack:
-.failed_substitution &{.return 1} .excessive_nesting .try_catch_recursive .scope se e_after
-$e_after {.try_catch_recursive .undeclared_variable .failed_substitution {
-  e ${.return 1}}}
-Z was not declared
-call stack: .failed_substitution
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.return 1} .try_catch_recursive(body) .try_catch_recursive .scope se e_after
-Z was not declared
-call stack: .failed_substitution
-$fn .else_without_if args ... {.nop $args; e ${.return 1}}
-$e_after {.try_catch_recursive .undeclared_variable .else_without_if {
-  .else {}}}
-Exception for failed handler. Original exception with call stack:
-.else_without_if .else .try_catch_recursive(body) .try_catch_recursive .scope se e_after
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.return 1} .else_without_if
-Z was not declared
-call stack: .failed_substitution
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.return 1} .else_without_if .try_catch_recursive .scope se e_after
-$fn .failed_substitution args ... {.nop $args; e ${.return 2}}
-$e_after {.try_catch_recursive .undeclared_variable .failed_substitution {
-  e ${.return 1}}}
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.return 1} .try_catch_recursive(body) .try_catch_recursive .scope se e_after
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.return 2} .failed_substitution
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.return 2} .failed_substitution .try_catch_recursive .scope se e_after
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.return 2} .failed_substitution .try_catch_recursive .scope se e_after
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.return 2} .failed_substitution .try_catch_recursive .scope se e_after
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.return 2} .failed_substitution .try_catch_recursive .scope se e_after
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.return 2} .failed_substitution .try_catch_recursive .scope se e_after
-exceeded maximum number of exceptions ( 5 ) in try_catch.
-call stack: .try_catch_recursive .scope se e_after
-$fn .else_without_if args ... {.nop $args; e $Z}
-$e_after {.try_catch_recursive .undeclared_variable .else_without_if {
-  .else {}}}
-Z was not declared
-call stack: .else_without_if
-Exception for failed handler. Original exception with call stack:
-.else_without_if .else .try_catch_recursive(body) .try_catch_recursive .scope se e_after
-Z was not declared
-call stack: .else_without_if
-$fn .failed_substitution args ... {.nop $args; .return Z}
-$e_after {.try_catch_recursive .not_a_number .failed_substitution {
-  e ${.return 1}}}
-Z is not a number
-call stack: .return .failed_substitution
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.return 1} .try_catch_recursive(body) .try_catch_recursive .scope se e_after
-Z is not a number
-call stack: .return .failed_substitution
-$
 $# .throw
 $.throw
 unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .throw
 $.throw .nop
--1
 $.throw .not_a_number 7
 7 is not a number
 call stack: .throw
@@ -4962,6 +4889,8 @@ exception_bomb .throw .throw
 exception_bomb : command not found ( exception_bomb .throw .throw )
 exception_bomb : binary not found in /bin:/usr/bin:.
 call stack: .which_path .autofunction .autofunction
+substitution (${.which_path $cmd $PATH}) failed
+call stack: .autofunction
 $se {.try_catch_recursive echo {
       echo first
       .throw echo failing successfully
@@ -5036,8 +4965,9 @@ $1 .rm_executable .run_logic
 $1 e executable not found
 1 : binary not found in /bin:/usr/bin:.
 call stack: .which_path .autofunction .autofunction
+substitution (${.which_path $cmd $PATH}) failed
+call stack: .autofunction
 1 : command not found ( 1 e executable not found )
--1
 $
 $# .vars
 $.vars
@@ -5111,6 +5041,7 @@ $.scope M val (N necessary) {printenv; .nop $necessary}
 added printenv to executable map in test suite
 .var_exists=must be requested to be checked
 ?=0
+??=.fork returned 255
 A=-7.29496e+09
 C=(external) () ( ) internal(parenthesis)
 FIGNORE=*de*
@@ -5154,6 +5085,7 @@ $echo $SHELL
 $printenv
 .var_exists=must be requested to be checked
 ?=0
+??=.fork returned 255
 A=-7.29496e+09
 C=(external) () ( ) internal(parenthesis)
 FIGNORE=
@@ -5169,18 +5101,10 @@ nl=
 original_message=Exception for failed handler. Original exception with call stack:
 
 this printenv function has been brought to you by .autofunction
-$.collect_errors_except .nop {${.throw echo exception from inside substitution}}
-exception from inside substitution .throw .mapped_argfunction .collect_errors_except
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.throw echo exception from inside substitution} .collect_errors_except
-Z is not a number
-call stack: .return .failed_substitution
-$.collect_errors_only .nop {${.throw echo exception from inside substitution}}
-exception from inside substitution .throw .mapped_argfunction .collect_errors_only
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.throw echo exception from inside substitution} .collect_errors_only
-Z is not a number
-call stack: .return .failed_substitution
+$
+$if_only_not test -z z {echo test throwing a .false exception}
+added /usr/bin/test to executable map in test suite
+test throwing a .false exception
 $
 $## unused variables
 $# bless_unused_variables
@@ -5410,6 +5334,108 @@ a2 was unused with call stack .scope
 -a was unused with call stack .scope
 -* was unused with call stack .scope
 $
+$# .excessive_nesting Base_executable::exception_handler
+$fn g {h}
+$fn h {g}
+$g
+function exceeded max nesting ( 20 ). call stack: (h g h g h g h g h g h g h g h g h g h g h g)
+$.stepwise g {e $* $nl; $*}
+h 
+function exceeded max nesting ( 20 ). call stack: (g h g h g h g h g h g h g h g h g h g h .mapped_argfunction .stepwise)
+$fn .excessive_nesting args ... {.nop $args; h}
+$g
+Exception for failed handler. Original exception with call stack:
+.excessive_nesting h g h g h g h g h g h g h g h g h g h g h g
+Exception for failed handler. Original exception with call stack:
+.excessive_nesting h g h g h g h g h g h g h g h g h g h g h .excessive_nesting
+$fn .excessive_nesting args ... {.nop $args; e &&{.throw .nop}}
+$fn .failed_substitution args ... {.nop $args; e $Z}
+$g
+Exception for failed handler. Original exception with call stack:
+.excessive_nesting h g h g h g h g h g h g h g h g h g h g h g
+Exception for failed handler. Original exception with call stack:
+.failed_substitution &{.throw .nop} .excessive_nesting
+Z was not declared
+call stack: .failed_substitution
+$.set_max_extra_exceptions 0
+$e_after {.try_catch_recursive .undeclared_variable .excessive_nesting .failed_substitution {g}}
+Exception for failed handler. Original exception with call stack:
+.excessive_nesting g h g h g h g h g h g h g h g h g .try_catch_recursive(body) .try_catch_recursive .scope se e_after
+Exception for failed handler. Original exception with call stack:
+.failed_substitution &{.throw .nop} .excessive_nesting
+Z was not declared
+call stack: .failed_substitution
+exceeded maximum number of exceptions ( 0 ) in try_catch.
+call stack: .try_catch_recursive .scope se e_after
+$.set_max_extra_exceptions 5
+$e_after {.try_catch_recursive .undeclared_variable .excessive_nesting .failed_substitution {g}}
+Z was not declared
+call stack: .failed_substitution
+Exception for failed handler. Original exception with call stack:
+.excessive_nesting g h g h g h g h g h g h g h g h g .try_catch_recursive(body) .try_catch_recursive .scope se e_after
+Exception for failed handler. Original exception with call stack:
+.failed_substitution &{.throw .nop} .excessive_nesting
+Z was not declared
+call stack: .failed_substitution
+Exception for failed handler. Original exception with call stack:
+.failed_substitution &{.throw .nop} .excessive_nesting .try_catch_recursive .scope se e_after
+$e_after {.try_catch_recursive .undeclared_variable .failed_substitution {
+  e ${.throw .nop}}}
+Z was not declared
+call stack: .failed_substitution
+Exception for failed handler. Original exception with call stack:
+.failed_substitution ${.throw .nop} .try_catch_recursive(body) .try_catch_recursive .scope se e_after
+Z was not declared
+call stack: .failed_substitution
+$fn .else_without_if args ... {.nop $args; e ${.throw .nop}}
+$e_after {.try_catch_recursive .undeclared_variable .else_without_if {
+  .else {}}}
+Exception for failed handler. Original exception with call stack:
+.else_without_if .else .try_catch_recursive(body) .try_catch_recursive .scope se e_after
+Exception for failed handler. Original exception with call stack:
+.failed_substitution ${.throw .nop} .else_without_if
+Z was not declared
+call stack: .failed_substitution
+Exception for failed handler. Original exception with call stack:
+.failed_substitution ${.throw .nop} .else_without_if .try_catch_recursive .scope se e_after
+$fn .failed_substitution args ... {.nop $args; e ${.throw echo foo}}
+$e_after {.try_catch_recursive .undeclared_variable .failed_substitution {
+  e ${.throw .nop}}}
+Exception for failed handler. Original exception with call stack:
+.failed_substitution ${.throw .nop} .try_catch_recursive(body) .try_catch_recursive .scope se e_after
+Exception for failed handler. Original exception with call stack:
+.failed_substitution ${.throw echo foo} .failed_substitution
+foo .throw .failed_substitution .failed_substitution .try_catch_recursive .scope se e_after
+Exception for failed handler. Original exception with call stack:
+.failed_substitution ${.throw echo foo} .failed_substitution .try_catch_recursive .scope se e_after
+foo .throw .failed_substitution .failed_substitution .try_catch_recursive .scope se e_after
+Exception for failed handler. Original exception with call stack:
+.failed_substitution ${.throw echo foo} .failed_substitution .try_catch_recursive .scope se e_after
+foo .throw .failed_substitution .failed_substitution .try_catch_recursive .scope se e_after
+Exception for failed handler. Original exception with call stack:
+.failed_substitution ${.throw echo foo} .failed_substitution .try_catch_recursive .scope se e_after
+exceeded maximum number of exceptions ( 5 ) in try_catch.
+call stack: .try_catch_recursive .scope se e_after
+foo .throw .failed_substitution .failed_substitution
+$fn .else_without_if args ... {.nop $args; e $Z}
+$e_after {.try_catch_recursive .undeclared_variable .else_without_if {
+  .else {}}}
+Z was not declared
+call stack: .else_without_if
+Exception for failed handler. Original exception with call stack:
+.else_without_if .else .try_catch_recursive(body) .try_catch_recursive .scope se e_after
+Z was not declared
+call stack: .else_without_if
+$fn .failed_substitution args ... {.nop $args; .return Z}
+$e_after {.try_catch_recursive .not_a_number .failed_substitution {
+  e ${.throw .nop}}}
+Z is not a number
+call stack: .return .failed_substitution
+Exception for failed handler. Original exception with call stack:
+.failed_substitution ${.throw .nop} .try_catch_recursive(body) .try_catch_recursive .scope se e_after
+Z is not a number
+call stack: .return .failed_substitution
+$
 $# exiting
 $# .shutdown .exit
 $.exit
@@ -5428,6 +5454,5 @@ $.collect_errors_except .nop {
   echo after having run .exit (will not print)}
 print expected after having collected exit exception
 .throw .collect_errors_only .try_catch_recursive(body)
--1
 
 now terminating normally

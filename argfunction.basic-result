@@ -24,12 +24,16 @@ call stack .source .try_catch_recursive(body)
 .function_all_flags .vars {.internal_vars}
 .source /etc/rwshrc-basic
 .function_all_flags # -- [ignored ...] {.nop $ignored$}
+.function_all_flags fn -- prototype ... {
+  .function_all_flags $prototype$ {.argfunction}}
 
 # set up environment
 .set_max_collectible_exceptions 10
 .set_max_extra_exceptions 5
 .global nl (
 )
+.if .var_exists ?? {}
+.else {.global ?? (); .nop $??}
 
 # internal functions
 .function_all_flags .ambiguous_prototype_dash_dash prototype stack ... {
@@ -109,7 +113,7 @@ call stack .source .try_catch_recursive(body)
   echo call stack $stack}
 .function_all_flags .failed_substitution substitution [stack ...] {
   echo substitution $substitution failed
-  echo call stack $stack$}
+  if_only .var_exists stack {echo call stack: $stack$}}
 .function_all_flags .false test [stack ...] {
   echo assertion $test failed
   echo call stack $stack$}
@@ -144,8 +148,10 @@ call stack .source .try_catch_recursive(body)
   echo value $value is out of usable numeric range
   echo call stack $stack$}
 .function_all_flags .internal_error -- [args ...] {
-  echo internal error: $args$
-  .return -1}
+  echo internal error: $args$}
+.function_all_flags .interrupted_sleep [stack ...] {
+  echo sleep was interrupted
+  echo call stack $stack$}
 .function_all_flags .invalid_word_selection selection [stack ...] {
   echo $selection is not a valid word selection
   echo call stack $stack$}
@@ -157,8 +163,7 @@ call stack .source .try_catch_recursive(body)
 .function .mismatched_parenthesis {
   .echo signal triggered: $0 \( $* \); .combine $nl
   echo mismatched parenthesis: $1
-  echo call stack: $*2
-  .return -1}
+  echo call stack: $*2}
 .function_all_flags .missing_argfunction cmd [add_stack ...] {
   echo $cmd requires an argfunction
   if_only .var_exists add_stack {echo stack $add_stack$}}
@@ -192,38 +197,42 @@ call stack .source .try_catch_recursive(body)
   echo result of $op with arguments $lhs and $rhs is out of range
   echo call stack: $op $stack$}
 .function_all_flags .return_code code cmd [add_stack ...] {
-  echo $cmd returned $code : call stack $cmd $add_stack$}
+  .if .test_in $cmd /usr/bin/test /bin/false {
+    .replace_exception .false $cmd
+    .nop $code $add_stack$}
+  .else {
+    .set ?? $cmd returned $code
+    echo $??$ : call stack $cmd $add_stack$}}
 .function_all_flags .selection_not_found not_found selection [stack ...] {
   .echo no file matching pattern $not_found
   if_only .test_string_unequal $not_found $selection {
     .echo () for selection $selection}
   .echo $nl
-  if_only .var_exists stack {echo call stack: $stack$}
-  .return -1}
+  if_only .var_exists stack {echo call stack: $stack$}}
 .function_all_flags .sigcont {
-  echo received SIGCONT; .return -1}
+  echo received SIGCONT}
 .function_all_flags .sigchld {
-  echo received SIGCHLD; .return -1}
+  echo received SIGCHLD}
 .function_all_flags .sighup {
-  echo received SIGHUP; .return -1}
+  echo received SIGHUP}
 .function_all_flags .sigint {
   .throw echo $nl received SIGINT}
 .function_all_flags .sigquit {
-  echo received SIGQUIT; .return -1}
+  echo received SIGQUIT}
 .function_all_flags .sigpipe {
-  echo received SIGPIPE; .return -1}
+  echo received SIGPIPE}
 .function_all_flags .sigterm {
   .throw echo $nl received SIGTERM}
 .function_all_flags .sigtstp {
-  echo received SIGTSTP; .return -1}
+  echo received SIGTSTP}
 .function_all_flags .siginfo {
-  echo received SIGINFO; .return -1}
+  echo received SIGINFO}
 .function_all_flags .sigusr1 {
-  echo received SIGUSR1; .return -1}
+  echo received SIGUSR1}
 .function_all_flags .sigusr2 {
-  echo received SIGUSR2; .return -1}
+  echo received SIGUSR2}
 .function_all_flags .sigunknown {
-  echo received unknown unix signal; .return -1}
+  echo received unknown unix signal}
 .function_all_flags .shutdown -- args ... {
   .nop $args
   .combine $nl (now terminating normally) $nl}
@@ -243,8 +252,7 @@ call stack .source .try_catch_recursive(body)
   if_only .var_exists stack {echo call stack: $stack$}}
 .function_all_flags .unreadable_dir dir errno [stack ...] {
   .combine (cannot read directory ) $dir \ \(errno\  $errno \) $nl
-  echo call stack: $stack$
-  .return -1}
+  echo call stack: $stack$}
 .function_all_flags .unrecognized_flag -- flag cmd [add_stack ...] {
   echo $flag flag is unrecognized for $cmd
   echo call stack: $cmd $add_stack$}
@@ -278,10 +286,7 @@ call stack .source .try_catch_recursive(body)
 .function_all_flags exec -- argv ... {.exec $argv$}
 .function_all_flags elif command ... {.else_if $command$ {.argfunction}}
 .function_all_flags else {.else {.argfunction}}
-.function_all_flags fn -- prototype ... {
-  .function_all_flags $prototype$ {.argfunction}}
-.function_all_flags fni -- name args ... {
-  .function_all_flags $name -- $args$ {.argfunction}}
+fn false {.try_catch_recursive .return_code {${whichp false}}}
 .function_all_flags fns -- name args ... {
   .function_all_flags $name [-*] $args$ {.argfunction}}
 .function_all_flags if_only -- args ... {
@@ -310,6 +315,8 @@ fn ntimes n {
   .if .var_exists $var {.set $var $value}
   .else {.global $var $value}}
 fn single -- args ... {.scope ${$args$}$ result {echo $result}}
+fn test -- args ... {
+  .try_catch_recursive .return_code {${whichp test} $args$}}
 fn test_var_not_equal var value {.test_string_unequal $$var $value}
 fn test_var_greater -- var value {.test_greater $$var $value}
 fn type [-t] args ... {

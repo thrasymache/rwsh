@@ -1,0 +1,3 @@
+echo before error
+echo the error ${.throw echo nonexistent} was there
+echo after error

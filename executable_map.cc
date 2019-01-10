@@ -71,17 +71,15 @@ int Executable_map::base_run(Argm& argm, Error_list& exceptions) {
   if (gc_state.in_if_block && !gc_state.exception_thrown) {
     gc_state.in_if_block = false;
     exceptions.add_error(Exception(Argm::Unfinished_if_block));}
-  if (global_stack.unwind_stack()) {
+  if (global_stack.unwind_stack())
     global_stack.exception_handler(exceptions);
-    return -1;}
-  else return ret;}
+  return ret;}
 
 int Executable_map::run_handling_exceptions(Argm& argm, Error_list& exceptions){
   int ret = run(argm, exceptions);
-  if (global_stack.unwind_stack()) {
+  if (global_stack.unwind_stack())
     global_stack.exception_handler(exceptions);
-    return -1;}
-  else return ret;}
+  return ret;}
 
 void Executable_map::unused_var_check_at_exit(void) {
   Error_list exceptions;
@@ -107,7 +105,7 @@ int Executable_map::run(Argm& argm, Error_list& exceptions) {
       else not_found(argm, exceptions);}}
   catch (Exception error) {
     exceptions.add_error(error);
-    return -1;}}
+    return 0;}}
 
 bool Executable_map::run_condition(Argm& argm, Error_list& exceptions) {
   run(argm, exceptions);
@@ -121,6 +119,6 @@ int Executable_map::not_found(Argm& argm_i, Error_list& exceptions) {
     set(new Function(Argm::exception_names[Argm::Function_not_found],
                      prototype_argm.begin(), prototype_argm.end(), false,
                      "{.echo $cmd (: command not found) \\( $cmd $args$ \\);"
-                     " .echo (\n)\n.return -1}", exceptions));}
+                     " .echo (\n)}", exceptions));}
   throw Exception(Argm::Function_not_found, argm_i);}
 

@@ -39,7 +39,6 @@ class Arg_script {
              std::back_insert_iterator<std::vector<Arg_script> > res,
              Error_list& current_exceptions) const;
   std::string str(void) const;
-  Argm base_interpret(const Argm& src, Error_list& errors) const;
   Argm interpret(const Argm& src, Error_list& exceptions) const;
   void promote_soons(unsigned);
   bool is_argfunction(void) const {return argfunction_level == 1;}; };
