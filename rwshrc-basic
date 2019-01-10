@@ -7,8 +7,8 @@
 .set_max_extra_exceptions 5
 .global nl (
 )
-.if .var_exists ?? {}
-.else {.global ?? (); .nop $??}
+.if .var_exists ? {}
+.else {.global ? (); .nop $?}
 
 # internal functions
 .function_all_flags .ambiguous_prototype_dash_dash prototype stack ... {
@@ -176,8 +176,8 @@
     .replace_exception .false $cmd
     .nop $code $add_stack$}
   .else {
-    .set ?? $cmd returned $code
-    echo $??$ : call stack $cmd $add_stack$}}
+    .set ? $cmd returned $code
+    echo $?$ : call stack $cmd $add_stack$}}
 .function_all_flags .selection_not_found not_found selection [stack ...] {
   .echo no file matching pattern $not_found
   if_only .test_string_unequal $not_found $selection {
@@ -246,7 +246,7 @@
 # ability of functions to act as builtin wrappers
 .function_all_flags ! args ... {
   .if $args$ {.throw .false ${.echo ! $args}}
-  .else {.return 0}}
+  .else {.nop}}
 .function_all_flags af -- [argv ...] {.argfunction}
 .function_all_flags c -- text ... {.combine $text$}
 .function_all_flags e -- text ... {.echo $text}

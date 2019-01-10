@@ -1,5 +1,4 @@
 .echo $nl $nl $nl $nl
-.return 0
 .function_all_flags # [args ...] {.nop $args$}
 .function_all_flags fw {
   .function_all_flags f1 name {.argfunction}
@@ -63,7 +62,6 @@ fw {.mapped_argfunction $name {.for a b {
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}}
 fw {.mapped_argfunction {.function_all_flags $name {.argfunction}}}
-.return 0
 .nop $A $FIGNORE
 .function_all_flags .shutdown -- args ... {
   .nop $args

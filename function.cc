@@ -44,26 +44,23 @@ Command_block* Command_block::apply(const Argm& argm, unsigned nesting,
     result->trailing = trailing;
     return result;}}
 
-int Command_block::execute(const Argm& src_argm,
+void Command_block::execute(const Argm& src_argm,
                            Error_list& exceptions) const {
-  int ret;
   for (auto j: *this) {
     Argm statement_argm = j.interpret(src_argm, exceptions);
     if (global_stack.unwind_stack()) break;
-    ret = executable_map.run(statement_argm, exceptions);
-    if (global_stack.unwind_stack()) break;}
-  return ret;}
+    executable_map.run(statement_argm, exceptions);
+    if (global_stack.unwind_stack()) break;}}
 
-int Command_block::prototype_execute(const Argm& argm,
+void Command_block::prototype_execute(const Argm& argm,
                                      const Prototype& prototype,
                                      Error_list& exceptions) const {
   Variable_map locals(prototype.arg_to_param(argm));
   Argm params(argm.argv(), argm.argfunction(), &locals,
               argm.input, argm.output, argm.error);
   try {
-    int ret = execute(params, exceptions);
-    prototype.unused_var_check(&locals, exceptions);
-    return ret;}
+    execute(params, exceptions);
+    prototype.unused_var_check(&locals, exceptions);}
   catch (Exception error) {
     prototype.unused_var_check(&locals, exceptions);
     throw error;}}
@@ -124,8 +121,8 @@ Function::Function(const std::string& name_i,
   }
 
 // run the given function
-int Function::execute(const Argm& argm, Error_list& exceptions) const {
-  return body.prototype_execute(argm, prototype, exceptions);}
+void Function::execute(const Argm& argm, Error_list& exceptions) const {
+  body.prototype_execute(argm, prototype, exceptions);}
 
 void Function::promote_soons(unsigned nesting) {
   if (this) body.promote_soons(nesting);}

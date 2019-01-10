@@ -256,7 +256,6 @@ whence .argfunction {e ${e $A}}
 sa &{.echo $A} {echo $args &1$}
 sa &{.throw .nop} {}
 sa ${.throw .nop} {}
-sa ${.return 1} {}
 se {e &{.throw .nop}}
 se {e &&{.throw .nop}; e after}
 se {e &&{.throw .nop}; e after}
@@ -274,9 +273,8 @@ e x&&&{e x}
 e $+{e x}
 e &+{e x}
 e &&${e x}
-.return &{.return 0}
-.return ${e 0 $nl}
-.return &{.echo 0}
+echo ${e 0 $nl}
+echo &{.echo 0}
 .echo nevermore &{/bin/echo quoth the raven} 
 sa ${e $B}$@1 ${e $B}$1 ${e $B}XYZ {echo $# $args$}
 sa ${e $B} {e $# $args$ $nl}
@@ -890,19 +888,18 @@ se {.fork se {
       /bin/kill -HUP ${.getpid}
       echo after the signal in subshell}
     echo after the signal in parent}
-.while .return 0 {
+.while .nop {
   echo before signals
   /bin/kill -PIPE ${.getpid}
   echo after sigpipe
   /bin/kill ${.getpid}
   echo should not continue beyond SIGTERM}
-.while .return 0 {
+.while .nop {
   echo before signals
   /bin/kill -USR1 ${.getpid}
   echo after sigusr1
   /bin/kill -INT ${.getpid}
   echo should not continue beyond SIGINT}
-.return 0
 
 # .global .local .unset .var_exists 
 .global
@@ -914,7 +911,7 @@ se {.fork se {
 .unset
 .unset x {excess argfunc}
 .unset x y
-.unset ?
+.unset FIGNORE
 .var_exists
 .var_exists x {excess argfunc}
 .global 100 nihilism
@@ -973,7 +970,6 @@ echo $x
 .var_exists y
 .unset x
 .var_exists x
-.return 0
 
 # .store_output
 .store_output x
@@ -994,7 +990,7 @@ e $x
     .throw .false first
     .throw echo exception $text$
     .throw .false second
-    .return 0}}
+    .nop}}
 .function_all_flags caught_silent_throw [text ...] {
   .try_catch_recursive echo {silent_throw $text$}}
 silent_throw on its own
@@ -1031,7 +1027,7 @@ fn conditional_echo first second {
 # ! negation: if_core workout
 .function_all_flags !x args ... {
   .if .throw .false anyway {}
-  .else_if_not $args$ {.return 0}
+  .else_if_not $args$ {.nop}
   .else {.throw .false ${.echo ! $args}}}
 .test_string_equal 42 420e-1
 .test_number_equal 42 420e-1
@@ -1221,14 +1217,14 @@ se {
   .else {echo second else for if}}
 se {
   .if .test_is_number 0 {echo if true}
-  .else {echo else true; .return 3}}
+  .else {echo else 0 not a number}}
 se {
   .if .test_is_number false {echo if false}
-  .else {echo else false; .return 5}}
+  .else {echo else false is not a number}}
 .else {}
 .else_if .test_is_number 0 {echo not this one}
+.else {}
 .else_if_not .test_is_number false {echo nor this}
-.return 0
 
 # .internal_features .internal_functions .internal_vars
 .internal_features 1
@@ -1275,20 +1271,6 @@ se {.is_default_error}
 .replace_exception echo not in exception handler
 .try_catch_recursive .replace_exception {
   .throw .replace_exception echo now in exception handler}
-.return 0
-
-# .return
-.return
-.return 1 1
-.return 0 {excess argfunc}
-.return 0
-.return 1
-.return \
-.return O
-.return 1E2
-.return 2147483647
-.return 2147483649
-.return -2147483649
 
 # .scope
 .scope {e $foo}
@@ -1368,7 +1350,6 @@ a -to -- -first
 pts -to -- -first
 a -to -first
 pts -to -first
-.return 0
 
 # .selection_set
 .selection_set A
@@ -1412,15 +1393,15 @@ echo $A
 
 # .try_catch_recursive .get_max_extra_exceptions .set_max_extra_exceptions
 .try_catch_recursive .function_not_found 
-.try_catch_recursive {.return A}
+.try_catch_recursive {.test_less 0 A}
 fn e_after {se {.argfunction}; echo after}
 e_after {.try_catch_recursive .not_a_number .function_not_found {
-  .return A}}
+  .test_less 0 A}}
 e_after {
   .try_catch_recursive .function_not_found .binary_not_found \
                        .failed_substitution {
-    ..return A}}
-e_after {.try_catch_recursive .not_a_number {.return A}}
+    ..test_less 0 A}}
+e_after {.try_catch_recursive .not_a_number {.test_less 0 A}}
 e_after {.try_catch_recursive .not_a_number {.cho A}}
 e_after {.try_catch_recursive .not_a_number .function_not_found {echo A}}
 e_after {sa echo hi {.try_catch_recursive ${.internal_functions}$ {&&&args$}}}
@@ -1433,8 +1414,10 @@ e_after {sa echo hi {.try_catch_recursive ${.internal_functions}$ {&&&args$}}}
 .scope () {.get_max_extra_exceptions; .echo $nl}
 .set_max_extra_exceptions 0
 .scope () {.get_max_extra_exceptions; .echo $nl}
-e_after {.try_catch_recursive .not_a_number {.try_catch_recursive .not_a_number {.return A}}}
-e_after {.try_catch_recursive .not_a_number {.try_catch_recursive .not_a_number {.return A}}}
+e_after {.try_catch_recursive .not_a_number {
+  .try_catch_recursive .not_a_number {.test_less 0 A}}}
+e_after {.try_catch_recursive .not_a_number {
+  .try_catch_recursive .not_a_number {.test_less 0 A}}}
 e_after {sa echo hi {.try_catch_recursive ${.internal_functions}$ {&&&args$}}}
 .set_max_extra_exceptions 5
 .scope () {.get_max_extra_exceptions; .echo $nl}
@@ -1541,7 +1524,6 @@ wrapper 1 2
 .enable_readline {excess}
 .disable_readline excess
 .disable_readline {excess}
-.return 0
 .nop .enable_readline
 .nop .disable_readline
 .nop .toggle_readline
@@ -1691,7 +1673,7 @@ echo ${.which_path rwsh /usr/bin:.}
 .scope 0 A {.while var_less A 4 {echo printed; .throw .break; echo skipped}}
 .scope 0 A {.while var_less A 4 {echo printed; .set A 4}}
 .scope 4 A {.while var_less A 4 {echo skipped}}
-.while .return 0 {.throw echo exception within while}
+.while .nop {.throw echo exception within while}
 .while silent_throw within condition {e body skipped}
 .while .throw .false because {echo body skipped}
 .scope 0 A {.while .throw .break {echo condition cannot break}}
@@ -1840,8 +1822,8 @@ echo ${.version}
 
 # internal functions 
 # .after_command .raw_command .prompt
-# all of these are used as part of the test itself. If this changes, then the 
-# following tests will fail.
+# all of these are used as part of the test itself, though no longer in a
+# significant way.
 whence .after_command
 whence .prompt
 whence .raw_command
@@ -2049,7 +2031,7 @@ e_after {.try_catch_recursive .undeclared_variable .failed_substitution {
 fn .else_without_if args ... {.nop $args; e $Z}
 e_after {.try_catch_recursive .undeclared_variable .else_without_if {
   .else {}}}
-fn .failed_substitution args ... {.nop $args; .return Z}
+fn .failed_substitution args ... {.nop $args; .test_less 0 Z}
 e_after {.try_catch_recursive .not_a_number .failed_substitution {
   e ${.throw .nop}}}
 

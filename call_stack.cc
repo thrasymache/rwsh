@@ -63,32 +63,30 @@ void Call_stack::catch_one(Argm& argm, Error_list& exceptions) {
   in_exception_handler_v = false;
   unwind_stack_v = true;}
 
-int Call_stack::collect_errors_core(const Argm& argm, bool logic,
+void Call_stack::collect_errors_core(const Argm& argm, bool logic,
                                     Error_list& parent) {
   Argm blank(argm.parent_map(), argm.input, argm.output.child_stream(),
              argm.error);
   blank.push_back(".mapped_argfunction");
   std::vector<std::string> other(argm.begin()+1, argm.end());
-  int ret;
   for (auto j: *argm.argfunction()) {
     if (current_exception_count > max_collect) {
       if (!collect_excess_thrown)
         parent.add_error(Exception(Argm::Excessive_exceptions_collected,
                                    max_collect));
       unwind_stack_v = collect_excess_thrown = true;
-      return ret;}
+      return;}
     Error_list children;
     Argm statement_argm = j.interpret(blank, children);
     if (!global_stack.unwind_stack())
-      ret = executable_map.run(statement_argm, children);
+      executable_map.run(statement_argm, children);
     if (children.size()) {
       unwind_stack_v = false;
       for (auto k: children) {
         parent.push_back(k);
         if (logic == (find(other.begin(), other.end(), k[0]) != other.end()))
           unwind_stack_v = true;}}} // will cause subsequent j to not run
-  if (parent.size()) unwind_stack_v = true;
-  return ret;}
+  if (parent.size()) unwind_stack_v = true;}
 
 /* code to call exception handlers, separated out of operator() for clarity.
    The requirements for stack unwinding to work properly are as

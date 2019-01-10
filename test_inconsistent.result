@@ -1,25 +1,13 @@
 init file /non-existent/file/to/test/failure does not exist
 call stack .source .try_catch_recursive(body)
-.global last_command_return -10
 .global A \
 
 .nop .function_all_flags .run_logic -- cmd [args ...] {
-  .return $last_command_return
   .signal_handler &{.internal_functions}$ {&&* {.argfunction}}
   .mapped_argfunction {&&* {.argfunction}}
-  &&* {.argfunction}
-  .set last_command_return $?
-  .echo $nl
-  .echo $last_command_return
-  .echo $nl}
-.function_all_flags .before_command -- args ... {
-  .nop $args
-  .return $last_command_return}
-.function_all_flags .after_command -- args ... {
-  .nop $args
-  .set last_command_return $?
-  if_only .test_string_unequal $last_command_return 0 {
-    .combine $last_command_return $nl}}
+  &&* {.argfunction}}
+.function_all_flags .before_command -- args ... {.nop $args}
+.function_all_flags .after_command -- args ... {.nop $args}
 .function_all_flags .prompt {.echo \$}
 .function_all_flags .vars {.internal_vars}
 .source /etc/rwshrc-basic
@@ -32,8 +20,8 @@ call stack .source .try_catch_recursive(body)
 .set_max_extra_exceptions 5
 .global nl (
 )
-.if .var_exists ?? {}
-.else {.global ?? (); .nop $??}
+.if .var_exists ? {}
+.else {.global ? (); .nop $?}
 
 # internal functions
 .function_all_flags .ambiguous_prototype_dash_dash prototype stack ... {
@@ -201,8 +189,8 @@ call stack .source .try_catch_recursive(body)
     .replace_exception .false $cmd
     .nop $code $add_stack$}
   .else {
-    .set ?? $cmd returned $code
-    echo $??$ : call stack $cmd $add_stack$}}
+    .set ? $cmd returned $code
+    echo $?$ : call stack $cmd $add_stack$}}
 .function_all_flags .selection_not_found not_found selection [stack ...] {
   .echo no file matching pattern $not_found
   if_only .test_string_unequal $not_found $selection {
@@ -271,7 +259,7 @@ call stack .source .try_catch_recursive(body)
 # ability of functions to act as builtin wrappers
 .function_all_flags ! args ... {
   .if $args$ {.throw .false ${.echo ! $args}}
-  .else {.return 0}}
+  .else {.nop}}
 .function_all_flags af -- [argv ...] {.argfunction}
 .function_all_flags c -- text ... {.combine $text$}
 .function_all_flags e -- text ... {.echo $text}
@@ -388,8 +376,8 @@ $.source /etc/rwshrc-basic
 .set_max_extra_exceptions 5
 .global nl (
 )
-.if .var_exists ?? {}
-.else {.global ?? (); .nop $??}
+.if .var_exists ? {}
+.else {.global ? (); .nop $?}
 
 # internal functions
 .function_all_flags .ambiguous_prototype_dash_dash prototype stack ... {
@@ -557,8 +545,8 @@ $.source /etc/rwshrc-basic
     .replace_exception .false $cmd
     .nop $code $add_stack$}
   .else {
-    .set ?? $cmd returned $code
-    echo $??$ : call stack $cmd $add_stack$}}
+    .set ? $cmd returned $code
+    echo $?$ : call stack $cmd $add_stack$}}
 .function_all_flags .selection_not_found not_found selection [stack ...] {
   .echo no file matching pattern $not_found
   if_only .test_string_unequal $not_found $selection {
@@ -627,7 +615,7 @@ $.source /etc/rwshrc-basic
 # ability of functions to act as builtin wrappers
 .function_all_flags ! args ... {
   .if $args$ {.throw .false ${.echo ! $args}}
-  .else {.return 0}}
+  .else {.nop}}
 .function_all_flags af -- [argv ...] {.argfunction}
 .function_all_flags c -- text ... {.combine $text$}
 .function_all_flags e -- text ... {.echo $text}
@@ -716,9 +704,9 @@ polish + .var_add
 polish / .var_divide
 $.global PATH /bin:/usr/bin
 $.scope () {.getpid; .echo $nl}
-17282
+29100
 $.scope () {.getppid; .echo $nl}
-14739
+22179
 $.function_all_flags timings focus {
   .combine $focus (:	last\() ${.last_execution_time $focus} \) \	
   .combine (total\() ${.total_execution_time $focus} \) \	
@@ -734,18 +722,18 @@ $.function_all_flags clock-watch {
 $clock-watch
 timings:	last(0.000000)	total(0.000000)	count(0)
 clock-watch:	last(0.000000)	total(0.000000)	count(0)
-usleep overhead:	9.1e-05
-.usleep:	last(0.000691)	total(0.000691)	count(1)
-/bin/true:	last(0.001497)	total(0.001497)	count(1)
+usleep overhead:	8.6e-05
+.usleep:	last(0.000686)	total(0.000686)	count(1)
+/bin/true:	last(0.001184)	total(0.001184)	count(1)
 $clock-watch
-timings:	last(0.000108)	total(0.000719)	count(4)
-clock-watch:	last(0.003553)	total(0.003553)	count(1)
-usleep overhead:	9.05e-05
-.usleep:	last(0.000690)	total(0.001381)	count(2)
-/bin/true:	last(0.000859)	total(0.002356)	count(2)
+timings:	last(0.000106)	total(0.000964)	count(4)
+clock-watch:	last(0.003510)	total(0.003510)	count(1)
+usleep overhead:	8.45e-05
+.usleep:	last(0.000683)	total(0.001369)	count(2)
+/bin/true:	last(0.000867)	total(0.002051)	count(2)
 $.mapped_argfunction {timings timings; timings clock-watch}
-timings:	last(0.000110)	total(0.001226)	count(8)
-clock-watch:	last(0.002164)	total(0.005717)	count(2)
+timings:	last(0.000107)	total(0.001461)	count(8)
+clock-watch:	last(0.002152)	total(0.005662)	count(2)
 $.error a stderr print will come before the diff $nl
 $.nop $A $FIGNORE
 $

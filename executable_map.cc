@@ -66,20 +66,19 @@ bool Executable_map::run_if_exists(const std::string& key, Argm& argm_i) {
   else {
     return false;}}
 
-int Executable_map::base_run(Argm& argm, Error_list& exceptions) {
-  int ret = run(argm, exceptions);
+void Executable_map::base_run(Argm& argm, Error_list& exceptions) {
+  run(argm, exceptions);
   if (gc_state.in_if_block && !gc_state.exception_thrown) {
     gc_state.in_if_block = false;
     exceptions.add_error(Exception(Argm::Unfinished_if_block));}
   if (global_stack.unwind_stack())
-    global_stack.exception_handler(exceptions);
-  return ret;}
+    global_stack.exception_handler(exceptions);}
 
-int Executable_map::run_handling_exceptions(Argm& argm, Error_list& exceptions){
-  int ret = run(argm, exceptions);
+void Executable_map::run_handling_exceptions(Argm& argm,
+                                             Error_list& exceptions) {
+  run(argm, exceptions);
   if (global_stack.unwind_stack())
-    global_stack.exception_handler(exceptions);
-  return ret;}
+    global_stack.exception_handler(exceptions);}
 
 void Executable_map::unused_var_check_at_exit(void) {
   Error_list exceptions;
@@ -87,10 +86,10 @@ void Executable_map::unused_var_check_at_exit(void) {
   shell_invocation.unused_var_check(Variable_map::global_map, exceptions);
   if (exceptions.size()) global_stack.exception_handler(exceptions);}
 
-int Executable_map::run(Argm& argm, Error_list& exceptions) {
+void Executable_map::run(Argm& argm, Error_list& exceptions) {
   try {
     Base_executable* i = find_second(argm);             // first check for key
-    if (i) return (*i)(argm, exceptions);
+    if (i) (*i)(argm, exceptions);
     else if (in_autofunction)                           // nested autofunction
       not_found(argm, exceptions);
     else {
@@ -101,20 +100,20 @@ int Executable_map::run(Argm& argm, Error_list& exceptions) {
       run(auto_argm, exceptions);
       in_autofunction = false;
       i = find_second(argm);                            // second check for key
-      if (i) return (*i)(argm, exceptions);
+      if (i) (*i)(argm, exceptions);
       else not_found(argm, exceptions);}}
   catch (Exception error) {
-    exceptions.add_error(error);
-    return 0;}}
+    exceptions.add_error(error);}}
 
 bool Executable_map::run_condition(Argm& argm, Error_list& exceptions) {
   run(argm, exceptions);
   return !global_stack.remove_exceptions(".false", exceptions) &&
          !exceptions.size();}  // optional
 
-int Executable_map::not_found(Argm& argm_i, Error_list& exceptions) {
+void Executable_map::not_found(Argm& argm_i, Error_list& exceptions) {
   if (Base::find(Argm::exception_names[Argm::Function_not_found]) == end()) {
-    Argm prototype_argm(argm_i.parent_map(), argm_i.input, argm_i.output, argm_i.error);
+    Argm prototype_argm(argm_i.parent_map(), argm_i.input, argm_i.output,
+                        argm_i.error);
     tokenize_words("cmd [args ...]", std::back_inserter(prototype_argm));
     set(new Function(Argm::exception_names[Argm::Function_not_found],
                      prototype_argm.begin(), prototype_argm.end(), false,

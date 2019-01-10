@@ -18,7 +18,6 @@ public:
   typedef Base::iterator iterator;
   typedef Base::const_iterator const_iterator;
   static Variable_map *global_map;
-  static int dollar_question;
   bool locals_listed;
   bool usage_checked;
 

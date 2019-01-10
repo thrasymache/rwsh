@@ -32,7 +32,6 @@ std::string word_from_value(const std::string& value) {
 Variable_map::Variable_map(Variable_map* parent_i) :
     parent(parent_i), locals_listed(false), usage_checked(false) {
   if (parent_i == nullptr) {
-    param("?", "");               // ? does not need to be used (in subshells)
     local("FIGNORE", "");}}
 
 void Variable_map::bless_unused_vars() {
@@ -73,10 +72,6 @@ bool Variable_map::exists(const std::string& key, bool check) {
   else return false;}
 
 const std::string& Variable_map::get(const std::string& key) {
-  if (key == "?") {
-    std::ostringstream tmp;
-    tmp <<dollar_question;
-    (*this)["?"] = tmp.str();}
   auto i = find(key);
   if (i != end()) {
     used_vars.insert(key);
@@ -122,7 +117,7 @@ void Variable_map::set(const std::string& key, const std::string& value) {
   else throw Exception(Argm::Undeclared_variable, key);}
 
 void Variable_map::unset(const std::string& key) {
-  if (key == "FIGNORE" || key == "?")
+  if (key == "FIGNORE")
     throw Exception(Argm::Illegal_variable_name, key);
   auto i = find(key);
   if (i != end()) erase(i);

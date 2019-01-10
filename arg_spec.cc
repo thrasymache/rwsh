@@ -205,11 +205,9 @@ Out Arg_spec::evaluate_substitution(const Argm& src, Out res,
   Substitution_stream override_stream;
   Argm temp_argm(src);
   temp_argm.output = override_stream.child_stream();
-  int ret = (*substitution)(temp_argm, exceptions);
+  (*substitution)(temp_argm, exceptions);
   if (global_stack.unwind_stack())
       exceptions.add_error(Exception(Argm::Failed_substitution, str()));
-  else if (ret) exceptions.add_error(Exception(Argm::Internal_error,
-                              "return-based failed substitution: " + str()));
   else return evaluate_expansion(override_stream.value(), res);
   return res;}
 

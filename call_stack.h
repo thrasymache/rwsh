@@ -24,7 +24,7 @@ class Call_stack {
   void add_error(void);
   void catch_blocks(const Argm& argm, Error_list& exceptions);
   void catch_one(Argm& argm, Error_list& exceptions);
-  int collect_errors_core(const Argm& argm, bool logic, Error_list& parent);
+  void collect_errors_core(const Argm& argm, bool logic, Error_list& parent);
   void exception_handler(Error_list& exceptions);
   int exit_value(void) {return exit_v;}
   bool in_exception_handler(void) {return in_exception_handler_v;}

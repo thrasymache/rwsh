@@ -156,9 +156,7 @@ fn unselect {.set s ()}
 # internal functions
 .function_all_flags .run_logic -- cmd [args ...] {
    .try_catch_recursive &{.internal_functions}$ {$cmd $args$ {.argfunction}}
-  # $* {.argfunction}
-  .local ret $?
-  if_only_not .test_number_equal $ret 0 {echo $cmd returned $ret}}
+  # $* {.argfunction}}
 .function_all_flags .prompt {.echo $s; .echo \$}
 .function_all_flags .vars {
   .internal_vars

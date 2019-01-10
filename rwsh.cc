@@ -118,7 +118,6 @@ std::string Argm::exception_names[Argm::Exception_count] = {
   ".variable_already_exists",
   ".version_incompatible"};
 bool readline_enabled = false;
-int Variable_map::dollar_question = -1;
 
 // static initializers without dependancies
 Call_stack global_stack;

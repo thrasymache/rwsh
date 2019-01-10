@@ -11,10 +11,6 @@ arguments more often than with them).
 
 Several changes are coming shortly, which may easily break scripts designed for
 this version of the shell, including the following.
-     *  Functions will not return integers - they will either successfully
-        complete their execution or they will throw an exception. .while will
-        respond to .break and .continue exceptions which will not propagate to
-        past a while statement.
      *  .while will respond to the .retest_condition exception by testing the
         condition, and ending the loop if it fails, but (unlike .continue)
         continuing with the following statement if it succeeds.

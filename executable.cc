@@ -22,26 +22,22 @@
 #include "executable_map.h"
 #include "plumber.h"
 
-int Base_executable::operator() (const Argm& argm,
+void Base_executable::operator() (const Argm& argm,
                                  Error_list& parent_exceptions) {
   if (global_stack.global_nesting > global_stack.max_nesting+1)
     parent_exceptions.add_error(Exception(Argm::Excessive_nesting));
-  if (global_stack.unwind_stack()) return 0;
+  if (global_stack.unwind_stack()) return;
   else ++executable_nesting, ++global_stack.global_nesting;
   Error_list children;
   struct timeval start_time;
   gettimeofday(&start_time, rwsh_clock.no_timezone);
-  int ret;
-  try {ret = execute(argm, children);}
-  catch (Exception error) {
-    children.add_error(error);
-    ret = -1;}
+  try {execute(argm, children);}
+  catch (Exception error) {children.add_error(error);}
   struct timeval end_time;
   gettimeofday(&end_time, rwsh_clock.no_timezone);
   last_execution_time_v = Clock::timeval_sub(end_time, start_time);
   Clock::timeval_add(total_execution_time_v, last_execution_time_v);
   ++execution_count_v;
-  Variable_map::dollar_question = last_return = ret;
   --global_stack.global_nesting;
   if (global_stack.caught_signal) {
     Exception focus(global_stack.caught_signal);
@@ -55,13 +51,12 @@ int Base_executable::operator() (const Argm& argm,
       parent_exceptions.push_back(*j);
       if (++j != children.end()) last_exception_v += "; ";}}
   --executable_nesting;
-  if (del_on_term && !executable_nesting) delete this;
-  return ret;}
+  if (del_on_term && !executable_nesting) delete this;}
 
 Binary::Binary(const std::string& impl) : implementation(impl) {}
 
 // run the given binary
-int Binary::execute(const Argm& argm_i, Error_list& exceptions) const {
+void Binary::execute(const Argm& argm_i, Error_list& exceptions) const {
   int ret,
       input = argm_i.input.fd(),
       output = argm_i.output.fd(),
@@ -82,13 +77,12 @@ int Binary::execute(const Argm& argm_i, Error_list& exceptions) const {
     exit(ret);}
   else plumber.wait(&ret);
   if (WIFEXITED(ret) && WEXITSTATUS(ret))
-    exceptions.add_error(Exception(Argm::Return_code, WEXITSTATUS(ret)));
-  return ret;}
+    exceptions.add_error(Exception(Argm::Return_code, WEXITSTATUS(ret)));}
 
 Builtin::Builtin(const std::string& name_i,
-                 int (*impl)(const Argm& argm, Error_list& exceptions)) :
+                 void (*impl)(const Argm& argm, Error_list& exceptions)) :
   implementation(impl), name_v(name_i) {}
 
 // run the given builtin
-int Builtin::execute(const Argm& argm, Error_list& exceptions) const {
-  return (*implementation)(argm, exceptions);}
+void Builtin::execute(const Argm& argm, Error_list& exceptions) const {
+  (*implementation)(argm, exceptions);}

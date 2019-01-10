@@ -2,5 +2,5 @@
 .global nl (
 )
 .for &{.internal_functions}$ {.nop
-  .function_all_flags $1 -- [args ...] {.echo signal triggered: $0 \( $args$ \); .combine $nl; .return -1}}
+  .function_all_flags $1 -- [args ...] {.echo signal triggered: $0 \( $args$ \); .combine $nl}}
 .function_all_flags .shutdown -- [args ...] {.nop $args; .exit 255}
