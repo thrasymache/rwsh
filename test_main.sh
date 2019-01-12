@@ -28,10 +28,11 @@ line continuation (or it was supposed to be)
 .source /etc/hosts {excess argfunc}
 .source test_files/*fu*bar*
 .source /etc/hosts
-.source test_files/unclosed_brace_newline.rwsh
 .source test_files/unclosed_brace.rwsh
-.source test_files/unclosed_parenthesis_newline.rwsh
+.source test_files/unclosed_brace_without_newline.rwsh
+.source test_files/unclosed_dot_brace.rwsh
 .source test_files/unclosed_parenthesis.rwsh
+.source test_files/unclosed_parenthesis_without_newline.rwsh
 .source test_files/multiple_errors.rwsh
 .source test_files/bad_substitution.rwsh
 .nop multiple statements \; on a line
@@ -268,7 +269,9 @@ se {e &&{.throw .nop}; e after}
 .collect_errors_only .nop {
   ${.throw echo exception from inside substitution}
   echo after failed substitution}
-e x{e bad argfunction style}
+echo before .{argfunction} between [.{argfunction}] after
+echo before ..{still bad} between [.{missing close} after
+echo x{e bad argfunction style}
 e x&&&{e x}
 e $+{e x}
 e &+{e x}

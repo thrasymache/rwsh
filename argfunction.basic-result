@@ -33,7 +33,7 @@ call stack .source .try_catch_recursive(body)
   .echo unacceptable argument count: received $required non-optional
   echo , but needed $needed \(with $optional optional\) for $stack$}
 .function_all_flags .bad_argfunction_style style {
-  echo $style is neither an argfunction nor a substitution}
+  echo $style is neither an argfunction nor a substitution nor a brace literal}
 .function_all_flags .bad_args -- proto assigned needed excess call_stack ... {
   .combine (unacceptable arguments: for prototype ) $proto , $nl
   if_only .test_not_empty $assigned {
@@ -145,9 +145,9 @@ call stack .source .try_catch_recursive(body)
   echo call stack $stack$}
 .function_all_flags .mismatched_brace context [stack ...] {
   echo mismatched brace: $context $stack$}
-.function_all_flags .mismatched_bracket context stack ... {
+.function_all_flags .mismatched_bracket context [stack ...] {
   echo mismatched bracket: $context
-  echo call stack: $stack$}
+  if_only .var_exists stack {echo call stack: $stack$}}
 .function .mismatched_parenthesis {
   .echo signal triggered: $0 \( $* \); .combine $nl
   echo mismatched parenthesis: $1

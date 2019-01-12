@@ -83,7 +83,7 @@ std::string::size_type Arg_script::parse_token(const std::string& src,
     add_token(token, max_soon, errors);
     return point;}
   else if (src[split] == '{') {
-    token_start = add_function(src, token_start, split, max_soon, errors);
+    token_start = add_braced_token(src, token_start, split, max_soon, errors);
     return src.find_first_not_of(WSPACE, token_start);}
   else {
     point = src.find_first_not_of(WSPACE, split);
@@ -108,7 +108,8 @@ Arg_script::Arg_script(const std::string& src, unsigned max_soon,
       errors.add_error(Exception(Argm::Mismatched_brace,src.substr(0,point+1)));
       while (point < src.length())            // see if anything else is wrong
         point = constructor(src, ++point, max_soon, errors);}
-    else std::abort();}
+    else std::abort();
+  else;}
 
 Arg_script::Arg_script(const std::string& src, std::string::size_type& point,
                        unsigned max_soon, Error_list& errors) :
@@ -159,7 +160,7 @@ void Arg_script::add_token(const std::string& src, unsigned max_soon,
     default:
       args.push_back(Arg_spec(src, max_soon, errors));}}
 
-std::string::size_type Arg_script::add_function(const std::string& src,
+std::string::size_type Arg_script::add_braced_token(const std::string& src,
         std::string::size_type style_start, std::string::size_type point,
         unsigned max_soon, Error_list& errors) {
   if (style_start != point)

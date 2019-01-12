@@ -14,7 +14,7 @@ class Arg_script {
   Arg_script(const Rwsh_istream_p& input, const Rwsh_ostream_p& output,
              const Rwsh_ostream_p& error, const std::string& indent,
              char terminator);
-  std::string::size_type add_function(const std::string& src,
+  std::string::size_type add_braced_token(const std::string& src,
          std::string::size_type style_start, std::string::size_type f_start,
          unsigned max_soon, Error_list& errors);
   std::string::size_type add_quote(const std::string& src,

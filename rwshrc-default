@@ -87,6 +87,7 @@ fns git command [file ...] {
   .else {&{whichp git} $-*$ $command}}
 sfn-subcommand git add
 fn-subcommand git branch
+sfn-subcommand git checkout
 fn-subcommand git clone
 fn-subcommand git config
 sfn-subcommand git commit
@@ -94,8 +95,10 @@ sfn-subcommand git diff
 fn-subcommand git fetch
 fn-subcommand git help
 fn-subcommand git log
+fn-subcommand git mv
 fn-subcommand git remote
 fn-subcommand git push
+sfn-subcommand git reset
 sfn-subcommand git rm
 sfn-subcommand git status
 fns grep [-l] [regex] [file ...] {

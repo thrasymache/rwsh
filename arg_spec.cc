@@ -43,7 +43,7 @@ bool sub_term_char(char focus) {
     default: return false;}}
 } // close unnamed namespace
 
-// Everything except substitutions and soon substitutions
+// Everything without braces
 Arg_spec::Arg_spec(const std::string& script, unsigned max_soon,
                    Error_list& errors) :
       soon_level(0), ref_level(0), expand_count(0), word_selection(-1),
@@ -96,43 +96,68 @@ Arg_spec::Arg_spec(const std::string& script, unsigned max_soon,
   else if (script[0] == '\\') {type=FIXED; text=script.substr(1);}
   else {type=FIXED; text=script;}};
 
-// Substitutions and soon substitutions
-Arg_spec::Arg_spec(const std::string& src, std::string::size_type style_start,
+void Arg_spec::parse_brace_type(const std::string& src, unsigned max_soon,
+                  std::string::size_type style, std::string::size_type end,
+                  Error_list& errors) {
+  auto focus = style;
+  if (src[focus] == '.') {
+    type = FIXED;
+    ++focus;}
+  else if (src[focus] == '[' && src[focus+1] == '.') {
+    type = FIXED;
+    focus += 2;}
+  else if (src[focus] == '&') {
+    type = SOON_SUBSTITUTION;
+    while (++focus < end && src[focus] == '&') ++soon_level;}
+  else if (src[focus] == '$') {
+    type = SUBSTITUTION;
+    ++focus, soon_level = max_soon;}
+  else type = FIXED; // This is a Bad_argfunction_style, but since we're going
+  // to continue processing, we need to properly initialize the structure
+  if (focus != end)
+    errors.add_error(Exception(Argm::Bad_argfunction_style,
+                      src.substr(style, end-style)));}
+
+// Substitutions, soon substitutions, and literal brace strings
+Arg_spec::Arg_spec(const std::string& src, std::string::size_type style,
         std::string::size_type& point, unsigned max_soon, Error_list& errors) :
       soon_level(0), ref_level(0), expand_count(0), word_selection(-1),
       substitution(0), text() {
-  auto tpoint = style_start;
-  if (src[tpoint] == '&') {
-    type = SOON_SUBSTITUTION;
-    while (++tpoint < src.length() && src[tpoint] == '&') ++soon_level;}
-  else if (src[tpoint] == '$') {
-    type = SUBSTITUTION;
-    ++tpoint, soon_level = max_soon;}
-  else type = FIXED; // This is a Bad_argfunction_style, but since we're going
-  // to continue processing, we need to properly initialize the structure
-  if (src[tpoint] != '{') {
-    errors.add_error(Exception(Argm::Bad_argfunction_style,
-                      src.substr(style_start, point-style_start)));
-    tpoint = point;}
-  substitution = new Command_block(src, tpoint, soon_level, errors);
-  if (soon_level > max_soon)
-    errors.add_error(Exception(Argm::Not_soon_enough,
-                      src.substr(style_start, tpoint-style_start)));
-  if (tpoint >= src.length() || sub_term_char(src[tpoint])) point = tpoint;
+  parse_brace_type(src, max_soon, style, point, errors);
+  if (type == FIXED) {
+    auto split = src.find_first_of('}', point);
+    if (split == std::string::npos)
+      throw Unclosed_brace(src.substr(0, point-1));
+    if (src[style] == '[')
+      if (src[split+1] == ']') ++split;
+      else errors.add_error(Exception(Argm::Mismatched_bracket,
+                      src.substr(style, split-style+1)));
+    else;
+    text = src.substr(style, split-style+1);
+    point = split+1;}
   else {
-    auto token_end = src.find_first_of(" };", tpoint);
-    if (src[tpoint] == '$') {
-      do ++expand_count;
-      while (++tpoint < src.length() && src[tpoint] == '$');
-      if (tpoint >= src.length() || sub_term_char(src[tpoint]));
-      else
-        try {word_selection = my_strtoi(src.substr(tpoint, token_end-tpoint));}
-        catch(...) {
-          errors.add_error(Exception(Argm::Invalid_word_selection,
-                                     src.substr(tpoint, token_end-tpoint)));}}
-    else errors.add_error(Exception(Argm::Invalid_word_selection,
-                                    src.substr(tpoint, token_end-tpoint)));
-    point = token_end;}}
+    substitution = new Command_block(src, point, soon_level, errors);
+    if (point < src.length() && !sub_term_char(src[point]))
+      parse_word_selection(src, point, errors);
+    if (soon_level > max_soon)
+      errors.add_error(Exception(Argm::Not_soon_enough,
+                                 src.substr(style, point-style)));}}
+
+void Arg_spec::parse_word_selection(const std::string& src,
+                          std::string::size_type& point, Error_list& errors){
+  auto token_end = src.find_first_of(" };", point);
+  if (src[point] == '$') {
+    do ++expand_count;
+    while (++point < src.length() && src[point] == '$');
+    if (point >= src.length() || sub_term_char(src[point]));
+    else
+      try {word_selection = my_strtoi(src.substr(point, token_end-point));}
+      catch(...) {
+        errors.add_error(Exception(Argm::Invalid_word_selection,
+                                   src.substr(point, token_end-point)));}}
+  else errors.add_error(Exception(Argm::Invalid_word_selection,
+                                  src.substr(point, token_end-point)));
+  point = token_end;}
 
 Arg_spec::Arg_spec(Arg_type type_i, unsigned soon_level_i,
                    unsigned ref_level_i, unsigned expand_count_i,

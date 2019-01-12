@@ -17,15 +17,19 @@ class Arg_spec {
   std::string text;
   std::string trailing;
 
-  void add_function_spec(const std::string& src);
   template<class Out> Out evaluate_expansion(const std::string& value,
                                              Out res) const;
   template<class Out> Out evaluate_substitution(const Argm& src, Out res,
                                              Error_list& exceptions) const;
   template<class Out> Out evaluate_var(const Argm& src, Out res) const;
+  void parse_brace_type(const std::string& src, unsigned max_soon,
+                   std::string::size_type style, std::string::size_type end,
+                   Error_list& errors);
+  void parse_word_selection(const std::string& src,
+                          std::string::size_type& point, Error_list& errors);
  public:
   Arg_spec(const std::string& script, unsigned max_soon, Error_list& errors);
-  Arg_spec(const std::string& src, std::string::size_type style_start,
+  Arg_spec(const std::string& src, std::string::size_type style,
          std::string::size_type& point, unsigned max_soon, Error_list& errors);
   Arg_spec(Arg_type type, unsigned soon_level, unsigned ref_level,
            unsigned expand_count, int word_selection,

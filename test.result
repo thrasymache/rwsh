@@ -33,7 +33,7 @@ call stack .source .try_catch_recursive(body)
   .echo unacceptable argument count: received $required non-optional
   echo , but needed $needed \(with $optional optional\) for $stack$}
 .function_all_flags .bad_argfunction_style style {
-  echo $style is neither an argfunction nor a substitution}
+  echo $style is neither an argfunction nor a substitution nor a brace literal}
 .function_all_flags .bad_args -- proto assigned needed excess call_stack ... {
   .combine (unacceptable arguments: for prototype ) $proto , $nl
   if_only .test_not_empty $assigned {
@@ -145,9 +145,9 @@ call stack .source .try_catch_recursive(body)
   echo call stack $stack$}
 .function_all_flags .mismatched_brace context [stack ...] {
   echo mismatched brace: $context $stack$}
-.function_all_flags .mismatched_bracket context stack ... {
+.function_all_flags .mismatched_bracket context [stack ...] {
   echo mismatched bracket: $context
-  echo call stack: $stack$}
+  if_only .var_exists stack {echo call stack: $stack$}}
 .function .mismatched_parenthesis {
   .echo signal triggered: $0 \( $* \); .combine $nl
   echo mismatched parenthesis: $1
@@ -424,21 +424,25 @@ call stack .source
 $.source /etc/hosts
 /etc/hosts is not executable
 call stack: .source
-$.source test_files/unclosed_brace_newline.rwsh
-fn bar {echo baz
-
-mismatched brace: (fn bar) .source
 $.source test_files/unclosed_brace.rwsh
 fn bar {echo baz
 
 mismatched brace: (fn bar) .source
-$.source test_files/unclosed_parenthesis_newline.rwsh
+$.source test_files/unclosed_brace_without_newline.rwsh
+fn bar {echo baz
+
+mismatched brace: (fn bar) .source
+$.source test_files/unclosed_dot_brace.rwsh
+echo bar .{argfunction baz
+
+mismatched brace: (echo bar ) .source
+$.source test_files/unclosed_parenthesis.rwsh
 echo bar (baz
 
 signal triggered: .mismatched_parenthesis ( echo bar ( .source )
 mismatched parenthesis: (echo bar ()
 call stack: .source
-$.source test_files/unclosed_parenthesis.rwsh
+$.source test_files/unclosed_parenthesis_without_newline.rwsh
 echo bar (baz
 
 signal triggered: .mismatched_parenthesis ( echo bar ( .source )
@@ -1151,16 +1155,17 @@ $se {e &&&A}
 &&&A attempts to substitute after the command has been run
 $se {@{} e &&&without$A $.{mismatched} {.argfunction brace} &&&{thrown}B
 }
-@ is neither an argfunction nor a substitution
+@ is neither an argfunction nor a substitution nor a brace literal
 $A is not a valid word selection
 call stack
 &&&without$A attempts to substitute after the command has been run
-$. is neither an argfunction nor a substitution
+$. is neither an argfunction nor a substitution nor a brace literal
 cannot specify arguments for (.argfunction brace!) directly
-&&&{thrown} attempts to substitute after the command has been run
 (B
 ) is not a valid word selection
 call stack
+(&&&{thrown}B
+) attempts to substitute after the command has been run
 $echo &{e &&A}
 &&A attempts to substitute after the command has been run
 $echo &&{e &A}
@@ -1228,16 +1233,21 @@ $.collect_errors_only .nop {
 exception from inside substitution .throw .mapped_argfunction .collect_errors_only
 substitution (${.throw echo exception from inside substitution}) failed
 call stack: .collect_errors_only
-$e x{e bad argfunction style}
-x is neither an argfunction nor a substitution
+$echo before .{argfunction} between [.{argfunction}] after
+before .{argfunction} between [.{argfunction}] after
+$echo before ..{still bad} between [.{missing close} after
+.. is neither an argfunction nor a substitution nor a brace literal
+mismatched bracket: ([.{missing close})
+$echo x{e bad argfunction style}
+x is neither an argfunction nor a substitution nor a brace literal
 $e x&&&{e x}
-x&&& is neither an argfunction nor a substitution
+x&&& is neither an argfunction nor a substitution nor a brace literal
 $e $+{e x}
-$+ is neither an argfunction nor a substitution
+$+ is neither an argfunction nor a substitution nor a brace literal
 $e &+{e x}
-&+ is neither an argfunction nor a substitution
+&+ is neither an argfunction nor a substitution nor a brace literal
 $e &&${e x}
-&&$ is neither an argfunction nor a substitution
+&&$ is neither an argfunction nor a substitution nor a brace literal
 (&&${e x}) attempts to substitute after the command has been run
 $echo ${e 0 $nl}
 (0 
@@ -1341,7 +1351,7 @@ $.for_each_line <outfile
 .for_each_line requires an argfunction
 $.for_each_line <outfile <another A{}
 double redirection is not supported at this time: <outfile and <another
-A is neither an argfunction nor a substitution
+A is neither an argfunction nor a substitution nor a brace literal
 $.for_each_line <outfile {
   echo current line $*
   if_only .test_greater $2 1 {
