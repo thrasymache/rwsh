@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2018 Samuel Newbold
+// Copyright (C) 2006-2019 Samuel Newbold
 
 extern const char* WSPACE;
 std::string escape(const std::string& src);
@@ -44,10 +44,13 @@ public:
   void global(const std::string& key, const std::string& value);
   void param(const std::string& key, const std::string& value);
   void local(const std::string& key, const std::string& value);
+  void local_declare(const std::string& key);
   const std::set<std::string>& locals(void) const {return local_vars;};
   void set(const std::string& key, const std::string& value);
   bool simple_exists(const std::string& key) const {return find(key) != end();}
   void unset(const std::string& key);
+  bool undefined_vars_contains(const std::string& key) const {
+    return undefined_vars.find(key) !=  undefined_vars.end();};
   bool used_vars_contains(const std::string& key) const {
     return used_vars.find(key) !=  used_vars.end();};
   bool checked_vars_contains(const std::string& key) const {

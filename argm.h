@@ -1,6 +1,7 @@
-// Copyright (C) 2005-2018 Samuel Newbold
+// Copyright (C) 2005-2019 Samuel Newbold
 
 class Command_block;
+struct Error_list;
 
 class Argm {
  public:
@@ -121,6 +122,7 @@ class Argm {
   std::string get_var(const std::string& key) const;
   void global(const std::string& key, const std::string& value) const;
   void local(const std::string& key, const std::string& value) const;
+  void local_declare(const std::string& key, Error_list& exceptions) const;
   void locals_listed(void) const;
   void set_var(const std::string& key, const std::string& value) const;
   template<class Out>

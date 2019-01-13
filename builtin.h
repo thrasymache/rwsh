@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2017 Samuel Newbold
+// Copyright (C) 2006-2019 Samuel Newbold
 
 void b_argc(const Argm& argm, Error_list& exceptions);
 void b_binary(const Argm& argm, Error_list& exceptions);
@@ -40,6 +40,7 @@ void b_list_environment(const Argm& argm, Error_list& exceptions);
 void b_list_executables(const Argm& argm, Error_list& exceptions);
 void b_list_locals(const Argm& argm, Error_list& exceptions);
 void b_local(const Argm& argm, Error_list& exceptions);
+void b_local_declare(const Argm& argm, Error_list& exceptions);
 void b_ls(const Argm& argm, Error_list& exceptions);
 void b_nop(const Argm& argm, Error_list& exceptions);
 void b_replace_exception(const Argm& argm, Error_list& exceptions);

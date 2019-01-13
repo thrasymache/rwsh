@@ -1,6 +1,6 @@
 // The functions that implement each of the builtin executables
 //
-// Copyright (C) 2006-2018 Samuel Newbold
+// Copyright (C) 2006-2019 Samuel Newbold
 
 #include <algorithm>
 #include <climits>
@@ -480,6 +480,13 @@ void b_local(const Argm& argm, Error_list& exceptions) {
   if (argm.argc() != 3) throw Exception(Argm::Bad_argc, argm.argc()-1, 2, 0);
   if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
   argm.local(argm[1], argm[2]);}
+
+// add, but don't define a  variable until the enclosing function terminates
+void b_local_declare(const Argm& argm, Error_list& exceptions) {
+  if (argm.argc() < 2) throw Exception(Argm::Bad_argc, argm.argc()-1, 1, 0);
+  if (argm.argfunction()) throw Exception(Argm::Excess_argfunction);
+  for (unsigned i=1; i<argm.argc(); ++i)
+    argm.local_declare(argm[i], exceptions);}
 
 // list the files specified by the arguments if they exist
 void b_ls(const Argm& argm, Error_list& exceptions) {

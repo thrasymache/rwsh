@@ -1,7 +1,7 @@
 // The definition of the Argm class, which contains the arguments that may
 // be passed to an executable.
 //
-// Copyright (C) 2005-2017 Samuel Newbold
+// Copyright (C) 2005-2019 Samuel Newbold
 
 #include <cstring>
 #include <cstdlib>
@@ -72,7 +72,8 @@ Argm& Argm::operator=(const Argm& src) {
   parent_map_v = src.parent_map();
   input = src.input;
   output = src.output;
-  error = src.error;}
+  error = src.error;
+  return *this;}
 
 Argm::~Argm(void) {
   delete argfunction_v;}
@@ -102,7 +103,7 @@ std::string Argm::get_var(const std::string& key) const {
               case '8': case '9': case '0': {
       try {
         int n = my_strtoi(key.c_str());
-        if (argv_v.size() > n) return argv_v[n];
+        if ((int)argv_v.size() > n) return argv_v[n];
         else return std::string();}
       catch (E_nan ex) {throw Exception(Argm::Undefined_variable, key);}}
     default: return parent_map()->get(key);}}
@@ -116,7 +117,7 @@ bool Argm::var_exists(const std::string& key) const {
     case '1': case '2': case '3': case '4': case '5': case '6':
               case '7': case '8': case '9': case '0': {
       int n = std::atoi(key.c_str());
-      return argv_v.size() > n;}
+      return (int)argv_v.size() > n;}
     default: return parent_map()->exists(key, true);}}
 
 void Argm::global(const std::string& key, const std::string& value) const {
@@ -132,6 +133,14 @@ void Argm::local(const std::string& key, const std::string& value) const {
               case '6': case '7': case '8': case '9': case '0':
       throw Exception(Argm::Illegal_variable_name, key);
     default: parent_map()->local(key, value);}}
+
+void Argm::local_declare(const std::string& key, Error_list& exceptions) const{
+  switch (key[0]) {
+    case '#': case '*': case '1': case '2': case '3': case '4': case '5':
+              case '6': case '7': case '8': case '9': case '0':
+      exceptions.add_error(Exception(Argm::Illegal_variable_name, key));
+      break;
+    default: parent_map()->local_declare(key);}}
 
 void Argm::locals_listed(void) const {
   parent_map()->locals_listed = true;}

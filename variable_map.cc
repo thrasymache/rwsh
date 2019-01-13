@@ -1,7 +1,7 @@
 // Functions to implement a variable map, and permit it to be exported as the
 // environment for child processes.
 //
-// Copyright (C) 2006-2018 Samuel Newbold
+// Copyright (C) 2006-2019 Samuel Newbold
 
 #include <cstdlib>
 #include <cstring>
@@ -105,6 +105,14 @@ void Variable_map::local(const std::string& key, const std::string& value) {
   local_vars.insert(key);
   param(key, value);}
 
+// locals have their usage checked directly
+void Variable_map::local_declare(const std::string& key) {
+  if (usage_checked)
+    throw Exception(Argm::Internal_error,
+                    "variable map added to after usage checked");
+  undefined_vars.insert(key);
+  local_vars.insert(key);}
+
 void Variable_map::set(const std::string& key, const std::string& value) {
   auto i = find(key);
   if (i != end())
@@ -112,7 +120,9 @@ void Variable_map::set(const std::string& key, const std::string& value) {
       used_vars.insert(key);  // we're about to throw a more specific error
       throw Exception(Argm::Unused_before_set, key);}
     else i->second = value;
-  else if (undefined_vars.find(key) != undefined_vars.end()) param(key, value);
+  else if (undefined_vars.find(key) != undefined_vars.end()) {
+    undefined_vars.erase(key);
+    param(key, value);}
   else if (parent) parent->set(key, value);
   else throw Exception(Argm::Undeclared_variable, key);}
 
@@ -121,6 +131,8 @@ void Variable_map::unset(const std::string& key) {
     throw Exception(Argm::Illegal_variable_name, key);
   auto i = find(key);
   if (i != end()) erase(i);
+  else if (undefined_vars.find(key) != undefined_vars.end())
+    throw Exception(Argm::Undefined_variable, key);
   else if (parent) parent->unset(key);
   else throw Exception(Argm::Undeclared_variable, key);}
 

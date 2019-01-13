@@ -2,7 +2,7 @@
 // between the arguments passed to and the parameters received by a function
 // or the argument function of .scope
 //
-// Copyright (C) 2015-2017 Samuel Newbold
+// Copyright (C) 2015-2019 Samuel Newbold
 #include <set>
 #include <string>
 #include <vector>
@@ -284,7 +284,7 @@ void Prototype::unused_var_check(Variable_map* vars, Error_list& errors) const {
   vars->used_vars_insert("-*");  // in the absent else case $-* is not defined
   vars->used_vars_insert("-?");  // in the absent else case $-? is not defined
   for (auto i: positional) i.unused_pos_var_check(vars, errors);
-  for (auto j: vars->locals()) if (!vars->used_vars_contains(j)) {
-    if (j == "?");  // $? does not need to be used (in subshells)
-    else errors.add_error(Exception(Argm::Unused_variable, j));
-    vars->used_vars_insert(j);}}
+  for (auto j: vars->locals())
+    if (!vars->used_vars_contains(j) && !vars->undefined_vars_contains(j)) {
+      errors.add_error(Exception(Argm::Unused_variable, j));
+      vars->used_vars_insert(j);}}

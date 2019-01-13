@@ -1,5 +1,5 @@
 // the registering of builtins
-// Copyright Samuel Newbold 2005-2018
+// Copyright Samuel Newbold 2005-2019
 
 #include <list>
 #include <map>
@@ -89,7 +89,7 @@ void internal_init(Error_list& exceptions) {
   executable_map.set(new Builtin(".internal_functions", b_internal_functions));
   executable_map.set(new Function(".internal_vars",
       empty_prototype.begin(), empty_prototype.end(), false,
-      "{.echo (FIGNORE ?\n)}", exceptions));
+      "{.echo (FIGNORE\n)}", exceptions));
   executable_map.set(new Builtin(".is_default_input", b_is_default_input));
   executable_map.set(new Builtin(".is_default_output", b_is_default_output));
   executable_map.set(new Builtin(".is_default_error", b_is_default_error));
@@ -101,6 +101,7 @@ void internal_init(Error_list& exceptions) {
   executable_map.set(new Builtin(".list_executables", b_list_executables));
   executable_map.set(new Builtin(".list_locals", b_list_locals));
   executable_map.set(new Builtin(".local", b_local));
+  executable_map.set(new Builtin(".local_declare", b_local_declare));
   executable_map.set(new Builtin(".ls", b_ls));
   executable_map.set(new Builtin(".nop", b_nop));
   executable_map.set(new Builtin(".replace_exception", b_replace_exception));

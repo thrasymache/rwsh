@@ -106,8 +106,7 @@ fns grep [-l] [regex] [file ...] {
   if_only .var_exists file {.selection_set s $file}
   .try_catch_recursive .return_code {
     .if var_exists -l {
-      .local result ()
-      .nop $result
+      .local_declare result
       .store_output result {&{whichp grep} $-*$ $REGEX @$s}
       .echo $result
       .set grep-sel $result$}

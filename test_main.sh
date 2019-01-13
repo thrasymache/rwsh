@@ -904,13 +904,15 @@ se {.fork se {
   /bin/kill -INT ${.getpid}
   echo should not continue beyond SIGINT}
 
-# .global .local .unset .var_exists 
+# .global .local .local_declare .unset .var_exists
 .global
 .global x y z
 .global x y {excess argfunc}
 .local
 .local x y z
 .local x y {excess argfunc}
+.local_declare
+.local_declare x {excess argfunc}
 .unset
 .unset x {excess argfunc}
 .unset x y
@@ -919,6 +921,7 @@ se {.fork se {
 .var_exists x {excess argfunc}
 .global 100 nihilism
 .local 0 nihilism
+.local_declare 0 #
 .global .var_exists (must be requested to be checked)
 echo $.var_exists$
 .unset #
@@ -941,37 +944,85 @@ echo $.var_exists$
 echo $x
 .global x nihilism
 .global x ubernihilism
-.function_all_flags a {if_only .var_exists x {e in a x \( $x \) $nl}
-             if_only .var_exists y {e in a y \( $y \) $nl}
-             .local x (first level not global)
-             .local y (level one not global)
-             b
-             if_only .var_exists x {e out a x \( $x \) $nl}
-             if_only .var_exists y {e out a y \( $y \) $nl}}
-.function_all_flags b {if_only .var_exists x {e in b x \( $x \) $nl}
-             if_only .var_exists y {e in b y \( $y \) $nl}
-             .local x (second level masks first)
-             .set y   (level two overwrites one)
-             c
-             if_only .var_exists x {e out b x \( $x \) $nl}
-             if_only .var_exists y {e out b y \( $y \) $nl}}
-.function_all_flags c {if_only .var_exists x {e in c x \( $x \) $nl}
-             if_only .var_exists y {e in c y \( $y \) $nl}
-             # can unset a local, but only one at a time
-             .unset x
-             .try_catch_recursive .global_would_be_masked {
-               .global y (attempting to create global masked by local)}
-             .set x (third level overwrites first)
-             .local x (third level masks first)
-             .set y (level three overwrites one)
-             if_only .var_exists x {e out c x \( $x \) $nl}
-             if_only .var_exists y {e out c y \( $y \) $nl}}
+.global i nihilism
+.global j nihilism
+fn a {if_only .var_exists x {echo in a x $x}
+      if_only .var_exists y {echo in a y $y}
+      if_only .var_exists i {echo in a i $i}
+      if_only .var_exists j {echo in a j $j}
+      if_only .var_exists k {echo in a k $k}
+      if_only .var_exists m {echo in a m $m}
+      .local x (first level not global)
+      .local y (level one not global)
+      .local z (will be unused)
+      .local_declare i j k l m
+      .set i (declared first level not global)
+      .set j (declared first level not global)
+      .set k (declared level one not global)
+      .set l (will be unused)
+      b
+      if_only .var_exists i {echo out a i $i}
+      if_only .var_exists j {echo out a j $j}
+      if_only .var_exists k {echo out a k $k}
+      if_only .var_exists m {echo out a m $m}
+      if_only .var_exists x {echo out a x $x}
+      if_only .var_exists y {echo out a y $y}}
+fn b {if_only .var_exists i {echo in b i $i}
+      if_only .var_exists j {echo in b j $j}
+      if_only .var_exists k {echo in b k $k}
+      if_only .var_exists m {echo in a m $m}
+      if_only .var_exists x {echo in b x $x}
+      if_only .var_exists y {echo in b y $y}
+      .local x (second level masks first)
+      .set y   (level two overwrites one)
+      .local_declare i j m
+      echo undefined i will hide the first level local
+      .set j (declared second level masks first)
+      .set k (declared level two overwrites one)
+      c
+      if_only .var_exists i {echo out b i $i}
+      if_only .var_exists j {echo out b j $j}
+      if_only .var_exists k {echo out b k $k}
+      if_only .var_exists m {echo out b m $m}
+      if_only .var_exists x {echo out b x $x}
+      if_only .var_exists y {echo out b y $y}}
+fn c {if_only .var_exists i {echo in c i $i}
+      if_only .var_exists j {echo in c j $j}
+      if_only .var_exists k {echo in c k $k}
+      if_only .var_exists m {echo in c m $m}
+      if_only .var_exists x {echo in c x $x}
+      if_only .var_exists y {echo in c y $y}
+      # can unset a local, but only one at a time
+      .unset x
+      .try_catch_recursive .undefined_variable {
+        .unset i}
+      .unset j
+      .unset l
+      .try_catch_recursive .global_would_be_masked {
+        .global y (attempting to create global masked by local)}
+      .set x (third level overwrites first)
+      .set i (declared third level overwrites second)
+      .set j (declared third level overwrites first)
+      .local x (third level masks first)
+      .local_declare i j m
+      .set i (declared third level masks first)
+      .set j (declared third level masks first)
+      .set y (level three overwrites one)
+      .set k (declared level three overwrites one)
+      if_only .var_exists i {echo out c i $i}
+      if_only .var_exists j {echo out c j $j}
+      if_only .var_exists k {echo out c k $k}
+      if_only .var_exists m {echo out c m $m}
+      if_only .var_exists x {echo out c x $x}
+      if_only .var_exists y {echo out c y $y}}
 a
 # demonstrating that final values are not retained
 a
 echo $x
 .var_exists y
 .unset x
+.unset i
+.unset j
 .var_exists x
 
 # .store_output
@@ -1532,7 +1583,7 @@ wrapper 1 2
 .nop .toggle_readline
 .nop .toggle_readline
 
-# .test_executable_exists .type .whence_function 
+# .test_executable_exists .type .whence_function
 # Arg_script::str() but only an unknown fraction of the lines
 # Arg_spec::str() (except trailing whitespace) only through SOON case
 .test_executable_exists
@@ -1635,7 +1686,7 @@ whence .mapped_argfunction {>dummy_file}
 .usleep -6
 .usleep 5i
 .usleep 800
-# .usleep_overhead 
+# .usleep_overhead
 .execution_count
 .execution_count j
 .scope () {
@@ -1823,7 +1874,7 @@ echo ${.version}
 .version_compatible 1.0
 .version_compatible 0.3+
 
-# internal functions 
+# internal functions
 # .after_command .raw_command .prompt
 # all of these are used as part of the test itself, though no longer in a
 # significant way.
