@@ -8,8 +8,8 @@
   .signal_handler &{.internal_functions}$ {&&* {.argfunction}}
   .mapped_argfunction {&&* {.argfunction}}
   &&* {.argfunction}}
-.function_all_flags .before_command -- args ... {.nop $args}
-.function_all_flags .after_command -- args ... {.nop $args}
+.function_all_flags .before_command -- args ... [.{argfunction}] {.nop $args}
+.function_all_flags .after_command -- args ... [.{argfunction}] {.nop $args}
 .function_all_flags .prompt {.echo \$}
 .function_all_flags .vars {.internal_vars}
 .source /etc/rwshrc-basic

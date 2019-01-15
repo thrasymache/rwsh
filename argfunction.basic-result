@@ -6,13 +6,13 @@ call stack .source .try_catch_recursive(body)
   .signal_handler &{.internal_functions}$ {&&* {.argfunction}}
   .mapped_argfunction {&&* {.argfunction}}
   &&* {.argfunction}}
-.function_all_flags .before_command -- args ... {.nop $args}
-.function_all_flags .after_command -- args ... {.nop $args}
+.function_all_flags .before_command -- args ... [.{argfunction}] {.nop $args}
+.function_all_flags .after_command -- args ... [.{argfunction}] {.nop $args}
 .function_all_flags .prompt {.echo \$}
 .function_all_flags .vars {.internal_vars}
 .source /etc/rwshrc-basic
-.function_all_flags # -- [ignored ...] {.nop $ignored$}
-.function_all_flags fn -- prototype ... {
+.function_all_flags # -- [ignored ...] [.{argfunction}] {.nop $ignored$}
+.function_all_flags fn -- prototype ... .{argfunction} {
   .function_all_flags $prototype$ {.argfunction}}
 
 # set up environment
@@ -110,6 +110,9 @@ call stack .source .try_catch_recursive(body)
   echo call stack $stack}
 .function_all_flags .file_open_failure -- file stack ... {
   echo could not open file $file
+  echo call stack $stack}
+.function_all_flags .fixed_argument -- arg stack ... {
+  echo $arg : fixed arguments are not supported at this time
   echo call stack $stack}
 .function_all_flags .flag_in_elipsis -- flag stack ... {
   echo found flag $flag while collecting arguments for elipsis
@@ -260,10 +263,10 @@ call stack .source .try_catch_recursive(body)
 .function_all_flags ! args ... {
   .if $args$ {.throw .false ${.echo ! $args}}
   .else {.nop}}
-.function_all_flags af -- [argv ...] {.argfunction}
+.function_all_flags af -- [argv ...] .{argfunction} {.argfunction}
 .function_all_flags c -- text ... {.combine $text$}
 .function_all_flags e -- text ... {.echo $text}
-.function_all_flags do_while argv ... {
+.function_all_flags do_while argv ... .{argfunction} {
   .try_catch_recursive .break {
     .nop $argv
     .try_catch_recursive .continue {.argfunction}
@@ -272,16 +275,17 @@ call stack .source .try_catch_recursive(body)
 .function_all_flags echo-comments cmd ... {
   .stepwise $cmd$ {if_only .test_in $1 .nop # #! ## {echo &&&*}}}
 .function_all_flags exec -- argv ... {.exec $argv$}
-.function_all_flags elif command ... {.else_if $command$ {.argfunction}}
-.function_all_flags else {.else {.argfunction}}
+.function_all_flags elif command ... .{argfunction} {
+  .else_if $command$ {.argfunction}}
+.function_all_flags else .{argfunction} {.else {.argfunction}}
 fn false {.try_catch_recursive .return_code {${whichp false}}}
-.function_all_flags fns -- name args ... {
+.function_all_flags fns -- name args ... .{argfunction} {
   .function_all_flags $name [-*] $args$ {.argfunction}}
-.function_all_flags if_only -- args ... {
+.function_all_flags if_only -- args ... .{argfunction} {
   .if $args$ {.argfunction}; .else {.nop}}
-.function_all_flags if_only_not -- args ... {
+.function_all_flags if_only_not -- args ... .{argfunction} {
   .if $args$ {.nop}; .else {.argfunction}}
-fn ntimes n {
+fn ntimes n .{argfunction} {
   .while test_var_greater n 0 {
     .mapped_argfunction {.argfunction}
     .var_subtract n 1}}
@@ -289,14 +293,14 @@ fn ntimes n {
   .replace_exception .break $stack$}
 .function_all_flags outer_continue stack ... {
   .replace_exception .continue $stack$}
-.function_all_flags scope_for var vals ... {
+.function_all_flags scope_for var vals ... .{argfunction} {
   .for $vals$ {
     .scope $1 $var {.argfunction}}}
-.function_all_flags outer_for var vals ... {
+.function_all_flags outer_for var vals ... .{argfunction} {
   .for $vals$ {
     .scope $1 $var {
       .try_catch_recursive outer_break outer_continue {.argfunction}}}}
-.function_all_flags outer_while argv ... {
+.function_all_flags outer_while argv ... .{argfunction} {
   .while $argv$ {
     .try_catch_recursive outer_break outer_continue {.argfunction}}}
 .function_all_flags setf var value {
@@ -307,16 +311,16 @@ fn test -- args ... {
   .try_catch_recursive .return_code {${whichp test} $args$}}
 fn test_var_not_equal var value {.test_string_unequal $$var $value}
 fn test_var_greater -- var value {.test_greater $$var $value}
-fn type [-t] args ... {
+fn type [-t] args ... [.{argfunction}] {
   .for $args$ {
     .try_catch_recursive .function_not_found {
       if_only_not .var_exists -t {.echo &&&1 is ()}
       .type &&&1 {.argfunction}}}}
-fn whence command {
+fn whence command [.{argfunction}] {
   .try_catch_recursive .function_not_found {
     .whence_function $command {.argfunction}}}
 fn whichp binary {.which_path $binary $PATH}
-.function_all_flags while_and_one_more argv ... {
+.function_all_flags while_and_one_more argv ... .{argfunction} {
   .try_catch_recursive .break {
     .while $argv$ {.argfunction}
     .try_catch_recursive .continue {.argfunction}}}
@@ -371,24 +375,25 @@ $.echo $nl $nl $nl $nl
  
  
  
-$.function_all_flags # [args ...] {.nop $args$}
-$.function_all_flags fw {
-  .function_all_flags f1 name {.argfunction}
+$.function_all_flags fw .{argfunction} {
+  .function_all_flags f1 name .{argfunction} {.argfunction}
   .whence_function f1; .echo $nl
   f1 f2 {.argfunction}
   .whence_function f2; .echo $nl
   .rm_executable f1; .rm_executable f2}
-$fw {.echo hi $nl; .function_all_flags $name {.argfunction}}
-.function_all_flags f1 name {.echo hi $nl; .function_all_flags $name {.argfunction}}
+$fw {.echo hi $nl; .function_all_flags $name .{argfunction} {.argfunction}}
+.function_all_flags f1 name {.echo hi $nl; .function_all_flags $name .{argfunction} {.argfunction}}
 
 hi 
-.function_all_flags f2  {.echo hi $nl; .function_all_flags $name {.argfunction}}
+.function_all_flags f2  {.echo hi $nl; .function_all_flags $name .{argfunction} {.argfunction}}
 
-$fw {.while .throw .false {.function_all_flags &&name {.argfunction}}}
-.function_all_flags f1 name {.while .throw .false {.function_all_flags &name {.argfunction}}}
+$fw {.while .throw .false {
+  .function_all_flags &&name .{argfunction} {.argfunction}}}
+.function_all_flags f1 name {.while .throw .false {
+  .function_all_flags &name .{argfunction} {.argfunction}}}
 
 f2 : command not found ( f2 .whence_function fw )
-$.function_all_flags f1 name {
+$.function_all_flags f1 name .{argfunction} {
   .echo function name $name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}
@@ -697,15 +702,17 @@ function name f2
 
  end of function body 
 f2 : command not found ( f2 .whence_function fw )
-$fw {.mapped_argfunction {.function_all_flags $name {.argfunction}}}
-.function_all_flags f1 name {.mapped_argfunction {.function_all_flags $name {.argfunction}}}
+$fw {.mapped_argfunction {
+  .function_all_flags $name .{argfunction} {.argfunction}}}
+.function_all_flags f1 name {.mapped_argfunction {
+  .function_all_flags $name .{argfunction} {.argfunction}}}
 
-.function_all_flags f2  {.mapped_argfunction {.function_all_flags $name {.function_all_flags $name {.mapped_argfunction {.function_all_flags $name {.argfunction}}}}}}
+.function_all_flags f2  {.mapped_argfunction {
+  .function_all_flags $name .{argfunction} {
+  .function_all_flags $name .{argfunction} {.mapped_argfunction {
+  .function_all_flags $name .{argfunction} {.argfunction}}}}}}
 
 $.nop $A $FIGNORE
-$.function_all_flags .shutdown -- args ... {
-  .nop $args
-  .combine $nl (now terminating normally) $nl}
 $.exit 0
 
 now terminating normally

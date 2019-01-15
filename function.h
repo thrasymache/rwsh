@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2017 Samuel Newbold
+// Copyright (C) 2005-2019 Samuel Newbold
 
 class Command_block : public Base_executable, public std::vector<Arg_script> {
   typedef std::vector<Arg_script> Base;
@@ -49,8 +49,9 @@ class Function : public Named_executable {
            const Command_block& src);
   Function(const Function& src) :
     name_v(src.name_v), prototype(src.prototype), body(src.body) {}
-  Variable_map arg_to_param(const Argm& invoking_argm) const {
-    return prototype.arg_to_param(invoking_argm);}
+  void arg_to_param(const Argm& invoking_argm, Variable_map& locals,
+                    Error_list& exceptions) const {
+    return prototype.arg_to_param(invoking_argm, locals, exceptions);}
   Function* copy_pointer(void) const {
     if (!this) return 0;
     else return new Function(*this);};

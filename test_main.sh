@@ -48,9 +48,9 @@ line continuation (or it was supposed to be)
 # rwshrc-basic
 .function e {.echo $*}
 .function om {.argfunction}
-.function_all_flags sa [args ...] {
+.function_all_flags sa [args ...] .{argfunction} {
   .scope $args$ ([args ...]) {.argfunction}}
-.function_all_flags se {.scope () {.argfunction}}
+.function_all_flags se .{argfunction} {.scope () {.argfunction}}
 .whence_function e
 .whence_function om
 .whence_function sa
@@ -63,7 +63,7 @@ echo text that does not have a prompt appended
 se {echo again}
 if_only .test_is_number false {echo not printed}
 if_only .test_is_number 0 {echo printed without error}
-.function_all_flags for -- [items ...] {
+.function_all_flags for -- [items ...] .{argfunction} {
   .if .var_exists items {.for $items$ {.argfunction}}
   .else {.nop}}
 for {echo skipped without error}
@@ -345,7 +345,7 @@ se {se >outfile {e line 1 $nl; e line 2 longer $nl; .echo $nl; echo ending}}
 .global A 0
 .global OLD_NESTING ${.get_max_nesting}
 .set_max_nesting 46
-fn x {.var_add A 1
+fn x .{argfunction} {.var_add A 1
      se {.var_add A 1
         se {.var_add A 1
            se {.var_add A 1
@@ -502,7 +502,7 @@ a 1 2
 a
 a 1
 a 1 2
-fn g name {.function_all_flags $name name {
+fn g name .{argfunction} {.function_all_flags $name name {
   .function_all_flags $name {.argfunction}}}
 g a {e 3 2 1 $nl}
 whence a
@@ -586,7 +586,7 @@ a 1 2 3
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
 whence a
 a --long-opt -xx over-long flag
-a -xx --long-opt over-long flag
+a -xx --long-opt over-long flag extra excess
 a --long-op short flag
 a - --long-op short flag
 a no flags
@@ -599,9 +599,9 @@ a tardy flags_last - -x
 a -x -- - flag_made_fixed_argument
 a -- - flag_again_made_fixed_argument
 a -x -- flag_and_fixed-x -x
-a -x just flags-x --long-opt
+a -x just flags-x --long-opt -x
 a -x just flags-x -- --long-opt
-a -x just flags-x --other
+a -x just flags-x --other --also-wrong
 a -x just flags-x -- --other
 a -x with one excess argument
 a - with flag
@@ -673,16 +673,14 @@ whence a
 .function_all_flags a -? x ... y {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
 whence a
-a -c -a -b first second third
-a -c first -a second -b third
 .function_all_flags a -* x ... y {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
 whence a
-a -c -a -b first second third
-a -c first -a second -b third
 .function_all_flags a [-?] x ... y {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
 whence a
+a -c -a -b first second third
+a -c first -a second -b third
 a 
 a first
 a first (se cond)
@@ -1049,13 +1047,17 @@ e $x
   .try_catch_recursive echo {silent_throw $text$}}
 silent_throw on its own
 caught_silent_throw on its own
-fn if_true {.if .test_not_empty ( ) {.argfunction}}
-fn if_false {.if .test_not_empty ()  {.argfunction}}
-fn else_if_true {.else_if .test_string_unequal q w {.argfunction}}
-fn else_if_false {.else_if .test_string_unequal q q {.argfunction}}
-fn else_if_not_true {.else_if_not .test_string_equal x x {.argfunction}}
-fn else_if_not_false {.else_if_not .test_string_equal y z {.argfunction}}
-fn obscured_else {.scope () {.scope () {.else {.argfunction}}}}
+fn if_true .{argfunction} {.if .test_not_empty ( ) {.argfunction}}
+fn if_false .{argfunction} {.if .test_not_empty ()  {.argfunction}}
+fn else_if_true .{argfunction} {
+  .else_if .test_string_unequal q w {.argfunction}}
+fn else_if_false .{argfunction} {
+  .else_if .test_string_unequal q q {.argfunction}}
+fn else_if_not_true .{argfunction} {
+  .else_if_not .test_string_equal x x {.argfunction}}
+fn else_if_not_false .{argfunction} {
+  .else_if_not .test_string_equal y z {.argfunction}}
+fn obscured_else .{argfunction} {.scope () {.scope () {.else {.argfunction}}}}
 fn if_with_body args ... {.if $args$ {echo the afore-mentioned body}}
 fn if_else_if_not_with_body args ... {
   .if $args$ {echo the first body}
@@ -1326,7 +1328,7 @@ se {.is_default_error}
 .try_catch_recursive .replace_exception {
   .throw .replace_exception echo now in exception handler}
 
-# .scope
+# .scope prototype.cc
 .scope {e $foo}
 .scope () {.scope foo}
 .scope a (y y) {echo illegal duplicate required parameter}
@@ -1344,6 +1346,7 @@ se {.is_default_error}
 .scope a ([arg -- foo]) {echo -- cannot be an argument}
 .scope -x -y a b ([-?] args ...) {
   for ${.list_locals}$ {.combine $1 = $$1 \ }; .echo $nl}
+.scope .foo {echo fixed arguments not yet supported}
 .scope a ([-? bad] arg) {e -? cannot currently take arguments}
 .scope a ([-* bad] arg) {e -* (aka -?) cannot currently take arguments}
 .scope -a -* -b a ([-?] a) {
@@ -1354,6 +1357,20 @@ se {.is_default_error}
 .scope foo bar baz bax (args ...) {echo aa $args$2 bb $args$1 cc}
 .scope single ([-x] [--long-opt y] second) {
   var_val ${.list_locals}$; .echo $nl}
+fn arg_req .{argfunction} {
+  echo before argfunction
+  .scope () {.argfunction}}
+arg_req {echo the argfunction}
+arg_req not an argfunction
+fn arg_opt [.{argfunction}] {
+  .test_executable_exists .argfunction {.argfunction}
+  .scope () {.argfunction}}
+arg_opt {echo the argfunction}
+arg_opt
+arg_opt not an argfunction
+fn arg_none {echo argfunction will not be accepted}
+arg_none bad arguments {echo will not print}
+arg_none
 .function_all_flags a [-x] [--long-opt y] second {
   for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
   .combine $nl}
@@ -1448,7 +1465,7 @@ echo $A
 # .try_catch_recursive .get_max_extra_exceptions .set_max_extra_exceptions
 .try_catch_recursive .function_not_found 
 .try_catch_recursive {.test_less 0 A}
-fn e_after {se {.argfunction}; echo after}
+fn e_after .{argfunction} {se {.argfunction}; echo after}
 e_after {.try_catch_recursive .not_a_number .function_not_found {
   .test_less 0 A}}
 e_after {
@@ -1617,7 +1634,7 @@ whence .mapped_argfunction {>dummy_file}
 .whence_function .mapped_argfunction {{&&{&&x &&{e}}$$$ ${&&x ${e}}$$$ {&&&x &&&{e} {&&&&x &&&&{e}}}}}
 whence .mapped_argfunction {$A $$A $0 $$$1 $# $* $*2 $A$$$ $A$10 $$*$ $$$*12$}
 .whence_function .mapped_argfunction {&&A &&0 &&* &&*3 &&$A$$$ &&$A$10 &&*$ &&*6$ {&&&A$ &&&A$10}}
-.function_all_flags wm [args ...] {
+.function_all_flags wm [args ...] .{argfunction} {
    .whence_function .mapped_argfunction {.argfunction}
    .scope $args$ (a1 a2 a3) {.argfunction}}
 wm (aa ab ac) bb cc {
@@ -1630,7 +1647,7 @@ wm (aa ab ac) bb cc {
   sa $args {echo $args$ $#}
   sa $args$ {echo $args$ $#}
   sa $more$ {echo $args$ $#}}}
-.function_all_flags wm [args ...] {
+.function_all_flags wm [args ...] .{argfunction} {
    whence .mapped_argfunction {.argfunction}
    .nop $args
    se {.argfunction}
@@ -1907,7 +1924,7 @@ not_a_thing
 # .escaped_argfunction
 .mapped_argfunction 1 2 3 {echo a $* a}
 .mapped_argfunction
-fn g {.whence_function .argfunction {.unescaped_argfunction}
+fn g .{argfunction} {.whence_function .argfunction {.unescaped_argfunction}
      .whence_function .argfunction {.argfunction}
      .whence_function .argfunction {.escaped_argfunction}}
 g {}

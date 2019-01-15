@@ -59,6 +59,7 @@ class Argm {
     False,
     File_open_failure,
     File_not_found,
+    Fixed_argument,
     Flag_in_elipsis,
     Function_not_found,
     Global_would_be_masked,

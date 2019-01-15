@@ -654,7 +654,9 @@ void b_stepwise(const Argm& argm, Error_list& exceptions) {
   Function* f = dynamic_cast<Function*>(e);
   if (!f) return; //throw Exception(Argm::Not_a_function, argm[1]);
   // this must be caught and handled to use .stepwise recursively
-  Variable_map locals(f->arg_to_param(lookup));
+  Variable_map locals(lookup.parent_map());
+  f->arg_to_param(lookup, locals, exceptions);
+  if (global_stack.unwind_stack()) return;
   Argm params(lookup.argv(), lookup.argfunction(), &locals,
               lookup.input, lookup.output, lookup.error);
   for (auto j: f->body) {

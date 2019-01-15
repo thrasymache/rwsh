@@ -6,13 +6,13 @@ call stack .source .try_catch_recursive(body)
   .signal_handler &{.internal_functions}$ {&&* {.argfunction}}
   .mapped_argfunction {&&* {.argfunction}}
   &&* {.argfunction}}
-.function_all_flags .before_command -- args ... {.nop $args}
-.function_all_flags .after_command -- args ... {.nop $args}
+.function_all_flags .before_command -- args ... [.{argfunction}] {.nop $args}
+.function_all_flags .after_command -- args ... [.{argfunction}] {.nop $args}
 .function_all_flags .prompt {.echo \$}
 .function_all_flags .vars {.internal_vars}
 .source /etc/rwshrc-basic
-.function_all_flags # -- [ignored ...] {.nop $ignored$}
-.function_all_flags fn -- prototype ... {
+.function_all_flags # -- [ignored ...] [.{argfunction}] {.nop $ignored$}
+.function_all_flags fn -- prototype ... .{argfunction} {
   .function_all_flags $prototype$ {.argfunction}}
 
 # set up environment
@@ -110,6 +110,9 @@ call stack .source .try_catch_recursive(body)
   echo call stack $stack}
 .function_all_flags .file_open_failure -- file stack ... {
   echo could not open file $file
+  echo call stack $stack}
+.function_all_flags .fixed_argument -- arg stack ... {
+  echo $arg : fixed arguments are not supported at this time
   echo call stack $stack}
 .function_all_flags .flag_in_elipsis -- flag stack ... {
   echo found flag $flag while collecting arguments for elipsis
@@ -260,10 +263,10 @@ call stack .source .try_catch_recursive(body)
 .function_all_flags ! args ... {
   .if $args$ {.throw .false ${.echo ! $args}}
   .else {.nop}}
-.function_all_flags af -- [argv ...] {.argfunction}
+.function_all_flags af -- [argv ...] .{argfunction} {.argfunction}
 .function_all_flags c -- text ... {.combine $text$}
 .function_all_flags e -- text ... {.echo $text}
-.function_all_flags do_while argv ... {
+.function_all_flags do_while argv ... .{argfunction} {
   .try_catch_recursive .break {
     .nop $argv
     .try_catch_recursive .continue {.argfunction}
@@ -272,16 +275,17 @@ call stack .source .try_catch_recursive(body)
 .function_all_flags echo-comments cmd ... {
   .stepwise $cmd$ {if_only .test_in $1 .nop # #! ## {echo &&&*}}}
 .function_all_flags exec -- argv ... {.exec $argv$}
-.function_all_flags elif command ... {.else_if $command$ {.argfunction}}
-.function_all_flags else {.else {.argfunction}}
+.function_all_flags elif command ... .{argfunction} {
+  .else_if $command$ {.argfunction}}
+.function_all_flags else .{argfunction} {.else {.argfunction}}
 fn false {.try_catch_recursive .return_code {${whichp false}}}
-.function_all_flags fns -- name args ... {
+.function_all_flags fns -- name args ... .{argfunction} {
   .function_all_flags $name [-*] $args$ {.argfunction}}
-.function_all_flags if_only -- args ... {
+.function_all_flags if_only -- args ... .{argfunction} {
   .if $args$ {.argfunction}; .else {.nop}}
-.function_all_flags if_only_not -- args ... {
+.function_all_flags if_only_not -- args ... .{argfunction} {
   .if $args$ {.nop}; .else {.argfunction}}
-fn ntimes n {
+fn ntimes n .{argfunction} {
   .while test_var_greater n 0 {
     .mapped_argfunction {.argfunction}
     .var_subtract n 1}}
@@ -289,14 +293,14 @@ fn ntimes n {
   .replace_exception .break $stack$}
 .function_all_flags outer_continue stack ... {
   .replace_exception .continue $stack$}
-.function_all_flags scope_for var vals ... {
+.function_all_flags scope_for var vals ... .{argfunction} {
   .for $vals$ {
     .scope $1 $var {.argfunction}}}
-.function_all_flags outer_for var vals ... {
+.function_all_flags outer_for var vals ... .{argfunction} {
   .for $vals$ {
     .scope $1 $var {
       .try_catch_recursive outer_break outer_continue {.argfunction}}}}
-.function_all_flags outer_while argv ... {
+.function_all_flags outer_while argv ... .{argfunction} {
   .while $argv$ {
     .try_catch_recursive outer_break outer_continue {.argfunction}}}
 .function_all_flags setf var value {
@@ -307,16 +311,16 @@ fn test -- args ... {
   .try_catch_recursive .return_code {${whichp test} $args$}}
 fn test_var_not_equal var value {.test_string_unequal $$var $value}
 fn test_var_greater -- var value {.test_greater $$var $value}
-fn type [-t] args ... {
+fn type [-t] args ... [.{argfunction}] {
   .for $args$ {
     .try_catch_recursive .function_not_found {
       if_only_not .var_exists -t {.echo &&&1 is ()}
       .type &&&1 {.argfunction}}}}
-fn whence command {
+fn whence command [.{argfunction}] {
   .try_catch_recursive .function_not_found {
     .whence_function $command {.argfunction}}}
 fn whichp binary {.which_path $binary $PATH}
-.function_all_flags while_and_one_more argv ... {
+.function_all_flags while_and_one_more argv ... .{argfunction} {
   .try_catch_recursive .break {
     .while $argv$ {.argfunction}
     .try_catch_recursive .continue {.argfunction}}}
@@ -367,8 +371,8 @@ polish / .var_divide
 )
   .source /etc/rwshrc-default}
 $.source /etc/rwshrc-basic
-.function_all_flags # -- [ignored ...] {.nop $ignored$}
-.function_all_flags fn -- prototype ... {
+.function_all_flags # -- [ignored ...] [.{argfunction}] {.nop $ignored$}
+.function_all_flags fn -- prototype ... .{argfunction} {
   .function_all_flags $prototype$ {.argfunction}}
 
 # set up environment
@@ -466,6 +470,9 @@ $.source /etc/rwshrc-basic
   echo call stack $stack}
 .function_all_flags .file_open_failure -- file stack ... {
   echo could not open file $file
+  echo call stack $stack}
+.function_all_flags .fixed_argument -- arg stack ... {
+  echo $arg : fixed arguments are not supported at this time
   echo call stack $stack}
 .function_all_flags .flag_in_elipsis -- flag stack ... {
   echo found flag $flag while collecting arguments for elipsis
@@ -616,10 +623,10 @@ $.source /etc/rwshrc-basic
 .function_all_flags ! args ... {
   .if $args$ {.throw .false ${.echo ! $args}}
   .else {.nop}}
-.function_all_flags af -- [argv ...] {.argfunction}
+.function_all_flags af -- [argv ...] .{argfunction} {.argfunction}
 .function_all_flags c -- text ... {.combine $text$}
 .function_all_flags e -- text ... {.echo $text}
-.function_all_flags do_while argv ... {
+.function_all_flags do_while argv ... .{argfunction} {
   .try_catch_recursive .break {
     .nop $argv
     .try_catch_recursive .continue {.argfunction}
@@ -628,16 +635,17 @@ $.source /etc/rwshrc-basic
 .function_all_flags echo-comments cmd ... {
   .stepwise $cmd$ {if_only .test_in $1 .nop # #! ## {echo &&&*}}}
 .function_all_flags exec -- argv ... {.exec $argv$}
-.function_all_flags elif command ... {.else_if $command$ {.argfunction}}
-.function_all_flags else {.else {.argfunction}}
+.function_all_flags elif command ... .{argfunction} {
+  .else_if $command$ {.argfunction}}
+.function_all_flags else .{argfunction} {.else {.argfunction}}
 fn false {.try_catch_recursive .return_code {${whichp false}}}
-.function_all_flags fns -- name args ... {
+.function_all_flags fns -- name args ... .{argfunction} {
   .function_all_flags $name [-*] $args$ {.argfunction}}
-.function_all_flags if_only -- args ... {
+.function_all_flags if_only -- args ... .{argfunction} {
   .if $args$ {.argfunction}; .else {.nop}}
-.function_all_flags if_only_not -- args ... {
+.function_all_flags if_only_not -- args ... .{argfunction} {
   .if $args$ {.nop}; .else {.argfunction}}
-fn ntimes n {
+fn ntimes n .{argfunction} {
   .while test_var_greater n 0 {
     .mapped_argfunction {.argfunction}
     .var_subtract n 1}}
@@ -645,14 +653,14 @@ fn ntimes n {
   .replace_exception .break $stack$}
 .function_all_flags outer_continue stack ... {
   .replace_exception .continue $stack$}
-.function_all_flags scope_for var vals ... {
+.function_all_flags scope_for var vals ... .{argfunction} {
   .for $vals$ {
     .scope $1 $var {.argfunction}}}
-.function_all_flags outer_for var vals ... {
+.function_all_flags outer_for var vals ... .{argfunction} {
   .for $vals$ {
     .scope $1 $var {
       .try_catch_recursive outer_break outer_continue {.argfunction}}}}
-.function_all_flags outer_while argv ... {
+.function_all_flags outer_while argv ... .{argfunction} {
   .while $argv$ {
     .try_catch_recursive outer_break outer_continue {.argfunction}}}
 .function_all_flags setf var value {
@@ -663,16 +671,16 @@ fn test -- args ... {
   .try_catch_recursive .return_code {${whichp test} $args$}}
 fn test_var_not_equal var value {.test_string_unequal $$var $value}
 fn test_var_greater -- var value {.test_greater $$var $value}
-fn type [-t] args ... {
+fn type [-t] args ... [.{argfunction}] {
   .for $args$ {
     .try_catch_recursive .function_not_found {
       if_only_not .var_exists -t {.echo &&&1 is ()}
       .type &&&1 {.argfunction}}}}
-fn whence command {
+fn whence command [.{argfunction}] {
   .try_catch_recursive .function_not_found {
     .whence_function $command {.argfunction}}}
 fn whichp binary {.which_path $binary $PATH}
-.function_all_flags while_and_one_more argv ... {
+.function_all_flags while_and_one_more argv ... .{argfunction} {
   .try_catch_recursive .break {
     .while $argv$ {.argfunction}
     .try_catch_recursive .continue {.argfunction}}}
@@ -704,9 +712,9 @@ polish + .var_add
 polish / .var_divide
 $.global PATH /bin:/usr/bin
 $.scope () {.getpid; .echo $nl}
-19929
+25942
 $.scope () {.getppid; .echo $nl}
-3689
+5024
 $.function_all_flags timings focus {
   .combine $focus (:	last\() ${.last_execution_time $focus} \) \	
   .combine (total\() ${.total_execution_time $focus} \) \	
@@ -722,18 +730,18 @@ $.function_all_flags clock-watch {
 $clock-watch
 timings:	last(0.000000)	total(0.000000)	count(0)
 clock-watch:	last(0.000000)	total(0.000000)	count(0)
-usleep overhead:	9.2e-05
-.usleep:	last(0.000692)	total(0.000692)	count(1)
-/bin/true:	last(0.001202)	total(0.001202)	count(1)
+usleep overhead:	9.1e-05
+.usleep:	last(0.000691)	total(0.000691)	count(1)
+/bin/true:	last(0.001235)	total(0.001235)	count(1)
 $clock-watch
-timings:	last(0.000127)	total(0.000814)	count(4)
-clock-watch:	last(0.003347)	total(0.003347)	count(1)
-usleep overhead:	9.2e-05
-.usleep:	last(0.000692)	total(0.001384)	count(2)
-/bin/true:	last(0.000748)	total(0.001950)	count(2)
+timings:	last(0.000108)	total(0.001104)	count(4)
+clock-watch:	last(0.003710)	total(0.003710)	count(1)
+usleep overhead:	8.6e-05
+.usleep:	last(0.000681)	total(0.001372)	count(2)
+/bin/true:	last(0.000740)	total(0.001975)	count(2)
 $.mapped_argfunction {timings timings; timings clock-watch}
-timings:	last(0.000104)	total(0.001299)	count(8)
-clock-watch:	last(0.002032)	total(0.005379)	count(2)
+timings:	last(0.000104)	total(0.001599)	count(8)
+clock-watch:	last(0.002033)	total(0.005743)	count(2)
 $.error a stderr print will come before the diff $nl
 $.nop $A $FIGNORE
 $

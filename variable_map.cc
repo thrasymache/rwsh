@@ -38,6 +38,11 @@ void Variable_map::bless_unused_vars() {
   if (!usage_checked) usage_checked = true;
   else throw Exception(Argm::Internal_error,
                        "variable map usage checked multiple times");
+  bless_unused_vars_without_usage();}
+
+void Variable_map::bless_unused_vars_without_usage() {
+  for (auto i: undefined_vars) if (checked_vars.find(i) == checked_vars.end())
+    checked_vars.insert(i);
   for (auto i: *this) if (used_vars.find(i.first) == used_vars.end())
     used_vars.insert(i.first);}
 

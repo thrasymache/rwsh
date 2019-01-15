@@ -1,6 +1,6 @@
 // The main function for rwsh
 //
-// Copyright (C) 2005-2018 Samuel Newbold
+// Copyright (C) 2005-2019 Samuel Newbold
 
 #include <cstdlib>
 #include <iostream>
@@ -65,6 +65,7 @@ std::string Argm::exception_names[Argm::Exception_count] = {
   ".false",
   ".file_open_failure",
   ".file_not_found",
+  ".fixed_argument",
   ".flag_in_elipsis",
   ".function_not_found",
   ".global_would_be_masked",

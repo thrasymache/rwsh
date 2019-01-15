@@ -23,6 +23,7 @@ public:
 
   Variable_map(Variable_map* parent);
   void bless_unused_vars();
+  void bless_unused_vars_without_usage();
   ~Variable_map();
 
   const_iterator begin(void) const {return Base::begin();};

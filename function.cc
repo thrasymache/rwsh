@@ -2,7 +2,7 @@
 // arguments passed to an executable and/or tie several other executables into
 // a single executable.
 //
-// Copyright (C) 2006-2018 Samuel Newbold
+// Copyright (C) 2006-2019 Samuel Newbold
 
 #include <algorithm>
 #include <iterator>
@@ -55,11 +55,18 @@ void Command_block::execute(const Argm& src_argm,
 void Command_block::prototype_execute(const Argm& argm,
                                      const Prototype& prototype,
                                      Error_list& exceptions) const {
-  Variable_map locals(prototype.arg_to_param(argm));
-  Argm params(argm.argv(), argm.argfunction(), &locals,
-              argm.input, argm.output, argm.error);
+  Variable_map locals(argm.parent_map());
+  prototype.arg_to_param(argm, locals, exceptions);
+  if (prototype.non_prototype);
+  else if (argm.argfunction() && prototype.exclude_argfunction)
+    exceptions.add_error(Exception(Argm::Excess_argfunction));
+  else if (!argm.argfunction() && prototype.required_argfunction)
+    exceptions.add_error(Exception(Argm::Missing_argfunction));
   try {
-    execute(params, exceptions);
+    if (!global_stack.unwind_stack()) {
+      Argm params(argm.argv(), argm.argfunction(), &locals,
+                  argm.input, argm.output, argm.error);
+      execute(params, exceptions);}
     prototype.unused_var_check(&locals, exceptions);}
   catch (Exception error) {
     prototype.unused_var_check(&locals, exceptions);
