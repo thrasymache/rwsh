@@ -2,10 +2,10 @@
 
 class Command_block;
 struct Error_list;
+typedef std::vector<std::string> Argv;
 
 class Argm {
  public:
-  typedef std::vector<std::string> Argv;
   Argm(Variable_map* parent_map_i,
        Rwsh_istream_p input_i, Rwsh_ostream_p output_i, Rwsh_ostream_p error_i);
   Argm(const Argv& args,
@@ -32,7 +32,6 @@ class Argm {
     Ambiguous_prototype_dash_dash,
     Arguments_for_argfunction,
     Autofunction,
-    Bad_argc,
     Bad_argfunction_style,
     Bad_args,
     Bad_if_nest,
@@ -49,6 +48,7 @@ class Argm {
     Elipsis_first_arg,
     Elipsis_out_of_option_group,
     Else_without_if,
+    Epsilon,
     Excess_argfunction,
     Excessive_exceptions_collected,
     Excessive_exceptions_in_catch,
@@ -199,7 +199,7 @@ class Old_argv {
   int argc_v;
 
  public:
-  Old_argv(const Argm::Argv& src);
+  Old_argv(const Argv& src);
   ~Old_argv(void);
   char** const argv(void) const {return focus;};
   int argc(void) {return argc_v;}; };

@@ -42,8 +42,7 @@ class Prototype {
   bool exclude_argfunction;
   bool required_argfunction;
   Prototype(bool non_prototype);
-  Prototype(Argm::const_iterator first_parameter,
-            Argm::const_iterator parameter_end, bool non_prototype_i);
+  Prototype(const Argv& parameters);
   void arg_to_param(const Argm& invoking_argm, Variable_map& locals,
                     Error_list& exceptions) const;
   void bad_args(std::string& missing, const Variable_map& locals,

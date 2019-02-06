@@ -17,8 +17,8 @@ rwsh: $(objects) $(local_objects)
 	$(CXX) $^ $(CXXFLAGS) $(LDLIBS) -o $@
 librwsh.a: $(objects)
 	ar -rv $@ $(objects)
-deps.mk: $(objects:o=cc) $(local_objects:o=cc)
-	gcc >$@ -MM $^
+# deps.mk: $(objects:o=cc) $(local_objects:o=cc)
+# 	gcc >$@ -MM $^
 
 include deps.mk
 

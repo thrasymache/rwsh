@@ -1,6 +1,6 @@
-// The definition of the Binary and Builtin classes. The former executes
-// external programs, the latter executes commands that are implemented by
-// functions in builtin.cc.
+// The definition of the Base_executable and Binary classes. The former
+// provides functionality common to all derived types, the latter executes
+// external programs.
 //
 // Copyright (C) 2005-2019 Samuel Newbold
 
@@ -78,11 +78,3 @@ void Binary::execute(const Argm& argm_i, Error_list& exceptions) const {
   else plumber.wait(&ret);
   if (WIFEXITED(ret) && WEXITSTATUS(ret))
     exceptions.add_error(Exception(Argm::Return_code, WEXITSTATUS(ret)));}
-
-Builtin::Builtin(const std::string& name_i,
-                 void (*impl)(const Argm& argm, Error_list& exceptions)) :
-  implementation(impl), name_v(name_i) {}
-
-// run the given builtin
-void Builtin::execute(const Argm& argm, Error_list& exceptions) const {
-  (*implementation)(argm, exceptions);}

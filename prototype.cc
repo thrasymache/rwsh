@@ -120,15 +120,14 @@ Prototype::Prototype(bool non_prototype_i) :
     positional(), required_argc(), non_prototype(non_prototype_i),
     exclude_argfunction(true), required_argfunction(false) {}
 
-Prototype::Prototype(Argm::const_iterator fp, Argm::const_iterator end,
-                     bool non_prototype_i) :
+Prototype::Prototype(const Argv& parameters) :
     bare_dash_dash(false), dash_dash_position(-1), elipsis_var(""),
     flag_options(), flags(ALL), parameter_names(),
-    positional(), required_argc(), non_prototype(non_prototype_i),
+    positional(), required_argc(), non_prototype(false),
     exclude_argfunction(true), required_argfunction(false) {
   bool has_elipsis = false;
-  for (; fp != end; ++fp) {
-    Parameter_group group(fp, end, parameter_names);
+  for (auto fp = parameters.begin(); fp != parameters.end(); ++fp) {
+    Parameter_group group(fp, parameters.end(), parameter_names);
     if (has_elipsis && !group.required && !group.has_argfunction)
       throw Exception(Argm::Post_elipsis_option, group.str());
     else if (group.elipsis == -1) {

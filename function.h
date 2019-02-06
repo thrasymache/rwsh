@@ -1,5 +1,17 @@
 // Copyright (C) 2005-2019 Samuel Newbold
 
+class Builtin : public Named_executable {
+  void (*implementation)(const Argm& argm, Error_list& exceptions);
+  std::string name_v;
+  Prototype prototype;
+ public:
+  Builtin(const std::string& name_i,
+          void (*impl)(const Argm& argm, Error_list& exceptions),
+          const Argv& prototype_i);
+  virtual void execute(const Argm& argm, Error_list& exceptions) const;
+  virtual const std::string& name(void) const {return name_v;};
+  virtual std::string str() const; };
+
 class Command_block : public Base_executable, public std::vector<Arg_script> {
   typedef std::vector<Arg_script> Base;
  public:
@@ -41,11 +53,11 @@ class Function : public Named_executable {
  public:
   Command_block body;
 
-  Function(const std::string& name, Argm::const_iterator first_parameter,
-           Argm::const_iterator parameter_end, bool non_prototype_i,
+  Function(const std::string& name, const Argv& parameters,
            const std::string& src, Error_list& errors);
-  Function(const std::string& name_i, Argm::const_iterator first_parameter,
-           Argm::const_iterator parameter_end, bool non_prototype_i,
+  Function(const std::string& name_i, bool non_prototype_i,
+           const Command_block& src);
+  Function(const std::string& name_i, const Argv& parameters,
            const Command_block& src);
   Function(const Function& src) :
     name_v(src.name_v), prototype(src.prototype), body(src.body) {}

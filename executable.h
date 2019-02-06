@@ -43,14 +43,3 @@ class Binary : public Named_executable {
   virtual void execute(const Argm& argm, Error_list& exceptions) const;
   virtual const std::string& name(void) const {return implementation;};
   virtual std::string str() const {return implementation;}; };
-
-class Builtin : public Named_executable {
-  void (*implementation)(const Argm& argm, Error_list& exceptions);
-  std::string name_v;
- public:
-  Builtin(const std::string& name_i,
-          void (*impl)(const Argm& argm, Error_list& exceptions));
-  virtual void execute(const Argm& argm, Error_list& exceptions) const;
-  virtual const std::string& name(void) const {return name_v;};
-  virtual std::string str() const {return name_v;}; };
-

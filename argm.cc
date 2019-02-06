@@ -248,7 +248,7 @@ void Error_list::replace_error(const Argm& error){
   push_back(error);
   global_stack.replace_error();}
 
-Old_argv::Old_argv(const Argm::Argv& src) : argc_v(src.size()) {
+Old_argv::Old_argv(const Argv& src) : argc_v(src.size()) {
   focus = new char*[src.size()+1];
   copy_to_cstr(src.begin(), src.end(), focus);}
 

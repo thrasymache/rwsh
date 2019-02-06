@@ -76,6 +76,7 @@ void b_usleep_overhead(const Argm& argm, Error_list& exceptions);
 void b_var_add(const Argm& argm, Error_list& exceptions);
 void b_var_divide(const Argm& argm, Error_list& exceptions);
 void b_var_exists(const Argm& argm, Error_list& exceptions);
+void b_var_multiply(const Argm& argm, Error_list& exceptions);
 void b_var_subtract(const Argm& argm, Error_list& exceptions);
 void b_version_compatible(const Argm& argm, Error_list& exceptions);
 void b_version(const Argm& argm, Error_list& exceptions);

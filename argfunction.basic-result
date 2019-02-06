@@ -29,9 +29,6 @@ call stack .source .try_catch_recursive(body)
   .combine ( (it requests reading the user's mind) ) \( stack: $stack \) $nl}
 .function_all_flags .arguments_for_argfunction name {
   echo cannot specify arguments for $name directly}
-.function_all_flags .bad_argc required needed optional [stack ...] {
-  .echo unacceptable argument count: received $required non-optional
-  echo , but needed $needed \(with $optional optional\) for $stack$}
 .function_all_flags .bad_argfunction_style style {
   echo $style is neither an argfunction nor a substitution nor a brace literal}
 .function_all_flags .bad_args -- proto assigned needed excess call_stack ... {
@@ -83,6 +80,9 @@ call stack .source .try_catch_recursive(body)
   echo call stack: $stack$}
 .function_all_flags .else_without_if stack ... {
   echo else without if with call stack: $stack$}
+.function_all_flags .epsilon var_val change stack ... {
+  echo $change is too small relative to $var_val to modify its value
+  echo call stack: $stack$}
 .function_all_flags .excess_argfunction cmd [stack ...] {
   echo $cmd does not accept an argfunction with call stack: $cmd $stack$}
 .function_all_flags .excessive_exceptions_collected max stack ... {
@@ -260,55 +260,49 @@ call stack .source .try_catch_recursive(body)
   echo call stack: $stack$}
 
 # ability of functions to act as builtin wrappers
-.function_all_flags ! args ... {
+fn ! args ... {
   .if $args$ {.throw .false ${.echo ! $args}}
   .else {.nop}}
-.function_all_flags af -- [argv ...] .{argfunction} {.argfunction}
-.function_all_flags c -- text ... {.combine $text$}
-.function_all_flags e -- text ... {.echo $text}
-.function_all_flags do_while argv ... .{argfunction} {
+fn af -- [argv ...] .{argfunction} {.argfunction}
+fn c -- text ... {.combine $text$}
+fn e -- text ... {.echo $text}
+fn do_while argv ... .{argfunction} {
   .try_catch_recursive .break {
     .nop $argv
     .try_catch_recursive .continue {.argfunction}
     .while $argv$ {.argfunction}}}
-.function_all_flags echo -- text ... {.echo $text; .combine $nl}
-.function_all_flags echo-comments cmd ... {
+fn echo -- text ... {.echo $text; .combine $nl}
+fn echo-comments cmd ... {
   .stepwise $cmd$ {if_only .test_in $1 .nop # #! ## {echo &&&*}}}
-.function_all_flags exec -- argv ... {.exec $argv$}
-.function_all_flags elif command ... .{argfunction} {
+fn exec -- argv ... {.exec $argv$}
+fn elif command ... .{argfunction} {
   .else_if $command$ {.argfunction}}
-.function_all_flags else .{argfunction} {.else {.argfunction}}
-fn false {.try_catch_recursive .return_code {${whichp false}}}
-.function_all_flags fns -- name args ... .{argfunction} {
-  .function_all_flags $name [-*] $args$ {.argfunction}}
-.function_all_flags if_only -- args ... .{argfunction} {
+fn else .{argfunction} {.else {.argfunction}}
+fn fns -- name args ... .{argfunction} {fn $name [-?] $args$ {.argfunction}}
+fn if_only -- args ... .{argfunction} {
   .if $args$ {.argfunction}; .else {.nop}}
-.function_all_flags if_only_not -- args ... .{argfunction} {
+fn if_only_not -- args ... .{argfunction} {
   .if $args$ {.nop}; .else {.argfunction}}
 fn ntimes n .{argfunction} {
   .while test_var_greater n 0 {
     .mapped_argfunction {.argfunction}
     .var_subtract n 1}}
-.function_all_flags outer_break stack ... {
-  .replace_exception .break $stack$}
-.function_all_flags outer_continue stack ... {
-  .replace_exception .continue $stack$}
-.function_all_flags scope_for var vals ... .{argfunction} {
+fn outer_break stack ... {.replace_exception .break $stack$}
+fn outer_continue stack ... {.replace_exception .continue $stack$}
+fn scope_for var vals ... .{argfunction} {
   .for $vals$ {
     .scope $1 $var {.argfunction}}}
-.function_all_flags outer_for var vals ... .{argfunction} {
+fn outer_for var vals ... .{argfunction} {
   .for $vals$ {
     .scope $1 $var {
       .try_catch_recursive outer_break outer_continue {.argfunction}}}}
-.function_all_flags outer_while argv ... .{argfunction} {
+fn outer_while argv ... .{argfunction} {
   .while $argv$ {
     .try_catch_recursive outer_break outer_continue {.argfunction}}}
-.function_all_flags setf var value {
+fn setf var value {
   .if .var_exists $var {.set $var $value}
   .else {.global $var $value}}
 fn single -- args ... {.scope ${$args$}$ result {echo $result}}
-fn test -- args ... {
-  .try_catch_recursive .return_code {${whichp test} $args$}}
 fn test_var_not_equal var value {.test_string_unequal $$var $value}
 fn test_var_greater -- var value {.test_greater $$var $value}
 fn type [-t] args ... [.{argfunction}] {
@@ -320,36 +314,45 @@ fn whence command [.{argfunction}] {
   .try_catch_recursive .function_not_found {
     .whence_function $command {.argfunction}}}
 fn whichp binary {.which_path $binary $PATH}
-.function_all_flags while_and_one_more argv ... .{argfunction} {
+fn while_and_one_more argv ... .{argfunction} {
   .try_catch_recursive .break {
     .while $argv$ {.argfunction}
     .try_catch_recursive .continue {.argfunction}}}
-.function_all_flags var_exists -- var {.var_exists $var}
-.function_all_flags var_in var set ... {.test_in $$var $set$}
-.function_all_flags var_less var N {.test_less $$var $N}
-.function_all_flags var_val -- [var ...] {
+fn var_exists -- var {.var_exists $var}
+fn var_in var set ... {.test_in $$var $set$}
+fn var_less var N {.test_less $$var $N}
+fn var_val -- [var ...] {
   .if .var_exists var {.for $var$ {.combine $1 \( $$1 \) \ }}
   .else {.nop}}
-.function_all_flags paren_if_words -- value {
+fn paren_if_words -- value {
   .if .test_number_equal ${.argc $value$} 1 {.combine $value}
   .else {.combine \( $value \)}}
 fn polish -- operator builtin {
   fn &&operator -- lhs rhs ... {
-    if_only .test_in $lhs + - / {
+    if_only .test_in $lhs + - / * {
       .scope ${$lhs $rhs$}$ (-- l r ...) {
         .set lhs $l
         .set rhs $r}}
     .scope $rhs$ (rhs [extra ...]) {
-      .if .test_in $rhs + - / {
+      .if .test_in $rhs + - / * {
         .scope ${$rhs $extra$}$ (rhs [extra ...]) {
           &&builtin lhs $rhs
           echo $lhs $extra$}}
       .else {
         &&builtin lhs $rhs
         echo $lhs $extra$}}}}
-polish - .var_subtract
 polish + .var_add
 polish / .var_divide
+polish * .var_multiply
+polish - .var_subtract
+
+# external commands tested in the test suite
+fn false {.try_catch_recursive .return_code {${whichp false}}}
+fn ln [-?] target {
+  .nop $-* # in case the following assertion fails
+  .test_file_exists $target
+  &{.which_path ln /bin:/usr/bin} $-* $target}
+fn test -- args ... {.try_catch_recursive .return_code {${whichp test} $args$}}
 .else_if .test_string_equal $2 -c {
   .for ${.list_environment}$ {
     .scope $1$ (-- var val) {
@@ -382,14 +385,14 @@ $.function_all_flags fw .{argfunction} {
   .whence_function f2; .echo $nl
   .rm_executable f1; .rm_executable f2}
 $fw {.echo hi $nl; .function_all_flags $name .{argfunction} {.argfunction}}
-.function_all_flags f1 name {.echo hi $nl; .function_all_flags $name .{argfunction} {.argfunction}}
+.function_all_flags f1 name .{argfunction} {.echo hi $nl; .function_all_flags $name .{argfunction} {.argfunction}}
 
 hi 
-.function_all_flags f2  {.echo hi $nl; .function_all_flags $name .{argfunction} {.argfunction}}
+.function_all_flags f2 .{argfunction} {.echo hi $nl; .function_all_flags $name .{argfunction} {.argfunction}}
 
 $fw {.while .throw .false {
   .function_all_flags &&name .{argfunction} {.argfunction}}}
-.function_all_flags f1 name {.while .throw .false {
+.function_all_flags f1 name .{argfunction} {.while .throw .false {
   .function_all_flags &name .{argfunction} {.argfunction}}}
 
 f2 : command not found ( f2 .whence_function fw )
@@ -412,7 +415,7 @@ $fw {
   .echo function name $name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}
-.function_all_flags f1 name {
+.function_all_flags f1 name .{argfunction} {
   .echo function name $name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}
@@ -429,7 +432,7 @@ $fw {.for 1 2 3 {
   .echo function name $1 $name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}
-.function_all_flags f1 name {.for 1 2 3 {
+.function_all_flags f1 name .{argfunction} {.for 1 2 3 {
   .echo function name $1 $name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}
@@ -460,7 +463,7 @@ $fw {.for 1 2 3 {.mapped_argfunction $1 {
   .echo function name &&name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}}
-.function_all_flags f1 name {.for 1 2 3 {.mapped_argfunction $1 {
+.function_all_flags f1 name .{argfunction} {.for 1 2 3 {.mapped_argfunction $1 {
   .echo function name &name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}}
@@ -492,7 +495,7 @@ $fw {.mapped_argfunction $1 {.for 1 2 3 {
   .echo function name &&name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}}
-.function_all_flags f1 name {.mapped_argfunction $1 {.for 1 2 3 {
+.function_all_flags f1 name .{argfunction} {.mapped_argfunction $1 {.for 1 2 3 {
   .echo function name &name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}}
@@ -542,7 +545,7 @@ $fw {.mapped_argfunction .not_a_number {
   .echo function name &&name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}
-.function_all_flags f1 name {.mapped_argfunction .not_a_number {
+.function_all_flags f1 name .{argfunction} {.mapped_argfunction .not_a_number {
   .echo function name &name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}
@@ -566,7 +569,7 @@ $fw {.try_catch_recursive .not_a_number {
   .echo function name &&name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}
-.function_all_flags f1 name {.try_catch_recursive .not_a_number {
+.function_all_flags f1 name .{argfunction} {.try_catch_recursive .not_a_number {
   .echo function name &name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}
@@ -583,7 +586,7 @@ $fw {.for 1 2 3 {.try_catch_recursive .not_a_number {
   .echo function name &&name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}}
-.function_all_flags f1 name {.for 1 2 3 {.try_catch_recursive .not_a_number {
+.function_all_flags f1 name .{argfunction} {.for 1 2 3 {.try_catch_recursive .not_a_number {
   .echo function name &name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}}
@@ -614,7 +617,7 @@ $fw {.try_catch_recursive .not_a_number {.for 1 2 3 {
   .echo function name &&name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}}
-.function_all_flags f1 name {.try_catch_recursive .not_a_number {.for 1 2 3 {
+.function_all_flags f1 name .{argfunction} {.try_catch_recursive .not_a_number {.for 1 2 3 {
   .echo function name &name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}}
@@ -646,7 +649,7 @@ $fw {.mapped_argfunction $1 {
   .echo function name &&name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}
-.function_all_flags f1 name {.mapped_argfunction $1 {
+.function_all_flags f1 name .{argfunction} {.mapped_argfunction $1 {
   .echo function name &name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}
@@ -670,7 +673,7 @@ $fw {.mapped_argfunction $name {.for a b {
   .echo function name &&name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}}
-.function_all_flags f1 name {.mapped_argfunction $name {.for a b {
+.function_all_flags f1 name .{argfunction} {.mapped_argfunction $name {.for a b {
   .echo function name &name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}}
@@ -704,10 +707,10 @@ function name f2
 f2 : command not found ( f2 .whence_function fw )
 $fw {.mapped_argfunction {
   .function_all_flags $name .{argfunction} {.argfunction}}}
-.function_all_flags f1 name {.mapped_argfunction {
+.function_all_flags f1 name .{argfunction} {.mapped_argfunction {
   .function_all_flags $name .{argfunction} {.argfunction}}}
 
-.function_all_flags f2  {.mapped_argfunction {
+.function_all_flags f2 .{argfunction} {.mapped_argfunction {
   .function_all_flags $name .{argfunction} {
   .function_all_flags $name .{argfunction} {.mapped_argfunction {
   .function_all_flags $name .{argfunction} {.argfunction}}}}}}

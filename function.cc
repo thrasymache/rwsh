@@ -1,6 +1,7 @@
-// The definition of the Function class which can be used to change the
-// arguments passed to an executable and/or tie several other executables into
-// a single executable.
+// The definition of the Builtin, Command_block, and Function classes. The
+// first of which executes commands that are implemented by functions in
+// builtin.cc, the latter of which map arguments passed to an executable
+// and/or tie several other executables into a single executable.
 //
 // Copyright (C) 2006-2019 Samuel Newbold
 
@@ -26,6 +27,26 @@
 #include "prototype.h"
 
 #include "function.h"
+
+Builtin::Builtin(const std::string& name_i,
+                 void (*impl)(const Argm& argm, Error_list& exceptions),
+                 const Argv& prototype_i) :
+  implementation(impl), name_v(name_i), prototype(prototype_i) {}
+
+// run the given builtin
+void Builtin::execute(const Argm& argm, Error_list& exceptions) const {
+  Variable_map locals(argm.parent_map());
+  prototype.arg_to_param(argm, locals, exceptions);
+  locals.bless_unused_vars();
+  if (prototype.non_prototype) std::abort();
+  else if (argm.argfunction() && prototype.exclude_argfunction)
+    exceptions.add_error(Exception(Argm::Excess_argfunction));
+  else if (!argm.argfunction() && prototype.required_argfunction)
+    exceptions.add_error(Exception(Argm::Missing_argfunction));
+  if (!global_stack.unwind_stack())
+    (*implementation)(argm, exceptions);}
+
+std::string Builtin::str() const {return name_v + " " + prototype.str();};
 
 // generate a new Command_block by unescaping argument functions and replacing
 // unescaped_argfunction with the argument function in argm
@@ -95,13 +116,9 @@ Command_block::Command_block(const std::string& src,
   point = tpoint + 1;}
 
 Function::Function(const std::string& name_i,
-                   Argm::const_iterator first_parameter,
-                   Argm::const_iterator parameter_end,
-                   bool non_prototype_i,
+                   const Argv& parameters,
                    const std::string& src, Error_list& errors) :
-    name_v(name_i),
-    prototype(first_parameter, parameter_end, non_prototype_i) {
-  if (prototype.non_prototype) default_error <<"deprecated string non-prototype: " <<name_i <<"\n";
+    name_v(name_i), prototype(parameters) {
   std::string::size_type point = 0;
   try {
     body = Command_block(src, point, 0, errors);
@@ -117,15 +134,13 @@ Function::Function(const std::string& name_i,
     throw "unclosed parenthesis on construction of function " + name_i + "\n" +
       error[1] + "\n";}}
 
-Function::Function(const std::string& name_i,
-                   Argm::const_iterator first_parameter,
-                   Argm::const_iterator parameter_end,
-                   bool non_prototype_i,
+Function::Function(const std::string& name_i, const Argv& parameters,
                    const Command_block& src) :
-    prototype(first_parameter, parameter_end, non_prototype_i),
-    name_v(name_i), body(src) {
-  //if (non_prototype_i) default_error <<"re-deprecated .function non-prototype: " <<name_i <<"\n";
-  }
+     name_v(name_i), prototype(parameters), body(src) {}
+
+Function::Function(const std::string& name_i, bool non_prototype_i,
+                   const Command_block& src) :
+     name_v(name_i), prototype(non_prototype_i), body(src) {}
 
 // run the given function
 void Function::execute(const Argm& argm, Error_list& exceptions) const {

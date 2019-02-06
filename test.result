@@ -29,9 +29,6 @@ call stack .source .try_catch_recursive(body)
   .combine ( (it requests reading the user's mind) ) \( stack: $stack \) $nl}
 .function_all_flags .arguments_for_argfunction name {
   echo cannot specify arguments for $name directly}
-.function_all_flags .bad_argc required needed optional [stack ...] {
-  .echo unacceptable argument count: received $required non-optional
-  echo , but needed $needed \(with $optional optional\) for $stack$}
 .function_all_flags .bad_argfunction_style style {
   echo $style is neither an argfunction nor a substitution nor a brace literal}
 .function_all_flags .bad_args -- proto assigned needed excess call_stack ... {
@@ -83,6 +80,9 @@ call stack .source .try_catch_recursive(body)
   echo call stack: $stack$}
 .function_all_flags .else_without_if stack ... {
   echo else without if with call stack: $stack$}
+.function_all_flags .epsilon var_val change stack ... {
+  echo $change is too small relative to $var_val to modify its value
+  echo call stack: $stack$}
 .function_all_flags .excess_argfunction cmd [stack ...] {
   echo $cmd does not accept an argfunction with call stack: $cmd $stack$}
 .function_all_flags .excessive_exceptions_collected max stack ... {
@@ -260,55 +260,49 @@ call stack .source .try_catch_recursive(body)
   echo call stack: $stack$}
 
 # ability of functions to act as builtin wrappers
-.function_all_flags ! args ... {
+fn ! args ... {
   .if $args$ {.throw .false ${.echo ! $args}}
   .else {.nop}}
-.function_all_flags af -- [argv ...] .{argfunction} {.argfunction}
-.function_all_flags c -- text ... {.combine $text$}
-.function_all_flags e -- text ... {.echo $text}
-.function_all_flags do_while argv ... .{argfunction} {
+fn af -- [argv ...] .{argfunction} {.argfunction}
+fn c -- text ... {.combine $text$}
+fn e -- text ... {.echo $text}
+fn do_while argv ... .{argfunction} {
   .try_catch_recursive .break {
     .nop $argv
     .try_catch_recursive .continue {.argfunction}
     .while $argv$ {.argfunction}}}
-.function_all_flags echo -- text ... {.echo $text; .combine $nl}
-.function_all_flags echo-comments cmd ... {
+fn echo -- text ... {.echo $text; .combine $nl}
+fn echo-comments cmd ... {
   .stepwise $cmd$ {if_only .test_in $1 .nop # #! ## {echo &&&*}}}
-.function_all_flags exec -- argv ... {.exec $argv$}
-.function_all_flags elif command ... .{argfunction} {
+fn exec -- argv ... {.exec $argv$}
+fn elif command ... .{argfunction} {
   .else_if $command$ {.argfunction}}
-.function_all_flags else .{argfunction} {.else {.argfunction}}
-fn false {.try_catch_recursive .return_code {${whichp false}}}
-.function_all_flags fns -- name args ... .{argfunction} {
-  .function_all_flags $name [-*] $args$ {.argfunction}}
-.function_all_flags if_only -- args ... .{argfunction} {
+fn else .{argfunction} {.else {.argfunction}}
+fn fns -- name args ... .{argfunction} {fn $name [-?] $args$ {.argfunction}}
+fn if_only -- args ... .{argfunction} {
   .if $args$ {.argfunction}; .else {.nop}}
-.function_all_flags if_only_not -- args ... .{argfunction} {
+fn if_only_not -- args ... .{argfunction} {
   .if $args$ {.nop}; .else {.argfunction}}
 fn ntimes n .{argfunction} {
   .while test_var_greater n 0 {
     .mapped_argfunction {.argfunction}
     .var_subtract n 1}}
-.function_all_flags outer_break stack ... {
-  .replace_exception .break $stack$}
-.function_all_flags outer_continue stack ... {
-  .replace_exception .continue $stack$}
-.function_all_flags scope_for var vals ... .{argfunction} {
+fn outer_break stack ... {.replace_exception .break $stack$}
+fn outer_continue stack ... {.replace_exception .continue $stack$}
+fn scope_for var vals ... .{argfunction} {
   .for $vals$ {
     .scope $1 $var {.argfunction}}}
-.function_all_flags outer_for var vals ... .{argfunction} {
+fn outer_for var vals ... .{argfunction} {
   .for $vals$ {
     .scope $1 $var {
       .try_catch_recursive outer_break outer_continue {.argfunction}}}}
-.function_all_flags outer_while argv ... .{argfunction} {
+fn outer_while argv ... .{argfunction} {
   .while $argv$ {
     .try_catch_recursive outer_break outer_continue {.argfunction}}}
-.function_all_flags setf var value {
+fn setf var value {
   .if .var_exists $var {.set $var $value}
   .else {.global $var $value}}
 fn single -- args ... {.scope ${$args$}$ result {echo $result}}
-fn test -- args ... {
-  .try_catch_recursive .return_code {${whichp test} $args$}}
 fn test_var_not_equal var value {.test_string_unequal $$var $value}
 fn test_var_greater -- var value {.test_greater $$var $value}
 fn type [-t] args ... [.{argfunction}] {
@@ -320,36 +314,45 @@ fn whence command [.{argfunction}] {
   .try_catch_recursive .function_not_found {
     .whence_function $command {.argfunction}}}
 fn whichp binary {.which_path $binary $PATH}
-.function_all_flags while_and_one_more argv ... .{argfunction} {
+fn while_and_one_more argv ... .{argfunction} {
   .try_catch_recursive .break {
     .while $argv$ {.argfunction}
     .try_catch_recursive .continue {.argfunction}}}
-.function_all_flags var_exists -- var {.var_exists $var}
-.function_all_flags var_in var set ... {.test_in $$var $set$}
-.function_all_flags var_less var N {.test_less $$var $N}
-.function_all_flags var_val -- [var ...] {
+fn var_exists -- var {.var_exists $var}
+fn var_in var set ... {.test_in $$var $set$}
+fn var_less var N {.test_less $$var $N}
+fn var_val -- [var ...] {
   .if .var_exists var {.for $var$ {.combine $1 \( $$1 \) \ }}
   .else {.nop}}
-.function_all_flags paren_if_words -- value {
+fn paren_if_words -- value {
   .if .test_number_equal ${.argc $value$} 1 {.combine $value}
   .else {.combine \( $value \)}}
 fn polish -- operator builtin {
   fn &&operator -- lhs rhs ... {
-    if_only .test_in $lhs + - / {
+    if_only .test_in $lhs + - / * {
       .scope ${$lhs $rhs$}$ (-- l r ...) {
         .set lhs $l
         .set rhs $r}}
     .scope $rhs$ (rhs [extra ...]) {
-      .if .test_in $rhs + - / {
+      .if .test_in $rhs + - / * {
         .scope ${$rhs $extra$}$ (rhs [extra ...]) {
           &&builtin lhs $rhs
           echo $lhs $extra$}}
       .else {
         &&builtin lhs $rhs
         echo $lhs $extra$}}}}
-polish - .var_subtract
 polish + .var_add
 polish / .var_divide
+polish * .var_multiply
+polish - .var_subtract
+
+# external commands tested in the test suite
+fn false {.try_catch_recursive .return_code {${whichp false}}}
+fn ln [-?] target {
+  .nop $-* # in case the following assertion fails
+  .test_file_exists $target
+  &{.which_path ln /bin:/usr/bin} $-* $target}
+fn test -- args ... {.try_catch_recursive .return_code {${whichp test} $args$}}
 .else_if .test_string_equal $2 -c {
   .for ${.list_environment}$ {
     .scope $1$ (-- var val) {
@@ -419,7 +422,9 @@ $not$all is not a valid word selection
 call stack
 &&&is$not$all attempts to substitute after the command has been run
 $.source
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .source
+unacceptable arguments: for prototype -- file [args ...],
+ needed (file),
+( call) stack: .source
 $.source /etc/hosts {excess argfunc}
 .source does not accept an argfunction with call stack: .source
 $.source test_files/*fu*bar*
@@ -599,8 +604,12 @@ $whence .autofunction
     .function_all_flags $cmd -- [args ...] {
       &full_path $args$}}
   .error added $cmd to executable map $nl}
+$whence .binary
+.binary file
 $.binary {e excess argfunction}
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .binary
+unacceptable arguments: for prototype file,
+ needed (file),
+( call) stack: .binary
 .binary does not accept an argfunction with call stack: .binary
 $.binary /bin/rzwsh
 /bin/rzwsh : binary does not exist
@@ -757,7 +766,6 @@ $./rwsh test_files/pause_hello.rwsh <test_files/pause_hello.rwsh
 hello world 
 .ambiguous_prototype_dash_dash not defined 
 .arguments_for_argfunction not defined 
-.bad_argc not defined 
 .bad_argfunction_style not defined 
 .bad_args not defined 
 .bad_if_nest not defined 
@@ -774,6 +782,7 @@ hello world
 .elipsis_first_arg not defined 
 .elipsis_out_of_option_group not defined 
 .else_without_if not defined 
+.epsilon not defined 
 .excess_argfunction not defined 
 .excessive_exceptions_collected not defined 
 .excessive_exceptions_in_catch not defined 
@@ -1324,6 +1333,11 @@ $# .for_each_line
 $/bin/cat <non_existent_file
 could not open file non_existent_file
 call stack /bin/cat
+$.for_each_line excess arguments
+unacceptable arguments: for prototype .{argfunction},
+ found (excess arguments) excess
+( call) stack: .for_each_line
+.for_each_line requires an argfunction
 $.for_each_line <non_existent_file {echo line of $# \( $* \)}
 could not open file non_existent_file
 call stack .for_each_line
@@ -1351,7 +1365,9 @@ line 2 longer
 
 ending
 $.for_each_line x {}
-unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .for_each_line
+unacceptable arguments: for prototype .{argfunction},
+ found (x) excess
+( call) stack: .for_each_line
 $.for_each_line <outfile
 .for_each_line requires an argfunction
 $.for_each_line <outfile <another A{}
@@ -1379,7 +1395,17 @@ line of 1 ( )
 line of 2 ( ending ) 
 $/bin/rm outfile
 $
-$# soon level promotion
+$# soon level promotion .get_max_nesting .set_max_nesting
+$.get_max_nesting excess {excess argfunction}
+unacceptable arguments: for prototype ,
+ found (excess) excess
+( call) stack: .get_max_nesting
+.get_max_nesting does not accept an argfunction with call stack: .get_max_nesting
+$.set_max_nesting {excess argfunction}
+unacceptable arguments: for prototype -- maximum,
+ needed (maximum),
+( call) stack: .set_max_nesting
+.set_max_nesting does not accept an argfunction with call stack: .set_max_nesting
 $.global A 0
 $.global OLD_NESTING ${.get_max_nesting}
 $.set_max_nesting 46
@@ -1412,6 +1438,8 @@ $.unset OLD_NESTING
 $
 $## builtin tests
 $# .argc
+$whence .argc
+.argc -- [list ...]
 $.argc {excess argfunc}
 .argc does not accept an argfunction with call stack: .argc
 $.scope () {.argc; .echo $nl}
@@ -1423,11 +1451,16 @@ $.scope () {.argc (1 a) (2 b (c d)) (3 ((e () f))); .echo $nl}
 $
 $# .cd (.which_path ../)
 $.cd
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .cd
+unacceptable arguments: for prototype -- path,
+ needed (path),
+( call) stack: .cd
 $.cd /bin {excess argfunc}
 .cd does not accept an argfunction with call stack: .cd
 $.cd /bin /
-unacceptable argument count: received 2 non-optional, but needed 1 (with 0 optional) for .cd
+unacceptable arguments: for prototype -- path,
+ assigned path=/bin ,
+ but found (/) excess
+( call) stack: .cd
 $.cd /bn
 /bn directory does not exist
 call stack .cd
@@ -1451,7 +1484,9 @@ call stack: .which_path .try_catch_recursive(body)
 $
 $# .combine
 $.combine
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .combine
+unacceptable arguments: for prototype -- text ...,
+ needed (text),
+( call) stack: .combine
 $.combine something {excess argfunc}
 .combine does not accept an argfunction with call stack: .combine
 $.combine on () e \ two ( ) $# $nl
@@ -1459,12 +1494,16 @@ one two 8
 $
 $# .echo .error
 $.error
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .error
+unacceptable arguments: for prototype -- text ...,
+ needed (text),
+( call) stack: .error
 $.error something {excess argfunc}
 .error does not accept an argfunction with call stack: .error
 $.nop .error cannot test error with a diff until you can redirect it $nl
 $.echo
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .echo
+unacceptable arguments: for prototype -- text ...,
+ needed (text),
+( call) stack: .echo
 $.echo something {excess argfunc}
 .echo does not accept an argfunction with call stack: .echo
 $.echo these are fixed strings $nl
@@ -1472,7 +1511,9 @@ these are fixed strings
 $
 $# .exec .fork Binary Old_argv_t .binary_not_found
 $.fork
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .fork
+unacceptable arguments: for prototype -- command ... [.{argfunction}],
+ needed (command),
+( call) stack: .fork
 $.fork echo text
 text
 $.fork .exit 127
@@ -1481,7 +1522,9 @@ $.fork sa 126 {sa $args$ {echo about to return $args$; .exit $args$}}
 about to return 126
 .fork returned 126 : call stack .fork
 $.exec
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .exec
+unacceptable arguments: for prototype -- command ...,
+ needed (command),
+( call) stack: .exec
 $.exec something {excess argfunc}
 .exec does not accept an argfunction with call stack: .exec
 $.exec /bin/ech does not exist
@@ -1551,16 +1594,22 @@ $/bin/echo 1 2 3
 $
 $# .fallback_handler .get_fallback_message .set_fallback_message
 $.fallback_handler
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .fallback_handler
+unacceptable arguments: for prototype -- command ... [.{argfunction}],
+ needed (command),
+( call) stack: .fallback_handler
 $.fallback_handler something {excess argfunc}
 Exception for failed handler. Original exception with call stack:
 something
 $.get_fallback_message something 
-unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .get_fallback_message
+unacceptable arguments: for prototype ,
+ found (something) excess
+( call) stack: .get_fallback_message
 $.get_fallback_message {excess argfunc}
 .get_fallback_message does not accept an argfunction with call stack: .get_fallback_message
 $.set_fallback_message
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .set_fallback_message
+unacceptable arguments: for prototype message ...,
+ needed (message),
+( call) stack: .set_fallback_message
 $.set_fallback_message something {excess argfunc}
 .set_fallback_message does not accept an argfunction with call stack: .set_fallback_message
 $.fallback_handler pretend_error
@@ -1586,7 +1635,9 @@ even from .throw .throw 7 is a number
 $
 $# .for
 $.for {echo no arguments $1}
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .for
+unacceptable arguments: for prototype -- list ... .{argfunction},
+ needed (list),
+( call) stack: .for
 $.for no_argfunction
 .for requires an argfunction
 $.for 1 {echo one argument $1}
@@ -1651,14 +1702,24 @@ four arguments 2
 four arguments 3 
 four arguments 4 
 $
-$# .function_all_flags .rm_executable
+$# .function_all_flags .rm_executable .list_locals
+$whence .function
+.function -- name .{argfunction}
 $.function_all_flags
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .function_all_flags
-$.function_all_flags missing argfunction
+unacceptable arguments: for prototype -- name [prototype ...] .{argfunction},
+ needed (name),
+( call) stack: .function_all_flags
 .function_all_flags requires an argfunction
 $.rm_executable {excess argfunction}
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .rm_executable
+unacceptable arguments: for prototype -- command,
+ needed (command),
+( call) stack: .rm_executable
 .rm_executable does not accept an argfunction with call stack: .rm_executable
+$.list_locals excess {excess argfunction}
+unacceptable arguments: for prototype ,
+ found (excess) excess
+( call) stack: .list_locals
+.list_locals does not accept an argfunction with call stack: .list_locals
 $.function_all_flags .exit {.nop}
 $.exit cannot be a function
 call stack .function_all_flags
@@ -1713,8 +1774,6 @@ $fn g {e hi $nl; fn g {e there $nl}; fn h {e nothing here}; g}
 $g
 hi 
 there 
-$.function_all_flags
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .function_all_flags
 $.function_all_flags .exit {e cannot redefine a builtin as a function}
 $.exit cannot be a function
 call stack .function_all_flags
@@ -2431,10 +2490,15 @@ $a -x second -
 x(-x) y(second) z(-) 
 $
 $# .get_max_collectible_exceptions .set_max_collectible_exceptions
+$# .collect_errors_except .collect_errors_only
 $.get_max_collectible_exceptions excess
-unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .get_max_collectible_exceptions
+unacceptable arguments: for prototype ,
+ found (excess) excess
+( call) stack: .get_max_collectible_exceptions
 $.set_max_collectible_exceptions
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .set_max_collectible_exceptions
+unacceptable arguments: for prototype -- maximum,
+ needed (maximum),
+( call) stack: .set_max_collectible_exceptions
 $.get_max_collectible_exceptions {excess}
 .get_max_collectible_exceptions does not accept an argfunction with call stack: .get_max_collectible_exceptions
 $.set_max_collectible_exceptions 1 {excess}
@@ -2451,10 +2515,14 @@ $.scope () {.get_max_collectible_exceptions; .echo $nl}
 10
 $.set_max_collectible_exceptions 7
 $.collect_errors_except
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .collect_errors_except
+unacceptable arguments: for prototype -- exceptions ... .{argfunction},
+ needed (exceptions),
+( call) stack: .collect_errors_except
 .collect_errors_except requires an argfunction
 $.collect_errors_only
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .collect_errors_only
+unacceptable arguments: for prototype -- exceptions ... .{argfunction},
+ needed (exceptions),
+( call) stack: .collect_errors_only
 .collect_errors_only requires an argfunction
 $se {.collect_errors_except .nop {
      se {echo before exception
@@ -2479,7 +2547,10 @@ $se {.collect_errors_except echo {
 between exceptions
 foo : command not found ( foo .throw .collect_errors_except .scope se )
 7 .throw .collect_errors_except .scope se
-$# .collect_errors_except .echo {${.throw .echo exception thrown directly}}
+$.collect_errors_except echo {${.throw echo exception thrown directly}}
+exception thrown directly .throw .mapped_argfunction .collect_errors_except
+substitution (${.throw echo exception thrown directly}) failed
+call stack: .collect_errors_except
 $se {.collect_errors_only .function_not_found {
      .throw .function_not_found foo
      echo between exceptions
@@ -2577,11 +2648,15 @@ $.scope () {.get_max_collectible_exceptions; .echo $nl}
 $
 $# .getpid .getppid .sighup
 $.getpid excess
-unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .getpid
+unacceptable arguments: for prototype ,
+ found (excess) excess
+( call) stack: .getpid
 $.getpid {excess argfunc}
 .getpid does not accept an argfunction with call stack: .getpid
 $.getppid excess
-unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .getppid
+unacceptable arguments: for prototype ,
+ found (excess) excess
+( call) stack: .getppid
 $.getppid {excess argfunc}
 .getppid does not accept an argfunction with call stack: .getppid
 $se {.fork se {
@@ -2626,32 +2701,51 @@ after sigusr1
 $
 $# .global .local .local_declare .unset .var_exists
 $.global
-unacceptable argument count: received 0 non-optional, but needed 2 (with 0 optional) for .global
+unacceptable arguments: for prototype -- var value,
+ needed (var value),
+( call) stack: .global
 $.global x y z
-unacceptable argument count: received 3 non-optional, but needed 2 (with 0 optional) for .global
+unacceptable arguments: for prototype -- var value,
+ assigned value=y var=x ,
+ but found (z) excess
+( call) stack: .global
 $.global x y {excess argfunc}
 .global does not accept an argfunction with call stack: .global
 $.local
-unacceptable argument count: received 0 non-optional, but needed 2 (with 0 optional) for .local
+unacceptable arguments: for prototype -- var value,
+ needed (var value),
+( call) stack: .local
 $.local x y z
-unacceptable argument count: received 3 non-optional, but needed 2 (with 0 optional) for .local
+unacceptable arguments: for prototype -- var value,
+ assigned value=y var=x ,
+ but found (z) excess
+( call) stack: .local
 $.local x y {excess argfunc}
 .local does not accept an argfunction with call stack: .local
 $.local_declare
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .local_declare
+unacceptable arguments: for prototype -- var ...,
+ needed (var),
+( call) stack: .local_declare
 $.local_declare x {excess argfunc}
 .local_declare does not accept an argfunction with call stack: .local_declare
 $.unset
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .unset
+unacceptable arguments: for prototype -- var,
+ needed (var),
+( call) stack: .unset
 $.unset x {excess argfunc}
 .unset does not accept an argfunction with call stack: .unset
 $.unset x y
-unacceptable argument count: received 2 non-optional, but needed 1 (with 0 optional) for .unset
+unacceptable arguments: for prototype -- var,
+ assigned var=x ,
+ but found (y) excess
+( call) stack: .unset
 $.unset FIGNORE
 $FIGNORE cannot be set
 call stack .unset
 $.var_exists
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .var_exists
+unacceptable arguments: for prototype -- var ...,
+ needed (var),
+( call) stack: .var_exists
 $.var_exists x {excess argfunc}
 .var_exists does not accept an argfunction with call stack: .var_exists
 $.global 100 nihilism
@@ -2869,7 +2963,9 @@ $# .store_output
 $.store_output x
 .store_output requires an argfunction
 $.store_output {echo some text}
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .store_output
+unacceptable arguments: for prototype -- var .{argfunction},
+ needed (var),
+( call) stack: .store_output
 $.store_output # {echo some text}
 $# cannot be set
 call stack .store_output
@@ -3222,14 +3318,35 @@ $
 $# .if .else_if .else_if_not .else
 $.collect_errors_except .nop {
   .if
+  whence .if
   .else_if .test_is_number 0 {echo do not run after an exception}
+  whence .else_if
   .else_if_not .test_is_number false {echo do not run after an exception}
   .else_if
+  whence .else_if_not
   .else_if_not
+  whence .else
   .else {echo do not run after an exception}}
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .if .collect_errors_except
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .else_if .collect_errors_except
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .else_if_not .collect_errors_except
+.if -- condition ... .{argfunction}
+.else_if -- condition ... .{argfunction}
+.else_if_not -- condition ... .{argfunction}
+.else .{argfunction}
+unacceptable arguments: for prototype -- condition ... .{argfunction},
+ needed (condition),
+( call) stack: (.if .collect_errors_except)
+.if requires an argfunction
+stack .collect_errors_except
+else without if with call stack: .else_if .collect_errors_except
+unacceptable arguments: for prototype -- condition ... .{argfunction},
+ needed (condition),
+( call) stack: (.else_if .collect_errors_except)
+.else_if requires an argfunction
+stack .collect_errors_except
+unacceptable arguments: for prototype -- condition ... .{argfunction},
+ needed (condition),
+( call) stack: (.else_if_not .collect_errors_except)
+.else_if_not requires an argfunction
+stack .collect_errors_except
 $.if missing argfunction
 .if requires an argfunction
 $.else_if missing argfunction
@@ -3260,25 +3377,28 @@ $.else_if_not .test_is_number false {echo nor this}
 else without if with call stack: .else_if_not
 $
 $# .internal_features .internal_functions .internal_vars
-$.internal_features 1
+$.internal_features 1 {excess argfunc}
 unacceptable arguments: for prototype ,
  found (1) excess
 ( call) stack: .internal_features
+.internal_features does not accept an argfunction with call stack: .internal_features
 $.internal_functions 1
-unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .internal_functions
+unacceptable arguments: for prototype ,
+ found (1) excess
+( call) stack: .internal_functions
 $.internal_functions {excess argfunc}
 .internal_functions does not accept an argfunction with call stack: .internal_functions
-$.internal_vars 1
+$.internal_vars 1 {excess argfunc}
 unacceptable arguments: for prototype ,
  found (1) excess
 ( call) stack: .internal_vars
+.internal_vars does not accept an argfunction with call stack: .internal_vars
 $.internal_features
 .after_command .before_command .run_logic
 $.internal_functions
 .ambiguous_prototype_dash_dash
 .arguments_for_argfunction
 .autofunction
-.bad_argc
 .bad_argfunction_style
 .bad_args
 .bad_if_nest
@@ -3295,6 +3415,7 @@ $.internal_functions
 .elipsis_first_arg
 .elipsis_out_of_option_group
 .else_without_if
+.epsilon
 .excess_argfunction
 .excessive_exceptions_collected
 .excessive_exceptions_in_catch
@@ -3362,7 +3483,9 @@ FIGNORE
 $
 $# .is_default_input .is_default_output .is_default_error
 $.is_default_input 1
-unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .is_default_input
+unacceptable arguments: for prototype ,
+ found (1) excess
+( call) stack: .is_default_input
 $.is_default_input {excess argfunc}
 .is_default_input does not accept an argfunction with call stack: .is_default_input
 $se {.is_default_input <dummy_file}
@@ -3370,7 +3493,9 @@ assertion is_default_input failed
 call stack .is_default_input .scope se
 $se {.is_default_input}
 $.is_default_output 1
-unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .is_default_output
+unacceptable arguments: for prototype ,
+ found (1) excess
+( call) stack: .is_default_output
 $.is_default_output {excess argfunc}
 .is_default_output does not accept an argfunction with call stack: .is_default_output
 $e ${.is_default_output; .echo $?}
@@ -3382,14 +3507,18 @@ assertion is_default_output failed
 call stack .is_default_output .scope se
 $se {.is_default_output}
 $.is_default_error 1
-unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .is_default_error
+unacceptable arguments: for prototype ,
+ found (1) excess
+( call) stack: .is_default_error
 $.is_default_error {excess argfunc}
 .is_default_error does not accept an argfunction with call stack: .is_default_error
 $se {.is_default_error}
 $
 $# .list_executables
 $.list_executables excess
-unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .list_executables
+unacceptable arguments: for prototype ,
+ found (excess) excess
+( call) stack: .list_executables
 $.list_executables {excess argfunc}
 .list_executables does not accept an argfunction with call stack: .list_executables
 $.for ${.list_executables}$ {.combine $1 $nl}
@@ -3398,6 +3527,7 @@ $.for ${.list_executables}$ {.combine $1 $nl}
 #
 #!
 ##
+*
 +
 -
 ./rwsh
@@ -3408,7 +3538,6 @@ $.for ${.list_executables}$ {.combine $1 $nl}
 .argc
 .arguments_for_argfunction
 .autofunction
-.bad_argc
 .bad_argfunction_style
 .bad_args
 .bad_if_nest
@@ -3437,6 +3566,7 @@ $.for ${.list_executables}$ {.combine $1 $nl}
 .else_if_not
 .else_without_if
 .enable_readline
+.epsilon
 .error
 .excess_argfunction
 .excessive_exceptions_collected
@@ -3566,6 +3696,7 @@ $.for ${.list_executables}$ {.combine $1 $nl}
 .var_add
 .var_divide
 .var_exists
+.var_multiply
 .var_subtract
 .variable_already_exists
 .vars
@@ -3624,6 +3755,7 @@ if_only
 if_only_not
 if_true
 if_with_body
+ln
 ntimes
 obscured_else
 om
@@ -3656,7 +3788,9 @@ while_and_one_more
 $
 $# .ls
 $.ls
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .ls
+unacceptable arguments: for prototype -- paths ...,
+ needed (paths),
+( call) stack: .ls
 $.ls /bin {excess argfunc}
 .ls does not accept an argfunction with call stack: .ls
 $.ls /bin/usr/
@@ -3670,23 +3804,35 @@ $.ls /bin /usr/
 /usr/
 $
 $# .nop
+$whence .nop
+.nop -- [args ...] [.{argfunction}]
 $.nop
 $.nop {optional argfunc}
 $.nop 1 2 3 4 5
 $
 $# .replace_exception
 $.replace_exception
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .replace_exception
+unacceptable arguments: for prototype -- args ... [.{argfunction}],
+ needed (args),
+( call) stack: .replace_exception
 $.replace_exception echo not in exception handler
 .replace_exception called outside of an exception handler
 call stack: .replace_exception
 $.try_catch_recursive .replace_exception {
   .throw .replace_exception echo now in exception handler}
 now in exception handler .throw .try_catch_recursive(body) .replace_exception .try_catch_recursive
+$.try_catch_recursive .replace_exception {
+  .throw .replace_exception .for {echo $1 is on the call stack}}
+.throw is on the call stack
+.try_catch_recursive(body) is on the call stack
+.replace_exception is on the call stack
+.try_catch_recursive is on the call stack
 $
 $# .scope prototype.cc
 $.scope {e $foo}
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .scope
+unacceptable arguments: for prototype -- [list ...] prototype .{argfunction},
+ needed (prototype),
+( call) stack: .scope
 $.scope () {.scope foo}
 .scope requires an argfunction
 stack .scope
@@ -3726,6 +3872,16 @@ $.scope a ([-- arg]) {echo -- cannot take arguments}
 optional -- parameter cannot take arguments ( ([-- arg]) ) with call stack: .scope
 $.scope a ([arg -- foo]) {echo -- cannot be an argument}
 optional -- parameter cannot take arguments ( ([arg -- foo]) ) with call stack: .scope
+$.scope (args ...) {for ${.list_locals}$ {.combine $1 = $$1 }; .echo $nl}
+unacceptable arguments: for prototype args ...,
+ needed (args),
+( call) stack: .scope
+$.scope ([args ...]) {for ${.list_locals}$ {.combine $1 = $$1 }; .echo $nl}
+
+$.scope () (args ...) {for ${.list_locals}$ {.combine $1 = $$1 }; .echo $nl}
+args=()
+$.scope () ([args ...]) {for ${.list_locals}$ {.combine $1 = $$1 }; .echo $nl}
+args=()
 $.scope -x -y a b ([-?] args ...) {
   for ${.list_locals}$ {.combine $1 = $$1 \ }; .echo $nl}
 -*=-x -y -?=-x -y args=a b 
@@ -3910,7 +4066,10 @@ $pts -to -first
 $
 $# .selection_set
 $.selection_set A
-unacceptable argument count: received 1 non-optional, but needed 2 (with 0 optional) for .selection_set
+unacceptable arguments: for prototype -- var value ...,
+ assigned var=A ,
+ but needed (value),
+( call) stack: .selection_set
 $.selection_set A /usr {excess argfunc}
 .selection_set does not accept an argfunction with call stack: .selection_set
 $.selection_set A /usr
@@ -3937,7 +4096,10 @@ $echo $A$
 $
 $# .set
 $.set A
-unacceptable argument count: received 1 non-optional, but needed 2 (with 0 optional) for .set
+unacceptable arguments: for prototype -- var value ...,
+ assigned var=A ,
+ but needed (value),
+( call) stack: .set
 $.set 1 x
 $1 cannot be set
 call stack .set
@@ -3974,10 +4136,12 @@ $echo $A
 x
 $
 $# .try_catch_recursive .get_max_extra_exceptions .set_max_extra_exceptions
-$.try_catch_recursive .function_not_found 
+$.try_catch_recursive .function_not_found
 .try_catch_recursive requires an argfunction
 $.try_catch_recursive {.test_less 0 A}
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .try_catch_recursive
+unacceptable arguments: for prototype -- exception ... .{argfunction},
+ needed (exception),
+( call) stack: .try_catch_recursive
 $fn e_after .{argfunction} {se {.argfunction}; echo after}
 $e_after {.try_catch_recursive .not_a_number .function_not_found {
   .test_less 0 A}}
@@ -4011,9 +4175,13 @@ $e_after {sa echo hi {.try_catch_recursive ${.internal_functions}$ {&&&args$}}}
 hi
 after
 $.get_max_extra_exceptions excess
-unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .get_max_extra_exceptions
+unacceptable arguments: for prototype ,
+ found (excess) excess
+( call) stack: .get_max_extra_exceptions
 $.set_max_extra_exceptions
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .set_max_extra_exceptions
+unacceptable arguments: for prototype -- maximum,
+ needed (maximum),
+( call) stack: .set_max_extra_exceptions
 $.get_max_extra_exceptions {excess}
 .get_max_extra_exceptions does not accept an argfunction with call stack: .get_max_extra_exceptions
 $.set_max_extra_exceptions 1 {excess}
@@ -4054,7 +4222,9 @@ $.function_all_flags a args ... {e $args$ one $nl; e $args$ two $nl
   e $args$ three $nl}
 $.function_all_flags d args ... {e $args$ $nl; .stepwise $args$ {d $*}}
 $.stepwise {e $* $nl}
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .stepwise
+unacceptable arguments: for prototype -- command ... .{argfunction},
+ needed (command),
+( call) stack: .stepwise
 $.stepwise wrapper 1 2
 .stepwise requires an argfunction
 $.stepwise stepwise {e $* $nl}
@@ -4133,7 +4303,9 @@ a 1 2 three
 $
 $# .test_file_exists
 $.test_file_exists
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .test_file_exists
+unacceptable arguments: for prototype -- path ...,
+ needed (path),
+( call) stack: .test_file_exists
 $.test_file_exists dummy_file {excess argfunc}
 .test_file_exists does not accept an argfunction with call stack: .test_file_exists
 $.test_file_exists /b /in
@@ -4143,21 +4315,38 @@ $.test_file_exists /b /bin /in
 $
 $# .test_string_equal .test_string_unequal .test_not_empty .test_in
 $.test_string_equal x
-unacceptable argument count: received 1 non-optional, but needed 2 (with 0 optional) for .test_string_equal
+unacceptable arguments: for prototype -- left_string right_string,
+ assigned left_string=x ,
+ but needed (right_string),
+( call) stack: .test_string_equal
 $.test_string_equal x x x
-unacceptable argument count: received 3 non-optional, but needed 2 (with 0 optional) for .test_string_equal
+unacceptable arguments: for prototype -- left_string right_string,
+ assigned left_string=x right_string=x ,
+ but found (x) excess
+( call) stack: .test_string_equal
 $.test_string_equal x x {excess argfunc}
 .test_string_equal does not accept an argfunction with call stack: .test_string_equal
-$.test_string_unequal x 
-unacceptable argument count: received 1 non-optional, but needed 2 (with 0 optional) for .test_string_unequal
+$.test_string_unequal x
+unacceptable arguments: for prototype -- left_string right_string,
+ assigned left_string=x ,
+ but needed (right_string),
+( call) stack: .test_string_unequal
 $.test_string_unequal x x x
-unacceptable argument count: received 3 non-optional, but needed 2 (with 0 optional) for .test_string_unequal
+unacceptable arguments: for prototype -- left_string right_string,
+ assigned left_string=x right_string=x ,
+ but found (x) excess
+( call) stack: .test_string_unequal
 $.test_string_unequal x x {excess argfunc}
 .test_string_unequal does not accept an argfunction with call stack: .test_string_unequal
-$.test_not_empty 
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .test_not_empty
+$.test_not_empty
+unacceptable arguments: for prototype -- input,
+ needed (input),
+( call) stack: .test_not_empty
 $.test_not_empty x x
-unacceptable argument count: received 2 non-optional, but needed 1 (with 0 optional) for .test_not_empty
+unacceptable arguments: for prototype -- input,
+ assigned input=x ,
+ but found (x) excess
+( call) stack: .test_not_empty
 $.test_not_empty x {excess argfunc}
 .test_not_empty does not accept an argfunction with call stack: .test_not_empty
 $.test_string_equal x y
@@ -4173,7 +4362,9 @@ assertion ( -n ) failed
 call stack .test_not_empty
 $.test_not_empty x
 $.test_in
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .test_in
+unacceptable arguments: for prototype -- focus [list ...],
+ needed (focus),
+( call) stack: .test_in
 $.test_in x
 assertion (x in) failed
 call stack .test_in
@@ -4186,7 +4377,9 @@ $.test_in y x y z
 $
 $# .test_is_number .test_number_equal .test_greater .test_less
 $.test_is_number
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .test_is_number
+unacceptable arguments: for prototype -- value,
+ needed (value),
+( call) stack: .test_is_number
 $.test_is_number 42 {excess argfunc}
 .test_is_number does not accept an argfunction with call stack: .test_is_number
 $.test_is_number ()
@@ -4202,7 +4395,10 @@ assertion (is_number 6.022e9000000000 - range) failed
 call stack .test_is_number
 $.test_is_number 6.022e23
 $.test_number_equal 42
-unacceptable argument count: received 1 non-optional, but needed 2 (with 0 optional) for .test_number_equal
+unacceptable arguments: for prototype -- lhs rhs,
+ assigned lhs=42 ,
+ but needed (rhs),
+( call) stack: .test_number_equal
 $.test_number_equal 42 42 {excess argfunc}
 .test_number_equal does not accept an argfunction with call stack: .test_number_equal
 $.test_number_equal 42 42a
@@ -4216,6 +4412,8 @@ assertion (0 -eq 0.000000000000000000000000001) failed
 call stack .test_number_equal
 $.test_number_equal 1e-9000000000 1e-9000000001
 value 1e-9000000000 is out of usable numeric range
+call stack .test_number_equal
+value 1e-9000000001 is out of usable numeric range
 call stack .test_number_equal
 $.test_number_equal 0 0.0
 $.test_number_equal 42 42.01
@@ -4233,13 +4431,15 @@ assertion (6.022e23 -eq 6.022e2) failed
 call stack .test_number_equal
 $.test_number_equal 6.022e23 .6022e24
 $.test_greater 6.022e23
-unacceptable argument count: received 1 non-optional, but needed 2 (with 0 optional) for .test_greater
+unacceptable arguments: for prototype -- lhs rhs,
+ assigned lhs=6.022e23 ,
+ but needed (rhs),
+( call) stack: .test_greater
 $.test_greater 6.022e23c 6.022e23 {excess argfunc}
 .test_greater does not accept an argfunction with call stack: .test_greater
-$.test_greater 6.022e23c 6.022e23
+$.test_greater 6.022e23c 6.022e23e
 6.022e23c is not a number
 call stack: .test_greater
-$.test_greater 6.022e23 6.022e23e
 6.022e23e is not a number
 call stack: .test_greater
 $.test_greater 6.022e9000000000 .6022e23
@@ -4256,13 +4456,15 @@ assertion (6.022e23 -gt .6022e24) failed
 call stack .test_greater
 $.test_greater 6.022e23 6.022e2
 $.test_less 6.022e23
-unacceptable argument count: received 1 non-optional, but needed 2 (with 0 optional) for .test_less
+unacceptable arguments: for prototype -- lhs rhs,
+ assigned lhs=6.022e23 ,
+ but needed (rhs),
+( call) stack: .test_less
 $.test_less 6.022b23 6.022e23 {excess argfunc}
 .test_less does not accept an argfunction with call stack: .test_less
-$.test_less 6.022b23 6.022e23
+$.test_less 6.022b23 6.022a23
 6.022b23 is not a number
 call stack: .test_less
-$.test_less 6.022e23 6.022a23
 6.022a23 is not a number
 call stack: .test_less
 $.test_less 6.022e9000000000 .6022e23
@@ -4281,15 +4483,21 @@ $.test_less 6.022e2 6.022e23
 $
 $# .enable_readline .disable_readline .toggle_readline
 $.toggle_readline excess
-unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .toggle_readline
+unacceptable arguments: for prototype ,
+ found (excess) excess
+( call) stack: .toggle_readline
 $.toggle_readline {excess}
 .toggle_readline does not accept an argfunction with call stack: .toggle_readline
 $.enable_readline excess
-unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .enable_readline
+unacceptable arguments: for prototype ,
+ found (excess) excess
+( call) stack: .enable_readline
 $.enable_readline {excess}
 .enable_readline does not accept an argfunction with call stack: .enable_readline
 $.disable_readline excess
-unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .disable_readline
+unacceptable arguments: for prototype ,
+ found (excess) excess
+( call) stack: .disable_readline
 $.disable_readline {excess}
 .disable_readline does not accept an argfunction with call stack: .disable_readline
 $.nop .enable_readline
@@ -4301,7 +4509,9 @@ $# .test_executable_exists .type .whence_function
 $# Arg_script::str() but only an unknown fraction of the lines
 $# Arg_spec::str() (except trailing whitespace) only through SOON case
 $.test_executable_exists
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .test_executable_exists
+unacceptable arguments: for prototype -- command [.{argfunction}],
+ needed (command),
+( call) stack: .test_executable_exists
 $.test_executable_exists j
 assertion (executable exists: j) failed
 call stack .test_executable_exists
@@ -4313,7 +4523,9 @@ assertion (executable exists: .mapped_argfunction) failed
 call stack .test_executable_exists
 $.test_executable_exists .mapped_argfunction {.argfunction}
 $.type
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .type
+unacceptable arguments: for prototype -- command [.{argfunction}],
+ needed (command),
+( call) stack: .type
 $.type j
 j : command not found ( j .type )
 $.type #
@@ -4337,13 +4549,15 @@ builtin
 j : command not found ( j .type .try_catch_recursive(body) )
 function
 $.whence_function
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .whence_function
+unacceptable arguments: for prototype -- command [.{argfunction}],
+ needed (command),
+( call) stack: .whence_function
 $.whence_function j
 j : command not found ( j .whence_function )
 $.whence_function #
 .function_all_flags # -- [ignored ...] [.{argfunction}] {.nop $ignored$}
 $.whence_function .nop
-.nop
+.nop -- [args ...] [.{argfunction}]
 $.whence_function /bin/cat
 /bin/cat
 $.whence_function .mapped_argfunction
@@ -4431,17 +4645,23 @@ $
 $# .waiting_for_shell .waiting_for_user .waiting_for_binary
 $# actual use of these builtins is in test_inconsistent.sh
 $.waiting_for_shell j
-unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .waiting_for_shell
+unacceptable arguments: for prototype ,
+ found (j) excess
+( call) stack: .waiting_for_shell
 $.waiting_for_shell {excess argfunc}
 .waiting_for_shell does not accept an argfunction with call stack: .waiting_for_shell
 $# .waiting_for_shell
 $.waiting_for_user j
-unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .waiting_for_user
+unacceptable arguments: for prototype ,
+ found (j) excess
+( call) stack: .waiting_for_user
 $.waiting_for_user {excess argfunc}
 .waiting_for_user does not accept an argfunction with call stack: .waiting_for_user
 $# .waiting_for_user
 $.waiting_for_binary j
-unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .waiting_for_binary
+unacceptable arguments: for prototype ,
+ found (j) excess
+( call) stack: .waiting_for_binary
 $.waiting_for_binary {excess argfunc}
 .waiting_for_binary does not accept an argfunction with call stack: .waiting_for_binary
 $# .waiting_for_binary
@@ -4452,7 +4672,9 @@ $.last_exception .last_exception
 $.last_exception .nop
 
 $.last_exception
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .last_exception
+unacceptable arguments: for prototype -- command,
+ needed (command),
+( call) stack: .last_exception
 $.last_exception .try_catch_recursive {excess argfunc}
 .last_exception does not accept an argfunction with call stack: .last_exception
 $.last_exception .last_exception
@@ -4476,17 +4698,20 @@ $.last_exception e
 $.last_exception test_var_greater
 .false 0 -gt 0 .test_greater test_var_greater n 0
 $
-$# .usleep .execution_count .last_execution_time
-$# .total_execution_time
+$# .usleep .execution_count .last_execution_time .total_execution_time
 $.usleep_overhead excess
-unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .usleep_overhead
+unacceptable arguments: for prototype ,
+ found (excess) excess
+( call) stack: .usleep_overhead
 $.usleep_overhead {excess argfunc}
 .usleep_overhead does not accept an argfunction with call stack: .usleep_overhead
-$.usleep_overhead 
+$.usleep_overhead
 () is not a number
 call stack: .usleep_overhead
 $.usleep
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .usleep
+unacceptable arguments: for prototype -- milliseconds,
+ needed (milliseconds),
+( call) stack: .usleep
 $.usleep 800 {excess argfunc}
 .usleep does not accept an argfunction with call stack: .usleep
 $.usleep -6
@@ -4498,35 +4723,44 @@ call stack: .usleep
 $.usleep 800
 $# .usleep_overhead
 $.execution_count
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .execution_count
+unacceptable arguments: for prototype -- command,
+ needed (command),
+( call) stack: .execution_count
 $.execution_count j
 j : command not found ( j .execution_count )
 $.scope () {
   .execution_count .mapped_argfunction {echo not tracked}; .echo $nl}
-0
+.execution_count does not accept an argfunction with call stack: .execution_count .scope
 $.scope () {
   .execution_count .usleep; .echo $nl}
 5
 $.last_execution_time
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .last_execution_time
+unacceptable arguments: for prototype -- command,
+ needed (command),
+( call) stack: .last_execution_time
 $.last_execution_time j
 j : command not found ( j .last_execution_time )
 $.scope () {
   .last_execution_time .mapped_argfunction {echo not tracked}; .echo $nl}
-0.000000
+.last_execution_time does not accept an argfunction with call stack: .last_execution_time .scope
 $# .last_execution_time .usleep
 $.total_execution_time
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .total_execution_time
+unacceptable arguments: for prototype -- command,
+ needed (command),
+( call) stack: .total_execution_time
 $.scope () {
   .total_execution_time .mapped_argfunction {echo not tracked}; .echo $nl}
-0.000000
+.total_execution_time does not accept an argfunction with call stack: .total_execution_time .scope
 $.total_execution_time j
 j : command not found ( j .total_execution_time )
 $# .total_execution_time .usleep
 $
 $# .which_path
 $echo ${.which_path cat}
-unacceptable argument count: received 1 non-optional, but needed 2 (with 0 optional) for .which_path echo
+unacceptable arguments: for prototype -- command PATH,
+ assigned command=cat ,
+ but needed (PATH),
+( call) stack: (.which_path echo)
 substitution (${.which_path cat}) failed
 $echo ${.which_path cat /bin {excess argfunc}}
 .which_path does not accept an argfunction with call stack: .which_path echo
@@ -4570,8 +4804,10 @@ $echo ${.which_path rwsh /usr/bin:.}
 $
 $# .while
 $.while {e ARGS}
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .while
-$.while var_less A 4 
+unacceptable arguments: for prototype -- command ... .{argfunction},
+ needed (command),
+( call) stack: .while
+$.while var_less A 4
 .while requires an argfunction
 $.scope 0 A {.while var_less A 4 {echo printed; .throw .break; echo skipped}}
 printed
@@ -4736,159 +4972,238 @@ $IJK outer_while outer_while outer_while
 5.2:1
 $.set_max_nesting 20
 $
+$fn var_op_val_echo -- var_val op val {
+  .scope $var_val (-- var) {.collect_errors_except .nop {
+    $op var $val
+    echo $var}}}
+$
 $# .var_add
-$.set A 4
 $.var_add
-unacceptable argument count: received 0 non-optional, but needed 2 (with 0 optional) for .var_add
-$.var_add A 1 2
-unacceptable argument count: received 3 non-optional, but needed 2 (with 0 optional) for .var_add
-$.var_add A 1 {excess argfunc}
+unacceptable arguments: for prototype -- var value,
+ needed (var value),
+( call) stack: .var_add
+$.var_add A 1 2 {excess argfunc}
+unacceptable arguments: for prototype -- var value,
+ assigned value=1 var=A ,
+ but found (2) excess
+( call) stack: .var_add
 .var_add does not accept an argfunction with call stack: .var_add
-$.var_add B 1
+$.var_add B B
 B was not declared
 call stack: .var_add
 $.scope [undefined] {.var_add undefined 1}
 optional variable undefined was not defined
 call stack: .var_add .scope
 undefined was not checked with call stack .scope
-$.set A A
-$.var_add A 2 
+$var_op_val_echo A .var_add 42C
+A
 A is not a number
-call stack: .var_add
-$.set A 1e309
-$.var_add A 2 
+call stack: .var_add .collect_errors_except .scope var_op_val_echo
+42C is not a number
+call stack: .var_add .collect_errors_except .scope var_op_val_echo
+$var_op_val_echo 3000000000 .var_add 2
+3000000000
+2 is too small relative to 3000000000 to modify its value
+call stack: .var_add .collect_errors_except .scope var_op_val_echo
+$var_op_val_echo 3000000000 .var_add 0
+3e+09
+$var_op_val_echo 1e309 .var_add -1e309
+1e309
 value 1e309 is out of usable numeric range
-call stack .var_add
-$.set A -1e308
-$.var_add A A
-A is not a number
-call stack: .var_add
-$.var_add A 1e309
-value 1e309 is out of usable numeric range
-call stack .var_add
-$.var_add A -1e308
+call stack .var_add .collect_errors_except .scope var_op_val_echo
+value -1e309 is out of usable numeric range
+call stack .var_add .collect_errors_except .scope var_op_val_echo
+$var_op_val_echo -1e308 .var_add -1e308
+-1e308
 result of .var_add with arguments -1e308 and -1e308 is out of range
-call stack: .var_add
-$.var_add A 1e308
-$.var_add A 1e308
-$echo $A
+call stack: .var_add .collect_errors_except .scope var_op_val_echo
+$var_op_val_echo -1e308 .var_add 1e308
+0
+$var_op_val_echo 0 .var_add 1e308
 1e+308
-$.var_add A 1e308
+$var_op_val_echo 1e+308 .var_add 1e308
+1e+308
 result of .var_add with arguments 1e+308 and 1e308 is out of range
-call stack: .var_add
-$.var_add A -1e308
-$echo $A
+call stack: .var_add .collect_errors_except .scope var_op_val_echo
+$var_op_val_echo 1e+308 .var_add -1e308
 0
-$.var_add A \
+$var_op_val_echo 0 .var_add \
+0
 () is not a number
-call stack: .var_add
-$echo $A
-0
+call stack: .var_add .collect_errors_except .scope var_op_val_echo
 $
 $# .var_divide
 $.var_divide A
-unacceptable argument count: received 1 non-optional, but needed 2 (with 0 optional) for .var_divide
-$.var_divide A 1 2
-unacceptable argument count: received 3 non-optional, but needed 2 (with 0 optional) for .var_divide
-$.var_divide A 1 {excess argfunc}
+unacceptable arguments: for prototype -- var value,
+ assigned var=A ,
+ but needed (value),
+( call) stack: .var_divide
+$.var_divide A 1 2 {excess argfunc}
+unacceptable arguments: for prototype -- var value,
+ assigned value=1 var=A ,
+ but found (2) excess
+( call) stack: .var_divide
 .var_divide does not accept an argfunction with call stack: .var_divide
-$.var_divide B 1
+$.var_divide B B
 B was not declared
 call stack: .var_divide
 $.scope [undefined] {.var_divide undefined 1}
 optional variable undefined was not defined
 call stack: .var_divide .scope
 undefined was not checked with call stack .scope
-$.set A A
-$.var_divide A 2 
+$var_op_val_echo A .var_divide 42C
+A
 A is not a number
-call stack: .var_divide
-$.set A 1e3000000000
-$.var_divide A 2 
+call stack: .var_divide .collect_errors_except .scope var_op_val_echo
+42C is not a number
+call stack: .var_divide .collect_errors_except .scope var_op_val_echo
+$var_op_val_echo 1e3000000000 .var_divide 2e3000000000
+1e3000000000
 value 1e3000000000 is out of usable numeric range
-call stack .var_divide
-$.set A 16.8
-$.var_divide A A
-A is not a number
-call stack: .var_divide
-$.var_divide A 1e3000000000
+call stack .var_divide .collect_errors_except .scope var_op_val_echo
+value 2e3000000000 is out of usable numeric range
+call stack .var_divide .collect_errors_except .scope var_op_val_echo
+$var_op_val_echo 1e3000000000 .var_divide 0
+1e3000000000
 value 1e3000000000 is out of usable numeric range
-call stack .var_divide
-$.var_divide A 0 
-attempt to divide 16.8 by 0 with call stack: .var_divide
-$.var_divide A 4.2 
-$echo $A
+call stack .var_divide .collect_errors_except .scope var_op_val_echo
+attempt to divide 1e3000000000 by 0 with call stack: .var_divide .collect_errors_except .scope var_op_val_echo
+$var_op_val_echo 16.8 .var_divide 4.2
 4
-$.set A 1.8e-20
-$.var_divide A 1e308
+$var_op_val_echo 1.8e-20 .var_divide 1e308
+1.8e-20
 result of .var_divide with arguments 1.8e-20 and 1e308 is out of range
-call stack: .var_divide
-$.set A 0
-$.var_divide A 1e308
-$echo $A
+call stack: .var_divide .collect_errors_except .scope var_op_val_echo
+$var_op_val_echo 0 .var_divide 3
 0
+$var_op_val_echo 3 .var_divide 1
+3
+$var_op_val_echo 9.9999995e-1 .var_divide 1.0000001
+9.9999995e-1
+1.0000001 is too small relative to 9.9999995e-1 to modify its value
+call stack: .var_divide .collect_errors_except .scope var_op_val_echo
+$
+$# .var_multiply
+$.var_multiply A
+unacceptable arguments: for prototype -- var value,
+ assigned var=A ,
+ but needed (value),
+( call) stack: .var_multiply
+$.var_multiply A 1 2 {excess argfunc}
+unacceptable arguments: for prototype -- var value,
+ assigned value=1 var=A ,
+ but found (2) excess
+( call) stack: .var_multiply
+.var_multiply does not accept an argfunction with call stack: .var_multiply
+$.var_multiply B B
+B was not declared
+call stack: .var_multiply
+$.scope [undefined] {.var_multiply undefined 1}
+optional variable undefined was not defined
+call stack: .var_multiply .scope
+undefined was not checked with call stack .scope
+$var_op_val_echo A .var_multiply 42C
+A
+A is not a number
+call stack: .var_multiply .collect_errors_except .scope var_op_val_echo
+42C is not a number
+call stack: .var_multiply .collect_errors_except .scope var_op_val_echo
+$var_op_val_echo 1e3000000000 .var_multiply 2e3000000000
+1e3000000000
+value 1e3000000000 is out of usable numeric range
+call stack .var_multiply .collect_errors_except .scope var_op_val_echo
+value 2e3000000000 is out of usable numeric range
+call stack .var_multiply .collect_errors_except .scope var_op_val_echo
+$var_op_val_echo 1.6 .var_multiply 1.6
+2.56
+$var_op_val_echo 1.8e-20 .var_multiply 1e308
+1.8e+288
+$var_op_val_echo -1e308 .var_multiply -1e308
+-1e308
+result of .var_multiply with arguments -1e308 and -1e308 is out of range
+call stack: .var_multiply .collect_errors_except .scope var_op_val_echo
+$var_op_val_echo 1e308 .var_multiply -1e308
+1e308
+result of .var_multiply with arguments 1e308 and -1e308 is out of range
+call stack: .var_multiply .collect_errors_except .scope var_op_val_echo
+$var_op_val_echo 0.00 .var_multiply 1e308
+0
+$var_op_val_echo 0 .var_multiply 3
+0
+$var_op_val_echo 3 .var_multiply 1
+3
+$var_op_val_echo 9.9999995e-1 .var_multiply 9.9999995e-1
+9.9999995e-1
+9.9999995e-1 is too small relative to 9.9999995e-1 to modify its value
+call stack: .var_multiply .collect_errors_except .scope var_op_val_echo
 $
 $# .var_subtract
 $.var_subtract
-unacceptable argument count: received 0 non-optional, but needed 2 (with 0 optional) for .var_subtract
-$.var_subtract A 1 2
-unacceptable argument count: received 3 non-optional, but needed 2 (with 0 optional) for .var_subtract
-$.var_subtract A 1 {excess argfunc}
+unacceptable arguments: for prototype -- var value,
+ needed (var value),
+( call) stack: .var_subtract
+$.var_subtract A 1 2 {excess argfunc}
+unacceptable arguments: for prototype -- var value,
+ assigned value=1 var=A ,
+ but found (2) excess
+( call) stack: .var_subtract
 .var_subtract does not accept an argfunction with call stack: .var_subtract
-$.var_subtract B 1
+$.var_subtract B B
 B was not declared
 call stack: .var_subtract
 $.scope [undefined] {.var_subtract undefined 1}
 optional variable undefined was not defined
 call stack: .var_subtract .scope
 undefined was not checked with call stack .scope
-$.set A A
-$.var_subtract A 2 
+$var_op_val_echo A .var_subtract 42C
+A
 A is not a number
-call stack: .var_subtract
-$.set A 3000000000
-$.var_subtract A 2 
-$.set A 1e308
-$.var_subtract A -1e308
-result of .var_subtract with arguments 1e308 and -1e308 is out of range
-call stack: .var_subtract
-$echo $A
+call stack: .var_subtract .collect_errors_except .scope var_op_val_echo
+42C is not a number
+call stack: .var_subtract .collect_errors_except .scope var_op_val_echo
+$var_op_val_echo 3000000000 .var_subtract 2
+3000000000
+2 is too small relative to 3000000000 to modify its value
+call stack: .var_subtract .collect_errors_except .scope var_op_val_echo
+$var_op_val_echo 3000000000 .var_subtract 0
+3e+09
+$var_op_val_echo 1e308 .var_subtract -1e308
 1e308
-$.set A -1e308
-$.scope () {.var_subtract A 1e308}
-result of .var_subtract with arguments -1e308 and 1e308 is out of range
-call stack: .var_subtract .scope
-$echo $A
--1e308
-$.set A -2147483648
-$.var_subtract A A
-A is not a number
-call stack: .var_subtract
-$.var_subtract A 3000000000
-$.var_subtract A -2147483648
-$.var_subtract A 2147483647
-$.var_subtract A 2147483647
-$echo $A
+result of .var_subtract with arguments 1e308 and -1e308 is out of range
+call stack: .var_subtract .collect_errors_except .scope var_op_val_echo
+$var_op_val_echo -2147483648 .var_subtract 3000000000
+-5.14748e+09
+$var_op_val_echo -5.14748e+09 .var_subtract -2147483648
+-3e+09
+$var_op_val_echo -3e+09 .var_subtract 2147483647
+-5.14748e+09
+$var_op_val_echo -5.14748e+09 .var_subtract 2147483647
 -7.29496e+09
-$.var_subtract A 2147483647
-$.var_subtract A -2147483648
-$echo $A
+$var_op_val_echo -7.29496e+09 .var_subtract 2147483647
+-9.44244e+09
+$var_op_val_echo -9.44244e+09 .var_subtract -2147483648
 -7.29496e+09
-$.var_subtract A \
+$var_op_val_echo -7294960000 .var_subtract \
+-7294960000
 () is not a number
-call stack: .var_subtract
-$echo $A
--7.29496e+09
+call stack: .var_subtract .collect_errors_except .scope var_op_val_echo
 $
 $# .version .version_compatible
 $.version 1.0
-unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .version
+unacceptable arguments: for prototype ,
+ found (1.0) excess
+( call) stack: .version
 $.version {excess argfunc}
 .version does not accept an argfunction with call stack: .version
 $.version_compatible
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .version_compatible
+unacceptable arguments: for prototype -- candidate_version,
+ needed (candidate_version),
+( call) stack: .version_compatible
 $.version_compatible 1.0 1.0
-unacceptable argument count: received 2 non-optional, but needed 1 (with 0 optional) for .version_compatible
+unacceptable arguments: for prototype -- candidate_version,
+ assigned candidate_version=1.0 ,
+ but found (1.0) excess
+( call) stack: .version_compatible
 $.version_compatible 1.0 {excess argfunc}
 .version_compatible does not accept an argfunction with call stack: .version_compatible
 $echo ${.version}
@@ -4977,7 +5292,9 @@ $g {}
 $
 $# .throw
 $.throw
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .throw
+unacceptable arguments: for prototype -- exception ... [.{argfunction}],
+ needed (exception),
+( call) stack: .throw
 $.throw .nop
 $.throw .not_a_number 7
 7 is not a number
@@ -5126,11 +5443,13 @@ unacceptable arguments: for prototype result,
 ( call) stack: (.scope single)
 $single - 40 10
 30
+$single * 2 - 40 10
+60
 $single - 40 - 10 2
 32
 $single / - + 40 10 2 2
 24
-$single - 40 - 10 - 7 2
+$single - 40 - * 2 5 - 7 2
 35
 $.function_all_flags excessive-commentary arg {#! shebang
   $arg first comment
@@ -5143,13 +5462,18 @@ $echo-comments excessive-commentary #
 # first comment
 .nop second
 $
+$# ln
+$ln -s test_files/fibb
+assertion ( -e test_files/fibb) failed
+call stack .test_file_exists ln
+$
 $## environment testing i don't want to mess up everything else
 $# check for extraneous variables and that export_env doesn't bless
 $.scope M val (N necessary) {printenv; .nop $necessary}
 added printenv to executable map in test suite
 .var_exists=must be requested to be checked
 ?=.fork returned 255
-A=-7.29496e+09
+A=x
 C=(external) () ( ) internal(parenthesis)
 FIGNORE=*de*
 LC_ALL=C
@@ -5167,7 +5491,9 @@ $
 $# .list_environment
 $.global SHELL unmodified
 $.list_environment x
-unacceptable argument count: received 1 non-optional, but needed 0 (with 0 optional) for .list_environment
+unacceptable arguments: for prototype ,
+ found (x) excess
+( call) stack: .list_environment
 $.list_environment {excess argfunc}
 .list_environment does not accept an argfunction with call stack: .list_environment
 $for ${.list_environment}$ {
@@ -5190,7 +5516,7 @@ $echo $SHELL
 $printenv
 .var_exists=must be requested to be checked
 ?=.fork returned 255
-A=-7.29496e+09
+A=x
 C=(external) () ( ) internal(parenthesis)
 FIGNORE=
 LC_ALL=C
@@ -5542,12 +5868,24 @@ $
 $# exiting
 $# .shutdown .exit
 $.exit
-unacceptable argument count: received 0 non-optional, but needed 1 (with 0 optional) for .exit
+unacceptable arguments: for prototype -- return_code,
+ needed (return_code),
+( call) stack: .exit
 $.exit 1 {excess argfunction}
 .exit does not accept an argfunction with call stack: .exit
 $.exit not_a_number
 not_a_number is not a number
 call stack: .exit
+$.fork .exit 256
+value 256 is out of usable numeric range
+call stack .exit
+.fork returned 255 : call stack .fork
+$.fork .exit -2560
+value -2560 is out of usable numeric range
+call stack .exit
+.fork returned 255 : call stack .fork
+$.fork .exit -2
+.fork returned 254 : call stack .fork
 $fn exit_exception args ... {echo $args$; .exit 0}
 $.collect_errors_except .nop {
   .try_catch_recursive exit_exception {

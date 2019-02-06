@@ -99,6 +99,7 @@ sa .nop 1 2 3 {
 # .init, rwshrc's autofunction, .binary
 whence .init
 whence .autofunction
+whence .binary
 .binary {e excess argfunction}
 .binary /bin/rzwsh
 .binary /bin/cat
@@ -310,6 +311,7 @@ y
 # file redirection (but don't overwrite files that exist)
 # .for_each_line
 /bin/cat <non_existent_file
+.for_each_line excess arguments
 .for_each_line <non_existent_file {echo line of $# \( $* \)}
 se {sa {echo hi >one >two} {cat <three <four}
 }
@@ -341,7 +343,9 @@ se {se >outfile {e line 1 $nl; e line 2 longer $nl; .echo $nl; echo ending}}
 .for_each_line <outfile {e line of $# \( $* \) $nl}
 /bin/rm outfile
 
-# soon level promotion
+# soon level promotion .get_max_nesting .set_max_nesting
+.get_max_nesting excess {excess argfunction}
+.set_max_nesting {excess argfunction}
 .global A 0
 .global OLD_NESTING ${.get_max_nesting}
 .set_max_nesting 46
@@ -369,6 +373,7 @@ x {x {x {x {
 
 ## builtin tests
 # .argc
+whence .argc
 .argc {excess argfunc}
 .scope () {.argc; .echo $nl}
 .scope () {.argc (); .echo $nl}
@@ -479,10 +484,11 @@ fIJ scope_for outer_for
 fIJ outer_for outer_for
 .for 1 2 3 4 {e four arguments $1 $nl}
 
-# .function_all_flags .rm_executable
+# .function_all_flags .rm_executable .list_locals
+whence .function
 .function_all_flags
-.function_all_flags missing argfunction
 .rm_executable {excess argfunction}
+.list_locals excess {excess argfunction}
 .function_all_flags .exit {.nop}
 .function_all_flags .escaped_argfunction {.nop}
 .rm_executable a
@@ -511,7 +517,6 @@ b
 # a function redefining itself doesn't seg fault
 fn g {e hi $nl; fn g {e there $nl}; fn h {e nothing here}; g}
 g
-.function_all_flags
 .function_all_flags .exit {e cannot redefine a builtin as a function}
 .function_all_flags .a {can define a function for non-existant builtin}
 .function_all_flags .argfunction {e cannot define .argfunction}
@@ -785,6 +790,7 @@ a first second third
 a -x second -
 
 # .get_max_collectible_exceptions .set_max_collectible_exceptions
+# .collect_errors_except .collect_errors_only
 .get_max_collectible_exceptions excess
 .set_max_collectible_exceptions
 .get_max_collectible_exceptions {excess}
@@ -810,7 +816,7 @@ se {.collect_errors_except echo {
      .throw echo 7
      echo inside collect}
    echo outside collect}
-# .collect_errors_except .echo {${.throw .echo exception thrown directly}}
+.collect_errors_except echo {${.throw echo exception thrown directly}}
 se {.collect_errors_only .function_not_found {
      .throw .function_not_found foo
      echo between exceptions
@@ -1258,10 +1264,14 @@ if_true {echo &{unfindable anywhere}}
 # .if .else_if .else_if_not .else
 .collect_errors_except .nop {
   .if
+  whence .if
   .else_if .test_is_number 0 {echo do not run after an exception}
+  whence .else_if
   .else_if_not .test_is_number false {echo do not run after an exception}
   .else_if
+  whence .else_if_not
   .else_if_not
+  whence .else
   .else {echo do not run after an exception}}
 .if missing argfunction
 .else_if missing argfunction
@@ -1283,10 +1293,10 @@ se {
 .else_if_not .test_is_number false {echo nor this}
 
 # .internal_features .internal_functions .internal_vars
-.internal_features 1
+.internal_features 1 {excess argfunc}
 .internal_functions 1
 .internal_functions {excess argfunc}
-.internal_vars 1
+.internal_vars 1 {excess argfunc}
 .internal_features
 .internal_functions
 .internal_vars
@@ -1318,6 +1328,7 @@ se {.is_default_error}
 .ls /bin /usr/
 
 # .nop
+whence .nop
 .nop
 .nop {optional argfunc}
 .nop 1 2 3 4 5
@@ -1327,6 +1338,8 @@ se {.is_default_error}
 .replace_exception echo not in exception handler
 .try_catch_recursive .replace_exception {
   .throw .replace_exception echo now in exception handler}
+.try_catch_recursive .replace_exception {
+  .throw .replace_exception .for {echo $1 is on the call stack}}
 
 # .scope prototype.cc
 .scope {e $foo}
@@ -1344,6 +1357,10 @@ se {.is_default_error}
 .scope a ([--] --) {echo -- and [--] cannot both be parameters}
 .scope a ([-- arg]) {echo -- cannot take arguments}
 .scope a ([arg -- foo]) {echo -- cannot be an argument}
+.scope (args ...) {for ${.list_locals}$ {.combine $1 = $$1 }; .echo $nl}
+.scope ([args ...]) {for ${.list_locals}$ {.combine $1 = $$1 }; .echo $nl}
+.scope () (args ...) {for ${.list_locals}$ {.combine $1 = $$1 }; .echo $nl}
+.scope () ([args ...]) {for ${.list_locals}$ {.combine $1 = $$1 }; .echo $nl}
 .scope -x -y a b ([-?] args ...) {
   for ${.list_locals}$ {.combine $1 = $$1 \ }; .echo $nl}
 .scope .foo {echo fixed arguments not yet supported}
@@ -1463,7 +1480,7 @@ echo $A$
 echo $A
 
 # .try_catch_recursive .get_max_extra_exceptions .set_max_extra_exceptions
-.try_catch_recursive .function_not_found 
+.try_catch_recursive .function_not_found
 .try_catch_recursive {.test_less 0 A}
 fn e_after .{argfunction} {se {.argfunction}; echo after}
 e_after {.try_catch_recursive .not_a_number .function_not_found {
@@ -1528,10 +1545,10 @@ wrapper 1 2
 .test_string_equal x
 .test_string_equal x x x
 .test_string_equal x x {excess argfunc}
-.test_string_unequal x 
+.test_string_unequal x
 .test_string_unequal x x x
 .test_string_unequal x x {excess argfunc}
-.test_not_empty 
+.test_not_empty
 .test_not_empty x x
 .test_not_empty x {excess argfunc}
 .test_string_equal x y
@@ -1571,8 +1588,7 @@ wrapper 1 2
 .test_number_equal 6.022e23 .6022e24
 .test_greater 6.022e23
 .test_greater 6.022e23c 6.022e23 {excess argfunc}
-.test_greater 6.022e23c 6.022e23
-.test_greater 6.022e23 6.022e23e
+.test_greater 6.022e23c 6.022e23e
 .test_greater 6.022e9000000000 .6022e23
 .test_greater 6.022e23 .6022e9000000001
 .test_greater 6.022e2 6.022e23
@@ -1580,8 +1596,7 @@ wrapper 1 2
 .test_greater 6.022e23 6.022e2
 .test_less 6.022e23
 .test_less 6.022b23 6.022e23 {excess argfunc}
-.test_less 6.022b23 6.022e23
-.test_less 6.022e23 6.022a23
+.test_less 6.022b23 6.022a23
 .test_less 6.022e9000000000 .6022e23
 .test_less 6.022e23 .6022e9000000001
 .test_less 6.022e23 6.022e2
@@ -1693,11 +1708,10 @@ whence .mapped_argfunction {>dummy_file}
 .last_exception e
 .last_exception test_var_greater
 
-# .usleep .execution_count .last_execution_time
-# .total_execution_time
+# .usleep .execution_count .last_execution_time .total_execution_time
 .usleep_overhead excess
 .usleep_overhead {excess argfunc}
-.usleep_overhead 
+.usleep_overhead
 .usleep
 .usleep 800 {excess argfunc}
 .usleep -6
@@ -1740,7 +1754,7 @@ echo ${.which_path rwsh /usr/bin:.}
 
 # .while
 .while {e ARGS}
-.while var_less A 4 
+.while var_less A 4
 .scope 0 A {.while var_less A 4 {echo printed; .throw .break; echo skipped}}
 .scope 0 A {.while var_less A 4 {echo printed; .set A 4}}
 .scope 4 A {.while var_less A 4 {echo skipped}}
@@ -1806,80 +1820,73 @@ IJK      .while      .while outer_while
 IJK outer_while outer_while outer_while
 .set_max_nesting 20
 
+fn var_op_val_echo -- var_val op val {
+  .scope $var_val (-- var) {.collect_errors_except .nop {
+    $op var $val
+    echo $var}}}
+
 # .var_add
-.set A 4
 .var_add
-.var_add A 1 2
-.var_add A 1 {excess argfunc}
-.var_add B 1
+.var_add A 1 2 {excess argfunc}
+.var_add B B
 .scope [undefined] {.var_add undefined 1}
-.set A A
-.var_add A 2 
-.set A 1e309
-.var_add A 2 
-.set A -1e308
-.var_add A A
-.var_add A 1e309
-.var_add A -1e308
-.var_add A 1e308
-.var_add A 1e308
-echo $A
-.var_add A 1e308
-.var_add A -1e308
-echo $A
-.var_add A \
-echo $A
+var_op_val_echo A .var_add 42C
+var_op_val_echo 3000000000 .var_add 2
+var_op_val_echo 3000000000 .var_add 0
+var_op_val_echo 1e309 .var_add -1e309
+var_op_val_echo -1e308 .var_add -1e308
+var_op_val_echo -1e308 .var_add 1e308
+var_op_val_echo 0 .var_add 1e308
+var_op_val_echo 1e+308 .var_add 1e308
+var_op_val_echo 1e+308 .var_add -1e308
+var_op_val_echo 0 .var_add \
 
 # .var_divide
 .var_divide A
-.var_divide A 1 2
-.var_divide A 1 {excess argfunc}
-.var_divide B 1
+.var_divide A 1 2 {excess argfunc}
+.var_divide B B
 .scope [undefined] {.var_divide undefined 1}
-.set A A
-.var_divide A 2 
-.set A 1e3000000000
-.var_divide A 2 
-.set A 16.8
-.var_divide A A
-.var_divide A 1e3000000000
-.var_divide A 0 
-.var_divide A 4.2 
-echo $A
-.set A 1.8e-20
-.var_divide A 1e308
-.set A 0
-.var_divide A 1e308
-echo $A
+var_op_val_echo A .var_divide 42C
+var_op_val_echo 1e3000000000 .var_divide 2e3000000000
+var_op_val_echo 1e3000000000 .var_divide 0
+var_op_val_echo 16.8 .var_divide 4.2
+var_op_val_echo 1.8e-20 .var_divide 1e308
+var_op_val_echo 0 .var_divide 3
+var_op_val_echo 3 .var_divide 1
+var_op_val_echo 9.9999995e-1 .var_divide 1.0000001
+
+# .var_multiply
+.var_multiply A
+.var_multiply A 1 2 {excess argfunc}
+.var_multiply B B
+.scope [undefined] {.var_multiply undefined 1}
+var_op_val_echo A .var_multiply 42C
+var_op_val_echo 1e3000000000 .var_multiply 2e3000000000
+var_op_val_echo 1.6 .var_multiply 1.6
+var_op_val_echo 1.8e-20 .var_multiply 1e308
+var_op_val_echo -1e308 .var_multiply -1e308
+var_op_val_echo 1e308 .var_multiply -1e308
+var_op_val_echo 0.00 .var_multiply 1e308
+var_op_val_echo 0 .var_multiply 3
+var_op_val_echo 3 .var_multiply 1
+var_op_val_echo 9.9999995e-1 .var_multiply 9.9999995e-1
 
 # .var_subtract
 .var_subtract
-.var_subtract A 1 2
-.var_subtract A 1 {excess argfunc}
-.var_subtract B 1
+.var_subtract A 1 2 {excess argfunc}
+.var_subtract B B
 .scope [undefined] {.var_subtract undefined 1}
-.set A A
-.var_subtract A 2 
-.set A 3000000000
-.var_subtract A 2 
-.set A 1e308
-.var_subtract A -1e308
-echo $A
-.set A -1e308
-.scope () {.var_subtract A 1e308}
-echo $A
-.set A -2147483648
-.var_subtract A A
-.var_subtract A 3000000000
-.var_subtract A -2147483648
-.var_subtract A 2147483647
-.var_subtract A 2147483647
-echo $A
-.var_subtract A 2147483647
-.var_subtract A -2147483648
-echo $A
-.var_subtract A \
-echo $A
+var_op_val_echo A .var_subtract 42C
+var_op_val_echo 3000000000 .var_subtract 2
+var_op_val_echo 3000000000 .var_subtract 0
+var_op_val_echo 1e308 .var_subtract -1e308
+var_op_val_echo -2147483648 .var_subtract 3000000000
+var_op_val_echo -5.14748e+09 .var_subtract -2147483648
+var_op_val_echo -3e+09 .var_subtract 2147483647
+var_op_val_echo -5.14748e+09 .var_subtract 2147483647
+var_op_val_echo -7.29496e+09 .var_subtract 2147483647
+var_op_val_echo -9.44244e+09 .var_subtract -2147483648
+var_op_val_echo -7294960000 .var_subtract \
 
 # .version .version_compatible
 .version 1.0
@@ -1981,14 +1988,18 @@ fn -n [-x] ignored -- [args ...] {
 single .nop
 single - - 40 10 - 7 2 1
 single - 40 10
+single * 2 - 40 10
 single - 40 - 10 2
 single / - + 40 10 2 2
-single - 40 - 10 - 7 2
+single - 40 - * 2 5 - 7 2
 .function_all_flags excessive-commentary arg {#! shebang
   $arg first comment
   echo not a $arg; .nop second; echo either}
 excessive-commentary #
 echo-comments excessive-commentary #
+
+# ln
+ln -s test_files/fibb
 
 ## environment testing i don't want to mess up everything else
 # check for extraneous variables and that export_env doesn't bless
@@ -2111,6 +2122,9 @@ e_after {.try_catch_recursive .not_a_number .failed_substitution {
 .exit
 .exit 1 {excess argfunction}
 .exit not_a_number
+.fork .exit 256
+.fork .exit -2560
+.fork .exit -2
 fn exit_exception args ... {echo $args$; .exit 0}
 .collect_errors_except .nop {
   .try_catch_recursive exit_exception {

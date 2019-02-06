@@ -38,7 +38,6 @@ std::string Argm::exception_names[Argm::Exception_count] = {
   ".ambiguous_prototype_dash_dash",
   ".arguments_for_argfunction",
   ".autofunction",
-  ".bad_argc",
   ".bad_argfunction_style",
   ".bad_args",
   ".bad_if_nest",
@@ -55,6 +54,7 @@ std::string Argm::exception_names[Argm::Exception_count] = {
   ".elipsis_first_arg",
   ".elipsis_out_of_option_group",
   ".else_without_if",
+  ".epsilon",
   ".excess_argfunction",
   ".excessive_exceptions_collected",
   ".excessive_exceptions_in_catch",
@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
   catch (Exception& exception) {
     executable_map.base_run(exception, exceptions);}
   Command_stream command_stream(default_input, true);
-  Argm::Argv std_argv(&argv[0], &argv[argc]);
+  Argv std_argv(&argv[0], &argv[argc]);
   Argm init_command(".init", std_argv,
                     nullptr, Variable_map::global_map,
                     default_input, default_output, default_error);

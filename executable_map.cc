@@ -116,7 +116,7 @@ void Executable_map::not_found(Argm& argm_i, Error_list& exceptions) {
                         argm_i.error);
     tokenize_words("cmd [args ...]", std::back_inserter(prototype_argm));
     set(new Function(Argm::exception_names[Argm::Function_not_found],
-                     prototype_argm.begin(), prototype_argm.end(), false,
+                     prototype_argm.argv(),
                      "{.echo $cmd (: command not found) \\( $cmd $args$ \\);"
                      " .echo (\n)}", exceptions));}
   throw Exception(Argm::Function_not_found, argm_i);}
