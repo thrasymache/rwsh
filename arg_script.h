@@ -23,9 +23,8 @@ class Arg_script {
   std::string::size_type parse_token(const std::string& src,
          std::string::size_type token_start, unsigned max_soon,
          Error_list& errors);
- public:
 
-  Arg_script(const std::string& src, unsigned max_soon, Error_list& errors);
+ public:
   Arg_script(const std::string& src, std::string::size_type& point,
                unsigned max_soon, Error_list& errors);
   Arg_script(const Arg_script& src);

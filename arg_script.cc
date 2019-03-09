@@ -48,8 +48,10 @@ std::string::size_type Arg_script::add_quote(const std::string& src,
       split += 1;
       break;
     default: std::abort();}
-  if (split == std::string::npos)
-    throw Unclosed_parenthesis(src.substr(0, point+1));
+  if (split == std::string::npos) {
+    errors.add_error(Exception(Argm::Unclosed_parenthesis,
+                               src.substr(0, point+1)));
+    return std::string::npos;}
   else {
     literal += src.substr(point+1, split-point-1);
     point = src.find_first_not_of(WSPACE, split+1);
@@ -96,21 +98,6 @@ Arg_script::Arg_script(const Rwsh_istream_p& input_i,
   argfunction(0), argfunction_level(0), input(input_i), output(output_i),
   error(error_i), indent(indent_i), terminator(terminator_i) {}
 
-Arg_script::Arg_script(const std::string& src, unsigned max_soon,
-                       Error_list& errors) :
-  argfunction(0), argfunction_level(0), input(default_input),
-  output(default_output), error(default_error), terminator('!') {
-  auto point = src.find_first_not_of(WSPACE, 0);
-  indent = src.substr(0, point);
-  point = constructor(src, point, max_soon, errors);
-  if (point < src.length())
-    if (src[point] == '}' || src[point] == ';') {
-      errors.add_error(Exception(Argm::Mismatched_brace,src.substr(0,point+1)));
-      while (point < src.length())            // see if anything else is wrong
-        point = constructor(src, ++point, max_soon, errors);}
-    else std::abort();
-  else;}
-
 Arg_script::Arg_script(const std::string& src, std::string::size_type& point,
                        unsigned max_soon, Error_list& errors) :
   argfunction(0), argfunction_level(0), input(default_input),
@@ -138,7 +125,10 @@ std::string::size_type Arg_script::constructor(const std::string& src,
       argfunction_level = 3;
     else std::abort();                          // unhandled argfunction level
   else;
-  if (src[point] == '}') terminator = *"";
+  if (point >= src.length()) {
+    terminator = *"";
+    point = std::string::npos;}
+  else if (src[point] == '}') terminator = *"";
   else terminator = src[point];
   return point;}
 

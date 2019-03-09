@@ -1,3 +1,4 @@
+.nop $argv$
 .for ${.list_environment}$ {
     .scope $1$ (-- var val) {
       .if .var_exists $var {.nop $val}
@@ -155,7 +156,7 @@ sfn wc
 fn unselect {.set s ()}
 
 # internal functions
-fn .run_logic -- cmd [args ...] {
+fn .run_logic -- cmd [args ...] [.{argfunction}] {
    .try_catch_recursive &{.internal_functions}$ {$cmd $args$ {.argfunction}}
   # $* {.argfunction}}
 fn .prompt {.echo $s; .echo \$}
@@ -231,3 +232,4 @@ fn bless-arg {&{whichp cp} argfunction.result.last argfunction.basic-result}
 .else {
   .combine rwsh\ v &{.version} $nl
   .global already-initialized true}
+if_only .var_exists argv {.error ignored excess arguments $argv $nl}

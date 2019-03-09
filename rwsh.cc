@@ -109,6 +109,8 @@ std::string Argm::exception_names[Argm::Exception_count] = {
   ".sigunknown",
   ".tardy_flag",
   ".unchecked_variable",
+  ".unclosed_brace",
+  ".unclosed_parenthesis",
   ".undeclared_variable",
   ".undefined_variable",
   ".unfinished_if_block",
@@ -143,27 +145,30 @@ int main(int argc, char *argv[]) {
   Argm init_command(".init", std_argv,
                     nullptr, Variable_map::global_map,
                     default_input, default_output, default_error);
+  Argm interpret(".interpret", Argv(),
+                    nullptr, Variable_map::global_map,
+                    default_input, default_output, default_error);
   executable_map.base_run(init_command, exceptions);
   register_signals();
-  Arg_script script("", 0, exceptions);
+  Command_block block;
   Exception prompt(Argm::Prompt);
   while (!command_stream.fail()) {
     executable_map.base_run(prompt, exceptions);
     Argm command(Variable_map::global_map,
                  default_input, default_output, default_error);
-    try {
-      command_stream.getline(script, exceptions);
-      if (exceptions.size()) {
-        global_stack.exception_handler(exceptions);
-        continue;}
-      else if (command_stream.fail()) break;
-      else command = script.interpret(script.argm(), exceptions);}
-    catch (Exception exception) {command = exception;}
-    executable_map.run_if_exists(".before_command", command);
-    if (exceptions.size()) global_stack.exception_handler(exceptions);
-    else if (!executable_map.run_if_exists(".run_logic", command))
-       executable_map.base_run(command, exceptions);
-    executable_map.run_if_exists(".after_command", command);}
+    command_stream.getline(block, exceptions);
+    if (exceptions.size()) {
+      global_stack.exception_handler(exceptions);
+      continue;}
+    else if (command_stream.fail()) break;
+    else for (auto j: block) {
+      try {command = j.interpret(interpret, exceptions);}
+      catch (Exception exception) {command = exception;}
+      executable_map.run_if_exists(".before_command", command);
+      if (exceptions.size()) global_stack.exception_handler(exceptions);
+      else if (!executable_map.run_if_exists(".run_logic", command))
+         executable_map.base_run(command, exceptions);
+      executable_map.run_if_exists(".after_command", command);}}
   Argm shutdown_command(Argm::exception_names[Argm::Shutdown],
                         std_argv, nullptr, Variable_map::global_map,
                         default_input, default_output, default_error);

@@ -160,7 +160,7 @@ Prototype::Prototype(const Argv& parameters) :
       has_elipsis = true;
       elipsis_var = group.names[group.elipsis];}}}
 
-void Prototype::arg_to_param(const Argm& argm, Variable_map& locals,
+void Prototype::arg_to_param(const Argv& argv, Variable_map& locals,
                              Error_list& exceptions) const {
   if (non_prototype) return;
   enum Dash_dash_type dash_dash = dash_dash_position? UNSEEN:
@@ -169,16 +169,16 @@ void Prototype::arg_to_param(const Argm& argm, Variable_map& locals,
   else if (flag_options.size()) locals.param("-*", "");
   int needed = required_argc;
   std::string missing;
-  auto f_arg = argm.begin()+1;
+  auto f_arg = argv.begin()+1;
   auto param = positional.begin();
-  for (int available = argm.argc()-1; f_arg != argm.end();)
+  for (int available = argv.size()-1; f_arg != argv.end();)
     if ((*f_arg)[0] == '-' && f_arg->length() > 1 && dash_dash != BARE) {
       auto h = flag_options.find(*f_arg);
       if (dash_dash == BRACKET && *f_arg != "--") {
         --available;
         exceptions.add_error(Exception(Argm::Tardy_flag, *f_arg++));}
       else if (h != flag_options.end())
-        h->second.arg_to_param(available, needed, missing, f_arg, argm.end(),
+        h->second.arg_to_param(available, needed, missing, f_arg, argv.end(),
                                &h->second.names[0], elipsis_var, dash_dash,
                                locals, exceptions);
       else {
@@ -193,14 +193,14 @@ void Prototype::arg_to_param(const Argm& argm, Variable_map& locals,
     else if (param == positional.end()) break;
     else {
       if (param->required || available > needed)
-        param->arg_to_param(available, needed, missing, f_arg, argm.end(),
+        param->arg_to_param(available, needed, missing, f_arg, argv.end(),
                             nullptr, elipsis_var, dash_dash, locals,
                             exceptions);
       else param->add_undefined_params(locals);
       if (++param - positional.begin() == dash_dash_position)
         dash_dash = bare_dash_dash? BARE: BRACKET;}
-  if (f_arg != argm.end() || needed || missing.length())
-    bad_args(missing, locals, f_arg, argm.end(), param, exceptions);
+  if (f_arg != argv.end() || needed || missing.length())
+    bad_args(missing, locals, f_arg, argv.end(), param, exceptions);
   if (param != positional.end()) {
     if (param->elipsis == -1) {
       const std::string& var((param-1)->names.back());

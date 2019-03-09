@@ -525,18 +525,22 @@ void b_source(const Argm& argm, Error_list& exceptions) {
     throw Exception(Argm::File_open_failure, argm[1]);
   if (!(sb.st_mode & S_IXUSR)) throw Exception(Argm::Not_executable, argm[1]);
   Rwsh_istream_p src(new File_istream(argm[1]), false, false);
-  Argm script_arg(argm.subrange(1), nullptr, argm.parent_map(),
-                  argm.input, argm.output.child_stream(), argm.error);
   Command_stream command_stream(src, false);
-  Arg_script script("", 0, exceptions);
-  while (!command_stream.fail() && !global_stack.unwind_stack())
-    try {
-      command_stream.getline(script, exceptions);
+  Command_block block;
+  Prototype prototype(Argv{"--", "[argv", "...]"});
+  Variable_map locals(argm.parent_map());
+  prototype.arg_to_param(argm.subrange(1), locals, exceptions);
+  Argm script_arg(argm.subrange(1), nullptr, &locals,
+                  argm.input, argm.output.child_stream(), argm.error);
+  try {
+    while (!command_stream.fail() && !global_stack.unwind_stack()) {
+      command_stream.getline(block, exceptions);
       if (command_stream.fail()) break;
-      Argm command(script.interpret(script_arg, exceptions));
-      if (global_stack.unwind_stack()) break;
-      executable_map.run(command, exceptions);}
-    catch (Exception exception) {exceptions.add_error(exception);}}
+      block.execute(script_arg, exceptions);}
+    prototype.unused_var_check(&locals, exceptions);}
+  catch (Exception error) {
+    prototype.unused_var_check(&locals, exceptions);
+    throw error;}}
 
 // run the argument function once with each command in the specified function
 // invocation
@@ -549,7 +553,7 @@ void b_stepwise(const Argm& argm, Error_list& exceptions) {
   if (!f) return; //throw Exception(Argm::Not_a_function, argm[1]);
   // this must be caught and handled to use .stepwise recursively
   Variable_map locals(lookup.parent_map());
-  f->arg_to_param(lookup, locals, exceptions);
+  f->arg_to_param(lookup.argv(), locals, exceptions);
   if (global_stack.unwind_stack()) return;
   Argm params(lookup.argv(), lookup.argfunction(), &locals,
               lookup.input, lookup.output, lookup.error);

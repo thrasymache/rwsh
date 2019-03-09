@@ -10,10 +10,10 @@
      .nop
 .nop 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
 echo 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
-.echo  ()    1                2       $# $nl
-.echo \escaped internal\ space $# $nl
-.echo now \ external\  $# $nl
-.echo a \  space $# $nl
+.scope  ()    1                2       (a ...) {.echo $a$ $# $nl}
+.scope \escaped internal\ space (a ...) {.echo $a$ $# $nl}
+.scope now \ external\  (a ...) {.echo $a$ $# $nl}
+.scope a \  space (a ...) {.echo $a$ $# $nl}
 echo \$tokens \} \{ \; \\ \) \(
 .echo a \
 line continuation (or it was supposed to be)
@@ -23,7 +23,7 @@ line continuation (or it was supposed to be)
 .whence_function .mapped_argfunction {.nop}
 .whence_function .argfunction {
   multiple line argfunction }
-.nop .argfunction .mismatched_brace } &&&is$not$all
+.nop .argfunction .mismatched_brace } x{}}&&&is$not$all
 .source
 .source /etc/hosts {excess argfunc}
 .source test_files/*fu*bar*
@@ -47,6 +47,7 @@ line continuation (or it was supposed to be)
 ## ability of functions to perform custom control flow
 # rwshrc-basic
 .function e {.echo $*}
+.function_all_flags echow -- text ... {.echo $text$; .combine $nl}
 .function om {.argfunction}
 .function_all_flags sa [args ...] .{argfunction} {
   .scope $args$ ([args ...]) {.argfunction}}
@@ -72,28 +73,29 @@ for 1 2 3 {echo loop $*}
 ## arg_script.cc and arg_spec.cc
 # Arg_spec::FIXED, Arg_script::add_quote
 echo 5 4 3 2 1
-e a (tight string created by parentheses $#) $# $nl
-e a ( spaced string created by parentheses $# ) $# $nl
-echo some escaped \) \(parentheses $#
-e some (nested (parentheses) $#) $# $nl
-e some ((((((((((repeated))))) parentheses))))) $# $nl
-e a (multi-line parenthesis
-  enclosed string) $# $nl
+sa a (tight string created by parentheses $#) {echow $args$ $#}
+sa a ( spaced string created by parentheses $# ) {echow $args$ $#}
+.scope some escaped \) \(parentheses (a b c d) {echo $a $b $c $d $#}
+sa some (nested (parentheses) $#) {echow $args$ $#}
+sa some ((((((((((repeated))))) parentheses))))) {echow $args$ $#}
+sa a (multi-line parenthesis
+  enclosed string) {echow $args$ $#}
 echo a )mismatched &&parenthesis
 echo a (multi-line parenthesis
   mismatch))
-e (internal \)parenthesis \\ escape ( \))) $# $nl
+.echo (internal \)parenthesis \\ escape ( \))); .combine $nl
+.argc (internal \)parenthesis \\ escape ( \))); .combine $nl
 
 # star_var (argm_star_var)
-echo 1 2 $* 3 4
-echo $*2 1 2
+.scope 1 2 3 4 (a b c d) {echo $a $b $* $c $d \$*}
+.scope 1 2 1 2 (a b c d) {echo $a $b $*3}
 
 # star_soon
 sa .nop 1 2 3 {
-  .if $args$ {echo &*}
+  .if $args$ {echo &&*}
   .else {}}
 sa .nop 1 2 3 {
-  .if $args$ {echo &*0}
+  .if $args$ {echo &&*0}
   .else {}}
 
 # .init, rwshrc's autofunction, .binary
@@ -201,9 +203,9 @@ sort test_files/tmp
 .global C ((external) () ( ) internal(parenthesis))
 .global broken (extra_close\) \(extra_open)
 echo $A $0 @$A
-echo A $1 1 $$3 $$$3
+.scope A 1 (a b) {echo $a $1 $b $$2 $$$2}
 echo A $1a
-echo A 1 2 3 4 5 6 7 $$$$$$$$$8
+sa A 1 2 3 4 5 6 7 {echo $args$ $$$$$$$$$8}
 sa $UNDECLARED $ALSO_UNDECLARED {}
 sa {echo $UNDECLARED $ALSO_UNDECLARED}
 echo &UNDECLARED &ALSO_UNDECLARED
@@ -232,7 +234,7 @@ sa $C$ {e $# $args$ $nl}
 sa $C$$ {echo $# $args$}
 
 # Arg_spec::SOON, apply()
-echo A &1 1 &$3 &$$3
+.scope A 1 (a b) {echo $a &&1 $b &&$2 &&$$2}
 echo &&A
 se {e &&&A}
 se {@{} e &&&without$A $.{mismatched} {.argfunction brace} &&&{thrown}B
@@ -285,7 +287,7 @@ sa ${e $B} {e $# $args$ $nl}
 sa &{e $B} {e $# $args$ $nl}
 sa ${e $B}$ {e $# $args$ $nl}
 sa &{e $B}$ {e $# $args$ $nl}
-e $# &{.echo $B}$ $nl
+sa &{.echo $B}$ {echow $# $args$}
 se {e $# &{e $B}$ $nl}
 sa &{e $B}$$ {e $# $args$ $nl}
 sa ${e $B}$$ {e $# $args$ $nl}
@@ -397,7 +399,7 @@ whence .argc
 # .combine
 .combine
 .combine something {excess argfunc}
-.combine on () e \ two ( ) $# $nl
+sa on () e \ two ( ) {.combine $args$ ${.argc $args$} $nl}
 
 # .echo .error
 .error
@@ -498,7 +500,7 @@ a 1 2 3
 .rm_executable a
 .whence_function a
 .global A \
-.echo () A () A () $# $nl
+sa () A () A () {.echo $args$ ${.argc $args$} $nl}
 .function_all_flags a arg {e 9 $A $arg @/usr $nl}
 .whence_function a
 a \
@@ -1653,10 +1655,10 @@ whence .mapped_argfunction {$A $$A $0 $$$1 $# $* $*2 $A$$$ $A$10 $$*$ $$$*12$}
    .whence_function .mapped_argfunction {.argfunction}
    .scope $args$ (a1 a2 a3) {.argfunction}}
 wm (aa ab ac) bb cc {
-  e x &&a1 &2 $a3 y &&a1$1 z &&a1$2; .nop $a2
+  e x &&a1 &&2 $a3 y &&a1$1 z &&a1$2; .nop $a2
   sa &&a1$ {e () w $args$ $#; e $nl}}
 .scope (aa ab ac) bb cc (args more ...) {.scope $args $more$ (args more ...) {
-  sa &1 {echo $args$ $#}
+  sa &&1 {echo $args$ $#}
   sa &&args {echo $args$ $#}
   sa &&&args {echo $args$ $#}
   sa $args {echo $args$ $#}
@@ -1916,7 +1918,7 @@ fn .before_command args ... {.echo $0 $args$; .echo $nl}
 # se {e &{e hi #>dummy_file}}
 
 # .function_not_found
-se {se {not_a_thing; e should not be printed}}
+se {not_a_thing; e should not be printed}
 .rm_executable .function_not_found
 .whence_function .function_not_found
 whence not_a_thing
@@ -1927,11 +1929,13 @@ not_a_thing
 .help
 .internal_error techincally this is untestable
 
-# .mapped_argfunction .unescaped_argfunction .argfunction
-# .escaped_argfunction
+# .mapped_argfunction .argfunction .escaped_argfunction
 .mapped_argfunction 1 2 3 {echo a $* a}
 .mapped_argfunction
-fn g .{argfunction} {.whence_function .argfunction {.unescaped_argfunction}
+fn g .{argfunction} {.nop
+     .whence_function .argfunction {.argfunction}
+     .whence_function .argfunction {.escaped_argfunction}}
+g {.whence_function .argfunction {}
      .whence_function .argfunction {.argfunction}
      .whence_function .argfunction {.escaped_argfunction}}
 g {}

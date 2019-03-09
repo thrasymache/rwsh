@@ -53,17 +53,15 @@ class Function : public Named_executable {
  public:
   Command_block body;
 
-  Function(const std::string& name, const Argv& parameters,
-           const std::string& src, Error_list& errors);
   Function(const std::string& name_i, bool non_prototype_i,
            const Command_block& src);
   Function(const std::string& name_i, const Argv& parameters,
            const Command_block& src);
   Function(const Function& src) :
     name_v(src.name_v), prototype(src.prototype), body(src.body) {}
-  void arg_to_param(const Argm& invoking_argm, Variable_map& locals,
+  void arg_to_param(const Argv& invoking_argv, Variable_map& locals,
                     Error_list& exceptions) const {
-    return prototype.arg_to_param(invoking_argm, locals, exceptions);}
+    return prototype.arg_to_param(invoking_argv, locals, exceptions);}
   Function* copy_pointer(void) const {
     if (!this) return 0;
     else return new Function(*this);};

@@ -138,10 +138,14 @@
 .function_all_flags .mismatched_bracket context [stack ...] {
   echo mismatched bracket: $context
   if_only .var_exists stack {echo call stack: $stack$}}
-.function .mismatched_parenthesis {
-  .echo signal triggered: $0 \( $* \); .combine $nl
-  echo mismatched parenthesis: $1
-  echo call stack: $*2}
+.function_all_flags .mismatched_parenthesis string [stack ...] {
+  .echo signal triggered: $0 \( $string $stack$ \); .combine $nl
+  echo mismatched parenthesis: $string
+  echo call stack: $stack$}
+.function_all_flags .unclosed_parenthesis string [stack ...] {
+  .echo signal triggered: $0 \( $string $stack$ \); .combine $nl
+  echo mismatched parenthesis: $string
+  echo call stack: $stack$}
 .function_all_flags .missing_argfunction cmd [add_stack ...] {
   echo $cmd requires an argfunction
   if_only .var_exists add_stack {echo stack $add_stack$}}
@@ -171,6 +175,7 @@
 .function_all_flags .post_dash_dash_flag -- flag stack ... {
   echo flag option $flag occurs after -- in the prototype
   echo call stack: $stack$}
+.function_all_flags .prompt {.echo \$}
 .function_all_flags .result_range -- lhs rhs op [stack ...] {
   echo result of $op with arguments $lhs and $rhs is out of range
   echo call stack: $op $stack$}
@@ -219,6 +224,8 @@
   echo call stack: $stack$}
 .function_all_flags .unchecked_variable -- var [stack ...] {
   echo $var was not checked with call stack $stack$}
+.function_all_flags .unclosed_brace context [stack ...] {
+  echo unclosed brace: $context $stack$}
 .function_all_flags .undeclared_variable -- name [stack ...] {
   echo $name was not declared
   echo call stack: $stack$}
@@ -340,3 +347,4 @@ fn ln [-?] target {
   .test_file_exists $target
   &{.which_path ln /bin:/usr/bin} $-* $target}
 fn test -- args ... {.try_catch_recursive .return_code {${whichp test} $args$}}
+if_only .var_exists argv {.error ignored excess arguments $argv $nl}

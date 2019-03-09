@@ -10,7 +10,7 @@ call stack .source .try_catch_recursive(body)
 .function_all_flags .after_command -- args ... [.{argfunction}] {.nop $args}
 .function_all_flags .prompt {.echo \$}
 .function_all_flags .vars {.internal_vars}
-.source /etc/rwshrc-basic
+.source /etc/rwshrc-basic $argv$
 .function_all_flags # -- [ignored ...] [.{argfunction}] {.nop $ignored$}
 .function_all_flags fn -- prototype ... .{argfunction} {
   .function_all_flags $prototype$ {.argfunction}}
@@ -151,10 +151,14 @@ call stack .source .try_catch_recursive(body)
 .function_all_flags .mismatched_bracket context [stack ...] {
   echo mismatched bracket: $context
   if_only .var_exists stack {echo call stack: $stack$}}
-.function .mismatched_parenthesis {
-  .echo signal triggered: $0 \( $* \); .combine $nl
-  echo mismatched parenthesis: $1
-  echo call stack: $*2}
+.function_all_flags .mismatched_parenthesis string [stack ...] {
+  .echo signal triggered: $0 \( $string $stack$ \); .combine $nl
+  echo mismatched parenthesis: $string
+  echo call stack: $stack$}
+.function_all_flags .unclosed_parenthesis string [stack ...] {
+  .echo signal triggered: $0 \( $string $stack$ \); .combine $nl
+  echo mismatched parenthesis: $string
+  echo call stack: $stack$}
 .function_all_flags .missing_argfunction cmd [add_stack ...] {
   echo $cmd requires an argfunction
   if_only .var_exists add_stack {echo stack $add_stack$}}
@@ -184,6 +188,7 @@ call stack .source .try_catch_recursive(body)
 .function_all_flags .post_dash_dash_flag -- flag stack ... {
   echo flag option $flag occurs after -- in the prototype
   echo call stack: $stack$}
+.function_all_flags .prompt {.echo \$}
 .function_all_flags .result_range -- lhs rhs op [stack ...] {
   echo result of $op with arguments $lhs and $rhs is out of range
   echo call stack: $op $stack$}
@@ -232,6 +237,8 @@ call stack .source .try_catch_recursive(body)
   echo call stack: $stack$}
 .function_all_flags .unchecked_variable -- var [stack ...] {
   echo $var was not checked with call stack $stack$}
+.function_all_flags .unclosed_brace context [stack ...] {
+  echo unclosed brace: $context $stack$}
 .function_all_flags .undeclared_variable -- name [stack ...] {
   echo $name was not declared
   echo call stack: $stack$}
@@ -353,29 +360,10 @@ fn ln [-?] target {
   .test_file_exists $target
   &{.which_path ln /bin:/usr/bin} $-* $target}
 fn test -- args ... {.try_catch_recursive .return_code {${whichp test} $args$}}
-.else_if .test_string_equal $2 -c {
-  .for ${.list_environment}$ {
-    .scope $1$ (-- var val) {
-      .if .var_exists $var {.nop $val}
-      .else {
-        .global $var $val
-        .nop $$var}}}
-  .source /etc/rwshrc-basic
-  .nop $FIGNORE
-  .function_all_flags .shutdown -- [args ...] {.nop $args}
-  .function_all_flags .return_code code cmd [add_stack ...] {
-    echo $cmd returned $code : call stack $cmd $add_stack$
-    .exit $code}
-  .collect_errors_except .nop {
-    .mapped_argfunction &3 {$1$}
-    .exit 0}}
-.else {
-  .echo unexpected command line: &* (
-)
-  .source /etc/rwshrc-default}
+if_only .var_exists argv {.error ignored excess arguments $argv $nl}
 $.binary /bin/cat
 $/bin/cat /tmp/lcl
-/etc/rwshrc ./rwsh test_init.sh 
+/etc/rwshrc ./rwsh test_init.rwsh 
 $.function_all_flags ## [args ...] {.nop $args}
 $#
 $.nop beware the empty comment
@@ -387,14 +375,14 @@ $     .nop
 $.nop 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
 $echo 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
-$.echo  ()    1                2       $# $nl
- 1 2 6 
-$.echo \escaped internal\ space $# $nl
-escaped internal space 5 
-$.echo now \ external\  $# $nl
-now  external  5 
-$.echo a \  space $# $nl
-a   space 6 
+$.scope  ()    1                2       (a ...) {.echo $a$ $# $nl}
+ 1 2 4 
+$.scope \escaped internal\ space (a ...) {.echo $a$ $# $nl}
+escaped internal space 3 
+$.scope now \ external\  (a ...) {.echo $a$ $# $nl}
+now  external  3 
+$.scope a \  space (a ...) {.echo $a$ $# $nl}
+a   space 4 
 $echo \$tokens \} \{ \; \\ \) \(
 $tokens } { ; \ ) (
 $.echo a \
@@ -416,8 +404,10 @@ $.whence_function .argfunction {
   multiple line argfunction }
 {
   multiple line argfunction}
-$.nop .argfunction .mismatched_brace } &&&is$not$all
+$.nop .argfunction .mismatched_brace } x{}}&&&is$not$all
 mismatched brace: (.nop .argfunction .mismatched_brace })
+x is neither an argfunction nor a substitution nor a brace literal
+mismatched brace: (.nop .argfunction .mismatched_brace } x{}})
 $not$all is not a valid word selection
 call stack
 &&&is$not$all attempts to substitute after the command has been run
@@ -436,28 +426,37 @@ call stack: .source
 $.source test_files/unclosed_brace.rwsh
 fn bar {echo baz
 
-mismatched brace: (fn bar) .source
+unclosed brace: (fn bar) .source
+argv was not checked with call stack .source
 $.source test_files/unclosed_brace_without_newline.rwsh
 fn bar {echo baz
 
-mismatched brace: (fn bar) .source
+unclosed brace: (fn bar) .source
+argv was not checked with call stack .source
 $.source test_files/unclosed_dot_brace.rwsh
 echo bar .{argfunction baz
 
-mismatched brace: (echo bar ) .source
+unclosed brace: (echo bar .{) .source
+argv was not checked with call stack .source
 $.source test_files/unclosed_parenthesis.rwsh
 echo bar (baz
 
-signal triggered: .mismatched_parenthesis ( echo bar ( .source )
+signal triggered: .unclosed_parenthesis ( echo bar ( .source )
 mismatched parenthesis: (echo bar ()
 call stack: .source
+argv was not checked with call stack .source
 $.source test_files/unclosed_parenthesis_without_newline.rwsh
 echo bar (baz
 
-signal triggered: .mismatched_parenthesis ( echo bar ( .source )
+signal triggered: .unclosed_parenthesis ( echo bar ( .source )
 mismatched parenthesis: (echo bar ()
 call stack: .source
+argv was not checked with call stack .source
 $.source test_files/multiple_errors.rwsh
+echo first; echo second ;echo third
+first
+second
+third
 fn bar {echo &&&baz$$bax
   cat >something >else
   }
@@ -467,6 +466,7 @@ call stack .source
 call stack .source
 double redirection is not supported at this time: >something and >else
 call stack: .source
+argv was not checked with call stack .source
 $.source test_files/bad_substitution.rwsh
 echo before error
 before error
@@ -474,6 +474,7 @@ echo the error ${.throw echo nonexistent} was there
 nonexistent .throw test_files/bad_substitution.rwsh .source
 substitution (${.throw echo nonexistent}) failed
 call stack: .source
+argv was not checked with call stack .source
 $.nop multiple statements \; on a line
 $.whence_function .argfunction {.multiple_argfunctions} {}
 multiple argfunctions not supported at this time
@@ -493,6 +494,7 @@ $
 $## ability of functions to perform custom control flow
 $# rwshrc-basic
 $.function e {.echo $*}
+$.function_all_flags echow -- text ... {.echo $text$; .combine $nl}
 $.function om {.argfunction}
 $.function_all_flags sa [args ...] .{argfunction} {
   .scope $args$ ([args ...]) {.argfunction}}
@@ -534,20 +536,20 @@ $## arg_script.cc and arg_spec.cc
 $# Arg_spec::FIXED, Arg_script::add_quote
 $echo 5 4 3 2 1
 5 4 3 2 1
-$e a (tight string created by parentheses $#) $# $nl
-a tight string created by parentheses $# 5 
-$e a ( spaced string created by parentheses $# ) $# $nl
-a  spaced string created by parentheses $#  5 
-$echo some escaped \) \(parentheses $#
-some escaped ) (parentheses 6
-$e some (nested (parentheses) $#) $# $nl
-some nested (parentheses) $# 5 
-$e some ((((((((((repeated))))) parentheses))))) $# $nl
-some (((((((((repeated))))) parentheses)))) 5 
-$e a (multi-line parenthesis
-  enclosed string) $# $nl
+$sa a (tight string created by parentheses $#) {echow $args$ $#}
+a tight string created by parentheses $# 3
+$sa a ( spaced string created by parentheses $# ) {echow $args$ $#}
+a  spaced string created by parentheses $#  3
+$.scope some escaped \) \(parentheses (a b c d) {echo $a $b $c $d $#}
+some escaped ) (parentheses 5
+$sa some (nested (parentheses) $#) {echow $args$ $#}
+some nested (parentheses) $# 3
+$sa some ((((((((((repeated))))) parentheses))))) {echow $args$ $#}
+some (((((((((repeated))))) parentheses)))) 3
+$sa a (multi-line parenthesis
+  enclosed string) {echow $args$ $#}
 a multi-line parenthesis
-  enclosed string 5 
+  enclosed string 3
 $echo a )mismatched &&parenthesis
 signal triggered: .mismatched_parenthesis ( echo a ) )
 mismatched parenthesis: (echo a ))
@@ -560,44 +562,54 @@ signal triggered: .mismatched_parenthesis ( echo a (multi-line parenthesis
 mismatched parenthesis: (echo a (multi-line parenthesis
   mismatch)))
 call stack:
-$e (internal \)parenthesis \\ escape ( \))) $# $nl
-internal )parenthesis \ escape ( )) 4 
+$.echo (internal \)parenthesis \\ escape ( \))); .combine $nl
+internal )parenthesis \ escape ( ))
+$.argc (internal \)parenthesis \\ escape ( \))); .combine $nl
+1
 $
 $# star_var (argm_star_var)
-$echo 1 2 $* 3 4
-1 2 1 2 $* 3 4 3 4
-$echo $*2 1 2
+$.scope 1 2 3 4 (a b c d) {echo $a $b $* $c $d \$*}
+1 2 1 2 3 4 3 4 $*
+$.scope 1 2 1 2 (a b c d) {echo $a $b $*3}
 1 2 1 2
+c was unused with call stack .scope
+d was unused with call stack .scope
 $
 $# star_soon
 $sa .nop 1 2 3 {
-  .if $args$ {echo &*}
+  .if $args$ {echo &&*}
   .else {}}
 .nop 1 2 3
 $sa .nop 1 2 3 {
-  .if $args$ {echo &*0}
+  .if $args$ {echo &&*0}
   .else {}}
-sa .nop 1 2 3
+.scope .nop 1 2 3
 $
 $# .init, rwshrc's autofunction, .binary
 $whence .init
 .function_all_flags .init -- [args ...] {.set_max_nesting 10
-    .function_all_flags .file_open_failure name stack ... {        .combine (init file ) $name ( does not exist
+    .function_all_flags .file_open_failure name stack ... {.nop
+        .combine (init file ) $name ( does not exist
 call stack ) $stack (
 )}
     .function_all_flags .raw_command -- args ... {.nop $args}
-    .source /etc/rwshrc $args$
-    .for &{.internal_functions}$ {      .if .test_executable_exists $1 {.nop}
-      .else {.echo &&1 not defined (
+    .collect_errors_except .nop {.nop
+      .source /etc/rwshrc $args$
+      .for &{.internal_functions}$ {
+        .if .test_executable_exists $1 {.nop}
+        .else {.echo &&&1 not defined (
 )}}
-    .if .test_executable_exists .help {      .if .test_not_empty ${.help} {.nop}
-      .else {.echo .help produces no output (
+      .if .test_executable_exists .help {.nop
+        .if .test_not_empty ${.help} {.nop}
+        .else {.echo .help produces no output (
 )}}
-    .else {.echo .help not defined (
-)}}
+      .else {.echo .help not defined (
+)}}}
 $whence .autofunction
-.function_all_flags .autofunction -- cmd [args ...] {
-  .nop $args$
+.function_all_flags .autofunction -- cmd [args ...] [.{argfunction}] {
+  .if .var_exists args {.nop $args}
+  .else {.nop}
+  .nop {argfunction}
   .local full_path ${.which_path $cmd $PATH}
   if_only_not .test_executable_exists $full_path {.binary $full_path}
   if_only_not .test_string_equal $cmd $full_path {
@@ -672,17 +684,98 @@ call stack .replace_exception .mapped_argfunction .if .return_code .try_catch_re
 $if_only_not false {echo false throwing a .false exception}
 false throwing a .false exception
 $./rwsh -c (env false)
-/usr/bin/env returned 1 : call stack /usr/bin/env env .mapped_argfunction .collect_errors_except .mapped_argfunction .else_if .source .init
+/usr/bin/env returned 1 : call stack /usr/bin/env env .mapped_argfunction .collect_errors_except .mapped_argfunction .else_if .mapped_argfunction .else .source .collect_errors_except .init
 ./rwsh returned 1 : call stack ./rwsh
 $./rwsh -c (.get_pid)
 .get_pid : binary not found in /bin:/usr/bin:.
-call stack: .which_path .autofunction .autofunction .mapped_argfunction .collect_errors_except .mapped_argfunction .else_if .source .init
+call stack: .which_path .autofunction .autofunction .mapped_argfunction .collect_errors_except .mapped_argfunction .else_if .mapped_argfunction .else .source .collect_errors_except .init
 substitution (${.which_path $cmd $PATH}) failed
-call stack: .autofunction .mapped_argfunction .collect_errors_except .mapped_argfunction .else_if .source .init
-.get_pid : command not found ( .get_pid .mapped_argfunction .collect_errors_except .mapped_argfunction .else_if .source .init )
+call stack: .autofunction .mapped_argfunction .collect_errors_except .mapped_argfunction .else_if .mapped_argfunction .else .source .collect_errors_except .init
+.get_pid : command not found ( .get_pid .mapped_argfunction .collect_errors_except .mapped_argfunction .else_if .mapped_argfunction .else .source .collect_errors_except .init )
 $./rwsh /non-existent/file/to/test/failure <test_files/pause_hello.rwsh
+.ambiguous_prototype_dash_dash not defined 
+.arguments_for_argfunction not defined 
+.bad_argfunction_style not defined 
+.bad_args not defined 
+.bad_if_nest not defined 
+.binary_does_not_exist not defined 
+.binary_not_found not defined 
+.break not defined 
+.continue not defined 
+.dash_dash_argument not defined 
+.dash_star_argument not defined 
+.directory_not_found not defined 
+.divide_by_zero not defined 
+.double_redirection not defined 
+.duplicate_parameter not defined 
+.elipsis_first_arg not defined 
+.elipsis_out_of_option_group not defined 
+.else_without_if not defined 
+.epsilon not defined 
+.excess_argfunction not defined 
+.excessive_exceptions_collected not defined 
+.excessive_exceptions_in_catch not defined 
+.excessive_nesting not defined 
+.exec_failed not defined 
+.executable_already_exists not defined 
+.failed_substitution not defined 
+.false not defined 
+.file_not_found not defined 
+.fixed_argument not defined 
+.flag_in_elipsis not defined 
+.function_not_found not defined 
+.global_would_be_masked not defined 
+.if_before_else not defined 
+.illegal_function_name not defined 
+.illegal_variable_name not defined 
+.input_range not defined 
+.internal_error not defined 
+.interrupted_sleep not defined 
+.invalid_word_selection not defined 
+.mismatched_brace not defined 
+.mismatched_bracket not defined 
+.mismatched_parenthesis not defined 
+.missing_argfunction not defined 
+.multiple_argfunctions not defined 
+.not_a_directory not defined 
+.not_a_function not defined 
+.not_a_number not defined 
+.not_catching_exception not defined 
+.not_executable not defined 
+.not_soon_enough not defined 
+.return_code not defined 
+.result_range not defined 
+.post_elipsis_option not defined 
+.post_dash_dash_flag not defined 
+.prompt not defined 
+.selection_not_found not defined 
+.sighup not defined 
+.sigint not defined 
+.sigquit not defined 
+.sigpipe not defined 
+.sigterm not defined 
+.sigtstp not defined 
+.sigcont not defined 
+.sigchld not defined 
+.sigusr1 not defined 
+.sigusr2 not defined 
+.sigunknown not defined 
+.tardy_flag not defined 
+.unchecked_variable not defined 
+.unclosed_brace not defined 
+.unclosed_parenthesis not defined 
+.undeclared_variable not defined 
+.undefined_variable not defined 
+.unfinished_if_block not defined 
+.unreadable_dir not defined 
+.unrecognized_flag not defined 
+.unused_before_set not defined 
+.unused_variable not defined 
+.variable_already_exists not defined 
+.version_incompatible not defined 
+.help not defined 
 init file /non-existent/file/to/test/failure does not exist
-call stack .source .mapped_argfunction .else_if .source .init
+call stack .source .mapped_argfunction .else_if .mapped_argfunction .else .source .collect_errors_except .init
 Exception for failed handler. Original exception with call stack:
 .undeclared_variable PATH .autofunction .autofunction
 .undeclared_variable : command not found ( .undeclared_variable PATH .autofunction .autofunction )
@@ -833,6 +926,8 @@ hello world
 .sigunknown not defined 
 .tardy_flag not defined 
 .unchecked_variable not defined 
+.unclosed_brace not defined 
+.unclosed_parenthesis not defined 
 .undeclared_variable not defined 
 .undefined_variable not defined 
 .unfinished_if_block not defined 
@@ -843,6 +938,23 @@ hello world
 .variable_already_exists not defined 
 .version_incompatible not defined 
 .help not defined 
+Exception for failed handler. Original exception with call stack:
+.unchecked_variable argv .source .mapped_argfunction .else_if .mapped_argfunction .else .source .collect_errors_except .init
+.unchecked_variable : command not found ( .unchecked_variable argv .source .mapped_argfunction .else_if .mapped_argfunction .else .source .collect_errors_except .init )
+Exception for failed handler. Original exception with call stack:
+.undeclared_variable PATH .autofunction .autofunction
+.undeclared_variable : command not found ( .undeclared_variable PATH .autofunction .autofunction )
+Exception for failed handler. Original exception with call stack:
+.failed_substitution ${.which_path $cmd $PATH} .autofunction
+.failed_substitution : command not found ( .failed_substitution ${.which_path $cmd $PATH} .autofunction )
+Exception for failed handler. Original exception with call stack:
+.undeclared_variable PATH .autofunction .autofunction
+Exception for failed handler. Original exception with call stack:
+.failed_substitution ${.which_path $cmd $PATH} .autofunction
+Exception for failed handler. Original exception with call stack:
+.undeclared_variable PATH .autofunction .autofunction
+Exception for failed handler. Original exception with call stack:
+.failed_substitution ${.which_path $cmd $PATH} .autofunction
 Exception for failed handler. Original exception with call stack:
 .undeclared_variable PATH .autofunction .autofunction
 .undeclared_variable : command not found ( .undeclared_variable PATH .autofunction .autofunction )
@@ -924,26 +1036,6 @@ Exception for failed handler. Original exception with call stack:
 ./rwsh returned 10 : call stack ./rwsh
 $./rwsh test_files/signal_triggered.rwsh <test_files/pause_hello.rwsh
 signal triggered: .raw_command ( .function_all_flags .shutdown -- [args ...] {.nop $args; .exit 255} )
-signal triggered: .raw_command ( .else_if .test_string_equal $2 -c {
-  .for ${.list_environment}$ {
-    .scope $1$ (-- var val) {
-      .if .var_exists $var {.nop $val}
-      .else {
-        .global $var $val
-        .nop $$var}}}
-  .source /etc/rwshrc-basic
-  .nop $FIGNORE
-  .function_all_flags .shutdown -- [args ...] {.nop $args}
-  .function_all_flags .return_code code cmd [add_stack ...] {
-    echo $cmd returned $code : call stack $cmd $add_stack$
-    .exit $code}
-  .collect_errors_except .nop {
-    .mapped_argfunction &3 {$1$}
-    .exit 0}} )
-signal triggered: .raw_command ( .else {
-  .echo unexpected command line: &* (
-)
-  .source /etc/rwshrc-default} )
 .help not defined 
 signal triggered: .prompt ( )
 signal triggered: .raw_command ( #! /bin/rwsh )
@@ -1084,13 +1176,13 @@ $.global B ( (zero   zero) ((one one  ) one   ) two three)
 $.global C ((external) () ( ) internal(parenthesis))
 $.global broken (extra_close\) \(extra_open)
 $echo $A $0 @$A
-/bin echo /bin
-$echo A $1 1 $$3 $$$3
+/bin .interpret /bin
+$.scope A 1 (a b) {echo $a $1 $b $$2 $$$2}
 A A 1 A /bin
 $echo A $1a
 optional variable 1a was not defined
 call stack:
-$echo A 1 2 3 4 5 6 7 $$$$$$$$$8
+$sa A 1 2 3 4 5 6 7 {echo $args$ $$$$$$$$$8}
 A 1 2 3 4 5 6 7 /bin
 $sa $UNDECLARED $ALSO_UNDECLARED {}
 UNDECLARED was not declared
@@ -1161,7 +1253,7 @@ $sa $C$$ {echo $# $args$}
 3 external internal(parenthesis)
 $
 $# Arg_spec::SOON, apply()
-$echo A &1 1 &$3 &$$3
+$.scope A 1 (a b) {echo $a &&1 $b &&$2 &&$$2}
 A A 1 A /bin
 $echo &&A
 &&A attempts to substitute after the command has been run
@@ -1214,7 +1306,7 @@ $.scope not_bin A {
 $.scope not_bin A {e &{.echo &A $A} &&{.echo &A &&A} ${.echo &A $A} $nl}
 /bin /bin /bin not_bin /bin not_bin 
 $sa &{.echo $A} {echo $args &1$}
-/bin &{.echo $A}
+/bin
 $sa &{.throw .nop} {}
 substitution (&{.throw .nop}) failed
 $sa ${.throw .nop} {}
@@ -1283,8 +1375,8 @@ $sa ${e $B}$ {e $# $args$ $nl}
 5 zero   zero (one one  ) one    two three 
 $sa &{e $B}$ {e $# $args$ $nl}
 5 zero   zero (one one  ) one    two three 
-$e $# &{.echo $B}$ $nl
-4 zero   zero (one one  ) one    two three 
+$sa &{.echo $B}$ {echow $# $args$}
+5 zero   zero (one one  ) one    two three
 $se {e $# &{e $B}$ $nl}
 1 zero   zero (one one  ) one    two three 
 $sa &{e $B}$$ {e $# $args$ $nl}
@@ -1489,8 +1581,8 @@ unacceptable arguments: for prototype -- text ...,
 ( call) stack: .combine
 $.combine something {excess argfunc}
 .combine does not accept an argfunction with call stack: .combine
-$.combine on () e \ two ( ) $# $nl
-one two 8
+$sa on () e \ two ( ) {.combine $args$ ${.argc $args$} $nl}
+one two 5
 $
 $# .echo .error
 $.error
@@ -1739,8 +1831,8 @@ $.rm_executable a
 $.whence_function a
 a : command not found ( a .whence_function )
 $.global A \
-$.echo () A () A () $# $nl
- A  A  8 
+$sa () A () A () {.echo $args$ ${.argc $args$} $nl}
+ A  A  5 
 $.function_all_flags a arg {e 9 $A $arg @/usr $nl}
 $.whence_function a
 .function_all_flags a arg {e 9 $A $arg @/usr $nl}
@@ -3307,10 +3399,10 @@ substitution (&{unfindable anywhere}) failed
 call stack: .mapped_argfunction .if if_true .scope se
 $if_true {echo &{unfindable anywhere}}
 unfindable : binary not found in /bin:/usr/bin:.
-call stack: .which_path .autofunction .autofunction if_true
+call stack: .which_path .autofunction .autofunction .interpret
 substitution (${.which_path $cmd $PATH}) failed
-call stack: .autofunction if_true
-unfindable : command not found ( unfindable anywhere if_true )
+call stack: .autofunction .interpret
+unfindable : command not found ( unfindable anywhere .interpret )
 substitution (&{unfindable anywhere}) failed
 $.else {echo else throws an exception because we never got into the if}
 else without if with call stack: .else
@@ -3469,6 +3561,8 @@ $.internal_functions
 .sigunknown
 .tardy_flag
 .unchecked_variable
+.unclosed_brace
+.unclosed_parenthesis
 .undeclared_variable
 .undefined_variable
 .unfinished_if_block
@@ -3500,7 +3594,7 @@ $.is_default_output {excess argfunc}
 .is_default_output does not accept an argfunction with call stack: .is_default_output
 $e ${.is_default_output; .echo $?}
 assertion is_default_output failed
-call stack .is_default_output e
+call stack .is_default_output .interpret
 substitution (${.is_default_output; .echo $?}) failed
 $se {.is_default_output >dummy_file}
 assertion is_default_output failed
@@ -3683,6 +3777,8 @@ $.for ${.list_executables}$ {.combine $1 $nl}
 .try_catch_recursive
 .type
 .unchecked_variable
+.unclosed_brace
+.unclosed_parenthesis
 .undeclared_variable
 .undefined_variable
 .unfinished_if_block
@@ -3732,6 +3828,7 @@ double_if_with_body
 e
 echo
 echo-comments
+echow
 elif
 else
 else_if_false
@@ -4583,20 +4680,20 @@ $.function_all_flags wm [args ...] .{argfunction} {
    .whence_function .mapped_argfunction {.argfunction}
    .scope $args$ (a1 a2 a3) {.argfunction}}
 $wm (aa ab ac) bb cc {
-  e x &&a1 &2 $a3 y &&a1$1 z &&a1$2; .nop $a2
+  e x &&a1 &&2 $a3 y &&a1$1 z &&a1$2; .nop $a2
   sa &&a1$ {e () w $args$ $#; e $nl}}
 {
-  e x &a1 bb $a3 y &a1$1 z &a1$2; .nop $a2
+  e x &a1 &2 $a3 y &a1$1 z &a1$2; .nop $a2
   sa &a1$ {e () w $args$ $#; e $nl}}
 x aa ab ac bb cc y ab z ac w aa ab ac 4
 $.scope (aa ab ac) bb cc (args more ...) {.scope $args $more$ (args more ...) {
-  sa &1 {echo $args$ $#}
+  sa &&1 {echo $args$ $#}
   sa &&args {echo $args$ $#}
   sa &&&args {echo $args$ $#}
   sa $args {echo $args$ $#}
   sa $args$ {echo $args$ $#}
   sa $more$ {echo $args$ $#}}}
-((aa ab ac)) 2
+(aa ab ac) 2
 (aa ab ac) 2
 (aa ab ac) 2
 (aa ab ac) 2
@@ -4760,18 +4857,18 @@ $echo ${.which_path cat}
 unacceptable arguments: for prototype -- command PATH,
  assigned command=cat ,
  but needed (PATH),
-( call) stack: (.which_path echo)
+( call) stack: (.which_path .interpret)
 substitution (${.which_path cat}) failed
 $echo ${.which_path cat /bin {excess argfunc}}
-.which_path does not accept an argfunction with call stack: .which_path echo
+.which_path does not accept an argfunction with call stack: .which_path .interpret
 substitution (${.which_path cat /bin {excess argfunc}}) failed
 $echo ${.which_path cat \ }
 cat : binary not found in ( )
-call stack: .which_path echo
+call stack: .which_path .interpret
 substitution (${.which_path cat ( )}) failed
 $echo ${.which_path does<not>exist /bin:/usr/bin}
 does<not>exist : binary not found in /bin:/usr/bin
-call stack: .which_path echo
+call stack: .which_path .interpret
 substitution (${.which_path does<not>exist /bin:/usr/bin}) failed
 $echo ${.which_path cat :/bin:/usr/bin}
 /bin/cat
@@ -4787,17 +4884,17 @@ $echo ${.which_path rwsh /usr/bin:/bin:.}
 /bin/rwsh
 $echo ${.which_path ./rwsh /usr/bin:/bin}
 ./rwsh : binary not found in /usr/bin:/bin
-call stack: .which_path echo
+call stack: .which_path .interpret
 substitution (${.which_path ./rwsh /usr/bin:/bin}) failed
 $echo ${.which_path ./rwsh /bin:.}
 ./rwsh
 $echo ${.which_path ../bin/rwsh /usr/bin:/bin}
 ../bin/rwsh : binary not found in /usr/bin:/bin
-call stack: .which_path echo
+call stack: .which_path .interpret
 substitution (${.which_path ../bin/rwsh /usr/bin:/bin}) failed
 $echo ${.which_path rwsh :/usr/bin::/usr/bin:}
 rwsh : binary not found in :/usr/bin::/usr/bin:
-call stack: .which_path echo
+call stack: .which_path .interpret
 substitution (${.which_path rwsh :/usr/bin::/usr/bin:}) failed
 $echo ${.which_path rwsh /usr/bin:.}
 ./rwsh
@@ -5236,12 +5333,12 @@ $# se {e hi >dummy_file}
 $# se {e &{e hi #>dummy_file}}
 $
 $# .function_not_found
-$se {se {not_a_thing; e should not be printed}}
+$se {not_a_thing; e should not be printed}
 not_a_thing : binary not found in /bin:/usr/bin:.
-call stack: .which_path .autofunction .autofunction .scope se .scope se
+call stack: .which_path .autofunction .autofunction .scope se
 substitution (${.which_path $cmd $PATH}) failed
-call stack: .autofunction .scope se .scope se
-not_a_thing : command not found ( not_a_thing .scope se .scope se )
+call stack: .autofunction .scope se
+not_a_thing : command not found ( not_a_thing .scope se )
 $.rm_executable .function_not_found
 $.whence_function .function_not_found
 Exception for failed handler. Original exception with call stack:
@@ -5270,8 +5367,7 @@ this is the default configuration for rwsh (or something copied from it), docume
 $.internal_error techincally this is untestable
 internal error: techincally this is untestable
 $
-$# .mapped_argfunction .unescaped_argfunction .argfunction
-$# .escaped_argfunction
+$# .mapped_argfunction .argfunction .escaped_argfunction
 $.mapped_argfunction 1 2 3 {echo a $* a}
 a 1 2 3 a
 $.mapped_argfunction
@@ -5280,13 +5376,17 @@ call stack: .which_path .autofunction .autofunction
 substitution (${.which_path $cmd $PATH}) failed
 call stack: .autofunction
 .mapped_argfunction : command not found ( .mapped_argfunction )
-$fn g .{argfunction} {.whence_function .argfunction {.unescaped_argfunction}
+$fn g .{argfunction} {.nop
      .whence_function .argfunction {.argfunction}
      .whence_function .argfunction {.escaped_argfunction}}
-$g {}
+$g {.whence_function .argfunction {}
+     .whence_function .argfunction {.argfunction}
+     .whence_function .argfunction {.escaped_argfunction}}
 {.whence_function .argfunction {}
      .whence_function .argfunction {.argfunction}
      .whence_function .argfunction {.escaped_argfunction}}
+{.argfunction}
+$g {}
 {}
 {.argfunction}
 $
@@ -5524,6 +5624,7 @@ PATH=/bin:/usr/bin:.
 SHELL=/bin/rwsh
 TESTABILITY=an=external var(iable)
 args=./rwsh -to
+argv=./rwsh -to
 broken=extra_close) (extra_open
 nl=
 

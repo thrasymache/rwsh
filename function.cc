@@ -36,7 +36,7 @@ Builtin::Builtin(const std::string& name_i,
 // run the given builtin
 void Builtin::execute(const Argm& argm, Error_list& exceptions) const {
   Variable_map locals(argm.parent_map());
-  prototype.arg_to_param(argm, locals, exceptions);
+  prototype.arg_to_param(argm.argv(), locals, exceptions);
   locals.bless_unused_vars();
   if (prototype.non_prototype) std::abort();
   else if (argm.argfunction() && prototype.exclude_argfunction)
@@ -77,7 +77,7 @@ void Command_block::prototype_execute(const Argm& argm,
                                      const Prototype& prototype,
                                      Error_list& exceptions) const {
   Variable_map locals(argm.parent_map());
-  prototype.arg_to_param(argm, locals, exceptions);
+  prototype.arg_to_param(argm.argv(), locals, exceptions);
   if (prototype.non_prototype);
   else if (argm.argfunction() && prototype.exclude_argfunction)
     exceptions.add_error(Exception(Argm::Excess_argfunction));
@@ -101,38 +101,29 @@ std::string Command_block::str() const {
   for (auto i = begin(); i != end()-1; ++i) body += i->str() + "";
   return "{" + body + back().str() + "}";}  //+ trailing + ",";}
 
+// if src[point] == '{' , then the block ends at the matching '}', otherwise
+// it continues to the end of the string.
 Command_block::Command_block(const std::string& src,
                                   std::string::size_type& point,
                                   unsigned max_soon, Error_list& errors) {
   std::string::size_type tpoint = point;
-  while (tpoint != std::string::npos && src[tpoint] != '}') {
-    push_back(Arg_script(src, ++tpoint, max_soon, errors));
+  while (tpoint != std::string::npos) {
+    if (src[tpoint] == '}')
+      if (src[point] == '{') break;
+      else errors.add_error(Exception(Argm::Mismatched_brace,
+                                      src.substr(0, tpoint+1)));
+    else;
+    if (src[tpoint] == '{' || src[tpoint] == '}' ||
+        src[tpoint] == ';' || src[tpoint] =='\n')  ++tpoint;
+    push_back(Arg_script(src, tpoint, max_soon, errors));
     if (size() != 1 && back().is_argfunction())
       default_output <<".argfunction cannot occur as one of several "
                   "commands\n";}
-  if (tpoint == std::string::npos)
-    throw Unclosed_brace(src.substr(0, point-1));
-  if (!size()) push_back(Arg_script("", max_soon, errors));
-  point = tpoint + 1;}
-
-Function::Function(const std::string& name_i,
-                   const Argv& parameters,
-                   const std::string& src, Error_list& errors) :
-    name_v(name_i), prototype(parameters) {
-  std::string::size_type point = 0;
-  try {
-    body = Command_block(src, point, 0, errors);
-    // this error handling is not simply testable because it requires bad
-    // functions in rwsh_init.cc
-    if (point != src.length())
-      throw "function with text following closing brace " + name_i + "\n" +
-          src.substr(point) + "\n";}
-  catch (Unclosed_brace error) {
-    throw "unclosed brace on construction of function " + name_i + "\n" +
-      error[1] + "\n";}
-  catch (Unclosed_parenthesis error) {
-    throw "unclosed parenthesis on construction of function " + name_i + "\n" +
-      error[1] + "\n";}}
+  if (tpoint == std::string::npos) {
+    if (src[point] == '{') errors.add_error(Exception(Argm::Unclosed_brace,
+                                                      src.substr(0, point-1)));
+    point = std::string::npos;}
+  else point = tpoint + 1;}
 
 Function::Function(const std::string& name_i, const Argv& parameters,
                    const Command_block& src) :

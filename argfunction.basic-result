@@ -10,7 +10,7 @@ call stack .source .try_catch_recursive(body)
 .function_all_flags .after_command -- args ... [.{argfunction}] {.nop $args}
 .function_all_flags .prompt {.echo \$}
 .function_all_flags .vars {.internal_vars}
-.source /etc/rwshrc-basic
+.source /etc/rwshrc-basic $argv$
 .function_all_flags # -- [ignored ...] [.{argfunction}] {.nop $ignored$}
 .function_all_flags fn -- prototype ... .{argfunction} {
   .function_all_flags $prototype$ {.argfunction}}
@@ -151,10 +151,14 @@ call stack .source .try_catch_recursive(body)
 .function_all_flags .mismatched_bracket context [stack ...] {
   echo mismatched bracket: $context
   if_only .var_exists stack {echo call stack: $stack$}}
-.function .mismatched_parenthesis {
-  .echo signal triggered: $0 \( $* \); .combine $nl
-  echo mismatched parenthesis: $1
-  echo call stack: $*2}
+.function_all_flags .mismatched_parenthesis string [stack ...] {
+  .echo signal triggered: $0 \( $string $stack$ \); .combine $nl
+  echo mismatched parenthesis: $string
+  echo call stack: $stack$}
+.function_all_flags .unclosed_parenthesis string [stack ...] {
+  .echo signal triggered: $0 \( $string $stack$ \); .combine $nl
+  echo mismatched parenthesis: $string
+  echo call stack: $stack$}
 .function_all_flags .missing_argfunction cmd [add_stack ...] {
   echo $cmd requires an argfunction
   if_only .var_exists add_stack {echo stack $add_stack$}}
@@ -184,6 +188,7 @@ call stack .source .try_catch_recursive(body)
 .function_all_flags .post_dash_dash_flag -- flag stack ... {
   echo flag option $flag occurs after -- in the prototype
   echo call stack: $stack$}
+.function_all_flags .prompt {.echo \$}
 .function_all_flags .result_range -- lhs rhs op [stack ...] {
   echo result of $op with arguments $lhs and $rhs is out of range
   echo call stack: $op $stack$}
@@ -232,6 +237,8 @@ call stack .source .try_catch_recursive(body)
   echo call stack: $stack$}
 .function_all_flags .unchecked_variable -- var [stack ...] {
   echo $var was not checked with call stack $stack$}
+.function_all_flags .unclosed_brace context [stack ...] {
+  echo unclosed brace: $context $stack$}
 .function_all_flags .undeclared_variable -- name [stack ...] {
   echo $name was not declared
   echo call stack: $stack$}
@@ -353,26 +360,7 @@ fn ln [-?] target {
   .test_file_exists $target
   &{.which_path ln /bin:/usr/bin} $-* $target}
 fn test -- args ... {.try_catch_recursive .return_code {${whichp test} $args$}}
-.else_if .test_string_equal $2 -c {
-  .for ${.list_environment}$ {
-    .scope $1$ (-- var val) {
-      .if .var_exists $var {.nop $val}
-      .else {
-        .global $var $val
-        .nop $$var}}}
-  .source /etc/rwshrc-basic
-  .nop $FIGNORE
-  .function_all_flags .shutdown -- [args ...] {.nop $args}
-  .function_all_flags .return_code code cmd [add_stack ...] {
-    echo $cmd returned $code : call stack $cmd $add_stack$
-    .exit $code}
-  .collect_errors_except .nop {
-    .mapped_argfunction &3 {$1$}
-    .exit 0}}
-.else {
-  .echo unexpected command line: &* (
-)
-  .source /etc/rwshrc-default}
+if_only .var_exists argv {.error ignored excess arguments $argv $nl}
 $.echo $nl $nl $nl $nl
 
  

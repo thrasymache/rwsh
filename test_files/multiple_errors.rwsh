@@ -1,3 +1,4 @@
+echo first; echo second ;echo third
 fn bar {echo &&&baz$$bax
   cat >something >else
   }

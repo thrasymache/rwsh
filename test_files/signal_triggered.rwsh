@@ -1,4 +1,5 @@
 #! /bin/rwsh
+.nop $argv$
 .global nl (
 )
 .for &{.internal_functions}$ {.nop

@@ -3,7 +3,7 @@
 // its key so that it can return argument functions which are part of the Argm
 // object.
 //
-// Copyright (C) 2005-2017 Samuel Newbold
+// Copyright (C) 2005-2019 Samuel Newbold
 
 #include <list>
 #include <map>
@@ -115,9 +115,11 @@ void Executable_map::not_found(Argm& argm_i, Error_list& exceptions) {
     Argm prototype_argm(argm_i.parent_map(), argm_i.input, argm_i.output,
                         argm_i.error);
     tokenize_words("cmd [args ...]", std::back_inserter(prototype_argm));
+    std::string::size_type point = 0;
+    Command_block body("{.echo $cmd (: command not found) "
+                       "\\( $cmd $args$ \\); .echo (\n)}",
+                       point, 0, exceptions);
     set(new Function(Argm::exception_names[Argm::Function_not_found],
-                     prototype_argm.argv(),
-                     "{.echo $cmd (: command not found) \\( $cmd $args$ \\);"
-                     " .echo (\n)}", exceptions));}
+                     prototype_argm.argv(), body));}
   throw Exception(Argm::Function_not_found, argm_i);}
 

@@ -32,7 +32,8 @@ Command_stream::Command_stream(Rwsh_istream_p& s, bool subprompt_i) :
     src(s), subprompt(subprompt_i) {}
 
 // write the next command to dest. run .prompt as appropriate
-Command_stream& Command_stream::getline(Arg_script& dest, Error_list& errors) {
+Command_stream& Command_stream::getline(Command_block& dest,
+                                        Error_list& errors) {
   if (this->fail()) return *this;
   std::string cmd;
   for (bool cmd_is_incomplete=true; cmd_is_incomplete;) {
@@ -46,24 +47,23 @@ Command_stream& Command_stream::getline(Arg_script& dest, Error_list& errors) {
     src.getline(line);
     gettimeofday(&after_input, rwsh_clock.no_timezone);
     rwsh_clock.user_wait(before_input, after_input);
-    if (fail())
+    std::string::size_type point = 0;
+    if (fail()) {
       if (cmd.size())  {                 // EOF without a complete command
         Exception raw_command(Argm::Raw_command, cmd);
         executable_map.run_handling_exceptions(raw_command, errors);
-        Arg_script(cmd, 0, errors);}     // this will throw the right exception
-      else return *this;
+        Command_block(cmd, point, 0, errors);} // will throw the right exception
+      return *this;}
     else cmd += line;
-    try {
-      dest = Arg_script(cmd, 0, errors);
-      if (global_stack.unwind_stack()) {
-        Exception raw_command(Argm::Raw_command, cmd);
-        global_stack.catch_one(raw_command, errors);
-        return *this;}
-      cmd_is_incomplete = false;}
-    catch (Unclosed_parenthesis exception) {
-      cmd += '\n';}
-    catch (Unclosed_brace exception) {
-      cmd += '\n';}}
+    dest = Command_block(cmd, point, 0, errors);
+    if (global_stack.remove_exceptions(".unclosed_brace", errors) ||
+        global_stack.remove_exceptions(".unclosed_parenthesis", errors))
+      cmd += '\n';
+    else if (global_stack.unwind_stack()) {
+      Exception raw_command(Argm::Raw_command, cmd);
+      global_stack.catch_one(raw_command, errors);
+      return *this;}
+    else cmd_is_incomplete = false;}
   Exception raw_command(Argm::Raw_command, cmd);
   executable_map.run_handling_exceptions(raw_command, errors);
   return *this;}

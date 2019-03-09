@@ -103,6 +103,8 @@ class Argm {
     Sigunknown,
     Tardy_flag,
     Unchecked_variable,
+    Unclosed_brace,
+    Unclosed_parenthesis,
     Undeclared_variable,
     Undefined_variable,
     Unfinished_if_block,
@@ -181,14 +183,6 @@ struct Exception : public Argm {
   Exception(Exception_t exception, int x, int y);
   Exception(Exception_t exception, int x, int y, int z);
   Exception(Exception_t exception, const Argm& src);};
-
-struct Unclosed_brace : public Exception {
-  Unclosed_brace(const std::string& prefix) :
-    Exception(Argm::Mismatched_brace, prefix) {}};
-
-struct Unclosed_parenthesis : public Exception {
-  Unclosed_parenthesis(const std::string& prefix_i) :
-    Exception(Argm::Mismatched_parenthesis, prefix_i) {}};
 
 struct Undefined_variable : public Exception {
   Undefined_variable(const std::string& name_i) :

@@ -5,5 +5,5 @@ class Command_stream {
   bool subprompt;
  public:
   Command_stream (Rwsh_istream_p& s, bool subprompt);
-  Command_stream& getline(Arg_script& dest, Error_list& errors);
+  Command_stream& getline(Command_block& dest, Error_list& errors);
   bool fail () const; };

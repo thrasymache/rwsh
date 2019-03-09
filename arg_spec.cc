@@ -126,15 +126,17 @@ Arg_spec::Arg_spec(const std::string& src, std::string::size_type style,
   parse_brace_type(src, max_soon, style, point, errors);
   if (type == FIXED) {
     auto split = src.find_first_of('}', point);
-    if (split == std::string::npos)
-      throw Unclosed_brace(src.substr(0, point-1));
-    if (src[style] == '[')
-      if (src[split+1] == ']') ++split;
-      else errors.add_error(Exception(Argm::Mismatched_bracket,
-                      src.substr(style, split-style+1)));
-    else;
-    text = src.substr(style, split-style+1);
-    point = split+1;}
+    if (split == std::string::npos) {
+      errors.add_error(Exception(Argm::Unclosed_brace, src.substr(0, point+1)));
+      point = std::string::npos;}
+    else {
+      if (src[style] == '[')
+        if (src[split+1] == ']') ++split;
+        else errors.add_error(Exception(Argm::Mismatched_bracket,
+                        src.substr(style, split-style+1)));
+      else;
+      text = src.substr(style, split-style+1);
+      point = split+1;}}
   else {
     substitution = new Command_block(src, point, soon_level, errors);
     if (point < src.length() && !sub_term_char(src[point]))

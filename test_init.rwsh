@@ -12,4 +12,4 @@
 .function_all_flags .after_command -- args ... [.{argfunction}] {.nop $args}
 .function_all_flags .prompt {.echo \$}
 .function_all_flags .vars {.internal_vars}
-.source /etc/rwshrc-basic
+.source /etc/rwshrc-basic $argv$

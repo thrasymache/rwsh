@@ -3,40 +3,43 @@
 .set_max_nesting 20
 .function_all_flags () {.nop}
 .function_all_flags #! -- ignored ... {.nop $ignored}
-.function_all_flags .autofunction -- cmd [args ...] {
-  .nop $args$
+.function_all_flags .autofunction -- cmd [args ...] [.{argfunction}] {
+  .if .var_exists args {.nop $args}
+  .else {.nop}
+  .nop {argfunction}
   .local full_path ${.which_path $cmd $PATH}
   if_only_not .test_executable_exists $full_path {.binary $full_path}
   if_only_not .test_string_equal $cmd $full_path {
     .function_all_flags $cmd -- [args ...] {
       &&full_path $args$}}
   .error added $cmd to executable map $nl}
-.if .test_number_equal $# 2 {.source /etc/rwshrc-default}
-.else_if .test_string_equal $2 -to {
-  .global SHELL /bin/rwsh
-  .global TESTABILITY (an=external var(iable))
-  .exec ./rwsh test_init.sh
-  .exit 0}
-.else_if .test_number_equal $# 3 {
-  .nop .source /etc/rwshrc-default
-  .source &2}
-.else_if .test_string_equal $2 -c {
-  .for ${.list_environment}$ {
-    .scope $1$ (-- var val) {
-      .if .var_exists $var {.nop $val}
-      .else {
-        .global $var $val
-        .nop $$var}}}
-  .source /etc/rwshrc-basic
-  .nop $FIGNORE
-  .function_all_flags .shutdown -- [args ...] {.nop $args}
-  .function_all_flags .return_code code cmd [add_stack ...] {
-    echo $cmd returned $code : call stack $cmd $add_stack$
-    .exit $code}
-  .collect_errors_except .nop {
-    .mapped_argfunction &3 {$1$}
-    .exit 0}}
+.if .test_less ${.argc $argv$} 2 {.source /etc/rwshrc-default}
 .else {
-  .echo unexpected command line: &* (
+  .if .test_string_equal $argv$1 -to {
+    .global SHELL /bin/rwsh
+    .global TESTABILITY (an=external var(iable))
+    .exec ./rwsh test_init.rwsh
+    .exit 0}
+  .else_if .test_number_equal ${.argc $argv$} 2 {
+    .nop .source /etc/rwshrc-default
+    .source $argv$1}
+  .else_if .test_string_equal $argv$1 -c {
+    .for ${.list_environment}$ {
+      .scope $1$ (-- var val) {
+        .if .var_exists $var {.nop $val}
+        .else {
+          .global $var $val
+          .nop $$var}}}
+    .source /etc/rwshrc-basic
+    .nop $FIGNORE
+    .function_all_flags .shutdown -- [args ...] {.nop $args}
+    .function_all_flags .return_code code cmd [add_stack ...] {
+      echo $cmd returned $code : call stack $cmd $add_stack$
+      .exit $code}
+    .collect_errors_except .nop {
+      .mapped_argfunction $argv$2 {$1$}
+      .exit 0}}
+  .else {
+    .echo unexpected command line: $argv$ (
 )
-  .source /etc/rwshrc-default}
+    .source /etc/rwshrc-default}}

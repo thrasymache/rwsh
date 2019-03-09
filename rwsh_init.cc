@@ -23,14 +23,20 @@
 
 #include "function.h"
 
-inline void bi(const std::string& name,
+void bi(const std::string& name,
         void (*implementation)(const Argm& argm, Error_list& exceptions),
         const Argv& parameters) {
     executable_map.set(new Builtin(name, implementation, parameters));}
 
-inline void fn(const std::string& name, const Argv& parameters,
-        const std::string& body, Error_list& exceptions) {
-    executable_map.set(new Function(name, parameters, body, exceptions));}
+void fn(const std::string& name, const Argv& parameters,
+        const std::string& src, Error_list& exceptions) {
+    std::string::size_type point = 0;
+    Command_block body(src, point, 0, exceptions);
+    if (point != src.length() && point != std::string::npos) std::abort();
+    // testing this error handling requires bad functions in internal_init()
+    else if (global_stack.unwind_stack())
+      global_stack.exception_handler(exceptions);
+    else executable_map.set(new Function(name, parameters, body));}
 
 void internal_init(Error_list& exceptions) {
   bi(".argc", b_argc, Argv {"--", "[list", "...]"});
@@ -70,23 +76,24 @@ void internal_init(Error_list& exceptions) {
   bi(".global", b_global, Argv {"--", "var", "value"});
   bi(".if", b_if, Argv {"--", "condition", "...", ".{argfunction}"});
   fn(".init",  Argv {"--", "[args", "...]"},
-      "{.set_max_nesting 10\n"
-      "    .function_all_flags .file_open_failure name stack ... {"
+      ".set_max_nesting 10\n"
+      "    .function_all_flags .file_open_failure name stack ... {.nop\n"
       "        .combine (init file ) $name ( does not exist\n"
       "call stack ) $stack (\n)}\n"
       "    .function_all_flags .raw_command -- args ... {.nop $args}\n"
-      "    .source /etc/rwshrc $args$\n"
-      "    .for &{.internal_functions}$ {" //.echo $1; .whence_function $1}\n"
-      "      .if .test_executable_exists $1 {.nop}\n"
-      "      .else {.echo &&1 not defined (\n)}}\n"
-      "    .if .test_executable_exists .help {"
-      "      .if .test_not_empty ${.help} {.nop}\n"
-      "      .else {.echo .help produces no output (\n)}}\n"
-      "    .else {.echo .help not defined (\n)}}", exceptions);
+      "    .collect_errors_except .nop {.nop\n"
+      "      .source /etc/rwshrc $args$\n"
+      "      .for &{.internal_functions}$ {\n"
+      "        .if .test_executable_exists $1 {.nop}\n"
+      "        .else {.echo &&&1 not defined (\n)}}\n"
+      "      .if .test_executable_exists .help {.nop\n"
+      "        .if .test_not_empty ${.help} {.nop}\n"
+      "        .else {.echo .help produces no output (\n)}}\n"
+      "      .else {.echo .help not defined (\n)}}", exceptions);
   fn(".internal_features", Argv {},
-     "{.echo (.after_command .before_command .run_logic\n)}", exceptions);
+     ".echo (.after_command .before_command .run_logic\n)", exceptions);
   bi(".internal_functions", b_internal_functions, Argv {});
-  fn(".internal_vars", Argv {}, "{.echo (FIGNORE\n)}", exceptions);
+  fn(".internal_vars", Argv {}, ".echo (FIGNORE\n)", exceptions);
   bi(".is_default_input", b_is_default_input, Argv {});
   bi(".is_default_output", b_is_default_output, Argv {});
   bi(".is_default_error", b_is_default_error, Argv {});
@@ -112,7 +119,7 @@ void internal_init(Error_list& exceptions) {
   bi(".set_max_extra_exceptions", b_set_max_extra_exceptions,
      Argv {"--", "maximum"});
   bi(".set_max_nesting", b_set_max_nesting, Argv {"--", "maximum"});
-  fn(".shutdown", Argv {"--", "[args", "...]"}, "{.nop $args; .exit 10}",
+  fn(".shutdown", Argv {"--", "[args", "...]"}, ".nop $args; .exit 10",
      exceptions);
   bi(".source", b_source, Argv {"--", "file", "[args", "...]"});
   bi(".stepwise", b_stepwise, Argv {"--", "command", "...", ".{argfunction}"});
