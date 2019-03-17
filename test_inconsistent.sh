@@ -1,11 +1,11 @@
 .global PATH /bin:/usr/bin
 .scope () {.getpid; .echo $nl}
 .scope () {.getppid; .echo $nl}
-.function_all_flags timings focus {
+.function timings focus {
   .combine $focus (:	last\() ${.last_execution_time $focus} \) \	
   .combine (total\() ${.total_execution_time $focus} \) \	
   .combine (count\() ${.execution_count $focus} \) $nl}
-.function_all_flags clock-watch {
+.function clock-watch {
   .usleep 600
   /bin/true
   timings timings

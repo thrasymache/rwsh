@@ -20,7 +20,6 @@ void b_fallback_handler(const Argm& argm, Error_list& exceptions);
 void b_for(const Argm& argm, Error_list& exceptions);
 void b_for_each_line(const Argm& argm, Error_list& exceptions);
 void b_fork(const Argm& argm, Error_list& exceptions);
-void b_function_all_flags(const Argm& argm, Error_list& exceptions);
 void b_function(const Argm& argm, Error_list& exceptions);
 void b_get_fallback_message(const Argm& argm, Error_list& exceptions);
 void b_get_max_collectible_exceptions(const Argm& argm, Error_list& exceptions);

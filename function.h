@@ -48,13 +48,11 @@ class Function : public Named_executable {
   Prototype prototype;
 
   Function(const std::string& name_i) :
-      name_v(name_i), prototype(true), body() {};
+      name_v(name_i), prototype(), body() {};
   void check_for_duplicates(const std::string& name);
  public:
   Command_block body;
 
-  Function(const std::string& name_i, bool non_prototype_i,
-           const Command_block& src);
   Function(const std::string& name_i, const Argv& parameters,
            const Command_block& src);
   Function(const Function& src) :

@@ -23,14 +23,14 @@
 
 # selection commands
 fn sfn command {
-  .function_all_flags $command [-*] [file ...] {
+  fn $command [-*] [file ...] {
     if_only .var_exists file {.selection_set s $file}
     &&{.which_path $command $PATH} $-*$ @$s}}
 fn fn-subcommand system command {
-  .function_all_flags &&{c $system - $command} -- [args ...] {
+  fn &&{c $system - $command} -- [args ...] {
     &&{whichp $system} &&command $args$}}
 fn sfn-subcommand system command {
-  .function_all_flags &&{c $system - $command} [-*] [file ...] {
+  fn &&{c $system - $command} [-*] [file ...] {
     if_only .var_exists file {.selection_set s $file}
     .if .test_not_empty $s {&&{whichp $system} &&command $-*$ @$s}
     .else {&&{whichp $system} &&command $-*$}}}

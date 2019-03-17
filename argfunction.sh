@@ -1,14 +1,14 @@
 .echo $nl $nl $nl $nl
-.function_all_flags fw .{argfunction} {
-  .function_all_flags f1 name .{argfunction} {.argfunction}
+.function fw .{argfunction} {
+  .function f1 name .{argfunction} {.argfunction}
   .whence_function f1; .echo $nl
   f1 f2 {.argfunction}
   .whence_function f2; .echo $nl
   .rm_executable f1; .rm_executable f2}
-fw {.echo hi $nl; .function_all_flags $name .{argfunction} {.argfunction}}
+fw {.echo hi $nl; .function $name .{argfunction} {.argfunction}}
 fw {.while .throw .false {
-  .function_all_flags &&name .{argfunction} {.argfunction}}}
-.function_all_flags f1 name .{argfunction} {
+  .function &&name .{argfunction} {.argfunction}}}
+.function f1 name .{argfunction} {
   .echo function name $name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}
@@ -62,7 +62,7 @@ fw {.mapped_argfunction $name {.for a b {
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}}
 fw {.mapped_argfunction {
-  .function_all_flags $name .{argfunction} {.argfunction}}}
+  .function $name .{argfunction} {.argfunction}}}
 .nop $A $FIGNORE
 .exit 0
 

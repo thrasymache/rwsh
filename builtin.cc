@@ -234,20 +234,9 @@ void b_fork(const Argm& argm, Error_list& exceptions) {
   if (WIFEXITED(status) && WEXITSTATUS(status))
     exceptions.add_error(Exception(Argm::Return_code, WEXITSTATUS(status)));}
 
-// add argfunction to executable map with name $1
-void b_function(const Argm& argm, Error_list& exceptions) {
-  Argm lookup(argm.subrange(1), nullptr, argm.parent_map());
-  Base_executable *e = executable_map.find_second(lookup);
-  if (is_argfunction_name(argm[1]) || dynamic_cast<Builtin*>(e))
-    exceptions.add_error(Exception(Argm::Illegal_function_name, argm[1]));
-  else {
-      argm.error <<"deprecated non-prototype: " <<argm.str() <<"\n";
-      executable_map.set(new Function(argm[1], true, *argm.argfunction()));
-  }}
-
 // add argfunction to executable map with name $1 and arguments $*2
 // the arguments must include all flags that can be passed to this function
-void b_function_all_flags(const Argm& argm, Error_list& exceptions) {
+void b_function(const Argm& argm, Error_list& exceptions) {
   Argm lookup(argm.subrange(1, argm.argc()-2), nullptr, argm.parent_map());
   Base_executable *e = executable_map.find_second(lookup);
   if (is_argfunction_name(argm[1]) || dynamic_cast<Builtin*>(e))

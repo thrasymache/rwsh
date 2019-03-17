@@ -38,10 +38,9 @@ class Prototype {
   std::vector<Parameter_group> positional;
   unsigned required_argc;
  public:
-  bool non_prototype;
   bool exclude_argfunction;
   bool required_argfunction;
-  Prototype(bool non_prototype);
+  Prototype(void);
   Prototype(const Argv& parameters);
   void arg_to_param(const Argv& invoking_argm, Variable_map& locals,
                     Error_list& exceptions) const;

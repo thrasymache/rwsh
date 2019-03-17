@@ -14,15 +14,13 @@ this version of the shell, including the following.
      *  .while will respond to the .retest_condition exception by testing the
         condition, and ending the loop if it fails, but (unlike .continue)
         continuing with the following statement if it succeeds.
-     *  All functions will require prototypes, and control flow statements such
-        as .for will also use a prototype for the values passed to the
-        argfunction rather than $1.
-     *  Whether a function takes an argfunction will also be part of the
-        prototype and functions will be able to take more than one argfunction
-        with string arguments being associated with each argfunction. For
-        instance this will permit .scope to take several prototypes with an
-        argfunction for each prototype, and will run the argfunction for which
-        its arguments match the corresponding prototype.
+     *  Control flow statements such as .for will also use a prototype for
+        the values passed to the argfunction rather than $1.
+     *  Functions will be able to take more than one argfunction with string
+        arguments being associated with each argfunction. For instance this
+        will permit .scope to take several prototypes with an argfunction for
+        each prototype, and will run the argfunction for which its arguments
+        match the corresponding prototype.
      *  "Soons" will be replaced with "Earlies". The syntax will not
         (necessarily) change, but the meaning will. Rather than & meaning to
         evaluate the first time a containing statement is evaluated and && meaning

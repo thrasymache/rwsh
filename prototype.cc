@@ -114,16 +114,16 @@ std::string Parameter_group::str() const {
        result.append((j? " ": "") + names[j] + (elipsis == j? " ...": ""));
     return result + "]";}}
 
-Prototype::Prototype(bool non_prototype_i) :
+Prototype::Prototype(void) :
     bare_dash_dash(false), dash_dash_position(-1), elipsis_var(""),
     flag_options(), flags(ALL), parameter_names(),
-    positional(), required_argc(), non_prototype(non_prototype_i),
+    positional(), required_argc(),
     exclude_argfunction(true), required_argfunction(false) {}
 
 Prototype::Prototype(const Argv& parameters) :
     bare_dash_dash(false), dash_dash_position(-1), elipsis_var(""),
     flag_options(), flags(ALL), parameter_names(),
-    positional(), required_argc(), non_prototype(false),
+    positional(), required_argc(),
     exclude_argfunction(true), required_argfunction(false) {
   bool has_elipsis = false;
   for (auto fp = parameters.begin(); fp != parameters.end(); ++fp) {
@@ -162,7 +162,6 @@ Prototype::Prototype(const Argv& parameters) :
 
 void Prototype::arg_to_param(const Argv& argv, Variable_map& locals,
                              Error_list& exceptions) const {
-  if (non_prototype) return;
   enum Dash_dash_type dash_dash = dash_dash_position? UNSEEN:
                                   bare_dash_dash? BARE: BRACKET;
   if (flags == SOME) locals.param("-*", ""), locals.param("-?", "");

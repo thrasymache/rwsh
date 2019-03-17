@@ -38,8 +38,7 @@ void Builtin::execute(const Argm& argm, Error_list& exceptions) const {
   Variable_map locals(argm.parent_map());
   prototype.arg_to_param(argm.argv(), locals, exceptions);
   locals.bless_unused_vars();
-  if (prototype.non_prototype) std::abort();
-  else if (argm.argfunction() && prototype.exclude_argfunction)
+  if (argm.argfunction() && prototype.exclude_argfunction)
     exceptions.add_error(Exception(Argm::Excess_argfunction));
   else if (!argm.argfunction() && prototype.required_argfunction)
     exceptions.add_error(Exception(Argm::Missing_argfunction));
@@ -78,8 +77,7 @@ void Command_block::prototype_execute(const Argm& argm,
                                      Error_list& exceptions) const {
   Variable_map locals(argm.parent_map());
   prototype.arg_to_param(argm.argv(), locals, exceptions);
-  if (prototype.non_prototype);
-  else if (argm.argfunction() && prototype.exclude_argfunction)
+  if (argm.argfunction() && prototype.exclude_argfunction)
     exceptions.add_error(Exception(Argm::Excess_argfunction));
   else if (!argm.argfunction() && prototype.required_argfunction)
     exceptions.add_error(Exception(Argm::Missing_argfunction));
@@ -129,10 +127,6 @@ Function::Function(const std::string& name_i, const Argv& parameters,
                    const Command_block& src) :
      name_v(name_i), prototype(parameters), body(src) {}
 
-Function::Function(const std::string& name_i, bool non_prototype_i,
-                   const Command_block& src) :
-     name_v(name_i), prototype(non_prototype_i), body(src) {}
-
 // run the given function
 void Function::execute(const Argm& argm, Error_list& exceptions) const {
   body.prototype_execute(argm, prototype, exceptions);}
@@ -143,7 +137,5 @@ void Function::promote_soons(unsigned nesting) {
 // convert the function to a string. except for the handling of the name this
 // is the inverse of the string constructor.
 std::string Function::str() const {
-  if (prototype.non_prototype)
-    return ".function " + escape(name()) + " " + body.str();
-  else return ".function_all_flags " + escape(name()) +
-              " " + prototype.str() + " " + body.str();}
+  return ".function " + escape(name()) + " " + prototype.str() + " " +
+    body.str();}

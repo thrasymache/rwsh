@@ -70,17 +70,16 @@ void internal_init(Error_list& exceptions) {
   bi(".for", b_for, Argv {"--", "list", "...", ".{argfunction}"});
   bi(".for_each_line", b_for_each_line, Argv {".{argfunction}"});
   bi(".fork", b_fork, Argv {"--", "command", "...", "[.{argfunction}]"});
-  bi(".function", b_function, Argv {"--", "name", ".{argfunction}"});
-  bi(".function_all_flags", b_function_all_flags,
+  bi(".function", b_function,
      Argv {"--", "name", "[prototype", "...]", ".{argfunction}"});
   bi(".global", b_global, Argv {"--", "var", "value"});
   bi(".if", b_if, Argv {"--", "condition", "...", ".{argfunction}"});
   fn(".init",  Argv {"--", "[args", "...]"},
       ".set_max_nesting 10\n"
-      "    .function_all_flags .file_open_failure name stack ... {.nop\n"
+      "    .function .file_open_failure name stack ... {.nop\n"
       "        .combine (init file ) $name ( does not exist\n"
       "call stack ) $stack (\n)}\n"
-      "    .function_all_flags .raw_command -- args ... {.nop $args}\n"
+      "    .function .raw_command -- args ... {.nop $args}\n"
       "    .collect_errors_except .nop {.nop\n"
       "      .source /etc/rwshrc $args$\n"
       "      .for &{.internal_functions}$ {.nop\n"

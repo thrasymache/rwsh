@@ -7,8 +7,8 @@
     .else {.nop
       .global $var $val
       .nop $$var}}}
-.function_all_flags #! -- ignored ... {.nop $ignored}
-.function_all_flags .autofunction -- cmd [args ...] [.{argfunction}] {.nop
+.function #! -- ignored ... {.nop $ignored}
+.function .autofunction -- cmd [args ...] [.{argfunction}] {.nop
   .if .var_exists args {.nop $args}
   .else {.nop}
   .nop {argfunction}
@@ -16,9 +16,9 @@
   .if .test_executable_exists $full_path {.nop}
   .else {.binary $full_path}
   .if .test_string_equal $cmd $full_path {.nop}
-  .else {.function_all_flags $cmd -- [args ...] {&&full_path $args$}}
+  .else {.function $cmd -- [args ...] {&&full_path $args$}}
   .error added $cmd to executable map $nl}
-.function_all_flags () {.nop}
+.function () {.nop}
 .scope $argv$ ([--init-file init-file] [-to] [-c command]
                [-rwsh] [rwsh_binary] [script-args ...]) {.nop
   .nop $rwsh_binary$ $-to$ $-c$ $script-args$ $-rwsh$
@@ -32,14 +32,14 @@
   .else_if .test_not_empty $-c$ $script-args$ {.source /etc/rwshrc-basic}
   .else {.exec /etc/rwshrc-default}
   .if .var_exists -c {
-    .function_all_flags .return_code code cmd [add_stack ...] {
+    .function .return_code code cmd [add_stack ...] {
       echo $cmd returned $code : call stack $cmd $add_stack$
       .exit $code}
     .collect_errors_except .nop {
       .mapped_argfunction $argv$2 {$1$}
       .exit 0}}
   .else_if .var_exists script-args {
-    .function_all_flags .return_code code cmd [add_stack ...] {
+    .function .return_code code cmd [add_stack ...] {
       echo $cmd returned $code : call stack $cmd $add_stack$
       .exit $code}
     .collect_errors_except .nop {

@@ -1,4 +1,4 @@
-.function_all_flags a [-*] [-x b ...] c {
+.function a [-*] [-x b ...] c {
   .for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
 .nop $A $FIGNORE
 .whence_function a
@@ -7,7 +7,7 @@ a -x first
 a -x (fi rst) second
 a -x first (sec ond) third
 a -x (fi rst) (sec ond) third fourth
-.function_all_flags a [-*] [-x ... b] c {
+.function a [-*] [-x ... b] c {
   .for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
   .combine $nl
   # if_only .test_not_empty $-* {c (-*: ) $-*$ $nl}
