@@ -1,5 +1,12 @@
+#! /bin/rwsh --init-file
+.for ${.list_environment}$ {.scope $1$ (-- var val) {
+  .nop $val
+  .if .test_in $var FIGNORE {.nop}
+  .else {.unset $var}}}
 .global nl (
 )
+.if .var_exists argv {.error ignored excess arguments $argv $nl}
+.else {.nop}
 .for &{.internal_functions}$ {.nop
   .if .test_string_unequal $1 .raw_command {
     .function_all_flags &&1 -- args ... {.nop

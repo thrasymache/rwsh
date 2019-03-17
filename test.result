@@ -1,8 +1,8 @@
 init file /non-existent/file/to/test/failure does not exist
 call stack .source .try_catch_recursive(body)
 .global A \
-
-.nop .function_all_flags .run_logic -- cmd [args ...] {
+.set SHELL /bin/rwsh
+.nop .function_all_flags .run_logic -- cmd [args ...] {.nop
   .signal_handler &{.internal_functions}$ {&&* {.argfunction}}
   .mapped_argfunction {&&* {.argfunction}}
   &&* {.argfunction}}
@@ -11,6 +11,8 @@ call stack .source .try_catch_recursive(body)
 .function_all_flags .prompt {.echo \$}
 .function_all_flags .vars {.internal_vars}
 .source /etc/rwshrc-basic $argv$
+#! /bin/rwsh --init-file
+.function_all_flags () {.nop}
 .function_all_flags # -- [ignored ...] [.{argfunction}] {.nop $ignored$}
 .function_all_flags fn -- prototype ... .{argfunction} {
   .function_all_flags $prototype$ {.argfunction}}
@@ -22,6 +24,7 @@ call stack .source .try_catch_recursive(body)
 )
 .if .var_exists ? {}
 .else {.global ? (); .nop $?}
+.nop $FIGNORE
 
 # internal functions
 .function_all_flags .ambiguous_prototype_dash_dash prototype stack ... {
@@ -229,9 +232,7 @@ call stack .source .try_catch_recursive(body)
   echo received SIGUSR2}
 .function_all_flags .sigunknown {
   echo received unknown unix signal}
-.function_all_flags .shutdown -- args ... {
-  .nop $args
-  .combine $nl (now terminating normally) $nl}
+.function_all_flags .shutdown -- [args ...] {.nop $args}
 .function_all_flags .tardy_flag -- flag stack ... {
   echo $flag flag comes too late in command
   echo call stack: $stack$}
@@ -306,7 +307,7 @@ fn outer_for var vals ... .{argfunction} {
 fn outer_while argv ... .{argfunction} {
   .while $argv$ {
     .try_catch_recursive outer_break outer_continue {.argfunction}}}
-fn setf var value {
+fn setf -- var value {
   .if .var_exists $var {.set $var $value}
   .else {.global $var $value}}
 fn single -- args ... {.scope ${$args$}$ result {echo $result}}
@@ -355,15 +356,20 @@ polish - .var_subtract
 
 # external commands tested in the test suite
 fn false {.try_catch_recursive .return_code {${whichp false}}}
-fn ln [-?] target {
-  .nop $-* # in case the following assertion fails
-  .test_file_exists $target
-  &{.which_path ln /bin:/usr/bin} $-* $target}
+fn ln [-?] [-t directory] target ... {
+  .nop $-* $target # in case the following assertion fails
+  .fork .mapped_argfunction {
+    if_only .var_exists -t {.cd $directory}
+    .for $target$ {.test_file_exists $1}
+    &{.which_path ln /bin:/usr/bin} $-? -t . $target$}}
 fn test -- args ... {.try_catch_recursive .return_code {${whichp test} $args$}}
 if_only .var_exists argv {.error ignored excess arguments $argv $nl}
+.function_all_flags .shutdown -- args ... {
+  .nop $args
+  .combine $nl (now terminating normally) $nl}
 $.binary /bin/cat
 $/bin/cat /tmp/lcl
-/etc/rwshrc ./rwsh test_init.rwsh 
+/etc/rwshrc ./rwsh --init-file test_init.rwsh 
 $.function_all_flags ## [args ...] {.nop $args}
 $#
 $.nop beware the empty comment
@@ -493,23 +499,20 @@ $.whence_function .argfunction {
 $
 $## ability of functions to perform custom control flow
 $# rwshrc-basic
-$.function e {.echo $*}
+$.function_all_flags echoe -- text ... {.nop $text; .echo $*}
 $.function_all_flags echow -- text ... {.echo $text$; .combine $nl}
-$.function om {.argfunction}
 $.function_all_flags sa [args ...] .{argfunction} {
   .scope $args$ ([args ...]) {.argfunction}}
 $.function_all_flags se .{argfunction} {.scope () {.argfunction}}
-$.whence_function e
-.function e {.echo $*}
-$.whence_function om
-.function om {.argfunction}
+$.whence_function echoe
+.function_all_flags echoe -- text ... {.nop $text; .echo $*}
 $.whence_function sa
 .function_all_flags sa [args ...] .{argfunction} {
   .scope $args$ ([args ...]) {.argfunction}}
 $.whence_function se
 .function_all_flags se .{argfunction} {.scope () {.argfunction}}
-$whence e
-.function e {.echo $*}
+$whence echoe
+.function_all_flags echoe -- text ... {.nop $text; .echo $*}
 $whence echo
 .function_all_flags echo -- text ... {.echo $text; .combine $nl}
 $whence ee
@@ -562,7 +565,7 @@ signal triggered: .mismatched_parenthesis ( echo a (multi-line parenthesis
 mismatched parenthesis: (echo a (multi-line parenthesis
   mismatch)))
 call stack:
-$.echo (internal \)parenthesis \\ escape ( \))); .combine $nl
+$echoe (internal \)parenthesis \\ escape ( \))); .combine $nl
 internal )parenthesis \ escape ( ))
 $.argc (internal \)parenthesis \\ escape ( \))); .combine $nl
 1
@@ -595,7 +598,7 @@ call stack ) $stack (
     .function_all_flags .raw_command -- args ... {.nop $args}
     .collect_errors_except .nop {.nop
       .source /etc/rwshrc $args$
-      .for &{.internal_functions}$ {
+      .for &{.internal_functions}$ {.nop
         .if .test_executable_exists $1 {.nop}
         .else {.echo &&&1 not defined (
 )}}
@@ -606,19 +609,19 @@ call stack ) $stack (
       .else {.echo .help not defined (
 )}}}
 $whence .autofunction
-.function_all_flags .autofunction -- cmd [args ...] [.{argfunction}] {
+.function_all_flags .autofunction -- cmd [args ...] [.{argfunction}] {.nop
   .if .var_exists args {.nop $args}
   .else {.nop}
   .nop {argfunction}
   .local full_path ${.which_path $cmd $PATH}
-  if_only_not .test_executable_exists $full_path {.binary $full_path}
-  if_only_not .test_string_equal $cmd $full_path {
-    .function_all_flags $cmd -- [args ...] {
-      &full_path $args$}}
+  .if .test_executable_exists $full_path {.nop}
+  .else {.binary $full_path}
+  .if .test_string_equal $cmd $full_path {.nop}
+  .else {.function_all_flags $cmd -- [args ...] {&full_path $args$}}
   .error added $cmd to executable map $nl}
 $whence .binary
 .binary file
-$.binary {e excess argfunction}
+$.binary {echo excess argfunction}
 unacceptable arguments: for prototype file,
  needed (file),
 ( call) stack: .binary
@@ -665,8 +668,7 @@ $.whence_function /usr/bin/env
 $env false add the function and the binary at once
 /usr/bin/env returned 1 : call stack /usr/bin/env env
 $.whence_function true
-.function_all_flags true -- [args ...] {
-      /bin/true $args$}
+.function_all_flags true -- [args ...] {/bin/true $args$}
 $/bin/echo this will add /bin/echo to the hash table
 this will add /bin/echo to the hash table
 $/bin/echo this will use the existing /bin/echo reference
@@ -684,15 +686,15 @@ call stack .replace_exception .mapped_argfunction .if .return_code .try_catch_re
 $if_only_not false {echo false throwing a .false exception}
 false throwing a .false exception
 $./rwsh -c (env false)
-/usr/bin/env returned 1 : call stack /usr/bin/env env .mapped_argfunction .collect_errors_except .mapped_argfunction .else_if .mapped_argfunction .else .source .collect_errors_except .init
+/usr/bin/env returned 1 : call stack /usr/bin/env env .mapped_argfunction .collect_errors_except .mapped_argfunction .if .scope .source .collect_errors_except .init
 ./rwsh returned 1 : call stack ./rwsh
 $./rwsh -c (.get_pid)
 .get_pid : binary not found in /bin:/usr/bin:.
-call stack: .which_path .autofunction .autofunction .mapped_argfunction .collect_errors_except .mapped_argfunction .else_if .mapped_argfunction .else .source .collect_errors_except .init
+call stack: .which_path .autofunction .autofunction .mapped_argfunction .collect_errors_except .mapped_argfunction .if .scope .source .collect_errors_except .init
 substitution (${.which_path $cmd $PATH}) failed
-call stack: .autofunction .mapped_argfunction .collect_errors_except .mapped_argfunction .else_if .mapped_argfunction .else .source .collect_errors_except .init
-.get_pid : command not found ( .get_pid .mapped_argfunction .collect_errors_except .mapped_argfunction .else_if .mapped_argfunction .else .source .collect_errors_except .init )
-$./rwsh /non-existent/file/to/test/failure <test_files/pause_hello.rwsh
+call stack: .autofunction .mapped_argfunction .collect_errors_except .mapped_argfunction .if .scope .source .collect_errors_except .init
+.get_pid : command not found ( .get_pid .mapped_argfunction .collect_errors_except .mapped_argfunction .if .scope .source .collect_errors_except .init )
+$./rwsh --init-file /non-existent/file/to/test/failure <test_files/pause_hello.rwsh
 .ambiguous_prototype_dash_dash not defined 
 .arguments_for_argfunction not defined 
 .bad_argfunction_style not defined 
@@ -775,87 +777,87 @@ $./rwsh /non-existent/file/to/test/failure <test_files/pause_hello.rwsh
 .version_incompatible not defined 
 .help not defined 
 init file /non-existent/file/to/test/failure does not exist
-call stack .source .mapped_argfunction .else_if .mapped_argfunction .else .source .collect_errors_except .init
+call stack .source .mapped_argfunction .if .scope .source .collect_errors_except .init
 Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
-.undeclared_variable : command not found ( .undeclared_variable PATH .autofunction .autofunction )
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-.failed_substitution : command not found ( .failed_substitution ${.which_path $cmd $PATH} .autofunction )
-.prompt : command not found ( .prompt )
-Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
-.undeclared_variable : command not found ( .undeclared_variable PATH .autofunction .autofunction )
+.binary_not_found .prompt /bin:/usr/bin:. .which_path .autofunction .autofunction
+.binary_not_found : command not found ( .binary_not_found .prompt /bin:/usr/bin:. .which_path .autofunction .autofunction )
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.which_path $cmd $PATH} .autofunction
 .failed_substitution : command not found ( .failed_substitution ${.which_path $cmd $PATH} .autofunction )
 .prompt : command not found ( .prompt )
 Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
+.binary_not_found .binary_not_found /bin:/usr/bin:. .which_path .autofunction .autofunction
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.which_path $cmd $PATH} .autofunction
 Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
+.binary_not_found .failed_substitution /bin:/usr/bin:. .which_path .autofunction .autofunction
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.which_path $cmd $PATH} .autofunction
 Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
-.undeclared_variable : command not found ( .undeclared_variable PATH .autofunction .autofunction )
+.binary_not_found .prompt /bin:/usr/bin:. .which_path .autofunction .autofunction
+.binary_not_found : command not found ( .binary_not_found .prompt /bin:/usr/bin:. .which_path .autofunction .autofunction )
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.which_path $cmd $PATH} .autofunction
 .failed_substitution : command not found ( .failed_substitution ${.which_path $cmd $PATH} .autofunction )
 .prompt : command not found ( .prompt )
 Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
+.binary_not_found .binary_not_found /bin:/usr/bin:. .which_path .autofunction .autofunction
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.which_path $cmd $PATH} .autofunction
 Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
+.binary_not_found .failed_substitution /bin:/usr/bin:. .which_path .autofunction .autofunction
+Exception for failed handler. Original exception with call stack:
+.failed_substitution ${.which_path $cmd $PATH} .autofunction
+Exception for failed handler. Original exception with call stack:
+.binary_not_found .prompt /bin:/usr/bin:. .which_path .autofunction .autofunction
+.binary_not_found : command not found ( .binary_not_found .prompt /bin:/usr/bin:. .which_path .autofunction .autofunction )
+Exception for failed handler. Original exception with call stack:
+.failed_substitution ${.which_path $cmd $PATH} .autofunction
+.failed_substitution : command not found ( .failed_substitution ${.which_path $cmd $PATH} .autofunction )
+.prompt : command not found ( .prompt )
+Exception for failed handler. Original exception with call stack:
+.binary_not_found .binary_not_found /bin:/usr/bin:. .which_path .autofunction .autofunction
+Exception for failed handler. Original exception with call stack:
+.failed_substitution ${.which_path $cmd $PATH} .autofunction
+Exception for failed handler. Original exception with call stack:
+.binary_not_found .failed_substitution /bin:/usr/bin:. .which_path .autofunction .autofunction
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.which_path $cmd $PATH} .autofunction
 hello world 
 Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
-.undeclared_variable : command not found ( .undeclared_variable PATH .autofunction .autofunction )
+.binary_not_found .prompt /bin:/usr/bin:. .which_path .autofunction .autofunction
+.binary_not_found : command not found ( .binary_not_found .prompt /bin:/usr/bin:. .which_path .autofunction .autofunction )
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.which_path $cmd $PATH} .autofunction
 .failed_substitution : command not found ( .failed_substitution ${.which_path $cmd $PATH} .autofunction )
 .prompt : command not found ( .prompt )
 Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
+.binary_not_found .binary_not_found /bin:/usr/bin:. .which_path .autofunction .autofunction
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.which_path $cmd $PATH} .autofunction
 Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
+.binary_not_found .failed_substitution /bin:/usr/bin:. .which_path .autofunction .autofunction
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.which_path $cmd $PATH} .autofunction
 Exception for failed handler. Original exception with call stack:
 .unused_variable FIGNORE
 .unused_variable : command not found ( .unused_variable FIGNORE )
 Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
-.undeclared_variable : command not found ( .undeclared_variable PATH .autofunction .autofunction )
+.binary_not_found .unused_variable /bin:/usr/bin:. .which_path .autofunction .autofunction
+.binary_not_found : command not found ( .binary_not_found .unused_variable /bin:/usr/bin:. .which_path .autofunction .autofunction )
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.which_path $cmd $PATH} .autofunction
 .failed_substitution : command not found ( .failed_substitution ${.which_path $cmd $PATH} .autofunction )
 Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
+.binary_not_found .binary_not_found /bin:/usr/bin:. .which_path .autofunction .autofunction
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.which_path $cmd $PATH} .autofunction
 Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
+.binary_not_found .failed_substitution /bin:/usr/bin:. .which_path .autofunction .autofunction
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.which_path $cmd $PATH} .autofunction
 ./rwsh returned 10 : call stack ./rwsh
-$./rwsh test_files/pause_hello.rwsh <test_files/pause_hello.rwsh
+$./rwsh --init-file test_files/pause_hello.rwsh <test_files/pause_hello.rwsh
 hello world 
 .ambiguous_prototype_dash_dash not defined 
 .arguments_for_argfunction not defined 
@@ -939,102 +941,102 @@ hello world
 .version_incompatible not defined 
 .help not defined 
 Exception for failed handler. Original exception with call stack:
-.unchecked_variable argv .source .mapped_argfunction .else_if .mapped_argfunction .else .source .collect_errors_except .init
-.unchecked_variable : command not found ( .unchecked_variable argv .source .mapped_argfunction .else_if .mapped_argfunction .else .source .collect_errors_except .init )
+.unchecked_variable argv .source .mapped_argfunction .if .scope .source .collect_errors_except .init
+.unchecked_variable : command not found ( .unchecked_variable argv .source .mapped_argfunction .if .scope .source .collect_errors_except .init )
 Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
-.undeclared_variable : command not found ( .undeclared_variable PATH .autofunction .autofunction )
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-.failed_substitution : command not found ( .failed_substitution ${.which_path $cmd $PATH} .autofunction )
-Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
-.undeclared_variable : command not found ( .undeclared_variable PATH .autofunction .autofunction )
+.binary_not_found .unchecked_variable /bin:/usr/bin:. .which_path .autofunction .autofunction
+.binary_not_found : command not found ( .binary_not_found .unchecked_variable /bin:/usr/bin:. .which_path .autofunction .autofunction )
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.which_path $cmd $PATH} .autofunction
 .failed_substitution : command not found ( .failed_substitution ${.which_path $cmd $PATH} .autofunction )
-.prompt : command not found ( .prompt )
 Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
+.binary_not_found .binary_not_found /bin:/usr/bin:. .which_path .autofunction .autofunction
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.which_path $cmd $PATH} .autofunction
 Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
-.undeclared_variable : command not found ( .undeclared_variable PATH .autofunction .autofunction )
+.binary_not_found .failed_substitution /bin:/usr/bin:. .which_path .autofunction .autofunction
+Exception for failed handler. Original exception with call stack:
+.failed_substitution ${.which_path $cmd $PATH} .autofunction
+Exception for failed handler. Original exception with call stack:
+.binary_not_found .prompt /bin:/usr/bin:. .which_path .autofunction .autofunction
+.binary_not_found : command not found ( .binary_not_found .prompt /bin:/usr/bin:. .which_path .autofunction .autofunction )
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.which_path $cmd $PATH} .autofunction
 .failed_substitution : command not found ( .failed_substitution ${.which_path $cmd $PATH} .autofunction )
 .prompt : command not found ( .prompt )
 Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
+.binary_not_found .binary_not_found /bin:/usr/bin:. .which_path .autofunction .autofunction
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.which_path $cmd $PATH} .autofunction
 Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
+.binary_not_found .failed_substitution /bin:/usr/bin:. .which_path .autofunction .autofunction
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.which_path $cmd $PATH} .autofunction
 Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
-.undeclared_variable : command not found ( .undeclared_variable PATH .autofunction .autofunction )
+.binary_not_found .prompt /bin:/usr/bin:. .which_path .autofunction .autofunction
+.binary_not_found : command not found ( .binary_not_found .prompt /bin:/usr/bin:. .which_path .autofunction .autofunction )
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.which_path $cmd $PATH} .autofunction
 .failed_substitution : command not found ( .failed_substitution ${.which_path $cmd $PATH} .autofunction )
 .prompt : command not found ( .prompt )
 Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
+.binary_not_found .binary_not_found /bin:/usr/bin:. .which_path .autofunction .autofunction
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.which_path $cmd $PATH} .autofunction
 Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
+.binary_not_found .failed_substitution /bin:/usr/bin:. .which_path .autofunction .autofunction
+Exception for failed handler. Original exception with call stack:
+.failed_substitution ${.which_path $cmd $PATH} .autofunction
+Exception for failed handler. Original exception with call stack:
+.binary_not_found .prompt /bin:/usr/bin:. .which_path .autofunction .autofunction
+.binary_not_found : command not found ( .binary_not_found .prompt /bin:/usr/bin:. .which_path .autofunction .autofunction )
+Exception for failed handler. Original exception with call stack:
+.failed_substitution ${.which_path $cmd $PATH} .autofunction
+.failed_substitution : command not found ( .failed_substitution ${.which_path $cmd $PATH} .autofunction )
+.prompt : command not found ( .prompt )
+Exception for failed handler. Original exception with call stack:
+.binary_not_found .binary_not_found /bin:/usr/bin:. .which_path .autofunction .autofunction
+Exception for failed handler. Original exception with call stack:
+.failed_substitution ${.which_path $cmd $PATH} .autofunction
+Exception for failed handler. Original exception with call stack:
+.binary_not_found .failed_substitution /bin:/usr/bin:. .which_path .autofunction .autofunction
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.which_path $cmd $PATH} .autofunction
 hello world 
 Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
-.undeclared_variable : command not found ( .undeclared_variable PATH .autofunction .autofunction )
+.binary_not_found .prompt /bin:/usr/bin:. .which_path .autofunction .autofunction
+.binary_not_found : command not found ( .binary_not_found .prompt /bin:/usr/bin:. .which_path .autofunction .autofunction )
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.which_path $cmd $PATH} .autofunction
 .failed_substitution : command not found ( .failed_substitution ${.which_path $cmd $PATH} .autofunction )
 .prompt : command not found ( .prompt )
 Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
+.binary_not_found .binary_not_found /bin:/usr/bin:. .which_path .autofunction .autofunction
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.which_path $cmd $PATH} .autofunction
 Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
+.binary_not_found .failed_substitution /bin:/usr/bin:. .which_path .autofunction .autofunction
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.which_path $cmd $PATH} .autofunction
 Exception for failed handler. Original exception with call stack:
 .unused_variable FIGNORE
 .unused_variable : command not found ( .unused_variable FIGNORE )
 Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
-.undeclared_variable : command not found ( .undeclared_variable PATH .autofunction .autofunction )
+.binary_not_found .unused_variable /bin:/usr/bin:. .which_path .autofunction .autofunction
+.binary_not_found : command not found ( .binary_not_found .unused_variable /bin:/usr/bin:. .which_path .autofunction .autofunction )
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.which_path $cmd $PATH} .autofunction
 .failed_substitution : command not found ( .failed_substitution ${.which_path $cmd $PATH} .autofunction )
 Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
+.binary_not_found .binary_not_found /bin:/usr/bin:. .which_path .autofunction .autofunction
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.which_path $cmd $PATH} .autofunction
 Exception for failed handler. Original exception with call stack:
-.undeclared_variable PATH .autofunction .autofunction
+.binary_not_found .failed_substitution /bin:/usr/bin:. .which_path .autofunction .autofunction
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.which_path $cmd $PATH} .autofunction
 ./rwsh returned 10 : call stack ./rwsh
-$./rwsh test_files/signal_triggered.rwsh <test_files/pause_hello.rwsh
+$./rwsh --init-file test_files/signal_triggered.rwsh <test_files/pause_hello.rwsh
 signal triggered: .raw_command ( .function_all_flags .shutdown -- [args ...] {.nop $args; .exit 255} )
 .help not defined 
 signal triggered: .prompt ( )
@@ -1048,10 +1050,13 @@ hello world
 signal triggered: .prompt ( )
 signal triggered: .unused_variable ( FIGNORE )
 ./rwsh returned 255 : call stack ./rwsh
+$./rwsh test_files/hello_argv.rwsh
+hello 
+$./rwsh test_files/hello_argv.rwsh world
+hello world 
 $.autofunction test_files/../rwsh
 $whence test_files/../rwsh
-.function_all_flags test_files/../rwsh -- [args ...] {
-      ./test_files/../rwsh $args$}
+.function_all_flags test_files/../rwsh -- [args ...] {./test_files/../rwsh $args$}
 $
 $.function_all_flags .autofunction -- cmd [args ...] {
   # $args$ redefining .autofunction tested by subsequent usage
@@ -1218,12 +1223,12 @@ call stack
 $sa $B$$1$ {echo $# $args$}
 $$1$ is not a valid word selection
 call stack
-$sa $B {e $# $args$ $nl}
-2  (zero   zero) ((one one  ) one   ) two three 
-$sa $B$ {e $# $args$ $nl}
-5 zero   zero (one one  ) one    two three 
-$sa $B$$ {e $# $args$ $nl}
-7 zero zero one one   one two three 
+$sa $B {echow $# $args$}
+2  (zero   zero) ((one one  ) one   ) two three
+$sa $B$ {echow $# $args$}
+5 zero   zero (one one  ) one    two three
+$sa $B$$ {echow $# $args$}
+7 zero zero one one   one two three
 $sa $B$$$$ {echo $# $args$}
 8 zero zero one one one two three
 $se {sa $B$$$$ {echo $# $args$}}
@@ -1231,11 +1236,11 @@ $se {sa $B$$$$ {echo $# $args$}}
 $sa $B$10 {echo $# $args$}
 optional variable $B$10 was not defined
 call stack:
-$sa $B$1 {e $# $args$ $nl}
-2 (one one  ) one    
+$sa $B$1 {echow $# $args$}
+2 (one one  ) one   
 $sa $B$$1 {echo $# $args$}
 2 zero
-$om $broken {e $# $* $nl}
+$.scope $broken arg {echoe $# $arg $nl}
 2 extra_close) (extra_open 
 $sa $broken$ {echo $# $args$}
 signal triggered: .mismatched_parenthesis ( extra_close) )
@@ -1245,10 +1250,10 @@ $sa $broken$$ {echo $# $args$}
 signal triggered: .mismatched_parenthesis ( extra_close) )
 mismatched parenthesis: extra_close)
 call stack:
-$sa $C {e $# $args$ $nl}
-2 (external) () ( ) internal(parenthesis) 
-$sa $C$ {e $# $args$ $nl}
-5 external    internal(parenthesis) 
+$sa $C {echow $# $args$}
+2 (external) () ( ) internal(parenthesis)
+$sa $C$ {echow $# $args$}
+5 external    internal(parenthesis)
 $sa $C$$ {echo $# $args$}
 3 external internal(parenthesis)
 $
@@ -1278,15 +1283,15 @@ $echo &&{e &A}
 (&&{e &A}) attempts to substitute after the command has been run
 $echo &A
 /bin
-$.scope not_bin A {e &A &&A $A $nl; .scope otherwise A {echo &A &&A &&&A $A}}
-/bin not_bin not_bin 
+$.scope not_bin A {echo &A &&A $A; .scope otherwise A {echo &A &&A &&&A $A}}
+/bin not_bin not_bin
 /bin not_bin otherwise otherwise
-$se {sa &B$10 {e $# $args$}}
+$se {sa &B$10 {echoe $# $args$}}
 optional variable &B$10 was not defined
 call stack:
 $se {sa &B$$$$ {echo $# $args$}}
 8 zero zero one one one two three
-$se {sa &B$1 {e $# $args$} $nl}
+$se {sa &B$1 {echoe $# $args$} $nl}
 3 (one one  ) one    
 $se {sa &B$$1 {echo $# $args$}}
 2 zero
@@ -1298,12 +1303,12 @@ $echo ${e $A}
 $whence .argfunction {e ${e $A}}
 {e ${e $A}}
 $.scope not_bin A {
-   e &{.echo $A} &&{.echo $A} $A $nl
+   echoe &{.echo $A} &&{.echo $A} $A $nl
    .scope otherwise A {
       echo &{.echo $A} &&{.echo $A} &&&{.echo $A} ${.echo $A} $A}}
 /bin not_bin not_bin 
 /bin not_bin otherwise otherwise otherwise
-$.scope not_bin A {e &{.echo &A $A} &&{.echo &A &&A} ${.echo &A $A} $nl}
+$.scope not_bin A {echoe &{.echo &A $A} &&{.echo &A &&A} ${.echo &A $A} $nl}
 /bin /bin /bin not_bin /bin not_bin 
 $sa &{.echo $A} {echo $args &1$}
 /bin
@@ -1344,67 +1349,69 @@ before .{argfunction} between [.{argfunction}] after
 $echo before ..{still bad} between [.{missing close} after
 .. is neither an argfunction nor a substitution nor a brace literal
 mismatched bracket: ([.{missing close})
-$echo x{e bad argfunction style}
+$echo x{echo bad argfunction style}
 x is neither an argfunction nor a substitution nor a brace literal
-$e x&&&{e x}
+$echo x&&&{echo x}
 x&&& is neither an argfunction nor a substitution nor a brace literal
-$e $+{e x}
+$echo $+{echo x}
 $+ is neither an argfunction nor a substitution nor a brace literal
-$e &+{e x}
+$echo &+{echo x}
 &+ is neither an argfunction nor a substitution nor a brace literal
-$e &&${e x}
+$echo &&${echo x}
 &&$ is neither an argfunction nor a substitution nor a brace literal
-(&&${e x}) attempts to substitute after the command has been run
-$echo ${e 0 $nl}
-(0 
+(&&${echo x}) attempts to substitute after the command has been run
+$echo ${echo 0}
+(0
 )
 $echo &{.echo 0}
 0
 $.echo nevermore &{/bin/echo quoth the raven} 
 nevermore quoth the raven
-$sa ${e $B}$@1 ${e $B}$1 ${e $B}XYZ {echo $# $args$}
+$sa ${echo $B}$@1 ${echo $B}$1 ${echo $B}XYZ {echo $# $args$}
 @1 is not a valid word selection
 call stack
 XYZ is not a valid word selection
 call stack
-$sa ${e $B} {e $# $args$ $nl}
-2  (zero   zero) ((one one  ) one   ) two three 
-$sa &{e $B} {e $# $args$ $nl}
-2  (zero   zero) ((one one  ) one   ) two three 
-$sa ${e $B}$ {e $# $args$ $nl}
-5 zero   zero (one one  ) one    two three 
-$sa &{e $B}$ {e $# $args$ $nl}
-5 zero   zero (one one  ) one    two three 
+$sa ${echoe $B} {echow $# $args$}
+2  (zero   zero) ((one one  ) one   ) two three
+$sa &{echoe $B} {echow $# $args$}
+2  (zero   zero) ((one one  ) one   ) two three
+$sa ${echoe $B}$ {echow $# $args$}
+5 zero   zero (one one  ) one    two three
+$sa &{echoe $B}$ {echow $# $args$}
+5 zero   zero (one one  ) one    two three
 $sa &{.echo $B}$ {echow $# $args$}
 5 zero   zero (one one  ) one    two three
-$se {e $# &{e $B}$ $nl}
-1 zero   zero (one one  ) one    two three 
-$sa &{e $B}$$ {e $# $args$ $nl}
+$se {echow $# &{echow $B}$}
+1 zero   zero (one one  ) one    two three
+$se {echo $# &{echo $B}$}
+1 ( (zero   zero) ((one one  ) one   ) two three)
+$sa &{echoe $B}$$ {echoe $# $args$ $nl}
 7 zero zero one one   one two three 
-$sa ${e $B}$$ {e $# $args$ $nl}
+$sa ${echoe $B}$$ {echoe $# $args$ $nl}
 7 zero zero one one   one two three 
-$se {sa ${e $B}$1 {e $# $args$ $nl}}
+$se {sa ${echoe $B}$1 {echoe $# $args$ $nl}}
 2 (one one  ) one    
-$se {sa &{e $B}$1 {.echo $# $args$ $nl}}
+$se {sa &{echoe $B}$1 {.echo $# $args$ $nl}}
 2 (one one  ) one    
-$se {sa ${e $B}$$$1 {echo $# $args$}}
+$se {sa ${echoe $B}$$$1 {echo $# $args$}}
 2 zero
-$se {sa &{e $B}$$$1 {echo $# $args$}}
+$se {sa &{echoe $B}$$$1 {echo $# $args$}}
 2 zero
 $.unset A
 $.unset B
-$sa &{e ((zero zero) (one one) two three)}$10 {echo $# $args$}
-optional variable (&{e ((zero zero) (one one) two three)}$10) was not defined
+$sa &{echoe ((zero zero) (one one) two three)}$10 {echo $# $args$}
+optional variable (&{echoe ((zero zero) (one one) two three)}$10) was not defined
 call stack:
-$sa ${e (zero zero) \)one one two three}$1 {echo $# $args$}
+$sa ${echoe (zero zero) \)one one two three}$1 {echo $# $args$}
 signal triggered: .mismatched_parenthesis ( zero zero ) )
 mismatched parenthesis: (zero zero ))
 call stack:
-$sa &{e (zero zero) \(one one two three}$1 {echo $# $args$}
+$sa &{echoe (zero zero) \(one one two three}$1 {echo $# $args$}
 signal triggered: .mismatched_parenthesis ( zero zero (one one two three )
 mismatched parenthesis: (zero zero (one one two three)
 call stack:
-$om ${e (zero zero) \)one one two three} {e $# $* $nl}
+$.scope ${echoe (zero zero) \)one one two three} arg {.echo $# $arg $nl}
 2 zero zero )one one two three 
 $c x &{.echo (y y)}$ x $nl
 xyyx
@@ -1450,7 +1457,8 @@ $se {
   .else {.nop}}
 $/bin/cat outfile
 there
-$se {se >outfile {e line 1 $nl; e line 2 longer $nl; .echo $nl; echo ending}}
+$se {se >outfile {
+  echoe line 1 $nl; echoe line 2 longer $nl; .echo $nl; echo ending}}
 $/bin/cat <outfile
 line 1 
 line 2 longer 
@@ -1477,10 +1485,10 @@ $.for_each_line <outfile {
 current line line 1
 current line line 2 longer
 $.for_each_line <outfile {
-  e line of $# \( $* \) $nl; .throw echo exception in for_each_line}
+  echoe line of $# \( $* \) $nl; .throw echo exception in for_each_line}
 line of 3 ( line 1 ) 
 exception in for_each_line .throw .mapped_argfunction .for_each_line
-$.for_each_line <outfile {e line of $# \( $* \) $nl}
+$.for_each_line <outfile {echoe line of $# \( $* \) $nl}
 line of 3 ( line 1 ) 
 line of 4 ( line 2 longer ) 
 line of 1 ( ) 
@@ -1512,12 +1520,12 @@ $.scope 00 A {x {echo &A &&A &&&A $A}}
 $.scope 00 A {x {x {x {x {echo &A &&A &&&A &&&&A &&&&&A &&&&&&A $A}}}}}
 0 00 5 10 15 20 20
 $.scope 00 A {
-  x {e &{.echo &A $A} . &&{.echo &A &&A $A} . &&&{.echo &A &&A &&&A $A} . ${
+  x {echoe &{.echo &A $A} . &&{.echo &A &&A $A} . &&&{.echo &A &&A &&&A $A} . ${
   .echo &A &&A &&&A $A} . $A $nl}}
 0 0 . 0 00 00 . 0 00 5 5 . 0 00 5 5 . 5 
 $.set A 0
 $x {x {x {x {
-  e &{.echo &A $A} . &&{.echo &A &&A $A} . &&&{.echo &A &&A &&&A $A} . &&&&{
+  echoe &{.echo &A $A} . &&{.echo &A &&A $A} . &&&{.echo &A &&A &&&A $A} . &&&&{
   .echo &A &&A &&&A &&&&A $A} . &&&&&{.echo &A &&A &&&A &&&&A &&&&&A $A} . ${
   .echo &A &&A &&&A &&&&A &&&&&A $A} . $A $nl}}}}
 0 0 . 0 5 5 . 0 5 10 10 . 0 5 10 15 15 . 0 5 10 15 20 20 . 0 5 10 15 20 20 . 20 
@@ -1622,8 +1630,8 @@ $.exec something {excess argfunc}
 $.exec /bin/ech does not exist
 /bin/ech : binary does not exist
 call stack: .exec
-$.exec /etc/rwshrc-default config files are not interpreters
-/etc/rwshrc-default is not executable
+$.exec /etc/rwshrc config files are not interpreters
+/etc/rwshrc is not executable
 call stack: .exec
 $.exec /bin cannot exec a directory
 /bin is not executable
@@ -1788,7 +1796,7 @@ $fIJ outer_for outer_for
 4:1,2
 5:1
 6:1
-$.for 1 2 3 4 {e four arguments $1 $nl}
+$.for 1 2 3 4 {echoe four arguments $1 $nl}
 four arguments 1 
 four arguments 2 
 four arguments 3 
@@ -1833,9 +1841,9 @@ a : command not found ( a .whence_function )
 $.global A \
 $sa () A () A () {.echo $args$ ${.argc $args$} $nl}
  A  A  5 
-$.function_all_flags a arg {e 9 $A $arg @/usr $nl}
+$.function_all_flags a arg {echoe 9 $A $arg @/usr $nl}
 $.whence_function a
-.function_all_flags a arg {e 9 $A $arg @/usr $nl}
+.function_all_flags a arg {echoe 9 $A $arg @/usr $nl}
 $a \
 9   /usr 
 $a 1
@@ -1845,7 +1853,7 @@ unacceptable arguments: for prototype arg,
  assigned arg=1 ,
  but found (2) excess
 ( call) stack: a
-$.function_all_flags a [args ...] {.nop $args$; e $*5 $* $*0 $nl}
+$.function_all_flags a [args ...] {.nop $args$; echoe $*5 $* $*0 $nl}
 $a
 a 
 $a 1
@@ -1854,52 +1862,52 @@ $a 1 2
 1 2 a 1 2 
 $fn g name .{argfunction} {.function_all_flags $name name {
   .function_all_flags $name {.argfunction}}}
-$g a {e 3 2 1 $nl}
+$g a {echoe 3 2 1 $nl}
 $whence a
 .function_all_flags a name {
-  .function_all_flags $name {e 3 2 1 $nl}}
+  .function_all_flags $name {echoe 3 2 1 $nl}}
 $a b
 $b
 3 2 1 
 $# a function redefining itself doesn't seg fault
-$fn g {e hi $nl; fn g {e there $nl}; fn h {e nothing here}; g}
+$fn g {echoe hi $nl; fn g {echoe there $nl}; fn h {echoe nothing here}; g}
 $g
 hi 
 there 
-$.function_all_flags .exit {e cannot redefine a builtin as a function}
+$.function_all_flags .exit {echoe cannot redefine a builtin as a function}
 $.exit cannot be a function
 call stack .function_all_flags
 $.function_all_flags .a {can define a function for non-existant builtin}
-$.function_all_flags .argfunction {e cannot define .argfunction}
+$.function_all_flags .argfunction {echoe cannot define .argfunction}
 $.argfunction cannot be a function
 call stack .function_all_flags
-$.function_all_flags a y y {e illegal duplicate required parameter}
+$.function_all_flags a y y {echoe illegal duplicate required parameter}
 duplicated parameter in function definition: y
 call stack: .function_all_flags
-$.function_all_flags a [-x] [-x] {e illegal duplicate flag parameter}
+$.function_all_flags a [-x] [-x] {echoe illegal duplicate flag parameter}
 duplicated parameter in function definition: -x
 call stack: .function_all_flags
-$.function_all_flags a [x x] {e illegal duplicate optional parameter}
+$.function_all_flags a [x x] {echoe illegal duplicate optional parameter}
 duplicated parameter in function definition: x
 call stack: .function_all_flags
-$.function_all_flags a [-x arg bar] [-y arg] {e illegal duplicate flag argument}
+$.function_all_flags a [-x arg bar] [-y arg] {echoe illegal duplicate flag argument}
 duplicated parameter in function definition: arg
 call stack: .function_all_flags
-$.function_all_flags a -x [-x] {e evil duplication between flags positional}
+$.function_all_flags a -x [-x] {echoe evil duplication between flags positional}
 duplicated parameter in function definition: -x
 call stack: .function_all_flags
-$.function_all_flags a -- -- {e -- cannot be a duplicate parameter}
+$.function_all_flags a -- -- {echoe -- cannot be a duplicate parameter}
 duplicated parameter in function definition: --
 call stack: .function_all_flags
-$.function_all_flags a [--] [--] {e [--] cannot be a duplicate parameter}
+$.function_all_flags a [--] [--] {echoe [--] cannot be a duplicate parameter}
 duplicated parameter in function definition: --
 call stack: .function_all_flags
-$.function_all_flags a [--] -- {e -- and [--] cannot both be parameters}
+$.function_all_flags a [--] -- {echoe -- and [--] cannot both be parameters}
 duplicated parameter in function definition: --
 call stack: .function_all_flags
-$.function_all_flags a [-- arg] {e -- cannot take arguments}
+$.function_all_flags a [-- arg] {echoe -- cannot take arguments}
 optional -- parameter cannot take arguments ( ([-- arg]) ) with call stack: .function_all_flags
-$.function_all_flags a [arg -- foo] {e -- cannot take arguments}
+$.function_all_flags a [arg -- foo] {echoe -- cannot take arguments}
 optional -- parameter cannot take arguments ( ([arg -- foo]) ) with call stack: .function_all_flags
 $.rm_executable nonsense
 nonsense : command not found ( nonsense .rm_executable )
@@ -1923,11 +1931,11 @@ $whence ntimes
   .while test_var_greater n 0 {
     .mapped_argfunction {.argfunction}
     .var_subtract n 1}}
-$ntimes -- 3 {e $n remaining $nl}
+$ntimes -- 3 {echoe $n remaining $nl}
 3 remaining 
 2 remaining 
 1 remaining 
-$ntimes 2 {ntimes 3 {e &&n and $n remaining $nl}}
+$ntimes 2 {ntimes 3 {echoe &&n and $n remaining $nl}}
 2 and 3 remaining 
 2 and 2 remaining 
 2 and 1 remaining 
@@ -1935,7 +1943,7 @@ $ntimes 2 {ntimes 3 {e &&n and $n remaining $nl}}
 1 and 2 remaining 
 1 and 1 remaining 
 $.function_all_flags a [-x] [-] [--long-opt y second {
-  e mismatched bracket (i.e. missing close brakcet)}
+  echoe mismatched bracket (i.e. missing close brakcet)}
 mismatched bracket: ([--long-opt y second)
 call stack: .function_all_flags
 $.function_all_flags a [-?] [--] {.list_locals}
@@ -3067,9 +3075,9 @@ call stack: .store_output
 $.global x ()
 $.store_output x {echo some text; .throw echo exception}
 exception .throw .mapped_argfunction .store_output
-$e $x
+$echoe $x
 $.store_output x {echo some text}
-$e $x
+$echoe $x
 some text
 $.unset x
 $
@@ -3828,6 +3836,7 @@ double_if_with_body
 e
 echo
 echo-comments
+echoe
 echow
 elif
 else
@@ -3855,7 +3864,6 @@ if_with_body
 ln
 ntimes
 obscured_else
-om
 outer_break
 outer_continue
 outer_for
@@ -4315,73 +4323,73 @@ $.scope () {.get_max_extra_exceptions; .echo $nl}
 $
 $# .stepwise
 $.function_all_flags wrapper args ... {a $args$ two; a $args$ three}
-$.function_all_flags a args ... {e $args$ one $nl; e $args$ two $nl
-  e $args$ three $nl}
-$.function_all_flags d args ... {e $args$ $nl; .stepwise $args$ {d $*}}
-$.stepwise {e $* $nl}
+$.function_all_flags a args ... {echow $args$ one; echow $args$ two
+  echow $args$ three}
+$.function_all_flags d args ... {echow $args$; .stepwise $args$ {d $*}}
+$.stepwise {echo $*}
 unacceptable arguments: for prototype -- command ... .{argfunction},
  needed (command),
 ( call) stack: .stepwise
 $.stepwise wrapper 1 2
 .stepwise requires an argfunction
-$.stepwise stepwise {e $* $nl}
+$.stepwise stepwise {echoe $* $nl}
 stepwise : command not found ( stepwise .stepwise )
-$.stepwise .stepwise {e $* $nl}
-$.stepwise wrapper 1 2 {e $* $nl}
+$.stepwise .stepwise {echoe $* $nl}
+$.stepwise wrapper 1 2 {echoe $* $nl}
 a 1 2 two 
 a 1 2 three 
 $.function_all_flags wrapper args ... {a $args$ one
   a $args$ two; a $args$ three}
 $wrapper 1 2
-1 2 one one 
-1 2 one two 
-1 2 one three 
-1 2 two one 
-1 2 two two 
-1 2 two three 
-1 2 three one 
-1 2 three two 
-1 2 three three 
+1 2 one one
+1 2 one two
+1 2 one three
+1 2 two one
+1 2 two two
+1 2 two three
+1 2 three one
+1 2 three two
+1 2 three three
 $.stepwise wrapper 1 2 {d $*}
-a 1 2 one 
-e 1 2 one one 
- 
-.echo 1 2 one one 
- 
-e 1 2 one two 
- 
-.echo 1 2 one two 
- 
-e 1 2 one three 
- 
-.echo 1 2 one three 
- 
-a 1 2 two 
-e 1 2 two one 
- 
-.echo 1 2 two one 
- 
-e 1 2 two two 
- 
-.echo 1 2 two two 
- 
-e 1 2 two three 
- 
-.echo 1 2 two three 
- 
-a 1 2 three 
-e 1 2 three one 
- 
-.echo 1 2 three one 
- 
-e 1 2 three two 
- 
-.echo 1 2 three two 
- 
-e 1 2 three three 
- 
-.echo 1 2 three three 
- 
+a 1 2 one
+echow 1 2 one one
+.echo 1 2 one one
+.combine 
+
+echow 1 2 one two
+.echo 1 2 one two
+.combine 
+
+echow 1 2 one three
+.echo 1 2 one three
+.combine 
+
+a 1 2 two
+echow 1 2 two one
+.echo 1 2 two one
+.combine 
+
+echow 1 2 two two
+.echo 1 2 two two
+.combine 
+
+echow 1 2 two three
+.echo 1 2 two three
+.combine 
+
+a 1 2 three
+echow 1 2 three one
+.echo 1 2 three one
+.combine 
+
+echow 1 2 three two
+.echo 1 2 three two
+.combine 
+
+echow 1 2 three three
+.echo 1 2 three three
+.combine 
+
 $.stepwise wrapper 1 2 {
   echo current line: $*
   if_only .test_string_equal $4 two {
@@ -4393,7 +4401,7 @@ $.stepwise wrapper 1 2 {
   echo not printed}
 current line: a 1 2 one
 current line: a 1 2 two
-$.stepwise wrapper 1 2 {e $* $nl}
+$.stepwise wrapper 1 2 {echoe $* $nl}
 a 1 2 one 
 a 1 2 two 
 a 1 2 three 
@@ -4436,14 +4444,9 @@ unacceptable arguments: for prototype -- left_string right_string,
 $.test_string_unequal x x {excess argfunc}
 .test_string_unequal does not accept an argfunction with call stack: .test_string_unequal
 $.test_not_empty
-unacceptable arguments: for prototype -- input,
- needed (input),
-( call) stack: .test_not_empty
+assertion ( -n ) failed
+call stack .test_not_empty
 $.test_not_empty x x
-unacceptable arguments: for prototype -- input,
- assigned input=x ,
- but found (x) excess
-( call) stack: .test_not_empty
 $.test_not_empty x {excess argfunc}
 .test_not_empty does not accept an argfunction with call stack: .test_not_empty
 $.test_string_equal x y
@@ -4458,6 +4461,11 @@ $.test_not_empty \
 assertion ( -n ) failed
 call stack .test_not_empty
 $.test_not_empty x
+$.test_not_empty x ()
+$.test_not_empty () x
+$.test_not_empty () () ()
+assertion ( -n ) failed
+call stack .test_not_empty
 $.test_in
 unacceptable arguments: for prototype -- focus [list ...],
  needed (focus),
@@ -4680,11 +4688,11 @@ $.function_all_flags wm [args ...] .{argfunction} {
    .whence_function .mapped_argfunction {.argfunction}
    .scope $args$ (a1 a2 a3) {.argfunction}}
 $wm (aa ab ac) bb cc {
-  e x &&a1 &&2 $a3 y &&a1$1 z &&a1$2; .nop $a2
-  sa &&a1$ {e () w $args$ $#; e $nl}}
+  echoe x &&a1 &&2 $a3 y &&a1$1 z &&a1$2; .nop $a2
+  sa &&a1$ {echoe () w $args$ $#; echoe $nl}}
 {
-  e x &a1 &2 $a3 y &a1$1 z &a1$2; .nop $a2
-  sa &a1$ {e () w $args$ $#; e $nl}}
+  echoe x &a1 &2 $a3 y &a1$1 z &a1$2; .nop $a2
+  sa &a1$ {echoe () w $args$ $#; echoe $nl}}
 x aa ab ac bb cc y ab z ac w aa ab ac 4
 $.scope (aa ab ac) bb cc (args more ...) {.scope $args $more$ (args more ...) {
   sa &&1 {echo $args$ $#}
@@ -4926,7 +4934,7 @@ call stack: .throw .while .scope
 A was unused with call stack .scope
 $.scope 0 A {.while var_less A 4 {echo body can break; .throw .break}}
 body can break
-$.scope 0 A {.while var_less A 4 {e in .while argfunction $A $nl; .var_add A 1}}
+$.scope 0 A {.while var_less A 4 {echoe in .while argfunction $A $nl; .var_add A 1}}
 in .while argfunction 0 
 in .while argfunction 1 
 in .while argfunction 2 
@@ -5565,31 +5573,55 @@ $
 $# ln
 $ln -s test_files/fibb
 assertion ( -e test_files/fibb) failed
-call stack .test_file_exists ln
+call stack .test_file_exists .mapped_argfunction .for .mapped_argfunction
+.fork returned 255 : call stack .fork ln
+$readlink ixxx
+added readlink to executable map in test suite
+/bin/readlink returned 1 : call stack /bin/readlink readlink
+$ln -s test_files/ixxx
+added /bin/ln to executable map in test suite
+$readlink ixxx
+test_files/ixxx
+this readlink function has been brought to you by .autofunction
+$/bin/rm ixxx
+$ln -s -t test_files/ rwshlib.h plumber.h builtin.h
+assertion ( -e rwshlib.h) failed
+call stack .test_file_exists .mapped_argfunction .for .mapped_argfunction
+.fork returned 255 : call stack .fork ln
+$readlink test_files/rwshlib.h test_files/plumber.h test_files/builtin.h
+/bin/readlink returned 1 : call stack /bin/readlink readlink
+$ln -s -t test_files/ ../rwshlib.h ../plumber.h ../builtin.h
+added /bin/ln to executable map in test suite
+$readlink test_files/rwshlib.h test_files/plumber.h test_files/builtin.h
+../rwshlib.h
+../plumber.h
+../builtin.h
+this readlink function has been brought to you by .autofunction
+$/bin/rm test_files/rwshlib.h test_files/plumber.h test_files/builtin.h
 $
 $## environment testing i don't want to mess up everything else
 $# check for extraneous variables and that export_env doesn't bless
-$.scope M val (N necessary) {printenv; .nop $necessary}
+$.scope M val (N necessary) {.nop $necessary
+  printenv -- .var_exists -* ? A C PATH SHELL TESTABILITY args N necessary nl}
 added printenv to executable map in test suite
-.var_exists=must be requested to be checked
-?=.fork returned 255
-A=x
-C=(external) () ( ) internal(parenthesis)
-FIGNORE=*de*
-LC_ALL=C
-PATH=/bin:/usr/bin:.
-broken=extra_close) (extra_open
-nl=
+must be requested to be checked
+-to
+/bin/readlink returned 1
+x
+(external) () ( ) internal(parenthesis)
+/bin:/usr/bin:.
+/bin/rwsh
+an=external var(iable)
+-- .var_exists -* ? A C PATH SHELL TESTABILITY args N necessary nl
+M
+val
 
-original_message=Exception for failed handler. Original exception with call stack:
 
-N=M
-necessary=val
 this printenv function has been brought to you by .autofunction
 N was unused with call stack .scope
 $
 $# .list_environment
-$.global SHELL unmodified
+$.set SHELL unmodified
 $.list_environment x
 unacceptable arguments: for prototype ,
  found (x) excess
@@ -5597,7 +5629,7 @@ unacceptable arguments: for prototype ,
 $.list_environment {excess argfunc}
 .list_environment does not accept an argfunction with call stack: .list_environment
 $for ${.list_environment}$ {
-  .scope $1$ (var val) {
+  .scope $1$ (-- var val) {
     .if .test_in $var ? FIGNORE SHELL {echo $var : $$var to $val}
     .else {.global $var $val}}}
 FIGNORE : *de* to ()
@@ -5608,27 +5640,24 @@ $echo $SHELL
 unmodified
 $.unset TESTABILITY
 $for ${.list_environment}$ {
-  .scope $1$ (var val) {setf $var $val; .nop $$var}}
+  .scope $1$ (-- var val) {setf $var $val; .nop $$var}}
 $.combine $TESTABILITY $nl
 an=external var(iable)
 $echo $SHELL
 /bin/rwsh
-$printenv
-.var_exists=must be requested to be checked
-?=.fork returned 255
-A=x
-C=(external) () ( ) internal(parenthesis)
-FIGNORE=
-LC_ALL=C
-PATH=/bin:/usr/bin:.
-SHELL=/bin/rwsh
-TESTABILITY=an=external var(iable)
-args=./rwsh -to
-argv=./rwsh -to
-broken=extra_close) (extra_open
-nl=
+$printenv -- -* .var_exists ? A C PATH SHELL TESTABILITY args argv broken nl
+-to
+must be requested to be checked
+/bin/readlink returned 1
+x
+(external) () ( ) internal(parenthesis)
+/bin:/usr/bin:.
+/bin/rwsh
+an=external var(iable)
+-- -* .var_exists ? A C PATH SHELL TESTABILITY args argv broken nl
+./rwsh -to
+extra_close) (extra_open
 
-original_message=Exception for failed handler. Original exception with call stack:
 
 this printenv function has been brought to you by .autofunction
 $
@@ -5869,7 +5898,7 @@ $fn g {h}
 $fn h {g}
 $g
 function exceeded max nesting ( 20 ). call stack: (h g h g h g h g h g h g h g h g h g h g h g)
-$.stepwise g {e $* $nl; $*}
+$.stepwise g {echoe $* $nl; $*}
 h 
 function exceeded max nesting ( 20 ). call stack: (g h g h g h g h g h g h g h g h g h g h .mapped_argfunction .stepwise)
 $fn .excessive_nesting args ... {.nop $args; h}
@@ -5878,8 +5907,8 @@ Exception for failed handler. Original exception with call stack:
 .excessive_nesting h g h g h g h g h g h g h g h g h g h g h g
 Exception for failed handler. Original exception with call stack:
 .excessive_nesting h g h g h g h g h g h g h g h g h g h g h .excessive_nesting
-$fn .excessive_nesting args ... {.nop $args; e &&{.throw .nop}}
-$fn .failed_substitution args ... {.nop $args; e $Z}
+$fn .excessive_nesting args ... {.nop $args; echoe &&{.throw .nop}}
+$fn .failed_substitution args ... {.nop $args; echoe $Z}
 $g
 Exception for failed handler. Original exception with call stack:
 .excessive_nesting h g h g h g h g h g h g h g h g h g h g h g

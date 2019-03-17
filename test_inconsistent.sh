@@ -1,4 +1,3 @@
-.source /etc/rwshrc-basic
 .global PATH /bin:/usr/bin
 .scope () {.getpid; .echo $nl}
 .scope () {.getppid; .echo $nl}

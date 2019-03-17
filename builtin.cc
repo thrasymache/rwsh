@@ -629,8 +629,8 @@ void b_test_less(const Argm& argm, Error_list& exceptions) {
 
 // throws .false if the string is empty
 void b_test_not_empty(const Argm& argm, Error_list& exceptions) {
-  if (!argm[1].length())
-    exceptions.add_error(Exception(Argm::False, " -n " + argm[1]));}
+  for (unsigned j = 1; j < argm.argc(); ++j) if (argm[j].length()) return;
+  exceptions.add_error(Exception(Argm::False, " -n "));}
 
 // throw .false if the two strings convert to doubles and are not equal
 void b_test_number_equal(const Argm& argm, Error_list& exceptions) {

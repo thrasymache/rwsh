@@ -1,8 +1,8 @@
 init file /non-existent/file/to/test/failure does not exist
 call stack .source .try_catch_recursive(body)
 .global A \
-
-.nop .function_all_flags .run_logic -- cmd [args ...] {
+.set SHELL /bin/rwsh
+.nop .function_all_flags .run_logic -- cmd [args ...] {.nop
   .signal_handler &{.internal_functions}$ {&&* {.argfunction}}
   .mapped_argfunction {&&* {.argfunction}}
   &&* {.argfunction}}
@@ -11,6 +11,8 @@ call stack .source .try_catch_recursive(body)
 .function_all_flags .prompt {.echo \$}
 .function_all_flags .vars {.internal_vars}
 .source /etc/rwshrc-basic $argv$
+#! /bin/rwsh --init-file
+.function_all_flags () {.nop}
 .function_all_flags # -- [ignored ...] [.{argfunction}] {.nop $ignored$}
 .function_all_flags fn -- prototype ... .{argfunction} {
   .function_all_flags $prototype$ {.argfunction}}
@@ -22,6 +24,7 @@ call stack .source .try_catch_recursive(body)
 )
 .if .var_exists ? {}
 .else {.global ? (); .nop $?}
+.nop $FIGNORE
 
 # internal functions
 .function_all_flags .ambiguous_prototype_dash_dash prototype stack ... {
@@ -229,9 +232,7 @@ call stack .source .try_catch_recursive(body)
   echo received SIGUSR2}
 .function_all_flags .sigunknown {
   echo received unknown unix signal}
-.function_all_flags .shutdown -- args ... {
-  .nop $args
-  .combine $nl (now terminating normally) $nl}
+.function_all_flags .shutdown -- [args ...] {.nop $args}
 .function_all_flags .tardy_flag -- flag stack ... {
   echo $flag flag comes too late in command
   echo call stack: $stack$}
@@ -306,7 +307,7 @@ fn outer_for var vals ... .{argfunction} {
 fn outer_while argv ... .{argfunction} {
   .while $argv$ {
     .try_catch_recursive outer_break outer_continue {.argfunction}}}
-fn setf var value {
+fn setf -- var value {
   .if .var_exists $var {.set $var $value}
   .else {.global $var $value}}
 fn single -- args ... {.scope ${$args$}$ result {echo $result}}
@@ -355,12 +356,17 @@ polish - .var_subtract
 
 # external commands tested in the test suite
 fn false {.try_catch_recursive .return_code {${whichp false}}}
-fn ln [-?] target {
-  .nop $-* # in case the following assertion fails
-  .test_file_exists $target
-  &{.which_path ln /bin:/usr/bin} $-* $target}
+fn ln [-?] [-t directory] target ... {
+  .nop $-* $target # in case the following assertion fails
+  .fork .mapped_argfunction {
+    if_only .var_exists -t {.cd $directory}
+    .for $target$ {.test_file_exists $1}
+    &{.which_path ln /bin:/usr/bin} $-? -t . $target$}}
 fn test -- args ... {.try_catch_recursive .return_code {${whichp test} $args$}}
 if_only .var_exists argv {.error ignored excess arguments $argv $nl}
+.function_all_flags .shutdown -- args ... {
+  .nop $args
+  .combine $nl (now terminating normally) $nl}
 $.echo $nl $nl $nl $nl
 
  

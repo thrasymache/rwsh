@@ -83,7 +83,7 @@ void internal_init(Error_list& exceptions) {
       "    .function_all_flags .raw_command -- args ... {.nop $args}\n"
       "    .collect_errors_except .nop {.nop\n"
       "      .source /etc/rwshrc $args$\n"
-      "      .for &{.internal_functions}$ {\n"
+      "      .for &{.internal_functions}$ {.nop\n"
       "        .if .test_executable_exists $1 {.nop}\n"
       "        .else {.echo &&&1 not defined (\n)}}\n"
       "      .if .test_executable_exists .help {.nop\n"
@@ -131,7 +131,7 @@ void internal_init(Error_list& exceptions) {
   bi(".test_is_number", b_test_is_number, Argv {"--", "value"});
   bi(".test_in", b_test_in, Argv {"--", "focus", "[list", "...]"});
   bi(".test_less", b_test_less, Argv {"--", "lhs", "rhs"});
-  bi(".test_not_empty", b_test_not_empty, Argv {"--", "input"});
+  bi(".test_not_empty", b_test_not_empty, Argv {"--", "[input", "...]"});
   bi(".test_number_equal", b_test_number_equal, Argv {"--", "lhs", "rhs"});
   bi(".test_string_equal", b_test_string_equal,
      Argv {"--", "left_string", "right_string"});

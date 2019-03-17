@@ -1,0 +1,4 @@
+#! /bin/rwsh
+
+.echo hello $argv$ (
+)

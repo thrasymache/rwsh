@@ -46,17 +46,15 @@ line continuation (or it was supposed to be)
 
 ## ability of functions to perform custom control flow
 # rwshrc-basic
-.function e {.echo $*}
+.function_all_flags echoe -- text ... {.nop $text; .echo $*}
 .function_all_flags echow -- text ... {.echo $text$; .combine $nl}
-.function om {.argfunction}
 .function_all_flags sa [args ...] .{argfunction} {
   .scope $args$ ([args ...]) {.argfunction}}
 .function_all_flags se .{argfunction} {.scope () {.argfunction}}
-.whence_function e
-.whence_function om
+.whence_function echoe
 .whence_function sa
 .whence_function se
-whence e
+whence echoe
 whence echo
 whence ee
 whence () {}
@@ -83,7 +81,7 @@ sa a (multi-line parenthesis
 echo a )mismatched &&parenthesis
 echo a (multi-line parenthesis
   mismatch))
-.echo (internal \)parenthesis \\ escape ( \))); .combine $nl
+echoe (internal \)parenthesis \\ escape ( \))); .combine $nl
 .argc (internal \)parenthesis \\ escape ( \))); .combine $nl
 
 # star_var (argm_star_var)
@@ -102,7 +100,7 @@ sa .nop 1 2 3 {
 whence .init
 whence .autofunction
 whence .binary
-.binary {e excess argfunction}
+.binary {echo excess argfunction}
 .binary /bin/rzwsh
 .binary /bin/cat
 .global PATH /usr/bin
@@ -128,9 +126,11 @@ false
 if_only_not false {echo false throwing a .false exception}
 ./rwsh -c (env false)
 ./rwsh -c (.get_pid)
-./rwsh /non-existent/file/to/test/failure <test_files/pause_hello.rwsh
-./rwsh test_files/pause_hello.rwsh <test_files/pause_hello.rwsh
-./rwsh test_files/signal_triggered.rwsh <test_files/pause_hello.rwsh
+./rwsh --init-file /non-existent/file/to/test/failure <test_files/pause_hello.rwsh
+./rwsh --init-file test_files/pause_hello.rwsh <test_files/pause_hello.rwsh
+./rwsh --init-file test_files/signal_triggered.rwsh <test_files/pause_hello.rwsh
+./rwsh test_files/hello_argv.rwsh
+./rwsh test_files/hello_argv.rwsh world
 .autofunction test_files/../rwsh
 whence test_files/../rwsh
 
@@ -218,19 +218,19 @@ echo &UNDECLARED &ALSO_UNDECLARED
 .scope leading_ud ([leading_ud] ref) {echo good $$ref$ ones are checked}
 sa $B$$1x {echo $# $args$}
 sa $B$$1$ {echo $# $args$}
-sa $B {e $# $args$ $nl}
-sa $B$ {e $# $args$ $nl}
-sa $B$$ {e $# $args$ $nl}
+sa $B {echow $# $args$}
+sa $B$ {echow $# $args$}
+sa $B$$ {echow $# $args$}
 sa $B$$$$ {echo $# $args$}
 se {sa $B$$$$ {echo $# $args$}}
 sa $B$10 {echo $# $args$}
-sa $B$1 {e $# $args$ $nl}
+sa $B$1 {echow $# $args$}
 sa $B$$1 {echo $# $args$}
-om $broken {e $# $* $nl}
+.scope $broken arg {echoe $# $arg $nl}
 sa $broken$ {echo $# $args$}
 sa $broken$$ {echo $# $args$}
-sa $C {e $# $args$ $nl}
-sa $C$ {e $# $args$ $nl}
+sa $C {echow $# $args$}
+sa $C$ {echow $# $args$}
 sa $C$$ {echo $# $args$}
 
 # Arg_spec::SOON, apply()
@@ -242,10 +242,10 @@ se {@{} e &&&without$A $.{mismatched} {.argfunction brace} &&&{thrown}B
 echo &{e &&A}
 echo &&{e &A}
 echo &A
-.scope not_bin A {e &A &&A $A $nl; .scope otherwise A {echo &A &&A &&&A $A}}
-se {sa &B$10 {e $# $args$}}
+.scope not_bin A {echo &A &&A $A; .scope otherwise A {echo &A &&A &&&A $A}}
+se {sa &B$10 {echoe $# $args$}}
 se {sa &B$$$$ {echo $# $args$}}
-se {sa &B$1 {e $# $args$} $nl}
+se {sa &B$1 {echoe $# $args$} $nl}
 se {sa &B$$1 {echo $# $args$}}
 
 # Arg_spec::SUBSTITUTION and Arg_spec::SOON_SUBSTITUTION, apply(), interpret(),
@@ -253,10 +253,10 @@ se {sa &B$$1 {echo $# $args$}}
 echo ${e $A}
 whence .argfunction {e ${e $A}}
 .scope not_bin A {
-   e &{.echo $A} &&{.echo $A} $A $nl
+   echoe &{.echo $A} &&{.echo $A} $A $nl
    .scope otherwise A {
       echo &{.echo $A} &&{.echo $A} &&&{.echo $A} ${.echo $A} $A}}
-.scope not_bin A {e &{.echo &A $A} &&{.echo &A &&A} ${.echo &A $A} $nl}
+.scope not_bin A {echoe &{.echo &A $A} &&{.echo &A &&A} ${.echo &A $A} $nl}
 sa &{.echo $A} {echo $args &1$}
 sa &{.throw .nop} {}
 sa ${.throw .nop} {}
@@ -274,33 +274,34 @@ se {e &&{.throw .nop}; e after}
   echo after failed substitution}
 echo before .{argfunction} between [.{argfunction}] after
 echo before ..{still bad} between [.{missing close} after
-echo x{e bad argfunction style}
-e x&&&{e x}
-e $+{e x}
-e &+{e x}
-e &&${e x}
-echo ${e 0 $nl}
+echo x{echo bad argfunction style}
+echo x&&&{echo x}
+echo $+{echo x}
+echo &+{echo x}
+echo &&${echo x}
+echo ${echo 0}
 echo &{.echo 0}
 .echo nevermore &{/bin/echo quoth the raven} 
-sa ${e $B}$@1 ${e $B}$1 ${e $B}XYZ {echo $# $args$}
-sa ${e $B} {e $# $args$ $nl}
-sa &{e $B} {e $# $args$ $nl}
-sa ${e $B}$ {e $# $args$ $nl}
-sa &{e $B}$ {e $# $args$ $nl}
+sa ${echo $B}$@1 ${echo $B}$1 ${echo $B}XYZ {echo $# $args$}
+sa ${echoe $B} {echow $# $args$}
+sa &{echoe $B} {echow $# $args$}
+sa ${echoe $B}$ {echow $# $args$}
+sa &{echoe $B}$ {echow $# $args$}
 sa &{.echo $B}$ {echow $# $args$}
-se {e $# &{e $B}$ $nl}
-sa &{e $B}$$ {e $# $args$ $nl}
-sa ${e $B}$$ {e $# $args$ $nl}
-se {sa ${e $B}$1 {e $# $args$ $nl}}
-se {sa &{e $B}$1 {.echo $# $args$ $nl}}
-se {sa ${e $B}$$$1 {echo $# $args$}}
-se {sa &{e $B}$$$1 {echo $# $args$}}
+se {echow $# &{echow $B}$}
+se {echo $# &{echo $B}$}
+sa &{echoe $B}$$ {echoe $# $args$ $nl}
+sa ${echoe $B}$$ {echoe $# $args$ $nl}
+se {sa ${echoe $B}$1 {echoe $# $args$ $nl}}
+se {sa &{echoe $B}$1 {.echo $# $args$ $nl}}
+se {sa ${echoe $B}$$$1 {echo $# $args$}}
+se {sa &{echoe $B}$$$1 {echo $# $args$}}
 .unset A
 .unset B
-sa &{e ((zero zero) (one one) two three)}$10 {echo $# $args$}
-sa ${e (zero zero) \)one one two three}$1 {echo $# $args$}
-sa &{e (zero zero) \(one one two three}$1 {echo $# $args$}
-om ${e (zero zero) \)one one two three} {e $# $* $nl}
+sa &{echoe ((zero zero) (one one) two three)}$10 {echo $# $args$}
+sa ${echoe (zero zero) \)one one two three}$1 {echo $# $args$}
+sa &{echoe (zero zero) \(one one two three}$1 {echo $# $args$}
+.scope ${echoe (zero zero) \)one one two three} arg {.echo $# $arg $nl}
 c x &{.echo (y y)}$ x $nl
 c x ${.echo ( y y )}$ x $nl
 c x &{.echo (( y) (y ))}$ x $nl
@@ -326,7 +327,8 @@ se {
   .if .test_is_number 0 {>outfile /bin/echo there}
   .else {.nop}}
 /bin/cat outfile
-se {se >outfile {e line 1 $nl; e line 2 longer $nl; .echo $nl; echo ending}}
+se {se >outfile {
+  echoe line 1 $nl; echoe line 2 longer $nl; .echo $nl; echo ending}}
 /bin/cat <outfile
 .for_each_line x {}
 .for_each_line <outfile
@@ -341,8 +343,8 @@ se {se >outfile {e line 1 $nl; e line 2 longer $nl; .echo $nl; echo ending}}
   .throw .continue
   echo not printed}
 .for_each_line <outfile {
-  e line of $# \( $* \) $nl; .throw echo exception in for_each_line}
-.for_each_line <outfile {e line of $# \( $* \) $nl}
+  echoe line of $# \( $* \) $nl; .throw echo exception in for_each_line}
+.for_each_line <outfile {echoe line of $# \( $* \) $nl}
 /bin/rm outfile
 
 # soon level promotion .get_max_nesting .set_max_nesting
@@ -360,11 +362,11 @@ fn x .{argfunction} {.var_add A 1
 .scope 00 A {x {echo &A &&A &&&A $A}}
 .scope 00 A {x {x {x {x {echo &A &&A &&&A &&&&A &&&&&A &&&&&&A $A}}}}}
 .scope 00 A {
-  x {e &{.echo &A $A} . &&{.echo &A &&A $A} . &&&{.echo &A &&A &&&A $A} . ${
+  x {echoe &{.echo &A $A} . &&{.echo &A &&A $A} . &&&{.echo &A &&A &&&A $A} . ${
   .echo &A &&A &&&A $A} . $A $nl}}
 .set A 0
 x {x {x {x {
-  e &{.echo &A $A} . &&{.echo &A &&A $A} . &&&{.echo &A &&A &&&A $A} . &&&&{
+  echoe &{.echo &A $A} . &&{.echo &A &&A $A} . &&&{.echo &A &&A &&&A $A} . &&&&{
   .echo &A &&A &&&A &&&&A $A} . &&&&&{.echo &A &&A &&&A &&&&A &&&&&A $A} . ${
   .echo &A &&A &&&A &&&&A &&&&&A $A} . $A $nl}}}}
 .rm_executable x
@@ -417,7 +419,7 @@ sa on () e \ two ( ) {.combine $args$ ${.argc $args$} $nl}
 .exec
 .exec something {excess argfunc}
 .exec /bin/ech does not exist
-.exec /etc/rwshrc-default config files are not interpreters
+.exec /etc/rwshrc config files are not interpreters
 .exec /bin cannot exec a directory
 .exec /bin/rwsh/insanity errno is ENOTDIR
 .fork se {.exec /bin/rwsh/insanity errno is ENOTDIR}
@@ -484,7 +486,7 @@ fIJ scope_for scope_for
 fIJ outer_for scope_for
 fIJ scope_for outer_for
 fIJ outer_for outer_for
-.for 1 2 3 4 {e four arguments $1 $nl}
+.for 1 2 3 4 {echoe four arguments $1 $nl}
 
 # .function_all_flags .rm_executable .list_locals
 whence .function
@@ -501,47 +503,47 @@ a 1 2 3
 .whence_function a
 .global A \
 sa () A () A () {.echo $args$ ${.argc $args$} $nl}
-.function_all_flags a arg {e 9 $A $arg @/usr $nl}
+.function_all_flags a arg {echoe 9 $A $arg @/usr $nl}
 .whence_function a
 a \
 a 1
 a 1 2
-.function_all_flags a [args ...] {.nop $args$; e $*5 $* $*0 $nl}
+.function_all_flags a [args ...] {.nop $args$; echoe $*5 $* $*0 $nl}
 a
 a 1
 a 1 2
 fn g name .{argfunction} {.function_all_flags $name name {
   .function_all_flags $name {.argfunction}}}
-g a {e 3 2 1 $nl}
+g a {echoe 3 2 1 $nl}
 whence a
 a b
 b
 # a function redefining itself doesn't seg fault
-fn g {e hi $nl; fn g {e there $nl}; fn h {e nothing here}; g}
+fn g {echoe hi $nl; fn g {echoe there $nl}; fn h {echoe nothing here}; g}
 g
-.function_all_flags .exit {e cannot redefine a builtin as a function}
+.function_all_flags .exit {echoe cannot redefine a builtin as a function}
 .function_all_flags .a {can define a function for non-existant builtin}
-.function_all_flags .argfunction {e cannot define .argfunction}
-.function_all_flags a y y {e illegal duplicate required parameter}
-.function_all_flags a [-x] [-x] {e illegal duplicate flag parameter}
-.function_all_flags a [x x] {e illegal duplicate optional parameter}
-.function_all_flags a [-x arg bar] [-y arg] {e illegal duplicate flag argument}
-.function_all_flags a -x [-x] {e evil duplication between flags positional}
-.function_all_flags a -- -- {e -- cannot be a duplicate parameter}
-.function_all_flags a [--] [--] {e [--] cannot be a duplicate parameter}
-.function_all_flags a [--] -- {e -- and [--] cannot both be parameters}
-.function_all_flags a [-- arg] {e -- cannot take arguments}
-.function_all_flags a [arg -- foo] {e -- cannot take arguments}
+.function_all_flags .argfunction {echoe cannot define .argfunction}
+.function_all_flags a y y {echoe illegal duplicate required parameter}
+.function_all_flags a [-x] [-x] {echoe illegal duplicate flag parameter}
+.function_all_flags a [x x] {echoe illegal duplicate optional parameter}
+.function_all_flags a [-x arg bar] [-y arg] {echoe illegal duplicate flag argument}
+.function_all_flags a -x [-x] {echoe evil duplication between flags positional}
+.function_all_flags a -- -- {echoe -- cannot be a duplicate parameter}
+.function_all_flags a [--] [--] {echoe [--] cannot be a duplicate parameter}
+.function_all_flags a [--] -- {echoe -- and [--] cannot both be parameters}
+.function_all_flags a [-- arg] {echoe -- cannot take arguments}
+.function_all_flags a [arg -- foo] {echoe -- cannot take arguments}
 .rm_executable nonsense
 whence test_var_greater
 .scope 5 n {test_var_greater n}
 .scope 5 n {test_var_greater n 3 12}
 .scope 5 n {test_var_greater n 3}
 whence ntimes
-ntimes -- 3 {e $n remaining $nl}
-ntimes 2 {ntimes 3 {e &&n and $n remaining $nl}}
+ntimes -- 3 {echoe $n remaining $nl}
+ntimes 2 {ntimes 3 {echoe &&n and $n remaining $nl}}
 .function_all_flags a [-x] [-] [--long-opt y second {
-  e mismatched bracket (i.e. missing close brakcet)}
+  echoe mismatched bracket (i.e. missing close brakcet)}
 .function_all_flags a [-?] [--] {.list_locals}
 .function_all_flags a [-x] [--] foo {.list_locals}
 .function_all_flags a [-?] -- foo {.list_locals}
@@ -1038,9 +1040,9 @@ echo $x
 .store_output x {echo some text}
 .global x ()
 .store_output x {echo some text; .throw echo exception}
-e $x
+echoe $x
 .store_output x {echo some text}
-e $x
+echoe $x
 .unset x
 
 ## if_core
@@ -1514,14 +1516,14 @@ e_after {sa echo hi {.try_catch_recursive ${.internal_functions}$ {&&&args$}}}
 
 # .stepwise
 .function_all_flags wrapper args ... {a $args$ two; a $args$ three}
-.function_all_flags a args ... {e $args$ one $nl; e $args$ two $nl
-  e $args$ three $nl}
-.function_all_flags d args ... {e $args$ $nl; .stepwise $args$ {d $*}}
-.stepwise {e $* $nl}
+.function_all_flags a args ... {echow $args$ one; echow $args$ two
+  echow $args$ three}
+.function_all_flags d args ... {echow $args$; .stepwise $args$ {d $*}}
+.stepwise {echo $*}
 .stepwise wrapper 1 2
-.stepwise stepwise {e $* $nl}
-.stepwise .stepwise {e $* $nl}
-.stepwise wrapper 1 2 {e $* $nl}
+.stepwise stepwise {echoe $* $nl}
+.stepwise .stepwise {echoe $* $nl}
+.stepwise wrapper 1 2 {echoe $* $nl}
 .function_all_flags wrapper args ... {a $args$ one
   a $args$ two; a $args$ three}
 wrapper 1 2
@@ -1535,7 +1537,7 @@ wrapper 1 2
       .throw .continue}}
   .throw .continue
   echo not printed}
-.stepwise wrapper 1 2 {e $* $nl}
+.stepwise wrapper 1 2 {echoe $* $nl}
 
 # .test_file_exists
 .test_file_exists
@@ -1559,6 +1561,9 @@ wrapper 1 2
 .test_string_unequal x x
 .test_not_empty \
 .test_not_empty x
+.test_not_empty x ()
+.test_not_empty () x
+.test_not_empty () () ()
 .test_in
 .test_in x
 .test_in x x
@@ -1655,8 +1660,8 @@ whence .mapped_argfunction {$A $$A $0 $$$1 $# $* $*2 $A$$$ $A$10 $$*$ $$$*12$}
    .whence_function .mapped_argfunction {.argfunction}
    .scope $args$ (a1 a2 a3) {.argfunction}}
 wm (aa ab ac) bb cc {
-  e x &&a1 &&2 $a3 y &&a1$1 z &&a1$2; .nop $a2
-  sa &&a1$ {e () w $args$ $#; e $nl}}
+  echoe x &&a1 &&2 $a3 y &&a1$1 z &&a1$2; .nop $a2
+  sa &&a1$ {echoe () w $args$ $#; echoe $nl}}
 .scope (aa ab ac) bb cc (args more ...) {.scope $args $more$ (args more ...) {
   sa &&1 {echo $args$ $#}
   sa &&args {echo $args$ $#}
@@ -1766,7 +1771,7 @@ echo ${.which_path rwsh /usr/bin:.}
 .scope 0 A {.while .throw .break {echo condition cannot break}}
 .scope 0 A {.while .throw .continue {echo condition cannot continue}}
 .scope 0 A {.while var_less A 4 {echo body can break; .throw .break}}
-.scope 0 A {.while var_less A 4 {e in .while argfunction $A $nl; .var_add A 1}}
+.scope 0 A {.while var_less A 4 {echoe in .while argfunction $A $nl; .var_add A 1}}
 .scope 0 A {.while var_in A 1 2 {echo A is $A; .var_add A 1}}
 .scope 0 A {do_while var_in A 1 2 {echo A is $A; .var_add A 1}}
 .scope 1 A {.while var_in A 1 2 {echo A is $A; .var_add A 1}}
@@ -2004,27 +2009,37 @@ echo-comments excessive-commentary #
 
 # ln
 ln -s test_files/fibb
+readlink ixxx
+ln -s test_files/ixxx
+readlink ixxx
+/bin/rm ixxx
+ln -s -t test_files/ rwshlib.h plumber.h builtin.h
+readlink test_files/rwshlib.h test_files/plumber.h test_files/builtin.h
+ln -s -t test_files/ ../rwshlib.h ../plumber.h ../builtin.h
+readlink test_files/rwshlib.h test_files/plumber.h test_files/builtin.h
+/bin/rm test_files/rwshlib.h test_files/plumber.h test_files/builtin.h
 
 ## environment testing i don't want to mess up everything else
 # check for extraneous variables and that export_env doesn't bless
-.scope M val (N necessary) {printenv; .nop $necessary}
+.scope M val (N necessary) {.nop $necessary
+  printenv -- .var_exists -* ? A C PATH SHELL TESTABILITY args N necessary nl}
 
 # .list_environment
-.global SHELL unmodified
+.set SHELL unmodified
 .list_environment x
 .list_environment {excess argfunc}
 for ${.list_environment}$ {
-  .scope $1$ (var val) {
+  .scope $1$ (-- var val) {
     .if .test_in $var ? FIGNORE SHELL {echo $var : $$var to $val}
     .else {.global $var $val}}}
 .combine $TESTABILITY $nl
 echo $SHELL
 .unset TESTABILITY
 for ${.list_environment}$ {
-  .scope $1$ (var val) {setf $var $val; .nop $$var}}
+  .scope $1$ (-- var val) {setf $var $val; .nop $$var}}
 .combine $TESTABILITY $nl
 echo $SHELL
-printenv
+printenv -- -* .var_exists ? A C PATH SHELL TESTABILITY args argv broken nl
 
 if_only_not test -z z {echo test throwing a .false exception}
 
@@ -2096,11 +2111,11 @@ if_only_not test -z z {echo test throwing a .false exception}
 fn g {h}
 fn h {g}
 g
-.stepwise g {e $* $nl; $*}
+.stepwise g {echoe $* $nl; $*}
 fn .excessive_nesting args ... {.nop $args; h}
 g
-fn .excessive_nesting args ... {.nop $args; e &&{.throw .nop}}
-fn .failed_substitution args ... {.nop $args; e $Z}
+fn .excessive_nesting args ... {.nop $args; echoe &&{.throw .nop}}
+fn .failed_substitution args ... {.nop $args; echoe $Z}
 g
 .set_max_extra_exceptions 0
 e_after {.try_catch_recursive .undeclared_variable .excessive_nesting .failed_substitution {g}}

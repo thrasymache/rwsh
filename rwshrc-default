@@ -1,13 +1,7 @@
-.nop $argv$
-.for ${.list_environment}$ {
-    .scope $1$ (-- var val) {
-      .if .var_exists $var {.nop $val}
-      .else {
-        .global $var $val
-        .nop $$var}}}
-.source /etc/rwshrc-basic
+#! /bin/rwsh --init-file
+.source /etc/rwshrc-basic $argv$
 
-# only the last line is actually needed, but this is the only test of these
+# only the fourth is needed, but this is the only test of these builtins
 .toggle_readline
 .toggle_readline
 .disable_readline
@@ -225,6 +219,7 @@ fn arg-diff [-?] {
     &{whichp diff} $-?$ argfunction.basic-result argfunction.result.last}
   .else {&{whichp diff} -u argfunction.basic-result argfunction.result.last}}
 fn bless-arg {&{whichp cp} argfunction.result.last argfunction.basic-result}
+fn counter {&{whichp rwsh} --init-file counter.rwsh}
 
 # final setup and individual configuration
 .source &{c $HOME /.rwshrc}

@@ -1,10 +1,11 @@
-.try_catch_recursive .file_open_failure {
+#! /bin/rwsh --init-file
+.try_catch_recursive .file_open_failure {.nop
   .source /non-existent/file/to/test/failure}
 .function_all_flags .raw_command -- cmd {.echo $cmd; .echo (
 )}
 .global A \
-
-.nop .function_all_flags .run_logic -- cmd [args ...] {
+.set SHELL /bin/rwsh
+.nop .function_all_flags .run_logic -- cmd [args ...] {.nop
   .signal_handler &{.internal_functions}$ {&&* {.argfunction}}
   .mapped_argfunction {&&* {.argfunction}}
   &&* {.argfunction}}
@@ -13,3 +14,6 @@
 .function_all_flags .prompt {.echo \$}
 .function_all_flags .vars {.internal_vars}
 .source /etc/rwshrc-basic $argv$
+.function_all_flags .shutdown -- args ... {
+  .nop $args
+  .combine $nl (now terminating normally) $nl}
