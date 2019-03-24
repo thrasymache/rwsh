@@ -38,7 +38,7 @@ call stack .source .try_catch_recursive(body)
   .combine (unacceptable arguments: for prototype ) $proto , $nl
   if_only .test_not_empty $assigned {
     .combine ( assigned )
-    .for $assigned$ {.combine $1$0 = ${paren_if_words $1$1} ( )}
+    .for $assigned$ (-- var val) {.combine $var = ${paren_if_words $val} ( )}
     .combine , $nl ( but)}
   if_only .test_not_empty $needed {
     .combine ( needed \() $needed \), $nl
@@ -280,8 +280,9 @@ fn do_while argv ... .{argfunction} {
     .try_catch_recursive .continue {.argfunction}
     .while $argv$ {.argfunction}}}
 fn echo -- text ... {.echo $text; .combine $nl}
-fn echo-comments cmd ... {
-  .stepwise $cmd$ {if_only .test_in $1 .nop # #! ## {echo &&&*}}}
+fn echo-comments argv ... {
+  .stepwise $argv$ (-- cmd [args ...]) {.nop $args$
+    if_only .test_in $cmd .nop # #! ## {echo &&&*}}}
 fn exec -- argv ... {.exec $argv$}
 fn elif command ... .{argfunction} {
   .else_if $command$ {.argfunction}}
@@ -297,14 +298,14 @@ fn ntimes n .{argfunction} {
     .var_subtract n 1}}
 fn outer_break stack ... {.replace_exception .break $stack$}
 fn outer_continue stack ... {.replace_exception .continue $stack$}
-fn scope_for var vals ... .{argfunction} {
-  .for $vals$ {
-    .scope $1 $var {.argfunction}}}
-fn outer_for var vals ... .{argfunction} {
-  .for $vals$ {
-    .scope $1 $var {
-      .try_catch_recursive outer_break outer_continue {.argfunction}}}}
-fn outer_while argv ... .{argfunction} {
+fn forj -- [vals ...] .{argfunction} {.for $vals$ (-- j) {.argfunction}}
+fn foreok -- [items ...] prototype .{argfunction} {
+  .if .var_exists items {.for $items$ $prototype {.argfunction}}
+  .else {.nop $prototype}}
+fn outer_for -- vals ... var .{argfunction} {
+  .for $vals$ $var {
+    .try_catch_recursive outer_break outer_continue {.argfunction}}}
+fn outer_while -- argv ... .{argfunction} {
   .while $argv$ {
     .try_catch_recursive outer_break outer_continue {.argfunction}}}
 fn setf -- var value {
@@ -314,9 +315,9 @@ fn single -- args ... {.scope ${$args$}$ result {echo $result}}
 fn test_var_not_equal var value {.test_string_unequal $$var $value}
 fn test_var_greater -- var value {.test_greater $$var $value}
 fn type [-t] args ... [.{argfunction}] {
-  .for $args$ {
+  .for $args$ (-- name ...) {
     .try_catch_recursive .function_not_found {
-      if_only_not .var_exists -t {.echo &&&1 is ()}
+      if_only_not .var_exists -t {.echo &&&name is ()}
       .type &&&1 {.argfunction}}}}
 fn whence command [.{argfunction}] {
   .try_catch_recursive .function_not_found {
@@ -329,8 +330,8 @@ fn while_and_one_more argv ... .{argfunction} {
 fn var_exists -- var {.var_exists $var}
 fn var_in var set ... {.test_in $$var $set$}
 fn var_less var N {.test_less $$var $N}
-fn var_val -- [var ...] {
-  .if .var_exists var {.for $var$ {.combine $1 \( $$1 \) \ }}
+fn var_val -- [vars ...] {
+  .if .var_exists vars {.for $vars$ (-- v ...) {.combine $v \( $$v \) \ }}
   .else {.nop}}
 fn paren_if_words -- value {
   .if .test_number_equal ${.argc $value$} 1 {.combine $value}
@@ -360,7 +361,7 @@ fn ln [-?] [-t directory] target ... {
   .nop $-* $target # in case the following assertion fails
   .fork .mapped_argfunction {
     if_only .var_exists -t {.cd $directory}
-    .for $target$ {.test_file_exists $1}
+    .for $target$ (-- j ...) {.test_file_exists $j}
     &{.which_path ln /bin:/usr/bin} $-? -t . $target$}}
 fn test -- args ... {.try_catch_recursive .return_code {${whichp test} $args$}}
 if_only .var_exists argv {.error ignored excess arguments $argv $nl}
@@ -369,9 +370,9 @@ if_only .var_exists argv {.error ignored excess arguments $argv $nl}
   .combine $nl (now terminating normally) $nl}
 $.global PATH /bin:/usr/bin
 $.scope () {.getpid; .echo $nl}
-3584
+16227
 $.scope () {.getppid; .echo $nl}
-16709
+5478
 $.function timings focus {
   .combine $focus (:	last\() ${.last_execution_time $focus} \) \	
   .combine (total\() ${.total_execution_time $focus} \) \	
@@ -387,18 +388,18 @@ $.function clock-watch {
 $clock-watch
 timings:	last(0.000000)	total(0.000000)	count(0)
 clock-watch:	last(0.000000)	total(0.000000)	count(0)
-usleep overhead:	0.000106
-.usleep:	last(0.000706)	total(0.000706)	count(1)
-/bin/true:	last(0.002659)	total(0.002659)	count(1)
+usleep overhead:	9.1e-05
+.usleep:	last(0.000691)	total(0.000691)	count(1)
+/bin/true:	last(0.002551)	total(0.002551)	count(1)
 $clock-watch
-timings:	last(0.000173)	total(0.000790)	count(4)
-clock-watch:	last(0.004706)	total(0.004706)	count(1)
-usleep overhead:	0.000113
-.usleep:	last(0.000720)	total(0.001426)	count(2)
-/bin/true:	last(0.001572)	total(0.004231)	count(2)
+timings:	last(0.000217)	total(0.000905)	count(4)
+clock-watch:	last(0.004726)	total(0.004726)	count(1)
+usleep overhead:	9.1e-05
+.usleep:	last(0.000691)	total(0.001382)	count(2)
+/bin/true:	last(0.001712)	total(0.004263)	count(2)
 $.mapped_argfunction {timings timings; timings clock-watch}
-timings:	last(0.000199)	total(0.001699)	count(8)
-clock-watch:	last(0.003349)	total(0.008055)	count(2)
+timings:	last(0.000239)	total(0.001873)	count(8)
+clock-watch:	last(0.003539)	total(0.008265)	count(2)
 $.error a stderr print will come before the diff $nl
 $.nop $A $FIGNORE
 $

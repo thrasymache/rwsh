@@ -26,7 +26,7 @@ class Base_executable {
     return total_execution_time_v;};
 
   void operator() (const Argm& argm, Error_list& parent_exceptions);
-  virtual void execute(const Argm& argm, Error_list& exceptions) const = 0;
+  virtual void execute(const Argm& argm, Error_list& exceptions) = 0;
   virtual std::string str() const = 0;};
 
 class Named_executable : public Base_executable {
@@ -40,6 +40,6 @@ class Binary : public Named_executable {
   std::string implementation;
  public:
   Binary(const std::string& impl);
-  virtual void execute(const Argm& argm, Error_list& exceptions) const;
+  virtual void execute(const Argm& argm, Error_list& exceptions);
   virtual const std::string& name(void) const {return implementation;};
   virtual std::string str() const {return implementation;}; };

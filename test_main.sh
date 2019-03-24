@@ -62,11 +62,8 @@ echo text that does not have a prompt appended
 se {echo again}
 if_only .test_is_number false {echo not printed}
 if_only .test_is_number 0 {echo printed without error}
-.function for -- [items ...] .{argfunction} {
-  .if .var_exists items {.for $items$ {.argfunction}}
-  .else {.nop}}
-for {echo skipped without error}
-for 1 2 3 {echo loop $*}
+foreok k {echo skipped without error}
+foreok 1 2 3 k {echo loop $k}
 
 ## arg_script.cc and arg_spec.cc
 # Arg_spec::FIXED, Arg_script::add_quote
@@ -163,7 +160,7 @@ echo @test_files/ix*x*xx
 .scope () {echo @/*selection_not_found*}
 echo @/ur/bin/pwd
 echo @test_main.cc
-se {se {.for @e*c {echo $1}} >test_files/tmp}
+se {se {forj @e*c {echo $j}} >test_files/tmp}
 .global LC_ALL C
 .nop $LC_ALL
 sort test_files/tmp
@@ -172,9 +169,9 @@ echo @test_files/*xx
 echo @test_files/*x*x*x*x
 echo @test_files/*xyxy
 echo @/bin
-se {se {.for @/usr/*bin {echo $1}} >test_files/tmp}
+se {se {forj @/usr/*bin {echo $j}} >test_files/tmp}
 sort test_files/tmp
-se {se {.for @/etc/rwsh* {echo $1}} >test_files/tmp}
+se {se {forj @/etc/rwsh* {echo $j}} >test_files/tmp}
 sort test_files/tmp
 echo @/etc/rw*ic
 echo @/etc/rwsh*a*
@@ -192,7 +189,7 @@ echo @/etc/rwsh*a*
 echo @test_files/*i*x*y*y*x*
 echo @/etc/rw*-basi*si*
 echo @test_main.sh
-se {se {.for @test_files/*x* {echo $1}} >test_files/tmp}
+se {se {forj @test_files/*x* {echo $j}} >test_files/tmp}
 sort test_files/tmp
 .scope r*h.cc sel*.h (A ...) {echo @$A}
 
@@ -314,8 +311,8 @@ y
 # file redirection (but don't overwrite files that exist)
 # .for_each_line
 /bin/cat <non_existent_file
-.for_each_line excess arguments
-.for_each_line <non_existent_file {echo line of $# \( $* \)}
+.for_each_line
+.for_each_line <non_existent_file argv {echo line of $# \( $argv$ \)}
 se {sa {echo hi >one >two} {cat <three <four}
 }
 se {
@@ -328,13 +325,13 @@ se {
   .else {.nop}}
 /bin/cat outfile
 se {se >outfile {
-  echoe line 1 $nl; echoe line 2 longer $nl; .echo $nl; echo ending}}
+  echo line 1; echo line 2 longer; .echo $nl; echo ending}}
 /bin/cat <outfile
-.for_each_line x {}
-.for_each_line <outfile
+.for_each_line {}
+.for_each_line <outfile x
 .for_each_line <outfile <another A{}
-.for_each_line <outfile {
-  echo current line $*
+.for_each_line <outfile argv ... {
+  echo current line $argv$
   if_only .test_greater $2 1 {
     .collect_errors_except .nop {
       .throw .continue
@@ -342,9 +339,13 @@ se {se >outfile {
       .throw .continue}}
   .throw .continue
   echo not printed}
-.for_each_line <outfile {
-  echoe line of $# \( $* \) $nl; .throw echo exception in for_each_line}
-.for_each_line <outfile {echoe line of $# \( $* \) $nl}
+.for_each_line <outfile argv ... {
+  echo line of $# \( $argv$ \); .throw echo exception in for_each_line}
+.for_each_line <outfile [argv ...] {echo line of $# \( $argv$ \)}
+.for_each_line <outfile first second [third] {
+  .nop $first;
+  if_only .var_exists third {.combine \(extra\ is\  $third \)\ }
+  echo $second}
 /bin/rm outfile
 
 # soon level promotion .get_max_nesting .set_max_nesting
@@ -455,13 +456,13 @@ sa on () e \ two ( ) {.combine $args$ ${.argc $args$} $nl}
 .throw .throw sa {echo even from $args$ 7 is a number}
 
 # .for
-.for {echo no arguments $1}
-.for no_argfunction
-.for 1 {echo one argument $1}
-.for 1 2 {echo one argument $1; .throw echo exception in for}
-.for 1 2 3 4 {
-  echo current arg $1
-  if_only .test_greater $1 2 {
+.for q {echo no arguments $q}
+.for no_argfunction q
+.for 1 q {echo one argument $q}
+.for 1 2 q {echo one argument $q; .throw echo exception in for}
+.for 1 2 3 4 q {
+  echo current arg $q
+  if_only .test_greater $q 2 {
     .collect_errors_except .nop {
       .throw .continue
       .throw .break
@@ -471,10 +472,10 @@ sa on () e \ two ( ) {.combine $args$ ${.argc $args$} $nl}
 fn fIJ outer inner {
   .local sum 0
   .nop $sum
-  $outer I 1 2 3 4 5 6 {
+  $outer 1 2 3 4 5 6 I {
     if_only_not .test_string_equal $I 1 {.combine $nl}
     .combine $I :
-    $inner J 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 {
+    $inner 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 J {
       if_only .test_less 1 $J {.echo ,}
       .echo $J
       .set sum ${+ $I $J}
@@ -482,11 +483,12 @@ fn fIJ outer inner {
       .else_if .test_less 3 $sum$ {.throw outer_continue}
       .else {}}}
   .echo $nl}
-fIJ scope_for scope_for
-fIJ outer_for scope_for
-fIJ scope_for outer_for
+fIJ .for .for
+fIJ outer_for .for
+fIJ .for outer_for
 fIJ outer_for outer_for
-.for 1 2 3 4 {echoe four arguments $1 $nl}
+.for 1 2 3 4 for_argument {echoe four arguments $for_argument $nl}
+.for (-x -y permitted) (-z rejected) ([-x] [-y arg] [-z]) {echo $-*}
 
 # .function .rm_executable .list_locals
 whence .function
@@ -554,7 +556,7 @@ a
 a --
 a foo
 .function a [-x] [--long-opt y] second {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 whence a
 a
 a single
@@ -563,7 +565,7 @@ a --long-opt arg single
 a --long-opt single
 a --long-opt first -x --long-opt second single
 .function a [-q option1 option2] [-x o1 o2 o3 o4] required {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 whence a
 a
 a single
@@ -576,7 +578,7 @@ a -x one two three four -q five six seven
 a -x one two three four five -q six seven
 a one -x two three four five -q six seven
 .function a [optional0] -- [optional1 optional2 optional3] required {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 whence a
 a
 a single
@@ -585,14 +587,14 @@ a one two three
 a one two three four five
 a one two three four five six seven eight nine
 .function a -y [second] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 whence a
 a
 a 1
 a 1 2
 a 1 2 3
 .function a [-x] -y [--long-opt] second [--] [-] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 whence a
 a --long-opt -xx over-long flag
 a -xx --long-opt over-long flag extra excess
@@ -629,7 +631,7 @@ a - --long-opt -x -x some_flags doubled
 a -x --long-opt -x --long-opt -x one_doubled one_tripled
 a --long-opt -x -x - --long-opt all_flags doubled
 .function a [-first] [-to] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }
   echo nothing_required}
 whence a
 a
@@ -640,7 +642,7 @@ a -first excess
 a -to -- -first -- stops flag parsing rather than being a flag
 a -to -first
 .function a [-?] [-first] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }
   echo nothing_required}
 whence a
 a
@@ -651,14 +653,14 @@ a -first excess
 a -to -- -first
 a -to -first
 .function a [-*] [-first] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }
   echo nothing_required}
 whence a
 a
 a -to -- -first
 a -to -first
 .function a [-?] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }
   echo nothing_required}
 whence a
 a
@@ -680,13 +682,13 @@ whence a
 .function a [x ... a ... b] {}
 .function a [-x ...] b [c] {}
 .function a -? x ... y {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 whence a
 .function a -* x ... y {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 whence a
 .function a [-?] x ... y {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 whence a
 a -c -a -b first second third
 a -c first -a second -b third
@@ -696,12 +698,12 @@ a first (se cond)
 a first (se cond) third
 a first (se cond) third fourth (fi fth)
 .function a [-?] x [...] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 whence a
 a
 a first second third fourth fifth
 .function a [-?] x [--] [y ...] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 whence a
 a
 a first
@@ -709,7 +711,7 @@ a first second
 a first second third
 a first second third fourth fifth
 .function a [-?] a [b ... c] d {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 whence a
 a first
 a first second
@@ -718,7 +720,7 @@ a first second third fourth
 a first second third fourth fifth
 a first second third fourth fifth sixth
 .function a [-x ...] b c {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 whence a
 a first second
 a -x first
@@ -726,7 +728,7 @@ a -x first second
 a -x first second third
 a -x first second third fourth
 .function a [-x b ...] c {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 whence a
 a first
 a -x first
@@ -736,7 +738,7 @@ a -x first -x (sec ond) third
 a -x first -y (sec ond) third
 a -x (fi rst) (sec ond) third fourth
 .function a [-x ... b] c {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }
   .combine $nl
   if_only .test_not_empty $-* {c (-*: ) $-*$ $nl}
   if_only .var_exists -x {c (-x: ) $-x$ $nl}
@@ -751,7 +753,7 @@ a -x () (fi rst) second
 a -x first (sec ond) third
 a -x (fi rst) (sec ond) third fourth
 .function a x [-?] [... y z] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }
   .combine $nl
   if_only .var_exists x {c (x: ) $x$ $nl}}
 whence a
@@ -763,7 +765,7 @@ a (fi rst) (sec ond) third fourth
 a () (sec ond) third fourth
 a (fi rst) (sec ond) (thi rd) (fou rth) (fi fth)
 .function a [-?] [x] [... y] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 whence a
 a
 a (fi rst)
@@ -772,7 +774,7 @@ a first (sec ond) third
 a (fi rst) (sec ond) third fourth
 a (fi rst) (sec ond) (thi rd) (fou rth) (fi fth)
 .function a [-?] [x y] [... z] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }
   .combine $nl
   if_only .var_exists x {c (x: ) $x $nl}
   if_only .var_exists y {c (y: ) $y$ $nl}
@@ -786,7 +788,7 @@ a (fi rst) (sec ond) third (fou rth)
 a (fi rst) (sec ond) (thi rd) (fou rth) (fi fth)
 .function a -- [-x] y z {}
 .function a -- [x y] z {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 whence a
 a
 a --file
@@ -1322,7 +1324,7 @@ se {.is_default_error}
 # .list_executables
 .list_executables excess
 .list_executables {excess argfunc}
-.for ${.list_executables}$ {.combine $1 $nl}
+forj ${.list_executables}$ {.combine $j $nl}
 
 # .ls
 .ls
@@ -1343,7 +1345,7 @@ whence .nop
 .try_catch_recursive .replace_exception {
   .throw .replace_exception echo now in exception handler}
 .try_catch_recursive .replace_exception {
-  .throw .replace_exception .for {echo $1 is on the call stack}}
+  .throw .replace_exception forj {echo $j is on the call stack}}
 
 # .scope prototype.cc
 .scope {e $foo}
@@ -1361,20 +1363,20 @@ whence .nop
 .scope a ([--] --) {echo -- and [--] cannot both be parameters}
 .scope a ([-- arg]) {echo -- cannot take arguments}
 .scope a ([arg -- foo]) {echo -- cannot be an argument}
-.scope (args ...) {for ${.list_locals}$ {.combine $1 = $$1 }; .echo $nl}
-.scope ([args ...]) {for ${.list_locals}$ {.combine $1 = $$1 }; .echo $nl}
-.scope () (args ...) {for ${.list_locals}$ {.combine $1 = $$1 }; .echo $nl}
-.scope () ([args ...]) {for ${.list_locals}$ {.combine $1 = $$1 }; .echo $nl}
+.scope (args ...) {foreok ${.list_locals}$ j {.combine $j = $$j $nl}}
+.scope ([args ...]) {foreok ${.list_locals}$ j {.combine $j = $$j $nl}}
+.scope () (args ...) {foreok ${.list_locals}$ j {.combine $j = $$j $nl}}
+.scope () ([args ...]) {foreok ${.list_locals}$ j {.combine $j = $$j $nl}}
 .scope -x -y a b ([-?] args ...) {
-  for ${.list_locals}$ {.combine $1 = $$1 \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j = $$j \ }; .echo $nl}
 .scope .foo {echo fixed arguments not yet supported}
 .scope a ([-? bad] arg) {e -? cannot currently take arguments}
 .scope a ([-* bad] arg) {e -* (aka -?) cannot currently take arguments}
 .scope -a -* -b a ([-?] a) {
-  for ${.list_locals}$ {.combine $1 = $$1 \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j = $$j \ }; .echo $nl}
 .scope bar foo {echo aa $foo bb}
 .scope baz bax (foo bar) {
-  for ${.list_locals}$ {.combine $1 = $$1 \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j = $$j \ }; .echo $nl}
 .scope foo bar baz bax (args ...) {echo aa $args$2 bb $args$1 cc}
 .scope single ([-x] [--long-opt y] second) {
   var_val ${.list_locals}$; .echo $nl}
@@ -1393,15 +1395,15 @@ fn arg_none {echo argfunction will not be accepted}
 arg_none bad arguments {echo will not print}
 arg_none
 .function a [-x] [--long-opt y] second {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }
   .combine $nl}
 whence a
 .function pt -- args ... {
   .scope $args$ ([-x] [--long-opt y] second) {
-    for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
+    forj ${.list_locals}$ {.combine $j \( $$j \) \ }}
   .combine $nl
   .scope $args$ ( [-?] [--long-opt y] second) {
-    for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
+    forj ${.list_locals}$ {.combine $j \( $$j \) \ }}
   .combine $nl}
 whence pt
 a
@@ -1416,16 +1418,16 @@ pt --long-opt single
 a --long-opt first -x --long-opt second single
 pt --long-opt first -x --long-opt second single
 .function a [-?] [-first] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }
   echo nothing_required}
 whence a
 .function pts -- [args ...] {
   .if var_exists args {
     .scope $args$ ([-first] [-?]) {
-      .for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
+      forj ${.list_locals}$ {.combine $j \( $$j \) \ }}
       echo nothing_required}
   else {.scope ([-first] [-?]) {
-      .for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
+      forj ${.list_locals}$ {.combine $j \( $$j \) \ }}
       echo nothing_required}}
 whence pts
 a
@@ -1518,18 +1520,19 @@ e_after {sa echo hi {.try_catch_recursive ${.internal_functions}$ {&&&args$}}}
 .function wrapper args ... {a $args$ two; a $args$ three}
 .function a args ... {echow $args$ one; echow $args$ two
   echow $args$ three}
-.function d args ... {echow $args$; .stepwise $args$ {d $*}}
-.stepwise {echo $*}
-.stepwise wrapper 1 2
-.stepwise stepwise {echoe $* $nl}
-.stepwise .stepwise {echoe $* $nl}
-.stepwise wrapper 1 2 {echoe $* $nl}
+.function d args ... {echow $args$; .stepwise $args$ (cmd ...) {d $cmd$}}
+.stepwise {echo $argv$}
+.stepwise wrapper 1 2 (cmd ...)
+.stepwise stepwise (cmd ...) {echo $cmd}
+.stepwise .stepwise (cmd ...) {echo $cmd}
+.stepwise ! (cmd ...) {echo $cmd}
+.stepwise wrapper 1 2 (cmd ...) {echo $cmd$}
 .function wrapper args ... {a $args$ one
   a $args$ two; a $args$ three}
 wrapper 1 2
-.stepwise wrapper 1 2 {d $*}
-.stepwise wrapper 1 2 {
-  echo current line: $*
+.stepwise wrapper 1 2 (cmd ...) {d $cmd$}
+.stepwise wrapper 1 2 (argv ...) {
+  echo current line: $argv$
   if_only .test_string_equal $4 two {
     .collect_errors_except .nop {
       .throw .continue
@@ -1537,7 +1540,9 @@ wrapper 1 2
       .throw .continue}}
   .throw .continue
   echo not printed}
-.stepwise wrapper 1 2 {echoe $* $nl}
+.stepwise wrapper 1 2 (argv ...) {echoe $argv$ $nl}
+.function a {echo -x allowed; echo -y allowed; echo -z rejected}
+.stepwise a (cmd [-x] [-y] comment) {$cmd $-* $comment}
 
 # .test_file_exists
 .test_file_exists
@@ -2002,7 +2007,8 @@ single - 40 - 10 2
 single / - + 40 10 2 2
 single - 40 - * 2 5 - 7 2
 .function excessive-commentary arg {#! shebang
-  $arg first comment
+  $arg first comment before a blank line
+
   echo not a $arg; .nop second; echo either}
 excessive-commentary #
 echo-comments excessive-commentary #
@@ -2028,15 +2034,14 @@ readlink test_files/rwshlib.h test_files/plumber.h test_files/builtin.h
 .set SHELL unmodified
 .list_environment x
 .list_environment {excess argfunc}
-for ${.list_environment}$ {
-  .scope $1$ (-- var val) {
-    .if .test_in $var ? FIGNORE SHELL {echo $var : $$var to $val}
-    .else {.global $var $val}}}
+.for ${.list_environment}$ (-- var val) {
+  .if .test_in $var ? FIGNORE SHELL {echo $var : $$var to $val}
+  .else {.global $var $val}}
 .combine $TESTABILITY $nl
 echo $SHELL
 .unset TESTABILITY
-for ${.list_environment}$ {
-  .scope $1$ (-- var val) {setf $var $val; .nop $$var}}
+.for ${.list_environment}$ (-- j ...) {
+  .scope $j$ (-- var val) {setf $var $val; .nop $$var}}
 .combine $TESTABILITY $nl
 echo $SHELL
 printenv -- -* .var_exists ? A C PATH SHELL TESTABILITY args argv broken nl
@@ -2111,7 +2116,7 @@ if_only_not test -z z {echo test throwing a .false exception}
 fn g {h}
 fn h {g}
 g
-.stepwise g {echoe $* $nl; $*}
+.stepwise g (argv ...) {echoe $argv$ $nl; $*}
 fn .excessive_nesting args ... {.nop $args; h}
 g
 fn .excessive_nesting args ... {.nop $args; echoe &&{.throw .nop}}

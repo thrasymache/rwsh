@@ -20,16 +20,16 @@ fw {
   .echo function name $name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}
-fw {.for 1 2 3 {
-  .echo function name $1 $name $nl
+fw {forj 1 2 3 {
+  .echo function name $j $name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}
-fw {.for 1 2 3 {.mapped_argfunction $1 {
+fw {forj 1 2 3 {.mapped_argfunction $j {
   .echo function name &&name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}}
 # all of the above make sense, and the next should be identical to the last
-fw {.mapped_argfunction $1 {.for 1 2 3 {
+fw {.mapped_argfunction $1 {forj 1 2 3 {.nop $j
   .echo function name &&name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}}
@@ -43,11 +43,12 @@ fw {.try_catch_recursive .not_a_number {
   .echo function name &&name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}
-fw {.for 1 2 3 {.try_catch_recursive .not_a_number {
+fw {forj 1 2 3 {.try_catch_recursive .not_a_number {
+  .nop $j
   .echo function name &&name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}}
-fw {.try_catch_recursive .not_a_number {.for 1 2 3 {
+fw {.try_catch_recursive .not_a_number {forj 1 2 3 {.nop $j
   .echo function name &&name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}}
@@ -57,7 +58,7 @@ fw {.mapped_argfunction $1 {
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}
 # definitely weird
-fw {.mapped_argfunction $name {.for a b {
+fw {.mapped_argfunction $name {forj a b {.nop $j
   .echo function name &&name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}}

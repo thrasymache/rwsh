@@ -38,7 +38,7 @@ call stack .source .try_catch_recursive(body)
   .combine (unacceptable arguments: for prototype ) $proto , $nl
   if_only .test_not_empty $assigned {
     .combine ( assigned )
-    .for $assigned$ {.combine $1$0 = ${paren_if_words $1$1} ( )}
+    .for $assigned$ (-- var val) {.combine $var = ${paren_if_words $val} ( )}
     .combine , $nl ( but)}
   if_only .test_not_empty $needed {
     .combine ( needed \() $needed \), $nl
@@ -280,8 +280,9 @@ fn do_while argv ... .{argfunction} {
     .try_catch_recursive .continue {.argfunction}
     .while $argv$ {.argfunction}}}
 fn echo -- text ... {.echo $text; .combine $nl}
-fn echo-comments cmd ... {
-  .stepwise $cmd$ {if_only .test_in $1 .nop # #! ## {echo &&&*}}}
+fn echo-comments argv ... {
+  .stepwise $argv$ (-- cmd [args ...]) {.nop $args$
+    if_only .test_in $cmd .nop # #! ## {echo &&&*}}}
 fn exec -- argv ... {.exec $argv$}
 fn elif command ... .{argfunction} {
   .else_if $command$ {.argfunction}}
@@ -297,14 +298,14 @@ fn ntimes n .{argfunction} {
     .var_subtract n 1}}
 fn outer_break stack ... {.replace_exception .break $stack$}
 fn outer_continue stack ... {.replace_exception .continue $stack$}
-fn scope_for var vals ... .{argfunction} {
-  .for $vals$ {
-    .scope $1 $var {.argfunction}}}
-fn outer_for var vals ... .{argfunction} {
-  .for $vals$ {
-    .scope $1 $var {
-      .try_catch_recursive outer_break outer_continue {.argfunction}}}}
-fn outer_while argv ... .{argfunction} {
+fn forj -- [vals ...] .{argfunction} {.for $vals$ (-- j) {.argfunction}}
+fn foreok -- [items ...] prototype .{argfunction} {
+  .if .var_exists items {.for $items$ $prototype {.argfunction}}
+  .else {.nop $prototype}}
+fn outer_for -- vals ... var .{argfunction} {
+  .for $vals$ $var {
+    .try_catch_recursive outer_break outer_continue {.argfunction}}}
+fn outer_while -- argv ... .{argfunction} {
   .while $argv$ {
     .try_catch_recursive outer_break outer_continue {.argfunction}}}
 fn setf -- var value {
@@ -314,9 +315,9 @@ fn single -- args ... {.scope ${$args$}$ result {echo $result}}
 fn test_var_not_equal var value {.test_string_unequal $$var $value}
 fn test_var_greater -- var value {.test_greater $$var $value}
 fn type [-t] args ... [.{argfunction}] {
-  .for $args$ {
+  .for $args$ (-- name ...) {
     .try_catch_recursive .function_not_found {
-      if_only_not .var_exists -t {.echo &&&1 is ()}
+      if_only_not .var_exists -t {.echo &&&name is ()}
       .type &&&1 {.argfunction}}}}
 fn whence command [.{argfunction}] {
   .try_catch_recursive .function_not_found {
@@ -329,8 +330,8 @@ fn while_and_one_more argv ... .{argfunction} {
 fn var_exists -- var {.var_exists $var}
 fn var_in var set ... {.test_in $$var $set$}
 fn var_less var N {.test_less $$var $N}
-fn var_val -- [var ...] {
-  .if .var_exists var {.for $var$ {.combine $1 \( $$1 \) \ }}
+fn var_val -- [vars ...] {
+  .if .var_exists vars {.for $vars$ (-- v ...) {.combine $v \( $$v \) \ }}
   .else {.nop}}
 fn paren_if_words -- value {
   .if .test_number_equal ${.argc $value$} 1 {.combine $value}
@@ -360,7 +361,7 @@ fn ln [-?] [-t directory] target ... {
   .nop $-* $target # in case the following assertion fails
   .fork .mapped_argfunction {
     if_only .var_exists -t {.cd $directory}
-    .for $target$ {.test_file_exists $1}
+    .for $target$ (-- j ...) {.test_file_exists $j}
     &{.which_path ln /bin:/usr/bin} $-? -t . $target$}}
 fn test -- args ... {.try_catch_recursive .return_code {${whichp test} $args$}}
 if_only .var_exists argv {.error ignored excess arguments $argv $nl}
@@ -368,26 +369,26 @@ if_only .var_exists argv {.error ignored excess arguments $argv $nl}
   .nop $args
   .combine $nl (now terminating normally) $nl}
 $.function a [-*] [-x b ...] c {
-  .for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
+  forj &&{.list_locals}$ j {.combine $j \( $$j \) \ }; .echo $nl}
 $.nop $A $FIGNORE
 $.whence_function a
 .function a [-?] [-x b ...] c {
-  .for &{.list_locals}$ {.combine $1 \( $$1 \) ( )}; .echo $nl}
+  forj &{.list_locals}$ j {.combine $j \( $$j \) ( )}; .echo $nl}
 $a first
--*() -?() c(first) 
+-*() -?() c(first) j(j) 
 $a -x first
 unacceptable arguments: for prototype [-?] [-x b ...] c,
  assigned -*=(-x first) -?=() -x=(-x first) b=first ,
  but needed (c),
 ( call) stack: a
 $a -x (fi rst) second
--*(-x (fi rst)) -?() -x(-x (fi rst)) b((fi rst)) c(second) 
+-*(-x (fi rst)) -?() -x(-x (fi rst)) b((fi rst)) c(second) j(j) 
 $a -x first (sec ond) third
--*(-x first (sec ond)) -?() -x(-x first (sec ond)) b(first (sec ond)) c(third) 
+-*(-x first (sec ond)) -?() -x(-x first (sec ond)) b(first (sec ond)) c(third) j(j) 
 $a -x (fi rst) (sec ond) third fourth
--*(-x (fi rst) (sec ond) third) -?() -x(-x (fi rst) (sec ond) third) b((fi rst) (sec ond) third) c(fourth) 
+-*(-x (fi rst) (sec ond) third) -?() -x(-x (fi rst) (sec ond) third) b((fi rst) (sec ond) third) c(fourth) j(j) 
 $.function a [-*] [-x ... b] c {
-  .for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
+  forj &&{.list_locals}$ {.combine $j \( $$j \) \ }
   .combine $nl
   # if_only .test_not_empty $-* {c (-*: ) $-*$ $nl}
   # if_only .var_exists -x {c (-x: ) $-x$ $nl}
@@ -396,7 +397,7 @@ $.function a [-*] [-x ... b] c {
 }
 $.whence_function a
 .function a [-?] [-x ... b] c {
-  .for &{.list_locals}$ {.combine $1 \( $$1 \) ( )}
+  forj &{.list_locals}$ {.combine $j \( $$j \) ( )}
   .combine $nl
   # if_only .test_not_empty $-* {c (-*: ) $-*$ $nl}
   # if_only .var_exists -x {c (-x: ) $-x$ $nl}

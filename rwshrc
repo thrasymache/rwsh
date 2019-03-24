@@ -1,12 +1,11 @@
 .echo $*0 >/tmp/lcl (
 )
 .set_max_nesting 20
-.for ${.list_environment}$ {.nop
-  .scope $1$ (-- var val) {.nop
+.for ${.list_environment}$ (-- var val) {.nop
     .if .var_exists $var {.nop $val}
     .else {.nop
       .global $var $val
-      .nop $$var}}}
+      .nop $$var}}
 .function #! -- ignored ... {.nop $ignored}
 .function .autofunction -- cmd [args ...] [.{argfunction}] {.nop
   .if .var_exists args {.nop $args}

@@ -56,7 +56,7 @@ void Base_executable::operator() (const Argm& argm,
 Binary::Binary(const std::string& impl) : implementation(impl) {}
 
 // run the given binary
-void Binary::execute(const Argm& argm_i, Error_list& exceptions) const {
+void Binary::execute(const Argm& argm_i, Error_list& exceptions) {
   int ret,
       input = argm_i.input.fd(),
       output = argm_i.output.fd(),

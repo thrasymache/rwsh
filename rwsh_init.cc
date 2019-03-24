@@ -67,8 +67,9 @@ void internal_init(Error_list& exceptions) {
   bi(".get_max_nesting", b_get_max_nesting, Argv {});
   bi(".getpid", b_getpid, Argv {});
   bi(".getppid", b_getppid, Argv {});
-  bi(".for", b_for, Argv {"--", "list", "...", ".{argfunction}"});
-  bi(".for_each_line", b_for_each_line, Argv {".{argfunction}"});
+  bi(".for", b_for, Argv {"--", "list", "...", "prototype", ".{argfunction}"});
+  bi(".for_each_line", b_for_each_line,
+     Argv {"--", "prototype", "...", ".{argfunction}"});
   bi(".fork", b_fork, Argv {"--", "command", "...", "[.{argfunction}]"});
   bi(".function", b_function,
      Argv {"--", "name", "[prototype", "...]", ".{argfunction}"});
@@ -82,9 +83,9 @@ void internal_init(Error_list& exceptions) {
       "    .function .raw_command -- args ... {.nop $args}\n"
       "    .collect_errors_except .nop {.nop\n"
       "      .source /etc/rwshrc $args$\n"
-      "      .for &{.internal_functions}$ {.nop\n"
-      "        .if .test_executable_exists $1 {.nop}\n"
-      "        .else {.echo &&&1 not defined (\n)}}\n"
+      "      .for &{.internal_functions}$ (func ...) {.nop\n"
+      "        .if .test_executable_exists $func {.nop}\n"
+      "        .else {.echo &&&func not defined (\n)}}\n"
       "      .if .test_executable_exists .help {.nop\n"
       "        .if .test_not_empty ${.help} {.nop}\n"
       "        .else {.echo .help produces no output (\n)}}\n"
@@ -121,7 +122,8 @@ void internal_init(Error_list& exceptions) {
   fn(".shutdown", Argv {"--", "[args", "...]"}, ".nop $args; .exit 10",
      exceptions);
   bi(".source", b_source, Argv {"--", "file", "[args", "...]"});
-  bi(".stepwise", b_stepwise, Argv {"--", "command", "...", ".{argfunction}"});
+  bi(".stepwise", b_stepwise,
+      Argv {"--", "command", "...", "prototype", ".{argfunction}"});
   bi(".store_output", b_store_output, Argv {"--", "var", ".{argfunction}"});
   bi(".test_executable_exists", b_test_executable_exists,
      Argv {"--", "command", "[.{argfunction}]"});

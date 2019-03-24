@@ -190,29 +190,34 @@ void b_fallback_handler(const Argm& argm, Error_list& exceptions) {
 
 // run the argfunction for each argument, passing that value as the argument
 void b_for(const Argm& argm, Error_list& exceptions) {
-  Argm body(argm.parent_map(), argm.input, argm.output, argm.error);
-  body.push_back(".mapped_argfunction");
-  body.push_back("");
-  for (auto i: argm.subrange(1))
+  Argv prototype_argv;
+  tokenize_words(argm[argm.argc()-1], std::back_inserter(prototype_argv));
+  Function temp_func(".for(body)", prototype_argv, *argm.argfunction());
+  for (auto i: argm.subrange(1,1))
     if (argm.argfunction()) {
-      body[1] = i;
-      (*argm.argfunction())(body, exceptions);
+      Argm body(argm.parent_map(), argm.input, argm.output, argm.error);
+      body.push_back(".for(body)");
+      tokenize_words(i, std::back_inserter(body));
+      temp_func(body, exceptions);
       (void) global_stack.remove_exceptions(".continue", exceptions);
       if (global_stack.remove_exceptions(".break", exceptions) ||
           global_stack.unwind_stack()) return;}}
 
 // run the argfunction for line of input, passing that line as the argm
 void b_for_each_line(const Argm& argm, Error_list& exceptions) {
+  Argv prototype_argv(argm.subrange(1));
+  Function temp_func(".for_each_line(body)", prototype_argv,
+                     *argm.argfunction());
   while(!argm.input.fail()) {
     std::string line;
     // shouldn't interfere with input being consumed by this builtin
-    Argm body(argm.parent_map(), default_input, argm.output, argm.error);
-    body.push_back(".mapped_argfunction");
+    Argm body({".for_each_line(body)"}, nullptr, argm.parent_map(),
+              default_input, argm.output, argm.error);
     argm.input.getline(line);
     if (argm.input.fail() && !line.size()) break;
     tokenize(line, std::back_inserter(body),
              std::bind2nd(std::equal_to<char>(), ' '));
-    (*argm.argfunction())(body, exceptions);
+    temp_func(body, exceptions);
     (void) global_stack.remove_exceptions(".continue", exceptions);
     if (global_stack.remove_exceptions(".break", exceptions) ||
         global_stack.unwind_stack()) return;}}
@@ -534,24 +539,29 @@ void b_source(const Argm& argm, Error_list& exceptions) {
 // run the argument function once with each command in the specified function
 // invocation
 void b_stepwise(const Argm& argm, Error_list& exceptions) {
-  Argm lookup(argm.subrange(1), nullptr, argm.parent_map(),
+  Argm lookup(argm.subrange(1,1), nullptr, argm.parent_map(),
                 argm.input, argm.output.child_stream(), argm.error);
   Base_executable* e = executable_map.find_second(lookup);
   if (!e) throw Exception(Argm::Function_not_found, argm[1]);
   Function* f = dynamic_cast<Function*>(e);
   if (!f) return; //throw Exception(Argm::Not_a_function, argm[1]);
+  Variable_map locals(argm.parent_map());
+  f->arg_to_param(argm.subrange(1,1), locals, exceptions);
+  if (global_stack.unwind_stack())
+    return f->unused_var_check(&locals, exceptions);
   // this must be caught and handled to use .stepwise recursively
-  Variable_map locals(lookup.parent_map());
-  f->arg_to_param(lookup.argv(), locals, exceptions);
-  if (global_stack.unwind_stack()) return;
-  Argm params(lookup.argv(), lookup.argfunction(), &locals,
-              lookup.input, lookup.output, lookup.error);
+  Argm params(argm.subrange(1,1), nullptr, &locals,
+              argm.input, argm.output.child_stream(), argm.error);
+  Argv prototype_argv;
+  tokenize_words(argm[argm.argc()-1], std::back_inserter(prototype_argv));
+  Function temp_func(".stepwise(body)", prototype_argv,
+                     *argm.argfunction());
   for (auto j: f->body) {
     Argm body_i(j.interpret(params, exceptions));
     if (global_stack.unwind_stack()) break;
-    Argm body(".mapped_argfunction", body_i.argv(), nullptr,
+    Argm body(".stepwise(body)", body_i.argv(), nullptr,
               body_i.parent_map(), body_i.input, body_i.output, body_i.error);
-    (*argm.argfunction())(body, exceptions);
+    temp_func(body, exceptions);
     (void) global_stack.remove_exceptions(".continue", exceptions);
     if (global_stack.remove_exceptions(".break", exceptions) ||
         global_stack.unwind_stack()) break;}

@@ -8,7 +8,7 @@ class Builtin : public Named_executable {
   Builtin(const std::string& name_i,
           void (*impl)(const Argm& argm, Error_list& exceptions),
           const Argv& prototype_i);
-  virtual void execute(const Argm& argm, Error_list& exceptions) const;
+  virtual void execute(const Argm& argm, Error_list& exceptions);
   virtual const std::string& name(void) const {return name_v;};
   virtual std::string str() const; };
 
@@ -37,10 +37,10 @@ class Command_block : public Base_executable, public std::vector<Arg_script> {
   void collect_errors_core(const Argm& src_argm,
                           const std::vector<std::string>& exceptional,
                           bool logic, Error_list& exceptions);
-  virtual void execute(const Argm& argm, Error_list& exceptions) const;
+  virtual void execute(const Argm& argm, Error_list& exceptions);
   void promote_soons(unsigned nesting);
   void prototype_execute(const Argm& argm, const Prototype& prototype,
-                        Error_list& exceptions) const;
+                        Error_list& exceptions);
   std::string str() const; };
 
 class Function : public Named_executable {
@@ -63,7 +63,7 @@ class Function : public Named_executable {
   Function* copy_pointer(void) const {
     if (!this) return 0;
     else return new Function(*this);};
-  virtual void execute(const Argm& argm, Error_list& exceptions) const;
+  virtual void execute(const Argm& argm, Error_list& exceptions);
   const std::string& name(void) const {return name_v;};
   void promote_soons(unsigned nesting);
   std::string str() const;

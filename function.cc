@@ -34,7 +34,7 @@ Builtin::Builtin(const std::string& name_i,
   implementation(impl), name_v(name_i), prototype(prototype_i) {}
 
 // run the given builtin
-void Builtin::execute(const Argm& argm, Error_list& exceptions) const {
+void Builtin::execute(const Argm& argm, Error_list& exceptions) {
   Variable_map locals(argm.parent_map());
   prototype.arg_to_param(argm.argv(), locals, exceptions);
   locals.bless_unused_vars();
@@ -64,8 +64,7 @@ Command_block* Command_block::apply(const Argm& argm, unsigned nesting,
     result->trailing = trailing;
     return result;}}
 
-void Command_block::execute(const Argm& src_argm,
-                           Error_list& exceptions) const {
+void Command_block::execute(const Argm& src_argm, Error_list& exceptions) {
   for (auto j: *this) {
     Argm statement_argm = j.interpret(src_argm, exceptions);
     if (global_stack.unwind_stack()) break;
@@ -74,7 +73,7 @@ void Command_block::execute(const Argm& src_argm,
 
 void Command_block::prototype_execute(const Argm& argm,
                                      const Prototype& prototype,
-                                     Error_list& exceptions) const {
+                                     Error_list& exceptions) {
   Variable_map locals(argm.parent_map());
   prototype.arg_to_param(argm.argv(), locals, exceptions);
   if (argm.argfunction() && prototype.exclude_argfunction)
@@ -128,7 +127,7 @@ Function::Function(const std::string& name_i, const Argv& parameters,
      name_v(name_i), prototype(parameters), body(src) {}
 
 // run the given function
-void Function::execute(const Argm& argm, Error_list& exceptions) const {
+void Function::execute(const Argm& argm, Error_list& exceptions) {
   body.prototype_execute(argm, prototype, exceptions);}
 
 void Function::promote_soons(unsigned nesting) {

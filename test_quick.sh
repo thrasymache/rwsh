@@ -1,5 +1,5 @@
 .function a [-*] [-x b ...] c {
-  .for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
+  forj &&{.list_locals}$ j {.combine $j \( $$j \) \ }; .echo $nl}
 .nop $A $FIGNORE
 .whence_function a
 a first
@@ -8,7 +8,7 @@ a -x (fi rst) second
 a -x first (sec ond) third
 a -x (fi rst) (sec ond) third fourth
 .function a [-*] [-x ... b] c {
-  .for &&{.list_locals}$ {.combine $1 \( $$1 \) \ }
+  forj &&{.list_locals}$ {.combine $j \( $$j \) \ }
   .combine $nl
   # if_only .test_not_empty $-* {c (-*: ) $-*$ $nl}
   # if_only .var_exists -x {c (-x: ) $-x$ $nl}

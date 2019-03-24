@@ -2,6 +2,6 @@
 .nop $argv$
 .global nl (
 )
-.for &{.internal_functions}$ {.nop
-  .function $1 -- [args ...] {.echo signal triggered: $0 \( $args$ \); .combine $nl}}
+.for &{.internal_functions}$ name {.nop
+  .function $name -- [args ...] {.echo signal triggered: $0 \( $args$ \); .combine $nl}}
 .function .shutdown -- [args ...] {.nop $args; .exit 255}

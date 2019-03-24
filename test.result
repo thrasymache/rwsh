@@ -38,7 +38,7 @@ call stack .source .try_catch_recursive(body)
   .combine (unacceptable arguments: for prototype ) $proto , $nl
   if_only .test_not_empty $assigned {
     .combine ( assigned )
-    .for $assigned$ {.combine $1$0 = ${paren_if_words $1$1} ( )}
+    .for $assigned$ (-- var val) {.combine $var = ${paren_if_words $val} ( )}
     .combine , $nl ( but)}
   if_only .test_not_empty $needed {
     .combine ( needed \() $needed \), $nl
@@ -280,8 +280,9 @@ fn do_while argv ... .{argfunction} {
     .try_catch_recursive .continue {.argfunction}
     .while $argv$ {.argfunction}}}
 fn echo -- text ... {.echo $text; .combine $nl}
-fn echo-comments cmd ... {
-  .stepwise $cmd$ {if_only .test_in $1 .nop # #! ## {echo &&&*}}}
+fn echo-comments argv ... {
+  .stepwise $argv$ (-- cmd [args ...]) {.nop $args$
+    if_only .test_in $cmd .nop # #! ## {echo &&&*}}}
 fn exec -- argv ... {.exec $argv$}
 fn elif command ... .{argfunction} {
   .else_if $command$ {.argfunction}}
@@ -297,14 +298,14 @@ fn ntimes n .{argfunction} {
     .var_subtract n 1}}
 fn outer_break stack ... {.replace_exception .break $stack$}
 fn outer_continue stack ... {.replace_exception .continue $stack$}
-fn scope_for var vals ... .{argfunction} {
-  .for $vals$ {
-    .scope $1 $var {.argfunction}}}
-fn outer_for var vals ... .{argfunction} {
-  .for $vals$ {
-    .scope $1 $var {
-      .try_catch_recursive outer_break outer_continue {.argfunction}}}}
-fn outer_while argv ... .{argfunction} {
+fn forj -- [vals ...] .{argfunction} {.for $vals$ (-- j) {.argfunction}}
+fn foreok -- [items ...] prototype .{argfunction} {
+  .if .var_exists items {.for $items$ $prototype {.argfunction}}
+  .else {.nop $prototype}}
+fn outer_for -- vals ... var .{argfunction} {
+  .for $vals$ $var {
+    .try_catch_recursive outer_break outer_continue {.argfunction}}}
+fn outer_while -- argv ... .{argfunction} {
   .while $argv$ {
     .try_catch_recursive outer_break outer_continue {.argfunction}}}
 fn setf -- var value {
@@ -314,9 +315,9 @@ fn single -- args ... {.scope ${$args$}$ result {echo $result}}
 fn test_var_not_equal var value {.test_string_unequal $$var $value}
 fn test_var_greater -- var value {.test_greater $$var $value}
 fn type [-t] args ... [.{argfunction}] {
-  .for $args$ {
+  .for $args$ (-- name ...) {
     .try_catch_recursive .function_not_found {
-      if_only_not .var_exists -t {.echo &&&1 is ()}
+      if_only_not .var_exists -t {.echo &&&name is ()}
       .type &&&1 {.argfunction}}}}
 fn whence command [.{argfunction}] {
   .try_catch_recursive .function_not_found {
@@ -329,8 +330,8 @@ fn while_and_one_more argv ... .{argfunction} {
 fn var_exists -- var {.var_exists $var}
 fn var_in var set ... {.test_in $$var $set$}
 fn var_less var N {.test_less $$var $N}
-fn var_val -- [var ...] {
-  .if .var_exists var {.for $var$ {.combine $1 \( $$1 \) \ }}
+fn var_val -- [vars ...] {
+  .if .var_exists vars {.for $vars$ (-- v ...) {.combine $v \( $$v \) \ }}
   .else {.nop}}
 fn paren_if_words -- value {
   .if .test_number_equal ${.argc $value$} 1 {.combine $value}
@@ -360,7 +361,7 @@ fn ln [-?] [-t directory] target ... {
   .nop $-* $target # in case the following assertion fails
   .fork .mapped_argfunction {
     if_only .var_exists -t {.cd $directory}
-    .for $target$ {.test_file_exists $1}
+    .for $target$ (-- j ...) {.test_file_exists $j}
     &{.which_path ln /bin:/usr/bin} $-? -t . $target$}}
 fn test -- args ... {.try_catch_recursive .return_code {${whichp test} $args$}}
 if_only .var_exists argv {.error ignored excess arguments $argv $nl}
@@ -526,11 +527,8 @@ again
 $if_only .test_is_number false {echo not printed}
 $if_only .test_is_number 0 {echo printed without error}
 printed without error
-$.function for -- [items ...] .{argfunction} {
-  .if .var_exists items {.for $items$ {.argfunction}}
-  .else {.nop}}
-$for {echo skipped without error}
-$for 1 2 3 {echo loop $*}
+$foreok k {echo skipped without error}
+$foreok 1 2 3 k {echo loop $k}
 loop 1
 loop 2
 loop 3
@@ -598,9 +596,9 @@ call stack ) $stack (
     .function .raw_command -- args ... {.nop $args}
     .collect_errors_except .nop {.nop
       .source /etc/rwshrc $args$
-      .for &{.internal_functions}$ {.nop
-        .if .test_executable_exists $1 {.nop}
-        .else {.echo &&&1 not defined (
+      .for &{.internal_functions}$ (func ...) {.nop
+        .if .test_executable_exists $func {.nop}
+        .else {.echo &&&func not defined (
 )}}
       .if .test_executable_exists .help {.nop
         .if .test_not_empty ${.help} {.nop}
@@ -1106,7 +1104,7 @@ $echo @/ur/bin/pwd
 no file matching pattern /ur for selection /ur/bin/pwd
 $echo @test_main.cc
 no file matching pattern test_main.cc
-$se {se {.for @e*c {echo $1}} >test_files/tmp}
+$se {se {forj @e*c {echo $j}} >test_files/tmp}
 $.global LC_ALL C
 $.nop $LC_ALL
 $sort test_files/tmp
@@ -1126,12 +1124,12 @@ $echo @test_files/*xyxy
 test_files/ixyxyxy
 $echo @/bin
 /bin
-$se {se {.for @/usr/*bin {echo $1}} >test_files/tmp}
+$se {se {forj @/usr/*bin {echo $j}} >test_files/tmp}
 $sort test_files/tmp
 /usr/bin
 /usr/sbin
 this sort function has been brought to you by .autofunction
-$se {se {.for @/etc/rwsh* {echo $1}} >test_files/tmp}
+$se {se {forj @/etc/rwsh* {echo $j}} >test_files/tmp}
 $sort test_files/tmp
 /etc/rwshrc
 /etc/rwshrc-basic
@@ -1166,7 +1164,7 @@ $echo @/etc/rw*-basi*si*
 no file matching pattern /etc/rw*-basi*si*
 $echo @test_main.sh
 test_main.sh
-$se {se {.for @test_files/*x* {echo $1}} >test_files/tmp}
+$se {se {forj @test_files/*x* {echo $j}} >test_files/tmp}
 $sort test_files/tmp
 test_files/ixxx
 test_files/ixyxyxy
@@ -1432,12 +1430,12 @@ $# .for_each_line
 $/bin/cat <non_existent_file
 could not open file non_existent_file
 call stack /bin/cat
-$.for_each_line excess arguments
-unacceptable arguments: for prototype .{argfunction},
- found (excess arguments) excess
+$.for_each_line
+unacceptable arguments: for prototype -- prototype ... .{argfunction},
+ needed (prototype),
 ( call) stack: .for_each_line
 .for_each_line requires an argfunction
-$.for_each_line <non_existent_file {echo line of $# \( $* \)}
+$.for_each_line <non_existent_file argv {echo line of $# \( $argv$ \)}
 could not open file non_existent_file
 call stack .for_each_line
 $se {sa {echo hi >one >two} {cat <three <four}
@@ -1458,23 +1456,23 @@ $se {
 $/bin/cat outfile
 there
 $se {se >outfile {
-  echoe line 1 $nl; echoe line 2 longer $nl; .echo $nl; echo ending}}
+  echo line 1; echo line 2 longer; .echo $nl; echo ending}}
 $/bin/cat <outfile
-line 1 
-line 2 longer 
+line 1
+line 2 longer
 
 ending
-$.for_each_line x {}
-unacceptable arguments: for prototype .{argfunction},
- found (x) excess
+$.for_each_line {}
+unacceptable arguments: for prototype -- prototype ... .{argfunction},
+ needed (prototype),
 ( call) stack: .for_each_line
-$.for_each_line <outfile
+$.for_each_line <outfile x
 .for_each_line requires an argfunction
 $.for_each_line <outfile <another A{}
 double redirection is not supported at this time: <outfile and <another
 A is neither an argfunction nor a substitution nor a brace literal
-$.for_each_line <outfile {
-  echo current line $*
+$.for_each_line <outfile argv ... {
+  echo current line $argv$
   if_only .test_greater $2 1 {
     .collect_errors_except .nop {
       .throw .continue
@@ -1484,15 +1482,24 @@ $.for_each_line <outfile {
   echo not printed}
 current line line 1
 current line line 2 longer
-$.for_each_line <outfile {
-  echoe line of $# \( $* \) $nl; .throw echo exception in for_each_line}
-line of 3 ( line 1 ) 
-exception in for_each_line .throw .mapped_argfunction .for_each_line
-$.for_each_line <outfile {echoe line of $# \( $* \) $nl}
-line of 3 ( line 1 ) 
-line of 4 ( line 2 longer ) 
-line of 1 ( ) 
-line of 2 ( ending ) 
+$.for_each_line <outfile argv ... {
+  echo line of $# \( $argv$ \); .throw echo exception in for_each_line}
+line of 3 ( line 1 )
+exception in for_each_line .throw .for_each_line(body) .for_each_line
+$.for_each_line <outfile [argv ...] {echo line of $# \( $argv$ \)}
+line of 3 ( line 1 )
+line of 4 ( line 2 longer )
+line of 1 ( )
+line of 2 ( ending )
+$.for_each_line <outfile first second [third] {
+  .nop $first;
+  if_only .var_exists third {.combine \(extra\ is\  $third \)\ }
+  echo $second}
+1
+(extra is longer) 2
+unacceptable arguments: for prototype first second [third],
+ needed (first second),
+( call) stack: (.for_each_line(body) .for_each_line)
 $/bin/rm outfile
 $
 $# soon level promotion .get_max_nesting .set_max_nesting
@@ -1734,20 +1741,21 @@ Exception for failed handler. Original exception with call stack:
 even from .throw .throw 7 is a number
 $
 $# .for
-$.for {echo no arguments $1}
-unacceptable arguments: for prototype -- list ... .{argfunction},
- needed (list),
+$.for q {echo no arguments $q}
+unacceptable arguments: for prototype -- list ... prototype .{argfunction},
+ assigned list=q ,
+ but needed (prototype),
 ( call) stack: .for
-$.for no_argfunction
+$.for no_argfunction q
 .for requires an argfunction
-$.for 1 {echo one argument $1}
+$.for 1 q {echo one argument $q}
 one argument 1
-$.for 1 2 {echo one argument $1; .throw echo exception in for}
+$.for 1 2 q {echo one argument $q; .throw echo exception in for}
 one argument 1
-exception in for .throw .mapped_argfunction .for
-$.for 1 2 3 4 {
-  echo current arg $1
-  if_only .test_greater $1 2 {
+exception in for .throw .for(body) .for
+$.for 1 2 3 4 q {
+  echo current arg $q
+  if_only .test_greater $q 2 {
     .collect_errors_except .nop {
       .throw .continue
       .throw .break
@@ -1760,10 +1768,10 @@ current arg 3
 $fn fIJ outer inner {
   .local sum 0
   .nop $sum
-  $outer I 1 2 3 4 5 6 {
+  $outer 1 2 3 4 5 6 I {
     if_only_not .test_string_equal $I 1 {.combine $nl}
     .combine $I :
-    $inner J 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 {
+    $inner 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 J {
       if_only .test_less 1 $J {.echo ,}
       .echo $J
       .set sum ${+ $I $J}
@@ -1771,18 +1779,18 @@ $fn fIJ outer inner {
       .else_if .test_less 3 $sum$ {.throw outer_continue}
       .else {}}}
   .echo $nl}
-$fIJ scope_for scope_for
+$fIJ .for .for
 1:1,2,3Exception for failed handler. Original exception with call stack:
-outer_continue .throw .mapped_argfunction .else_if .scope .mapped_argfunction .for scope_for .scope .mapped_argfunction .for scope_for fIJ
+outer_continue .throw .mapped_argfunction .else_if .for(body) .for .for(body) .for fIJ
 .continue thrown outside of control flow body
-call stack: .throw .mapped_argfunction .else_if .scope .mapped_argfunction .for scope_for .scope .mapped_argfunction .for scope_for fIJ .replace_exception outer_continue
-$fIJ outer_for scope_for
+call stack: .throw .mapped_argfunction .else_if .for(body) .for .for(body) .for fIJ .replace_exception outer_continue
+$fIJ outer_for .for
 1:1,2,3
 2:1,2
 3:1
 4:1
 5:1
-$fIJ scope_for outer_for
+$fIJ .for outer_for
 1:1,2,3,4,5
 2:1,2,3,4
 3:1,2,3
@@ -1796,11 +1804,17 @@ $fIJ outer_for outer_for
 4:1,2
 5:1
 6:1
-$.for 1 2 3 4 {echoe four arguments $1 $nl}
+$.for 1 2 3 4 for_argument {echoe four arguments $for_argument $nl}
 four arguments 1 
 four arguments 2 
 four arguments 3 
 four arguments 4 
+$.for (-x -y permitted) (-z rejected) ([-x] [-y arg] [-z]) {echo $-*}
+(-x -y permitted)
+unacceptable arguments: for prototype [-x] [-y arg] [-z],
+ assigned -*=-z -z=-z ,
+ but found (rejected) excess
+( call) stack: (.for(body) .for)
 $
 $# .function .rm_executable .list_locals
 $whence .function
@@ -1966,10 +1980,10 @@ unacceptable arguments: for prototype [--],
  found (foo) excess
 ( call) stack: a
 $.function a [-x] [--long-opt y] second {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 $whence a
 .function a [--long-opt y] [-x] second {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) ( )}; .echo $nl}
 $a
 unacceptable arguments: for prototype [--long-opt y] [-x] second,
  assigned -*=() ,
@@ -1989,10 +2003,10 @@ unacceptable arguments: for prototype [--long-opt y] [-x] second,
 $a --long-opt first -x --long-opt second single
 -*(--long-opt first -x --long-opt second) --long-opt(--long-opt first --long-opt second) -x(-x) second(single) y(first second) 
 $.function a [-q option1 option2] [-x o1 o2 o3 o4] required {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 $whence a
 .function a [-q option1 option2] [-x o1 o2 o3 o4] required {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) ( )}; .echo $nl}
 $a
 unacceptable arguments: for prototype [-q option1 option2] [-x o1 o2 o3 o4] required,
  assigned -*=() ,
@@ -2023,10 +2037,10 @@ $a -x one two three four five -q six seven
 $a one -x two three four five -q six seven
 -*(-x two three four five -q six seven) -q(-q six seven) -x(-x two three four five) o1(two) o2(three) o3(four) o4(five) option1(six) option2(seven) required(one) 
 $.function a [optional0] -- [optional1 optional2 optional3] required {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 $whence a
 .function a [optional0] -- [optional1 optional2 optional3] required {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) ( )}; .echo $nl}
 $a
 unacceptable arguments: for prototype [optional0] -- [optional1 optional2 optional3] required,
  needed (required),
@@ -2048,10 +2062,10 @@ unacceptable arguments: for prototype [optional0] -- [optional1 optional2 option
  but found (six seven eight nine) excess
 ( call) stack: a
 $.function a -y [second] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 $whence a
 .function a -y [second] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) ( )}; .echo $nl}
 $a
 unacceptable arguments: for prototype -y [second],
  needed (-y),
@@ -2066,10 +2080,10 @@ unacceptable arguments: for prototype -y [second],
  but found (3) excess
 ( call) stack: a
 $.function a [-x] -y [--long-opt] second [--] [-] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 $whence a
 .function a [--long-opt] [-x] -y second [--] [-] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) ( )}; .echo $nl}
 $a --long-opt -xx over-long flag
 -xx flag is unrecognized for a
 call stack: a
@@ -2166,11 +2180,11 @@ $a -x --long-opt -x --long-opt -x one_doubled one_tripled
 $a --long-opt -x -x - --long-opt all_flags doubled
 -(doubled) -*(--long-opt -x -x --long-opt) --long-opt(--long-opt --long-opt) -x(-x -x) -y(-) second(all_flags) 
 $.function a [-first] [-to] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }
   echo nothing_required}
 $whence a
 .function a [-first] [-to] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
+  forj ${.list_locals}$ {.combine $j \( $$j \) ( )}
   echo nothing_required}
 $a
 -*() nothing_required
@@ -2196,11 +2210,11 @@ unacceptable arguments: for prototype [-first] [-to],
 $a -to -first
 -*(-to -first) -first(-first) -to(-to) nothing_required
 $.function a [-?] [-first] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }
   echo nothing_required}
 $whence a
 .function a [-?] [-first] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
+  forj ${.list_locals}$ {.combine $j \( $$j \) ( )}
   echo nothing_required}
 $a
 -*() -?() nothing_required
@@ -2226,11 +2240,11 @@ unacceptable arguments: for prototype [-?] [-first],
 $a -to -first
 -*(-to -first) -?(-to) -first(-first) nothing_required
 $.function a [-*] [-first] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }
   echo nothing_required}
 $whence a
 .function a [-?] [-first] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
+  forj ${.list_locals}$ {.combine $j \( $$j \) ( )}
   echo nothing_required}
 $a
 -*() -?() nothing_required
@@ -2242,11 +2256,11 @@ unacceptable arguments: for prototype [-?] [-first],
 $a -to -first
 -*(-to -first) -?(-to) -first(-first) nothing_required
 $.function a [-?] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }
   echo nothing_required}
 $whence a
 .function a [-?] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
+  forj ${.list_locals}$ {.combine $j \( $$j \) ( )}
   echo nothing_required}
 $a
 -*() -?() nothing_required
@@ -2299,20 +2313,20 @@ $.function a [-x ...] b [c] {}
 option [c] coming after an elipsis has no meaning
 call stack: .function
 $.function a -? x ... y {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 $whence a
 .function a [-?] x ... y {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) ( )}; .echo $nl}
 $.function a -* x ... y {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 $whence a
 .function a [-?] x ... y {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) ( )}; .echo $nl}
 $.function a [-?] x ... y {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 $whence a
 .function a [-?] x ... y {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) ( )}; .echo $nl}
 $a -c -a -b first second third
 -*(-c -a -b) -?(-c -a -b) x(first second) y(third) 
 $a -c first -a second -b third
@@ -2337,10 +2351,10 @@ $a first (se cond) third
 $a first (se cond) third fourth (fi fth)
 -*() -?() x(first (se cond) third fourth) y(fi fth) 
 $.function a [-?] x [...] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 $whence a
 .function a [-?] x ... {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) ( )}; .echo $nl}
 $a
 unacceptable arguments: for prototype [-?] x ...,
  assigned -*=() -?=() ,
@@ -2349,10 +2363,10 @@ unacceptable arguments: for prototype [-?] x ...,
 $a first second third fourth fifth
 -*() -?() x(first second third fourth fifth) 
 $.function a [-?] x [--] [y ...] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 $whence a
 .function a [-?] x [--] [y ...] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) ( )}; .echo $nl}
 $a
 unacceptable arguments: for prototype [-?] x [--] [y ...],
  assigned -*=() -?=() ,
@@ -2367,10 +2381,10 @@ $a first second third
 $a first second third fourth fifth
 -*() -?() x(first) y(second third fourth fifth) 
 $.function a [-?] a [b ... c] d {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 $whence a
 .function a [-?] a [b ... c] d {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) ( )}; .echo $nl}
 $a first
 unacceptable arguments: for prototype [-?] a [b ... c] d,
  assigned -*=() -?=() a=first ,
@@ -2390,10 +2404,10 @@ $a first second third fourth fifth
 $a first second third fourth fifth sixth
 -*() -?() a(first) b(second third fourth) c(fifth) d(sixth) 
 $.function a [-x ...] b c {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 $whence a
 .function a [-x ...] b c {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) ( )}; .echo $nl}
 $a first second
 -*() b(first) c(second) 
 $a -x first
@@ -2408,10 +2422,10 @@ $a -x first second third
 $a -x first second third fourth
 -*(-x first second) -x(-x first second) b(third) c(fourth) 
 $.function a [-x b ...] c {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 $whence a
 .function a [-x b ...] c {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) ( )}; .echo $nl}
 $a first
 -*() c(first) 
 $a -x first
@@ -2432,7 +2446,7 @@ call stack a
 $a -x (fi rst) (sec ond) third fourth
 -*(-x (fi rst) (sec ond) third) -x(-x (fi rst) (sec ond) third) b((fi rst) (sec ond) third) c(fourth) 
 $.function a [-x ... b] c {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }
   .combine $nl
   if_only .test_not_empty $-* {c (-*: ) $-*$ $nl}
   if_only .var_exists -x {c (-x: ) $-x$ $nl}
@@ -2441,7 +2455,7 @@ $.function a [-x ... b] c {
 }
 $whence a
 .function a [-x ... b] c {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
+  forj ${.list_locals}$ {.combine $j \( $$j \) ( )}
   .combine $nl
   if_only .test_not_empty $-* {c (-*: ) $-*$ $nl}
   if_only .var_exists -x {c (-x: ) $-x$ $nl}
@@ -2481,12 +2495,12 @@ $a -x (fi rst) (sec ond) third fourth
 b: third
 c: fourth
 $.function a x [-?] [... y z] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }
   .combine $nl
   if_only .var_exists x {c (x: ) $x$ $nl}}
 $whence a
 .function a [-?] x [... y z] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
+  forj ${.list_locals}$ {.combine $j \( $$j \) ( )}
   .combine $nl
   if_only .var_exists x {c (x: ) $x$ $nl}}
 $a
@@ -2515,10 +2529,10 @@ $a (fi rst) (sec ond) (thi rd) (fou rth) (fi fth)
 -*() -?() x((fi rst) (sec ond) (thi rd)) y(fou rth) z(fi fth) 
 x: fi rstsec ondthi rd
 $.function a [-?] [x] [... y] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 $whence a
 .function a [-?] [x] [... y] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) ( )}; .echo $nl}
 $a
 -*() -?() 
 $a (fi rst)
@@ -2532,14 +2546,14 @@ $a (fi rst) (sec ond) third fourth
 $a (fi rst) (sec ond) (thi rd) (fou rth) (fi fth)
 -*() -?() x((fi rst) (sec ond) (thi rd) (fou rth)) y(fi fth) 
 $.function a [-?] [x y] [... z] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }
   .combine $nl
   if_only .var_exists x {c (x: ) $x $nl}
   if_only .var_exists y {c (y: ) $y$ $nl}
   if_only .var_exists z {c (z: ) $z$ $nl}}
 $whence a
 .function a [-?] [x y] [... z] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
+  forj ${.list_locals}$ {.combine $j \( $$j \) ( )}
   .combine $nl
   if_only .var_exists x {c (x: ) $x $nl}
   if_only .var_exists y {c (y: ) $y$ $nl}
@@ -2574,10 +2588,10 @@ $.function a -- [-x] y z {}
 flag option [-x] occurs after -- in the prototype
 call stack: .function
 $.function a -- [x y] z {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 $whence a
 .function a -- [x y] z {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}; .echo $nl}
+  forj ${.list_locals}$ {.combine $j \( $$j \) ( )}; .echo $nl}
 $a
 unacceptable arguments: for prototype -- [x y] z,
  needed (z),
@@ -3623,7 +3637,7 @@ unacceptable arguments: for prototype ,
 ( call) stack: .list_executables
 $.list_executables {excess argfunc}
 .list_executables does not accept an argfunction with call stack: .list_executables
-$.for ${.list_executables}$ {.combine $1 $nl}
+$forj ${.list_executables}$ {.combine $j $nl}
 !
 !x
 #
@@ -3851,7 +3865,8 @@ fIJ
 false
 fn
 fns
-for
+foreok
+forj
 g
 h
 if_else_if_not_with_body
@@ -3870,7 +3885,6 @@ outer_while
 paren_if_words
 polish
 sa
-scope_for
 se
 setf
 silent_throw
@@ -3926,7 +3940,7 @@ $.try_catch_recursive .replace_exception {
   .throw .replace_exception echo now in exception handler}
 now in exception handler .throw .try_catch_recursive(body) .replace_exception .try_catch_recursive
 $.try_catch_recursive .replace_exception {
-  .throw .replace_exception .for {echo $1 is on the call stack}}
+  .throw .replace_exception forj {echo $j is on the call stack}}
 .throw is on the call stack
 .try_catch_recursive(body) is on the call stack
 .replace_exception is on the call stack
@@ -3976,18 +3990,17 @@ $.scope a ([-- arg]) {echo -- cannot take arguments}
 optional -- parameter cannot take arguments ( ([-- arg]) ) with call stack: .scope
 $.scope a ([arg -- foo]) {echo -- cannot be an argument}
 optional -- parameter cannot take arguments ( ([arg -- foo]) ) with call stack: .scope
-$.scope (args ...) {for ${.list_locals}$ {.combine $1 = $$1 }; .echo $nl}
+$.scope (args ...) {foreok ${.list_locals}$ j {.combine $j = $$j $nl}}
 unacceptable arguments: for prototype args ...,
  needed (args),
 ( call) stack: .scope
-$.scope ([args ...]) {for ${.list_locals}$ {.combine $1 = $$1 }; .echo $nl}
-
-$.scope () (args ...) {for ${.list_locals}$ {.combine $1 = $$1 }; .echo $nl}
+$.scope ([args ...]) {foreok ${.list_locals}$ j {.combine $j = $$j $nl}}
+$.scope () (args ...) {foreok ${.list_locals}$ j {.combine $j = $$j $nl}}
 args=()
-$.scope () ([args ...]) {for ${.list_locals}$ {.combine $1 = $$1 }; .echo $nl}
+$.scope () ([args ...]) {foreok ${.list_locals}$ j {.combine $j = $$j $nl}}
 args=()
 $.scope -x -y a b ([-?] args ...) {
-  for ${.list_locals}$ {.combine $1 = $$1 \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j = $$j \ }; .echo $nl}
 -*=-x -y -?=-x -y args=a b 
 $.scope .foo {echo fixed arguments not yet supported}
 .foo : fixed arguments are not supported at this time
@@ -3997,12 +4010,12 @@ optional -* parameter cannot take arguments ( ([-? bad]) ) with call stack: .sco
 $.scope a ([-* bad] arg) {e -* (aka -?) cannot currently take arguments}
 optional -* parameter cannot take arguments ( ([-* bad]) ) with call stack: .scope
 $.scope -a -* -b a ([-?] a) {
-  for ${.list_locals}$ {.combine $1 = $$1 \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j = $$j \ }; .echo $nl}
 -*=-a -* -b -?=-a -* -b a=a 
 $.scope bar foo {echo aa $foo bb}
 aa bar bb
 $.scope baz bax (foo bar) {
-  for ${.list_locals}$ {.combine $1 = $$1 \ }; .echo $nl}
+  forj ${.list_locals}$ {.combine $j = $$j \ }; .echo $nl}
 bar=bax foo=baz 
 $.scope foo bar baz bax (args ...) {echo aa $args$2 bb $args$1 cc}
 aa baz bb bar cc
@@ -4041,26 +4054,26 @@ arg_none does not accept an argfunction with call stack: arg_none
 $arg_none
 argfunction will not be accepted
 $.function a [-x] [--long-opt y] second {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }
   .combine $nl}
 $whence a
 .function a [--long-opt y] [-x] second {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
+  forj ${.list_locals}$ {.combine $j \( $$j \) ( )}
   .combine $nl}
 $.function pt -- args ... {
   .scope $args$ ([-x] [--long-opt y] second) {
-    for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
+    forj ${.list_locals}$ {.combine $j \( $$j \) \ }}
   .combine $nl
   .scope $args$ ( [-?] [--long-opt y] second) {
-    for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
+    forj ${.list_locals}$ {.combine $j \( $$j \) \ }}
   .combine $nl}
 $whence pt
 .function pt -- args ... {
   .scope $args$ ([-x] [--long-opt y] second) {
-    for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+    forj ${.list_locals}$ {.combine $j \( $$j \) ( )}}
   .combine $nl
   .scope $args$ ( [-?] [--long-opt y] second) {
-    for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+    forj ${.list_locals}$ {.combine $j \( $$j \) ( )}}
   .combine $nl}
 $a
 unacceptable arguments: for prototype [--long-opt y] [-x] second,
@@ -4098,28 +4111,28 @@ $pt --long-opt first -x --long-opt second single
 -*(--long-opt first -x --long-opt second) --long-opt(--long-opt first --long-opt second) -x(-x) second(single) y(first second) 
 -*(--long-opt first -x --long-opt second) --long-opt(--long-opt first --long-opt second) -?(-x) second(single) y(first second) 
 $.function a [-?] [-first] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) \ }
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }
   echo nothing_required}
 $whence a
 .function a [-?] [-first] {
-  for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}
+  forj ${.list_locals}$ {.combine $j \( $$j \) ( )}
   echo nothing_required}
 $.function pts -- [args ...] {
   .if var_exists args {
     .scope $args$ ([-first] [-?]) {
-      .for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
+      forj ${.list_locals}$ {.combine $j \( $$j \) \ }}
       echo nothing_required}
   else {.scope ([-first] [-?]) {
-      .for ${.list_locals}$ {.combine $1 \( $$1 \) \ }}
+      forj ${.list_locals}$ {.combine $j \( $$j \) \ }}
       echo nothing_required}}
 $whence pts
 .function pts -- [args ...] {
   .if var_exists args {
     .scope $args$ ([-first] [-?]) {
-      .for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+      forj ${.list_locals}$ {.combine $j \( $$j \) ( )}}
       echo nothing_required}
   else {.scope ([-first] [-?]) {
-      .for ${.list_locals}$ {.combine $1 \( $$1 \) ( )}}
+      forj ${.list_locals}$ {.combine $j \( $$j \) ( )}}
       echo nothing_required}}
 $a
 -*() -?() nothing_required
@@ -4324,19 +4337,23 @@ $# .stepwise
 $.function wrapper args ... {a $args$ two; a $args$ three}
 $.function a args ... {echow $args$ one; echow $args$ two
   echow $args$ three}
-$.function d args ... {echow $args$; .stepwise $args$ {d $*}}
-$.stepwise {echo $*}
-unacceptable arguments: for prototype -- command ... .{argfunction},
- needed (command),
+$.function d args ... {echow $args$; .stepwise $args$ (cmd ...) {d $cmd$}}
+$.stepwise {echo $argv$}
+unacceptable arguments: for prototype -- command ... prototype .{argfunction},
+ needed (command prototype),
 ( call) stack: .stepwise
-$.stepwise wrapper 1 2
+$.stepwise wrapper 1 2 (cmd ...)
 .stepwise requires an argfunction
-$.stepwise stepwise {echoe $* $nl}
+$.stepwise stepwise (cmd ...) {echo $cmd}
 stepwise : command not found ( stepwise .stepwise )
-$.stepwise .stepwise {echoe $* $nl}
-$.stepwise wrapper 1 2 {echoe $* $nl}
-a 1 2 two 
-a 1 2 three 
+$.stepwise .stepwise (cmd ...) {echo $cmd}
+$.stepwise ! (cmd ...) {echo $cmd}
+unacceptable arguments: for prototype args ...,
+ needed (args),
+( call) stack: .stepwise
+$.stepwise wrapper 1 2 (cmd ...) {echo $cmd$}
+a 1 2 two
+a 1 2 three
 $.function wrapper args ... {a $args$ one
   a $args$ two; a $args$ three}
 $wrapper 1 2
@@ -4349,7 +4366,7 @@ $wrapper 1 2
 1 2 three one
 1 2 three two
 1 2 three three
-$.stepwise wrapper 1 2 {d $*}
+$.stepwise wrapper 1 2 (cmd ...) {d $cmd$}
 a 1 2 one
 echow 1 2 one one
 .echo 1 2 one one
@@ -4389,8 +4406,8 @@ echow 1 2 three three
 .echo 1 2 three three
 .combine 
 
-$.stepwise wrapper 1 2 {
-  echo current line: $*
+$.stepwise wrapper 1 2 (argv ...) {
+  echo current line: $argv$
   if_only .test_string_equal $4 two {
     .collect_errors_except .nop {
       .throw .continue
@@ -4400,10 +4417,16 @@ $.stepwise wrapper 1 2 {
   echo not printed}
 current line: a 1 2 one
 current line: a 1 2 two
-$.stepwise wrapper 1 2 {echoe $* $nl}
+$.stepwise wrapper 1 2 (argv ...) {echoe $argv$ $nl}
 a 1 2 one 
 a 1 2 two 
 a 1 2 three 
+$.function a {echo -x allowed; echo -y allowed; echo -z rejected}
+$.stepwise a (cmd [-x] [-y] comment) {$cmd $-* $comment}
+-x allowed
+-y allowed
+-z flag is unrecognized for .stepwise(body)
+call stack: .stepwise(body) .stepwise
 $
 $# .test_file_exists
 $.test_file_exists
@@ -5559,20 +5582,21 @@ $single / - + 40 10 2 2
 $single - 40 - * 2 5 - 7 2
 35
 $.function excessive-commentary arg {#! shebang
-  $arg first comment
+  $arg first comment before a blank line
+
   echo not a $arg; .nop second; echo either}
 $excessive-commentary #
 not a #
 either
 $echo-comments excessive-commentary #
 #! shebang
-# first comment
+# first comment before a blank line
 .nop second
 $
 $# ln
 $ln -s test_files/fibb
 assertion ( -e test_files/fibb) failed
-call stack .test_file_exists .mapped_argfunction .for .mapped_argfunction
+call stack .test_file_exists .for(body) .for .mapped_argfunction
 .fork returned 255 : call stack .fork ln
 $readlink ixxx
 added readlink to executable map in test suite
@@ -5585,7 +5609,7 @@ this readlink function has been brought to you by .autofunction
 $/bin/rm ixxx
 $ln -s -t test_files/ rwshlib.h plumber.h builtin.h
 assertion ( -e rwshlib.h) failed
-call stack .test_file_exists .mapped_argfunction .for .mapped_argfunction
+call stack .test_file_exists .for(body) .for .mapped_argfunction
 .fork returned 255 : call stack .fork ln
 $readlink test_files/rwshlib.h test_files/plumber.h test_files/builtin.h
 /bin/readlink returned 1 : call stack /bin/readlink readlink
@@ -5627,10 +5651,9 @@ unacceptable arguments: for prototype ,
 ( call) stack: .list_environment
 $.list_environment {excess argfunc}
 .list_environment does not accept an argfunction with call stack: .list_environment
-$for ${.list_environment}$ {
-  .scope $1$ (-- var val) {
-    .if .test_in $var ? FIGNORE SHELL {echo $var : $$var to $val}
-    .else {.global $var $val}}}
+$.for ${.list_environment}$ (-- var val) {
+  .if .test_in $var ? FIGNORE SHELL {echo $var : $$var to $val}
+  .else {.global $var $val}}
 FIGNORE : *de* to ()
 SHELL : unmodified to /bin/rwsh
 $.combine $TESTABILITY $nl
@@ -5638,8 +5661,8 @@ an=external var(iable)
 $echo $SHELL
 unmodified
 $.unset TESTABILITY
-$for ${.list_environment}$ {
-  .scope $1$ (-- var val) {setf $var $val; .nop $$var}}
+$.for ${.list_environment}$ (-- j ...) {
+  .scope $j$ (-- var val) {setf $var $val; .nop $$var}}
 $.combine $TESTABILITY $nl
 an=external var(iable)
 $echo $SHELL
@@ -5897,9 +5920,9 @@ $fn g {h}
 $fn h {g}
 $g
 function exceeded max nesting ( 20 ). call stack: (h g h g h g h g h g h g h g h g h g h g h g)
-$.stepwise g {echoe $* $nl; $*}
+$.stepwise g (argv ...) {echoe $argv$ $nl; $*}
 h 
-function exceeded max nesting ( 20 ). call stack: (g h g h g h g h g h g h g h g h g h g h .mapped_argfunction .stepwise)
+function exceeded max nesting ( 20 ). call stack: (g h g h g h g h g h g h g h g h g h g h .stepwise(body) .stepwise)
 $fn .excessive_nesting args ... {.nop $args; h}
 $g
 Exception for failed handler. Original exception with call stack:

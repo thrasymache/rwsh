@@ -38,7 +38,7 @@ call stack .source .try_catch_recursive(body)
   .combine (unacceptable arguments: for prototype ) $proto , $nl
   if_only .test_not_empty $assigned {
     .combine ( assigned )
-    .for $assigned$ {.combine $1$0 = ${paren_if_words $1$1} ( )}
+    .for $assigned$ (-- var val) {.combine $var = ${paren_if_words $val} ( )}
     .combine , $nl ( but)}
   if_only .test_not_empty $needed {
     .combine ( needed \() $needed \), $nl
@@ -280,8 +280,9 @@ fn do_while argv ... .{argfunction} {
     .try_catch_recursive .continue {.argfunction}
     .while $argv$ {.argfunction}}}
 fn echo -- text ... {.echo $text; .combine $nl}
-fn echo-comments cmd ... {
-  .stepwise $cmd$ {if_only .test_in $1 .nop # #! ## {echo &&&*}}}
+fn echo-comments argv ... {
+  .stepwise $argv$ (-- cmd [args ...]) {.nop $args$
+    if_only .test_in $cmd .nop # #! ## {echo &&&*}}}
 fn exec -- argv ... {.exec $argv$}
 fn elif command ... .{argfunction} {
   .else_if $command$ {.argfunction}}
@@ -297,14 +298,14 @@ fn ntimes n .{argfunction} {
     .var_subtract n 1}}
 fn outer_break stack ... {.replace_exception .break $stack$}
 fn outer_continue stack ... {.replace_exception .continue $stack$}
-fn scope_for var vals ... .{argfunction} {
-  .for $vals$ {
-    .scope $1 $var {.argfunction}}}
-fn outer_for var vals ... .{argfunction} {
-  .for $vals$ {
-    .scope $1 $var {
-      .try_catch_recursive outer_break outer_continue {.argfunction}}}}
-fn outer_while argv ... .{argfunction} {
+fn forj -- [vals ...] .{argfunction} {.for $vals$ (-- j) {.argfunction}}
+fn foreok -- [items ...] prototype .{argfunction} {
+  .if .var_exists items {.for $items$ $prototype {.argfunction}}
+  .else {.nop $prototype}}
+fn outer_for -- vals ... var .{argfunction} {
+  .for $vals$ $var {
+    .try_catch_recursive outer_break outer_continue {.argfunction}}}
+fn outer_while -- argv ... .{argfunction} {
   .while $argv$ {
     .try_catch_recursive outer_break outer_continue {.argfunction}}}
 fn setf -- var value {
@@ -314,9 +315,9 @@ fn single -- args ... {.scope ${$args$}$ result {echo $result}}
 fn test_var_not_equal var value {.test_string_unequal $$var $value}
 fn test_var_greater -- var value {.test_greater $$var $value}
 fn type [-t] args ... [.{argfunction}] {
-  .for $args$ {
+  .for $args$ (-- name ...) {
     .try_catch_recursive .function_not_found {
-      if_only_not .var_exists -t {.echo &&&1 is ()}
+      if_only_not .var_exists -t {.echo &&&name is ()}
       .type &&&1 {.argfunction}}}}
 fn whence command [.{argfunction}] {
   .try_catch_recursive .function_not_found {
@@ -329,8 +330,8 @@ fn while_and_one_more argv ... .{argfunction} {
 fn var_exists -- var {.var_exists $var}
 fn var_in var set ... {.test_in $$var $set$}
 fn var_less var N {.test_less $$var $N}
-fn var_val -- [var ...] {
-  .if .var_exists var {.for $var$ {.combine $1 \( $$1 \) \ }}
+fn var_val -- [vars ...] {
+  .if .var_exists vars {.for $vars$ (-- v ...) {.combine $v \( $$v \) \ }}
   .else {.nop}}
 fn paren_if_words -- value {
   .if .test_number_equal ${.argc $value$} 1 {.combine $value}
@@ -360,7 +361,7 @@ fn ln [-?] [-t directory] target ... {
   .nop $-* $target # in case the following assertion fails
   .fork .mapped_argfunction {
     if_only .var_exists -t {.cd $directory}
-    .for $target$ {.test_file_exists $1}
+    .for $target$ (-- j ...) {.test_file_exists $j}
     &{.which_path ln /bin:/usr/bin} $-? -t . $target$}}
 fn test -- args ... {.try_catch_recursive .return_code {${whichp test} $args$}}
 if_only .var_exists argv {.error ignored excess arguments $argv $nl}
@@ -422,62 +423,62 @@ function name f2
 
  end of function body 
 f2 : command not found ( f2 .whence_function fw )
-$fw {.for 1 2 3 {
-  .echo function name $1 $name $nl
+$fw {forj 1 2 3 {
+  .echo function name $j $name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}
-.function f1 name .{argfunction} {.for 1 2 3 {
-  .echo function name $1 $name $nl
+.function f1 name .{argfunction} {forj 1 2 3 {
+  .echo function name $j $name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}
 
 function name 1 f2 
-{.for 1 2 3 {
-  .echo function name $1 $name $nl
+{forj 1 2 3 {
+  .echo function name $j $name $nl
   .whence_function .argfunction
   .echo $nl end of function body $nl}}
 
  end of function body 
 function name 2 f2 
-{.for 1 2 3 {
-  .echo function name $1 $name $nl
+{forj 1 2 3 {
+  .echo function name $j $name $nl
   .whence_function .argfunction
   .echo $nl end of function body $nl}}
 
  end of function body 
 function name 3 f2 
-{.for 1 2 3 {
-  .echo function name $1 $name $nl
+{forj 1 2 3 {
+  .echo function name $j $name $nl
   .whence_function .argfunction
   .echo $nl end of function body $nl}}
 
  end of function body 
 f2 : command not found ( f2 .whence_function fw )
-$fw {.for 1 2 3 {.mapped_argfunction $1 {
+$fw {forj 1 2 3 {.mapped_argfunction $j {
   .echo function name &&name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}}
-.function f1 name .{argfunction} {.for 1 2 3 {.mapped_argfunction $1 {
+.function f1 name .{argfunction} {forj 1 2 3 {.mapped_argfunction $j {
   .echo function name &name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}}
 
 function name f2 
-{.for 1 2 3 {.mapped_argfunction $1 {
+{forj 1 2 3 {.mapped_argfunction $j {
   .echo function name &name $nl
   .whence_function .argfunction
   .echo $nl end of function body $nl}}}
 
  end of function body 
 function name f2 
-{.for 1 2 3 {.mapped_argfunction $1 {
+{forj 1 2 3 {.mapped_argfunction $j {
   .echo function name &name $nl
   .whence_function .argfunction
   .echo $nl end of function body $nl}}}
 
  end of function body 
 function name f2 
-{.for 1 2 3 {.mapped_argfunction $1 {
+{forj 1 2 3 {.mapped_argfunction $j {
   .echo function name &name $nl
   .whence_function .argfunction
   .echo $nl end of function body $nl}}}
@@ -485,21 +486,21 @@ function name f2
  end of function body 
 f2 : command not found ( f2 .whence_function fw )
 $# all of the above make sense, and the next should be identical to the last
-$fw {.mapped_argfunction $1 {.for 1 2 3 {
+$fw {.mapped_argfunction $1 {forj 1 2 3 {.nop $j
   .echo function name &&name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}}
-.function f1 name .{argfunction} {.mapped_argfunction $1 {.for 1 2 3 {
+.function f1 name .{argfunction} {.mapped_argfunction $1 {forj 1 2 3 {.nop $j
   .echo function name &name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}}
 
 function name f2 
-{.mapped_argfunction $1 {.for 1 2 3 {
+{.mapped_argfunction $1 {forj 1 2 3 {.nop $j
   .echo function name &name $nl
-  .whence_function .argfunction {.for 1 2 3 {
+  .whence_function .argfunction {forj 1 2 3 {.nop $j
   .echo function name f2 $nl
-  .whence_function .argfunction {.mapped_argfunction $1 {.for 1 2 3 {
+  .whence_function .argfunction {.mapped_argfunction $1 {forj 1 2 3 {.nop $j
   .echo function name &&&&&&name $nl
   .whence_function .argfunction
   .echo $nl end of function body $nl}}}
@@ -508,11 +509,11 @@ function name f2
 
  end of function body 
 function name f2 
-{.mapped_argfunction $1 {.for 1 2 3 {
+{.mapped_argfunction $1 {forj 1 2 3 {.nop $j
   .echo function name &name $nl
-  .whence_function .argfunction {.for 1 2 3 {
+  .whence_function .argfunction {forj 1 2 3 {.nop $j
   .echo function name f2 $nl
-  .whence_function .argfunction {.mapped_argfunction $1 {.for 1 2 3 {
+  .whence_function .argfunction {.mapped_argfunction $1 {forj 1 2 3 {.nop $j
   .echo function name &&&&&&name $nl
   .whence_function .argfunction
   .echo $nl end of function body $nl}}}
@@ -521,11 +522,11 @@ function name f2
 
  end of function body 
 function name f2 
-{.mapped_argfunction $1 {.for 1 2 3 {
+{.mapped_argfunction $1 {forj 1 2 3 {.nop $j
   .echo function name &name $nl
-  .whence_function .argfunction {.for 1 2 3 {
+  .whence_function .argfunction {forj 1 2 3 {.nop $j
   .echo function name f2 $nl
-  .whence_function .argfunction {.mapped_argfunction $1 {.for 1 2 3 {
+  .whence_function .argfunction {.mapped_argfunction $1 {forj 1 2 3 {.nop $j
   .echo function name &&&&&&name $nl
   .whence_function .argfunction
   .echo $nl end of function body $nl}}}
@@ -576,62 +577,67 @@ function name f2
 
  end of function body 
 f2 : command not found ( f2 .whence_function fw )
-$fw {.for 1 2 3 {.try_catch_recursive .not_a_number {
+$fw {forj 1 2 3 {.try_catch_recursive .not_a_number {
+  .nop $j
   .echo function name &&name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}}
-.function f1 name .{argfunction} {.for 1 2 3 {.try_catch_recursive .not_a_number {
+.function f1 name .{argfunction} {forj 1 2 3 {.try_catch_recursive .not_a_number {
+  .nop $j
   .echo function name &name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}}
 
 function name f2 
-{.for 1 2 3 {.try_catch_recursive .not_a_number {
+{forj 1 2 3 {.try_catch_recursive .not_a_number {
+  .nop $j
   .echo function name &name $nl
   .whence_function .argfunction
   .echo $nl end of function body $nl}}}
 
  end of function body 
 function name f2 
-{.for 1 2 3 {.try_catch_recursive .not_a_number {
+{forj 1 2 3 {.try_catch_recursive .not_a_number {
+  .nop $j
   .echo function name &name $nl
   .whence_function .argfunction
   .echo $nl end of function body $nl}}}
 
  end of function body 
 function name f2 
-{.for 1 2 3 {.try_catch_recursive .not_a_number {
+{forj 1 2 3 {.try_catch_recursive .not_a_number {
+  .nop $j
   .echo function name &name $nl
   .whence_function .argfunction
   .echo $nl end of function body $nl}}}
 
  end of function body 
 f2 : command not found ( f2 .whence_function fw )
-$fw {.try_catch_recursive .not_a_number {.for 1 2 3 {
+$fw {.try_catch_recursive .not_a_number {forj 1 2 3 {.nop $j
   .echo function name &&name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}}
-.function f1 name .{argfunction} {.try_catch_recursive .not_a_number {.for 1 2 3 {
+.function f1 name .{argfunction} {.try_catch_recursive .not_a_number {forj 1 2 3 {.nop $j
   .echo function name &name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}}
 
 function name f2 
-{.try_catch_recursive .not_a_number {.for 1 2 3 {
+{.try_catch_recursive .not_a_number {forj 1 2 3 {.nop $j
   .echo function name &name $nl
   .whence_function .argfunction
   .echo $nl end of function body $nl}}}
 
  end of function body 
 function name f2 
-{.try_catch_recursive .not_a_number {.for 1 2 3 {
+{.try_catch_recursive .not_a_number {forj 1 2 3 {.nop $j
   .echo function name &name $nl
   .whence_function .argfunction
   .echo $nl end of function body $nl}}}
 
  end of function body 
 function name f2 
-{.try_catch_recursive .not_a_number {.for 1 2 3 {
+{.try_catch_recursive .not_a_number {forj 1 2 3 {.nop $j
   .echo function name &name $nl
   .whence_function .argfunction
   .echo $nl end of function body $nl}}}
@@ -663,21 +669,21 @@ function name f2
  end of function body 
 f2 : command not found ( f2 .whence_function fw )
 $# definitely weird
-$fw {.mapped_argfunction $name {.for a b {
+$fw {.mapped_argfunction $name {forj a b {.nop $j
   .echo function name &&name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}}
-.function f1 name .{argfunction} {.mapped_argfunction $name {.for a b {
+.function f1 name .{argfunction} {.mapped_argfunction $name {forj a b {.nop $j
   .echo function name &name $nl
   .whence_function .argfunction {.argfunction}
   .echo $nl end of function body $nl}}}
 
 function name f2 
-{.mapped_argfunction $name {.for a b {
+{.mapped_argfunction $name {forj a b {.nop $j
   .echo function name &name $nl
-  .whence_function .argfunction {.for a b {
+  .whence_function .argfunction {forj a b {.nop $j
   .echo function name f2 $nl
-  .whence_function .argfunction {.mapped_argfunction $name {.for a b {
+  .whence_function .argfunction {.mapped_argfunction $name {forj a b {.nop $j
   .echo function name &&&&&&name $nl
   .whence_function .argfunction
   .echo $nl end of function body $nl}}}
@@ -686,11 +692,11 @@ function name f2
 
  end of function body 
 function name f2 
-{.mapped_argfunction $name {.for a b {
+{.mapped_argfunction $name {forj a b {.nop $j
   .echo function name &name $nl
-  .whence_function .argfunction {.for a b {
+  .whence_function .argfunction {forj a b {.nop $j
   .echo function name f2 $nl
-  .whence_function .argfunction {.mapped_argfunction $name {.for a b {
+  .whence_function .argfunction {.mapped_argfunction $name {forj a b {.nop $j
   .echo function name &&&&&&name $nl
   .whence_function .argfunction
   .echo $nl end of function body $nl}}}
