@@ -293,8 +293,7 @@ an unmodified selection. "..." and "[...]" have the same meaning, which
 is to say that the first version above does not require two or more
 arguments. "..." is currently not permitted to occur more than once in
 a single function prototype. Note that a space is currently required
-before
-the "...", though I have seen man pages that do not do this.
+before the "...", though I have seen man pages that do not do this.
 
 ### Whitespace within brackets
 To simplify the parsing logic in the initial implementation, whitespace
@@ -440,4 +439,3 @@ these errors, as would the following body.
          if_only .var_exists -y {echo y flag passed}
          if_only .test_not_empty $-? {echo other flags passed}
          if_only .var_exists bar {echo $foo $bar $baz} 
-

@@ -6,6 +6,10 @@ objects = argm.o arg_script.o arg_spec.o builtin.o call_stack.o clock.o \
 	pipe_stream.o prototype.o selection.o substitution_stream.o \
 	variable_map.o
 local_objects = rwsh_init.o 
+documentation = docs/argument_functions.html docs/builtins.html \
+	docs/function_prototypes_and_option_handling.html \
+	docs/internal_functions.html docs/introduction_and_philosophy.html \
+	docs/the_selection.html
 	
 CXX = g++-7
 #CXX = g++
@@ -17,8 +21,11 @@ rwsh: $(objects) $(local_objects)
 	$(CXX) $^ $(CXXFLAGS) $(LDLIBS) -o $@
 librwsh.a: $(objects)
 	ar -rv $@ $(objects)
+%.html: %.md
+	markdown $< >$@
 # deps.mk: $(objects:o=cc) $(local_objects:o=cc)
 # 	gcc >$@ -MM $^
+
 
 include deps.mk
 
@@ -43,4 +50,6 @@ cowboy-install: rwsh
 	ln -sf $(CURDIR)/rwshrc-default /etc/
 	ln -sf $(CURDIR)/rwshrc /etc/
 	ln -sf $(CURDIR)/rwsh /bin
-
+docs: $(documentation)
+docs-clean:
+	rm $(documentation)

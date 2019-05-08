@@ -27,9 +27,6 @@ name to get the special meaning. Since they are not keywords, they can
 be used as arguments to commands without the shell interfering. Of them
 only rwsh.mapped\_argfunction can take arguments itself.
 
-
-
-
 ### rwsh.mapped\_argfunction
 
 rwsh.mapped\_argfunction executes its argument function with the given
@@ -52,7 +49,6 @@ interpretted for argument functions until they are run. For example
             echo $*
             rwsh.mapped_argfunction x $2 $3 {echo $*}}}
 
-
 will output
 
     1 2 3
@@ -68,85 +64,70 @@ calls. Each time an argument script is interpretted
 rwsh.unescaped\_argfunction is replaced by the current argument function
 and rwsh.argfunction is replaced by rwsh.unescaped\_argfunction.
 
-
 so if you type
 
-<pre>.function fn {.function $* {rwsh.argfunction}}</pre>
+    .function fn {.function $* {rwsh.argfunction}}
 
+the result of interpretting the command line results in
 
-the result of interpretting the command line results in<br>
-
-<pre>.function fn {.function $* {rwsh.unescaped\_argfunction}}</pre>
+    .function fn {.function $* {rwsh.unescaped_argfunction}}
 
 which places ".function $* {rwsh.unescaped\_argfunction}" in the
-executable\_map with name fn.<br>
+executable\_map with name fn.
 
-<br>
+if you then type
 
-if you then type <br>
-
-<pre>fn sel {echo $SELECT}</pre>
-
+    fn sel {echo $SELECT}
 
 the command is unchanged by interpretation, and the function that is
-stored under fn gets interpretted to be<br>
+stored under fn gets interpretted to be
 
-<pre>.function sel {echo $SELECT}</pre>
+    .function sel {echo $SELECT}
 
+If we had instead typed
 
-If we had instead typed<br>
+    .function fn {.function $* {rwsh.unescaped_argfunction}}
 
-<pre>.function fn {.function $* {rwsh.unescaped\_argfunction}}</pre>
+It would have been interpretted to result in
 
-
-It would have been interpretted to result in<br>
-
-<pre>.function fn {.function $* {.function $* {rwsh.unescaped\_argfunction}}}</pre>
-
+    .function fn {.function $* {.function $* {rwsh.unescaped_argfunction}}}
 
 The result would have been a function that takes an argument function
 and defines a second function which, when run, would define a function
-to execute the argument function that was passed to the first function.<br>
-
-<br>
+to execute the argument function that was passed to the first function.
 
 The which command seeks to describe what is in the executable map in
 the terms that you would use to put it there rather than what is
-actually there. Thus<br>
+actually there. Thus
 
-<pre>which fn</pre>
+    which fn
 
+prints out
 
-prints out<br>
+    .function fn {.function $* {rwsh.argfunction}}
 
-<pre>.function fn {.function $* {rwsh.argfunction}}</pre>
+instead of what is stored, which is
 
-
-instead of what is stored, which is<br>
-
-<pre>.function $* {rwsh.unescaped\_argfunction}</pre>
-
+    .function $* {rwsh.unescaped_argfunction}
 
 The which command also recognizes the names rwsh.mapped\_argfunction and
 rwsh.argfunction to request the printing of the specified argument
 function. In these cases the ".function rwsh.argfunction " part of the
 print out is omitted for various reasons. For example, we could define
-fn\_v<br>
+fn\_v
 
-<pre>fn fn\_v {.echo adding \ ; which rwsh.argfunction {rwsh.argfunction};<br>.echo \ to executable map as $1; fn $* {rwsh.argfunction}}</pre>
+    fn fn_v {.echo adding \ ; which rwsh.argfunction {rwsh.argfunction};
+    .echo \ to executable map as $1; fn $* {rwsh.argfunction}}
 
+then running
 
-then running<br>
+    fn_v sel {echo $SELECT}
 
-<pre>fn\_v sel {echo $SELECT}</pre>
+would print out
 
+    adding {echo $SELECT} to executable map as sel
 
-would print out<br>
-
-<pre>adding {echo $SELECT} to executable map as sel</pre>
-
-
-<h3>rwsh.escaped\_argfunction</h3>
+### rwsh.escaped_argfunction
 
 Suppose you wanted to define a function fn-fn such that it defined a
 function with the name of its first argument which was equivalent to
@@ -154,32 +135,27 @@ function with the name of its first argument which was equivalent to
 argument function, but not its own argument function, the new
 function's argument
 function. The solution is rwsh.escaped\_argfunction, which is replaced
-by rwsh.argfunction when interpretted. fn-fn can be defined as follows:<br>
+by rwsh.argfunction when interpretted. fn-fn can be defined as follows:
 
-<pre>.function fn-fn {.function $1 {.function $* {rwsh.escaped\_argfunction}}}</pre>
+    .function fn-fn {.function $1 {.function $* {rwsh.escaped_argfunction}}}
 
+### argfunction call as the result of an interpretation
 
-<h3>argfunction call as the result of an interpretation</h3>
+If you gave the command
 
-If you gave the command<br>
-
-<pre>rwsh.mapped\_argfunction {echo x; rwsh.mapped\_argfunction<br>rwsh.argfunction {$1}}</pre>
-
+    rwsh.mapped_argfunction {echo x; rwsh.mapped_argfunction
+    rwsh.argfunction {$1}}
 
 There is a problem: if rwsh.argfunction was given directly as an
 executable, since rwsh.argfunction is only recognized as an executable
 name when the shell is trying to execute $1, it does not get
 interpretted when there is any argument function for it to be replaced
-with. &nbsp;As a result, only rwsh.mapped\_argfunction is supported
+with. As a result, only rwsh.mapped\_argfunction is supported
 as
-the result of an interpretation<br>
+the result of an interpretation
 
-<pre>rwsh.mapped\_argfunction rwsh.mapped\_argfunction xyy {$1 $2 {echo $1}}</pre>
+    rwsh.mapped_argfunction rwsh.mapped_argfunction xyy {$1 $2 {echo $1}}
 
+will print
 
-will print<br>
-
-<pre>xxy</pre>
-
-</body>
-</html>
+    xxy
