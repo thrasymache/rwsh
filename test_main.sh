@@ -160,19 +160,13 @@ echo @test_files/ix*x*xx
 .scope () {echo @/*selection_not_found*}
 echo @/ur/bin/pwd
 echo @test_main.cc
-se {se {forj @e*c {echo $j}} >test_files/tmp}
-.global LC_ALL C
-.nop $LC_ALL
-sort test_files/tmp
-whence sort
+forj @e*c {echo $j}
 echo @test_files/*xx
 echo @test_files/*x*x*x*x
 echo @test_files/*xyxy
 echo @/bin
-se {se {forj @/usr/*bin {echo $j}} >test_files/tmp}
-sort test_files/tmp
-se {se {forj @/etc/rwsh* {echo $j}} >test_files/tmp}
-sort test_files/tmp
+forj @/usr/*bin {echo $j}
+forj @/etc/rwsh* {echo $j}
 echo @/etc/rw*ic
 echo @/etc/rwsh*a*
 .set FIGNORE rwshrc* rwshrc-bas rwshrc-default
@@ -189,8 +183,7 @@ echo @/etc/rwsh*a*
 echo @test_files/*i*x*y*y*x*
 echo @/etc/rw*-basi*si*
 echo @test_main.sh
-se {se {forj @test_files/*x* {echo $j}} >test_files/tmp}
-sort test_files/tmp
+forj @test_files/*x* {echo $j}
 .scope r*h.cc sel*.h (A ...) {echo @$A}
 
 # Arg_spec::REFERENCE, interpret(), evaluate_expansion(), evaluate_var()
@@ -2045,6 +2038,7 @@ echo $SHELL
 .combine $TESTABILITY $nl
 echo $SHELL
 printenv -- -* .var_exists ? A C PATH SHELL TESTABILITY args argv broken nl
+whence printenv
 
 if_only_not test -z z {echo test throwing a .false exception}
 

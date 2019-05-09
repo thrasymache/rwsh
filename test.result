@@ -1104,18 +1104,9 @@ $echo @/ur/bin/pwd
 no file matching pattern /ur for selection /ur/bin/pwd
 $echo @test_main.cc
 no file matching pattern test_main.cc
-$se {se {forj @e*c {echo $j}} >test_files/tmp}
-$.global LC_ALL C
-$.nop $LC_ALL
-$sort test_files/tmp
-added sort to executable map in test suite
+$forj @e*c {echo $j}
 executable.cc
 executable_map.cc
-this sort function has been brought to you by .autofunction
-$whence sort
-.function sort -- [args ...] {
-      /usr/bin/sort $args$
-      echo this sort function has been brought to you by .autofunction}
 $echo @test_files/*xx
 test_files/ixxx
 $echo @test_files/*x*x*x*x
@@ -1124,17 +1115,13 @@ $echo @test_files/*xyxy
 test_files/ixyxyxy
 $echo @/bin
 /bin
-$se {se {forj @/usr/*bin {echo $j}} >test_files/tmp}
-$sort test_files/tmp
+$forj @/usr/*bin {echo $j}
 /usr/bin
 /usr/sbin
-this sort function has been brought to you by .autofunction
-$se {se {forj @/etc/rwsh* {echo $j}} >test_files/tmp}
-$sort test_files/tmp
+$forj @/etc/rwsh* {echo $j}
 /etc/rwshrc
 /etc/rwshrc-basic
 /etc/rwshrc-default
-this sort function has been brought to you by .autofunction
 $echo @/etc/rw*ic
 /etc/rwshrc-basic
 $echo @/etc/rwsh*a*
@@ -1143,7 +1130,7 @@ $.set FIGNORE rwshrc* rwshrc-bas rwshrc-default
 $echo @/etc/rwshrc-*
 /etc/rwshrc-basic
 $echo @/etc/rwshrc*
-/etc/rwshrc-basic /etc/rwshrc
+/etc/rwshrc /etc/rwshrc-basic
 $echo @/etc/rwshr*
 no file matching pattern /etc/rwshr*
 $.set FIGNORE *.cc
@@ -1164,11 +1151,9 @@ $echo @/etc/rw*-basi*si*
 no file matching pattern /etc/rw*-basi*si*
 $echo @test_main.sh
 test_main.sh
-$se {se {forj @test_files/*x* {echo $j}} >test_files/tmp}
-$sort test_files/tmp
+$forj @test_files/*x* {echo $j}
 test_files/ixxx
 test_files/ixyxyxy
-this sort function has been brought to you by .autofunction
 $.scope r*h.cc sel*.h (A ...) {echo @$A}
 rwsh.cc selection.h
 $
@@ -3834,7 +3819,6 @@ $forj ${.list_executables}$ {.combine $j $nl}
 /bin/rm
 /bin/true
 /usr/bin/env
-/usr/bin/sort
 a
 af
 b
@@ -3889,7 +3873,6 @@ se
 setf
 silent_throw
 single
-sort
 test
 test_files/../rwsh
 test_var_greater
@@ -5682,6 +5665,10 @@ extra_close) (extra_open
 
 
 this printenv function has been brought to you by .autofunction
+$whence printenv
+.function printenv -- [args ...] {
+      /usr/bin/printenv $args$
+      echo this printenv function has been brought to you by .autofunction}
 $
 $if_only_not test -z z {echo test throwing a .false exception}
 added /usr/bin/test to executable map in test suite

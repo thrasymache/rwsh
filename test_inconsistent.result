@@ -370,9 +370,9 @@ if_only .var_exists argv {.error ignored excess arguments $argv $nl}
   .combine $nl (now terminating normally) $nl}
 $.global PATH /bin:/usr/bin
 $.scope () {.getpid; .echo $nl}
-16227
+30787
 $.scope () {.getppid; .echo $nl}
-5478
+5322
 $.function timings focus {
   .combine $focus (:	last\() ${.last_execution_time $focus} \) \	
   .combine (total\() ${.total_execution_time $focus} \) \	
@@ -388,18 +388,18 @@ $.function clock-watch {
 $clock-watch
 timings:	last(0.000000)	total(0.000000)	count(0)
 clock-watch:	last(0.000000)	total(0.000000)	count(0)
-usleep overhead:	9.1e-05
-.usleep:	last(0.000691)	total(0.000691)	count(1)
-/bin/true:	last(0.002551)	total(0.002551)	count(1)
+usleep overhead:	0.000311
+.usleep:	last(0.000911)	total(0.000911)	count(1)
+/bin/true:	last(0.000816)	total(0.000816)	count(1)
 $clock-watch
-timings:	last(0.000217)	total(0.000905)	count(4)
-clock-watch:	last(0.004726)	total(0.004726)	count(1)
-usleep overhead:	9.1e-05
-.usleep:	last(0.000691)	total(0.001382)	count(2)
-/bin/true:	last(0.001712)	total(0.004263)	count(2)
+timings:	last(0.000079)	total(0.000375)	count(4)
+clock-watch:	last(0.002387)	total(0.002387)	count(1)
+usleep overhead:	0.000311
+.usleep:	last(0.000911)	total(0.001822)	count(2)
+/bin/true:	last(0.001014)	total(0.001830)	count(2)
 $.mapped_argfunction {timings timings; timings clock-watch}
-timings:	last(0.000239)	total(0.001873)	count(8)
-clock-watch:	last(0.003539)	total(0.008265)	count(2)
+timings:	last(0.000079)	total(0.000920)	count(8)
+clock-watch:	last(0.002560)	total(0.004947)	count(2)
 $.error a stderr print will come before the diff $nl
 $.nop $A $FIGNORE
 $
