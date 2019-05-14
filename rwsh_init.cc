@@ -106,6 +106,8 @@ void internal_init(Error_list& exceptions) {
   bi(".local_declare", b_local_declare, Argv {"--", "var", "..."});
   bi(".ls", b_ls, Argv {"--", "paths", "..."});
   bi(".nop", b_nop, Argv {"--", "[args", "...]", "[.{argfunction}]"});
+  bi(".reinterpret", b_reinterpret,
+     Argv {"--", "[list", "...]", "prototype"});
   bi(".replace_exception", b_replace_exception,
      Argv {"--", "args", "...", "[.{argfunction}]"});
   bi(".rm_executable", b_rm_executable, Argv {"--", "command"});
@@ -157,6 +159,7 @@ void internal_init(Error_list& exceptions) {
   bi(".var_add", b_var_add, Argv {"--", "var", "value"});
   bi(".var_divide", b_var_divide, Argv {"--", "var", "value"});
   bi(".var_exists", b_var_exists, Argv {"--", "var", "..."});
+  bi(".var_modulo", b_var_modulo, Argv {"--", "var", "value"});
   bi(".var_multiply", b_var_multiply, Argv {"--", "var", "value"});
   bi(".var_subtract", b_var_subtract, Argv {"--", "var", "value"});
   bi(".version", b_version, Argv {});

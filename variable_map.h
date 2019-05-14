@@ -32,21 +32,26 @@ public:
   iterator end(void) {return Base::end();};
   unsigned size(void) const {return Base::size();};
 
-  void add_undefined(const std::string& key) {undefined_vars.insert(key);}
-  void append_word_locally(const std::string& key, const std::string& value);
-  void append_word_if_exists(const std::string& key, const std::string& value);
-  void param_or_append_word(const std::string& key, const std::string& value);
+  void add_undefined(const std::string& key, bool is_reassign);
+  void append_word(const std::string& key, const std::string& value,
+                   bool parent_ok);
   template <class In, class Out>
       Out copy_to_char_star_star(
               In first, In last, Out res, const Variable_map* descendant);
-  bool exists(const std::string& key, bool check);
+  void define(const std::string& key, const std::string& value);
+  bool exists_with_check(const std::string& key);
+  bool exists_without_check(const std::string& key) const;
   void export_env(std::vector<char*>& env);
   const std::string& get(const std::string& key);
   void global(const std::string& key, const std::string& value);
-  void param(const std::string& key, const std::string& value);
   void local(const std::string& key, const std::string& value);
   void local_declare(const std::string& key);
   const std::set<std::string>& locals(void) const {return local_vars;};
+  void param(const std::string& key, const std::string& value,
+             bool is_reassign);
+  void param_or_append_word(const std::string& key, const std::string& value,
+                            bool is_reassign);
+  Variable_map* nonempty_parent(void);
   void set(const std::string& key, const std::string& value);
   bool simple_exists(const std::string& key) const {return find(key) != end();}
   void unset(const std::string& key);

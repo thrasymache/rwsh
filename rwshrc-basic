@@ -104,8 +104,8 @@
 .function .fixed_argument -- arg stack ... {
   echo $arg : fixed arguments are not supported at this time
   echo call stack $stack}
-.function .flag_in_elipsis -- flag stack ... {
-  echo found flag $flag while collecting arguments for elipsis
+.function .flag_in_elipsis -- flag group stack ... {
+  echo found flag $flag while collecting arguments for elipsis in $group
   echo call stack $stack$}
 .function .function_not_found -- cmd [stack ...] {
   echo $cmd : command not found \( $cmd $stack$ \)}
@@ -172,6 +172,9 @@
 .function .not_soon_enough too_late [stack ...] {
   echo $too_late attempts to substitute after the command has been run
   if_only .var_exists stack {echo call stack $stack}}
+.function .number_not_an_integer -- nan stack ... {
+  echo $nan is a number but not an integer
+  echo call stack: $stack$}
 .function .post_elipsis_option -- flag stack ... {
   echo option $flag coming after an elipsis has no meaning
   echo call stack: $stack$}
@@ -239,9 +242,9 @@
 .function .unreadable_dir dir errno [stack ...] {
   .combine (cannot read directory ) $dir \ \(errno\  $errno \) $nl
   echo call stack: $stack$}
-.function .unrecognized_flag -- flag cmd [add_stack ...] {
-  echo $flag flag is unrecognized for $cmd
-  echo call stack: $cmd $add_stack$}
+.function .unrecognized_flag -- flag proto [stack ...] {
+  echo $flag flag is unrecognized for $proto
+  echo call stack: $stack$}
 .function .unused_before_set -- var [stack ...] {
   echo attempt to set $var before making use of its initial value
   echo call stack $stack$}
@@ -255,7 +258,7 @@
   echo call stack: $stack$}
 
 # ability of functions to act as builtin wrappers
-fn ! args ... {
+fn ! -- args ... {
   .if $args$ {.throw .false ${.echo ! $args}}
   .else {.nop}}
 fn af -- [argv ...] .{argfunction} {.argfunction}
@@ -324,23 +327,24 @@ fn paren_if_words -- value {
   .if .test_number_equal ${.argc $value$} 1 {.combine $value}
   .else {.combine \( $value \)}}
 fn polish -- operator builtin {
-  fn &&operator -- lhs rhs ... {
+  fn &&operator -- lhs rhs [extra ...] {
     if_only .test_in $lhs + - / * {
-      .scope ${$lhs $rhs$}$ (-- l r ...) {
-        .set lhs $l
-        .set rhs $r}}
-    .scope $rhs$ (rhs [extra ...]) {
-      .if .test_in $rhs + - / * {
-        .scope ${$rhs $extra$}$ (rhs [extra ...]) {
-          &&builtin lhs $rhs
-          echo $lhs $extra$}}
-      .else {
-        &&builtin lhs $rhs
-        echo $lhs $extra$}}}}
+      .reinterpret ${$lhs $rhs $extra$}$ (-- lhs rhs [extra ...])}
+    if_only .test_in $rhs + - / * {
+      .reinterpret ${$rhs $extra$}$ (-- rhs [extra ...])}
+    &&builtin lhs $rhs
+    echo $lhs $extra$}}
 polish + .var_add
 polish / .var_divide
+polish % .var_modulo
 polish * .var_multiply
 polish - .var_subtract
+fn rpn -- [extra ...] lhs rhs operator {
+  if_only .test_in $rhs + - / * % {
+    .reinterpret ${rpn $extra$ $lhs $rhs}$ (-- [extra ...] lhs rhs)}
+  if_only .test_in $lhs + - / * % {
+    .reinterpret ${rpn $extra$ $lhs}$ (-- [extra ...] lhs)}
+  echo $extra$ ${$operator $lhs $rhs}$}
 
 # external commands tested in the test suite
 fn false {.try_catch_recursive .return_code {${whichp false}}}
@@ -349,6 +353,6 @@ fn ln [-?] [-t directory] target ... {
   .fork .mapped_argfunction {
     if_only .var_exists -t {.cd $directory}
     .for $target$ (-- j ...) {.test_file_exists $j}
-    &{.which_path ln /bin:/usr/bin} $-? -t . $target$}}
+    .exec &{.which_path ln /bin:/usr/bin} $-? -t . $target$}}
 fn test -- args ... {.try_catch_recursive .return_code {${whichp test} $args$}}
 if_only .var_exists argv {.error ignored excess arguments $argv $nl}

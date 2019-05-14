@@ -1,0 +1,280 @@
+#! /bin/rwsh
+.reinterpret $argv$ ()
+
+fn timings cmd {
+  .echo last time (); .last_execution_time $cmd; c $nl
+  .echo total time (); .total_execution_time $cmd; c $nl
+  .echo execution count (); .execution_count $cmd; c $nl}
+fn operator-recursive-scope -- operator builtin {
+  fn &&operator -- lhs rhs ... {
+    if_only .test_in $lhs + - / * % {
+      .scope ${$lhs $rhs$}$ (-- l r ...) {
+        .set lhs $l
+        .set rhs $r}}
+    .scope $rhs$ (rhs [extra ...]) {
+      .if .test_in $rhs + - / * % {
+        .scope ${$rhs $extra$}$ (rhs [extra ...]) {
+          &&builtin lhs $rhs
+          echo $lhs $extra$}}
+      .else {
+        &&builtin lhs $rhs
+        echo $lhs $extra$}}}}
+operator-recursive-scope + .var_add
+.set_max_nesting 54
+single + + + + + + + + + 1 2 3 4 5 6 7 8 9 10
+timings +
+single + 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 10
+timings +
+single + + 1 2 + + + 3 4 + 5 6 + + 7 8 + 9 10
+timings +
+timings single
+fn operator-recursive-reinterpret -- operator builtin {
+  fn &&operator -- lhs rhs [extra ...] {
+    if_only .test_in $lhs + - / * % {
+      .reinterpret ${$lhs $rhs $extra$}$ (-- lhs rhs [extra ...])}
+    if_only .test_in $rhs + - / * % {
+      .reinterpret ${$rhs $extra$}$ (-- rhs [extra ...])}
+    &&builtin lhs $rhs
+    echo $lhs $extra$}}
+operator-recursive-reinterpret + .var_add
+single + + + + + + + + + 1 2 3 4 5 6 7 8 9 10
+timings +
+single + 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 10
+timings +
+single + + 1 2 + + + 3 4 + 5 6 + + 7 8 + 9 10
+timings +
+timings single
+fn nonrecursive-operator -- operator builtin {
+  fn &&operator -- lhs rhs {&&builtin lhs $rhs; echo $lhs}}
+nonrecursive-operator + .var_add
+nonrecursive-operator - .var_subtract
+nonrecursive-operator * .var_multiply
+nonrecursive-operator / .var_divide
+nonrecursive-operator % .var_modulo
+fn reverse-iterative-reinterpret -- lhs rhs operator [extra ...] {
+  .local stack ()
+  .while .var_exists operator {
+    .if .test_in $operator + - / * % {
+      .local_declare pre
+      if_only .test_not_empty $stack$ {
+        .reinterpret $stack$ (-- [stack ...] pre)}
+      .reinterpret $pre$ ${$operator $lhs $rhs}$ $extra$ (
+          -- lhs [rhs] [operator] [extra ...])}
+    .else {
+      .reinterpret $stack$ $lhs (-- stack ...)
+      .reinterpret $rhs $operator $extra$ (-- lhs rhs [operator] [extra ...])}}
+  echo $stack$ $lhs $rhs$ $extra$}
+.nop reverse-iterative-reinterpret 1
+.nop reverse-iterative-reinterpret +
+.nop reverse-iterative-reinterpret 1 1
+.nop reverse-iterative-reinterpret 1 +
+.nop reverse-iterative-reinterpret + 1
+.nop reverse-iterative-reinterpret + +
+reverse-iterative-reinterpret 1 1 1
+reverse-iterative-reinterpret 1 1 +
+.nop reverse-iterative-reinterpret 1 + 1
+.nop reverse-iterative-reinterpret 1 + +
+.nop reverse-iterative-reinterpret + 1 1
+.nop reverse-iterative-reinterpret + 1 +
+.nop reverse-iterative-reinterpret + + 1
+.nop reverse-iterative-reinterpret + + +
+reverse-iterative-reinterpret 1 1 1 1
+reverse-iterative-reinterpret 1 1 1 +
+.nop reverse-iterative-reinterpret 1 1 + 1
+reverse-iterative-reinterpret 1 1 + +
+.nop reverse-iterative-reinterpret 1 + 1 1
+.nop reverse-iterative-reinterpret 1 + 1 +
+.nop reverse-iterative-reinterpret 1 + + 1
+.nop reverse-iterative-reinterpret 1 + + +
+.nop reverse-iterative-reinterpret + 1 1 1
+reverse-iterative-reinterpret + 1 1 +
+.nop reverse-iterative-reinterpret + 1 + 1
+.nop reverse-iterative-reinterpret + 1 + +
+.nop reverse-iterative-reinterpret + + 1 1
+.nop reverse-iterative-reinterpret + + 1 +
+.nop reverse-iterative-reinterpret + + + 1
+.nop reverse-iterative-reinterpret + + + +
+reverse-iterative-reinterpret 1 1 1 1 1
+reverse-iterative-reinterpret 1 1 1 1 +
+reverse-iterative-reinterpret 1 1 1 + 1
+reverse-iterative-reinterpret 1 1 1 + +
+reverse-iterative-reinterpret 1 1 + 1 1
+reverse-iterative-reinterpret 1 1 + 1 +
+.nop reverse-iterative-reinterpret 1 1 + + 1
+.nop reverse-iterative-reinterpret 1 1 + + +
+.nop reverse-iterative-reinterpret 1 + 1 1 1
+reverse-iterative-reinterpret 1 + 1 1 +
+.nop reverse-iterative-reinterpret 1 + 1 + 1
+.nop reverse-iterative-reinterpret 1 + 1 + +
+.nop reverse-iterative-reinterpret 1 + + 1 1
+.nop reverse-iterative-reinterpret 1 + + 1 +
+.nop reverse-iterative-reinterpret 1 + + + 1
+.nop reverse-iterative-reinterpret 1 + + + +
+.nop reverse-iterative-reinterpret + 1 1 1 1
+.nop reverse-iterative-reinterpret + 1 1 1 +
+.nop reverse-iterative-reinterpret + 1 1 + 1
+.nop reverse-iterative-reinterpret + 1 1 + +
+.nop reverse-iterative-reinterpret + 1 + 1 1
+.nop reverse-iterative-reinterpret + 1 + 1 +
+.nop reverse-iterative-reinterpret + 1 + + 1
+.nop reverse-iterative-reinterpret + 1 + + +
+.nop reverse-iterative-reinterpret + + 1 1 1
+reverse-iterative-reinterpret + + 1 1 +
+.nop reverse-iterative-reinterpret + + 1 + 1
+.nop reverse-iterative-reinterpret + + 1 + +
+.nop reverse-iterative-reinterpret + + + 1 1
+.nop reverse-iterative-reinterpret + + + 1 +
+.nop reverse-iterative-reinterpret + + + + 1
+.nop reverse-iterative-reinterpret + + + + +
+fn reverse-recursive-scope -- lhs ... rhs operator {
+  if_only .test_in $rhs + - / * % {
+    .scope ${reverse-recursive-scope $lhs$ $rhs}$ (-- l ... r) {
+      .set lhs $l
+      .set rhs $r}}
+  .scope $lhs$ (-- [extra ...] lhs) {
+    .if .test_in $lhs + - / * % {
+      .scope ${reverse-recursive-scope $extra$ $lhs}$ (-- [extra ...] lhs) {
+        echo $extra$ ${$operator $lhs $rhs}$}}
+    .else {echo $extra$ ${$operator $lhs $rhs}$}}}
+fn reverse-recursive-reinterpret -- [extra ...] lhs rhs operator {
+  if_only .test_in $rhs + - / * % {
+    .reinterpret ${reverse-recursive-reinterpret $extra$ $lhs $rhs}$ (
+      -- [extra ...] lhs rhs)}
+  if_only .test_in $lhs + - / * % {
+    .reinterpret ${reverse-recursive-reinterpret $extra$ $lhs}$ (
+      -- [extra ...] lhs)}
+  echo $extra$ ${$operator $lhs $rhs}$}
+fn reverse-recursive-direct -- lhs rhs operator [next] [more ...] {
+  .if ! .test_in $operator + - / * % {
+    reverse-recursive-direct $lhs ${
+                       reverse-recursive-direct $rhs $operator $next$ $more$}$}
+  .else_if_not .test_in $next$ + + - / * % {
+    reverse-recursive-direct ${$operator $lhs $rhs}$ $next$ $more$}
+  .else {echo ${$operator $lhs $rhs}$ $next$ $more$}}
+fn polish-recursive-scope -- operator lhs rhs ... {
+    if_only .test_in $lhs + - / * % {
+      .scope ${polish-recursive-scope $lhs $rhs$}$ (-- l r ...) {
+        .set lhs $l
+        .set rhs $r}}
+    .scope $rhs$ (-- rhs [extra ...]) {
+      .if .test_in $rhs + - / * % {
+        .scope ${polish-recursive-scope $rhs $extra$}$ (-- rhs [extra ...]) {
+          echo ${$operator $lhs $rhs}$ $extra$}}
+      .else {echo ${$operator $lhs $rhs}$ $extra$}}}
+fn polish-recursive-reinterpret -- operator lhs rhs [extra ...] {
+  if_only .test_in $lhs + - / * % {
+    .reinterpret ${polish-recursive-reinterpret $lhs $rhs $extra$}$ (
+      -- lhs rhs [extra ...])}
+  if_only .test_in $rhs + - / * % {
+    .reinterpret ${polish-recursive-reinterpret $rhs $extra$}$ (
+      -- rhs [extra ...])}
+  echo ${$operator $lhs $rhs}$ $extra$}
+fn polish-iterative-reinterpret -- [extra ...] operator lhs rhs {
+  .local stack ()
+  .while .var_exists operator {
+    .if .test_in $operator + - / * % {
+      .local_declare pre
+      .reinterpret $stack$ (-- [pre] [stack ...])
+      .reinterpret $extra$ ${$operator $lhs $rhs}$ $pre$ (-- [extra ...] rhs)
+      .if .test_not_empty $extra$ {
+        .reinterpret $extra$ (-- [extra ...] lhs)
+        .if .test_not_empty $extra$ {
+          .reinterpret $extra$ (-- [extra ...] operator)}
+        .else {.reinterpret [operator]}}
+      .else {.reinterpret ([operator lhs])}}
+    .else {
+      .reinterpret $rhs $stack$ (-- stack ...)
+      .reinterpret $extra$ $operator $lhs (-- [extra ...] lhs rhs)
+      .if .test_not_empty $extra$ {
+        .reinterpret $extra$ (-- [extra ...] operator)}
+      .else {.reinterpret [operator]}}}
+  echo $stack$ $lhs$ $rhs$ $extra$}
+fn polish-backiter-reinterpret -- operator lhs rhs [extra ...] {
+  .local stack ()
+  .while .var_exists rhs {
+    .if .test_in $rhs + - / * % {
+      .reinterpret $stack$ $operator $lhs (-- stack ...)
+      .reinterpret $rhs $extra$ (-- [operator] [lhs] [rhs] [extra ...])}
+    .else_if .test_in $lhs + - / * % {
+      .reinterpret $stack$ $operator (-- stack ...)
+      .reinterpret $lhs $rhs $extra$ (-- [operator] [lhs] [rhs] [extra ...])}
+    .else_if .test_in $operator + - / * % {
+      .local_declare pre1 pre2
+      if_only .test_not_empty $stack$ {
+        .reinterpret $stack$ (-- [stack ...] pre1)}
+      if_only .test_not_empty $stack$ {
+        .reinterpret $stack$ (-- [stack ...] pre2)}
+      .reinterpret $pre2$ $pre1$ ${$operator $lhs $rhs}$ $extra$ (
+          -- operator [lhs] [rhs] [extra ...])}
+    .else {
+      .reinterpret $stack$ $operator $lhs $rhs (-- stack ...)
+      .reinterpret $extra$ (-- [operator] [lhs] [rhs] [extra ...])}}
+  echo $stack$ $operator$ $lhs$}
+fn define-compare-calculate func-prefix methods {
+  fn ${.combine $func-prefix -compare-calculate} -- result calculation {
+    .for &&methods$ method {
+      .if .test_string_unequal ${echo $result} ${$method $calculation$} {
+        .echo $method $calculation$ -> ${$method $calculation$}$ != $result \  }
+      .else {.echo (  ) $method $calculation$ == $result \ }
+      .last_execution_time $method
+      .echo $nl}}}
+fn reverse-backiter-reinterpret -- [extra ...] lhs rhs operator {
+  .local stack ()
+  .while .var_exists lhs {
+    .if .test_in $lhs + - / * % {
+      .reinterpret $rhs $operator $stack$ (-- stack ...)
+      .reinterpret $extra$ $lhs (-- [extra ...])}
+    .else_if .test_in $rhs + - / * % {
+      .reinterpret $operator $stack$ (-- stack ...)
+      .reinterpret $extra$ $lhs $rhs (-- [extra ...])}
+    .else_if .test_in $operator + - / * % {
+      .local_declare pre1 pre2
+      .reinterpret $stack$ (-- [pre1] [pre2] [stack ...])
+      .reinterpret $extra$ ${$operator $lhs $rhs}$ $pre1$ $pre2$ (
+        -- [extra ...])}
+    .else {.reinterpret $lhs $rhs $operator $stack$ (-- stack ...)}
+    .if .test_less ${.argc $extra$} 3 {.throw .break}
+    .else {.reinterpret $extra$ (-- [extra ...] lhs rhs operator)}}
+  echo $extra$ $stack$}
+define-compare-calculate reverse (
+  reverse-recursive-scope
+  reverse-recursive-direct
+  reverse-recursive-reinterpret
+  reverse-backiter-reinterpret
+  reverse-iterative-reinterpret
+  )
+define-compare-calculate polish (
+  polish-recursive-scope
+  polish-recursive-reinterpret
+  polish-backiter-reinterpret
+  polish-iterative-reinterpret)
+.set_max_nesting 110
+.nop reverse-recursive-direct 1 2 3 +
+reverse-compare-calculate 3 (1 2 +)
+polish-compare-calculate 3 (+ 2 1)
+reverse-compare-calculate 15 (10 2 3 + +)
+polish-compare-calculate 15 (+ + 3 2 10)
+reverse-compare-calculate 55 (1 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 +)
+polish-compare-calculate 55 (+ 10 + 9 + 8 + 7 + 6 + 5 + 4 + 3 + 2 1)
+reverse-compare-calculate 55 (1 2 3 4 5 6 7 8 9 10 + + + + + + + + +)
+polish-compare-calculate 55 (+ + + + + + + + + 10 9 8 7 6 5 4 3 2 1)
+reverse-compare-calculate 55 (1 2 + 3 4 + + 5 6 + 7 8 + + + 9 10 + +)
+polish-compare-calculate 55 (+ + 10 9 + + + 8 7 + 6 5 + + 4 3 + 2 1)
+reverse-compare-calculate 110 (1 2 + 3 4 + + 5 6 + 7 8 + + + 9 10 + +
+                               1 2 + 3 4 + + 5 6 + 7 8 + + + 9 10 + + +)
+polish-compare-calculate 110 (+ + + 10 9 + + + 8 7 + 6 5 + + 4 3 + 2 1
+                              + + 10 9 + + + 8 7 + 6 5 + + 4 3 + 2 1)
+reverse-compare-calculate 210 (1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19
+                              20 + + + + + + + + + + + + + + + + + + +)
+polish-compare-calculate 210 (+ + + + + + + + + + + + + + + + + + + 20
+                              19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1)
+reverse-iterative-reinterpret 1 2 + 3 4 + 5 6 + 7 8 + 9 10 + 2 +
+reverse-recursive-scope 1 2 + 3 4 + 5 6 + 7 8 + 9 10 + 2 +
+.nop reverse-recursive-direct 1 2 + 3 4 + 5 6 + 7 8 + 9 10 + 2 +
+.nop reverse-compare-calculate 0 (1 2 + 3 4 + 5 6 + 7 8 + 9 10 + 2 +)
+reverse-compare-calculate -55 (-1 2 -3 4 -5 6 -7 8 -9 10 - - - - - - - - -)
+polish-compare-calculate -55 (- -1 - 2 - -3 - 4 - -5 - 6 - -7 - 8 - -9 10)
+reverse-compare-calculate 55 (10 -9 - -8 - -7 - -6 - -5 - -4 - -3 - -2 - -1 -)
+polish-compare-calculate 55 (- - - - - - - - - 10 -9 -8 -7 -6 -5 -4 -3 -2 -1)
+reverse-compare-calculate 55 (1 -2 - -3 4 - - -5 6 - 7 -8 - - - -9 10 - -)
+polish-compare-calculate 55 (- - 10 -9 - - - -8 7 - 6 -5 - - 4 -3 - -2 1)

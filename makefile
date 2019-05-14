@@ -23,8 +23,8 @@ librwsh.a: $(objects)
 	ar -rv $@ $(objects)
 %.html: %.md
 	markdown $< >$@
-# deps.mk: $(objects:o=cc) $(local_objects:o=cc)
-# 	gcc >$@ -MM $^
+#deps.mk: $(objects:o=cc) $(local_objects:o=cc)
+#	gcc >$@ -MM $^
 
 
 include deps.mk

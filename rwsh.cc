@@ -88,6 +88,7 @@ std::string Argm::exception_names[Argm::Exception_count] = {
   ".not_catching_exception",
   ".not_executable",
   ".not_soon_enough",
+  ".number_not_an_integer",
   ".raw_command",
   ".return_code",
   ".result_range",

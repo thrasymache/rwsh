@@ -516,6 +516,7 @@ b
 # a function redefining itself doesn't seg fault
 fn g {echoe hi $nl; fn g {echoe there $nl}; fn h {echoe nothing here}; g}
 g
+fn ll {.list_locals; .combine $nl}
 .function .exit {echoe cannot redefine a builtin as a function}
 .function .a {can define a function for non-existant builtin}
 .function .argfunction {echoe cannot define .argfunction}
@@ -543,7 +544,7 @@ ntimes 2 {ntimes 3 {echoe &&n and $n remaining $nl}}
 .function a [-x] [--] foo {.list_locals}
 .function a [-?] -- foo {.list_locals}
 .function a [-x] -- {.list_locals}
-.function a [--] {.list_locals; .echo $nl}
+.function a [--] {if_only .var_exists -- {.echo $--}; ll}
 whence a
 a
 a --
@@ -558,7 +559,7 @@ a --long-opt arg single
 a --long-opt single
 a --long-opt first -x --long-opt second single
 .function a [-q option1 option2] [-x o1 o2 o3 o4] required {
-  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
+  forj ${ll}$ {.combine $j \( $$j \) \ }; .echo $nl}
 whence a
 a
 a single
@@ -881,32 +882,6 @@ se {.collect_errors_only .function_not_found {
 .set_max_collectible_exceptions 7
 .scope () {.get_max_collectible_exceptions; .echo $nl}
 
-# .getpid .getppid .sighup
-.getpid excess
-.getpid {excess argfunc}
-.getppid excess
-.getppid {excess argfunc}
-se {.fork se {
-      /bin/kill -HUP ${.getppid}
-      echo after the signal in subshell}
-    echo after the signal in parent}
-se {.fork se {
-      /bin/kill -HUP ${.getpid}
-      echo after the signal in subshell}
-    echo after the signal in parent}
-.while .nop {
-  echo before signals
-  /bin/kill -PIPE ${.getpid}
-  echo after sigpipe
-  /bin/kill ${.getpid}
-  echo should not continue beyond SIGTERM}
-.while .nop {
-  echo before signals
-  /bin/kill -USR1 ${.getpid}
-  echo after sigusr1
-  /bin/kill -INT ${.getpid}
-  echo should not continue beyond SIGINT}
-
 # .global .local .local_declare .unset .var_exists
 .global
 .global x y z
@@ -942,40 +917,36 @@ echo $.var_exists$
 .var_exists y x
 .unset x
 .global x nihilism
+.local_declare x
 .var_exists x
 .var_exists x y
 echo $x
 .global x nihilism
 .global x ubernihilism
 .global i nihilism
+.unset i
 .global j nihilism
-fn a {if_only .var_exists x {echo in a x $x}
-      if_only .var_exists y {echo in a y $y}
-      if_only .var_exists i {echo in a i $i}
-      if_only .var_exists j {echo in a j $j}
-      if_only .var_exists k {echo in a k $k}
-      if_only .var_exists m {echo in a m $m}
+fn echo-i-y in-out func {
+  if_only .var_exists i {echo $in-out $func i $i}
+  if_only .var_exists j {echo $in-out $func j $j}
+  if_only .var_exists k {echo $in-out $func k $k}
+  if_only .var_exists m {echo $in-out $func m $m}
+  if_only .var_exists n {echo $in-out $func n $n}
+  if_only .var_exists x {echo $in-out $func x $x}
+  if_only .var_exists y {echo $in-out $func y $y}}
+fn a {echo-i-y in a
       .local x (first level not global)
       .local y (level one not global)
       .local z (will be unused)
-      .local_declare i j k l m
+      .local_declare i j k l m n
       .set i (declared first level not global)
       .set j (declared first level not global)
       .set k (declared level one not global)
       .set l (will be unused)
+      .set n (will be used)
       b
-      if_only .var_exists i {echo out a i $i}
-      if_only .var_exists j {echo out a j $j}
-      if_only .var_exists k {echo out a k $k}
-      if_only .var_exists m {echo out a m $m}
-      if_only .var_exists x {echo out a x $x}
-      if_only .var_exists y {echo out a y $y}}
-fn b {if_only .var_exists i {echo in b i $i}
-      if_only .var_exists j {echo in b j $j}
-      if_only .var_exists k {echo in b k $k}
-      if_only .var_exists m {echo in a m $m}
-      if_only .var_exists x {echo in b x $x}
-      if_only .var_exists y {echo in b y $y}
+      echo-i-y out a}
+fn b {echo-i-y in b
       .local x (second level masks first)
       .set y   (level two overwrites one)
       .local_declare i j m
@@ -983,24 +954,14 @@ fn b {if_only .var_exists i {echo in b i $i}
       .set j (declared second level masks first)
       .set k (declared level two overwrites one)
       c
-      if_only .var_exists i {echo out b i $i}
-      if_only .var_exists j {echo out b j $j}
-      if_only .var_exists k {echo out b k $k}
-      if_only .var_exists m {echo out b m $m}
-      if_only .var_exists x {echo out b x $x}
-      if_only .var_exists y {echo out b y $y}}
-fn c {if_only .var_exists i {echo in c i $i}
-      if_only .var_exists j {echo in c j $j}
-      if_only .var_exists k {echo in c k $k}
-      if_only .var_exists m {echo in c m $m}
-      if_only .var_exists x {echo in c x $x}
-      if_only .var_exists y {echo in c y $y}
-      # can unset a local, but only one at a time
+      echo-i-y out b}
+fn c {echo-i-y in c
+      .reinterpret .reinterpreted .reinterpreted (n [j] y)
+      echo-i-y middle c
+      # can unset a local, but won't remove everything named x
       .unset x
-      .try_catch_recursive .undefined_variable {
-        .unset i}
       .unset j
-      .unset l
+      .unset n
       .try_catch_recursive .global_would_be_masked {
         .global y (attempting to create global masked by local)}
       .set x (third level overwrites first)
@@ -1012,15 +973,18 @@ fn c {if_only .var_exists i {echo in c i $i}
       .set j (declared third level masks first)
       .set y (level three overwrites one)
       .set k (declared level three overwrites one)
-      if_only .var_exists i {echo out c i $i}
-      if_only .var_exists j {echo out c j $j}
-      if_only .var_exists k {echo out c k $k}
-      if_only .var_exists m {echo out c m $m}
-      if_only .var_exists x {echo out c x $x}
-      if_only .var_exists y {echo out c y $y}}
+      echo-i-y out c}
 a
 # demonstrating that final values are not retained
 a
+ntimes 2 {
+  echo before $x$ , $j$
+  .local_declare x
+  .local_declare x
+  .local j (locally defined)
+  echo between $x$ , $j$
+  .set x locally set
+  echo after $x$ , $j$}
 echo $x
 .var_exists y
 .unset x
@@ -1090,16 +1054,39 @@ fn conditional_echo first second {
   .if .throw .false anyway {}
   .else_if_not $args$ {.nop}
   .else {.throw .false ${.echo ! $args}}}
+.function !! args ... {
+  .if $args$ {}
+  .else {.throw .false ${.echo !! $args}}}
 .test_string_equal 42 420e-1
 .test_number_equal 42 420e-1
 !  .test_greater 50 230
 !x .test_greater 50 230
+!! !  .test_greater 50 230
+!  !! .test_greater 50 230
+!! .test_greater 50 230
+!! !! .test_greater 50 230
 !  .test_less 5 2.3e1
 !x .test_less 5 2.3e1
+!! !x .test_less 5 2.3e1
+!x !! .test_less 5 2.3e1
+!! .test_less 5 2.3e1
+!! !! .test_less 5 2.3e1
 !  !  .test_executable_exists !!!
+!! !  !  .test_executable_exists !!!
+!  !! !  .test_executable_exists !!!
+!  !  !! .test_executable_exists !!!
 !  !x .test_executable_exists !!!
+!! !  !x .test_executable_exists !!!
+!  !! !x .test_executable_exists !!!
+!  !x !! .test_executable_exists !!!
 !x !  .test_executable_exists !!!
+!! !x !  .test_executable_exists !!!
+!x !! !  .test_executable_exists !!!
+!x !  !! .test_executable_exists !!!
 !x !x .test_executable_exists !!!
+!! !x !x .test_executable_exists !!!
+!x !! !x .test_executable_exists !!!
+!x !x !! .test_executable_exists !!!
 !  !  .whence_function !!!
 !x !x .whence_function !!!
 !  !  .test_not_empty 0
@@ -1124,6 +1111,46 @@ fn conditional_echo first second {
 !x !  !x !  .test_in 0 0
 !x !x !  !  .test_in 0 0
 !x !x !x !  .test_in 0 0
+se {.if .test_string_equal 42 420e-1 {echo if}; .else {echo else}}
+se {.if .test_number_equal 42 420e-1 {echo if}; .else {echo else}}
+se {.if !  .test_greater 50 230 {echo if}; .else {echo else}}
+se {.if !x .test_greater 50 230 {echo if}; .else {echo else}}
+se {.if !! !  .test_greater 50 230 {echo if}; .else {echo else}}
+se {.if !  !! .test_greater 50 230 {echo if}; .else {echo else}}
+se {.if !! .test_greater 50 230 {echo if}; .else {echo else}}
+se {.if !  .test_less 5 2.3e1 {echo if}; .else {echo else}}
+se {.if !x .test_less 5 2.3e1 {echo if}; .else {echo else}}
+se {.if !! !x .test_less 5 2.3e1 {echo if}; .else {echo else}}
+se {.if !x !! .test_less 5 2.3e1 {echo if}; .else {echo else}}
+se {.if !! .test_less 5 2.3e1 {echo if}; .else {echo else}}
+se {.if !  !  .test_executable_exists !!! {echo if}; .else {echo else}}
+se {.if !  !x .test_executable_exists !!! {echo if}; .else {echo else}}
+se {.if !x !  .test_executable_exists !!! {echo if}; .else {echo else}}
+se {.if !x !x .test_executable_exists !!! {echo if}; .else {echo else}}
+se {.if !  !  .whence_function !!! {echo if}; .else {echo else}}
+se {.if !x !x .whence_function !!! {echo if}; .else {echo else}}
+se {.if !  !  .test_not_empty 0 {echo if}; .else {echo else}}
+se {.if !  !x .test_not_empty 0 {echo if}; .else {echo else}}
+se {.if !x !  .test_not_empty 0 {echo if}; .else {echo else}}
+se {.if !x !x .test_not_empty 0 {echo if}; .else {echo else}}
+se {.if !  !  !  .test_in 0 0 {echo if}; .else {echo else}}
+se {.if !  !  !  .test_in 0 {echo if}; .else {echo else}}
+se {.if !  !  !  !  .test_in 0 {echo if}; .else {echo else}}
+se {.if !  !  !x !  .test_in 0 {echo if}; .else {echo else}}
+se {.if !  !x !  !  .test_in 0 {echo if}; .else {echo else}}
+se {.if !  !x !x !  .test_in 0 {echo if}; .else {echo else}}
+se {.if !x !  !  !  .test_in 0 {echo if}; .else {echo else}}
+se {.if !x !  !x !  .test_in 0 {echo if}; .else {echo else}}
+se {.if !x !x !  !  .test_in 0 {echo if}; .else {echo else}}
+se {.if !x !x !x !  .test_in 0 {echo if}; .else {echo else}}
+se {.if !  !  !  !  .test_in 0 0 {echo if}; .else {echo else}}
+se {.if !  !  !x !  .test_in 0 0 {echo if}; .else {echo else}}
+se {.if !  !x !  !  .test_in 0 0 {echo if}; .else {echo else}}
+se {.if !  !x !x !  .test_in 0 0 {echo if}; .else {echo else}}
+se {.if !x !  !  !  .test_in 0 0 {echo if}; .else {echo else}}
+se {.if !x !  !x !  .test_in 0 0 {echo if}; .else {echo else}}
+se {.if !x !x !  !  .test_in 0 0 {echo if}; .else {echo else}}
+se {.if !x !x !x !  .test_in 0 0 {echo if}; .else {echo else}}
 
 # properly sequenced un-nested conditionals where everything succeeds
 se {
@@ -1259,6 +1286,7 @@ se {
   .else {echo else not printing when condition true and if body threw}}
 if_true {echo &{unfindable anywhere}}
 .else {echo else throws an exception because we never got into the if}
+if_only .nop {.for .break ex {if_only .nop {.throw $ex properly nested}}}
 
 # .if .else_if .else_if_not .else
 .collect_errors_except .nop {
@@ -1340,8 +1368,9 @@ whence .nop
 .try_catch_recursive .replace_exception {
   .throw .replace_exception forj {echo $j is on the call stack}}
 
-# .scope prototype.cc
-.scope {e $foo}
+# .scope .reinterpret prototype.cc
+.scope
+.reinterpret {e $foo}
 .scope () {.scope foo}
 .scope a (y y) {echo illegal duplicate required parameter}
 .scope a ([-x] [-x]) {echo illegal duplicate flag parameter}
@@ -1373,6 +1402,12 @@ whence .nop
 .scope foo bar baz bax (args ...) {echo aa $args$2 bb $args$1 cc}
 .scope single ([-x] [--long-opt y] second) {
   var_val ${.list_locals}$; .echo $nl}
+.reinterpret [jj]
+.scope [-x] {.reinterpret -x bar ([-x kk])}
+.scope ([n y]) {.scope local_val x {.reinterpret insufficient (n y)}}
+.scope one two (a b [c]) {
+  .reinterpret $a $b (c [b] a)
+  echo $a$ $c$}
 fn arg_req .{argfunction} {
   echo before argfunction
   .scope () {.argfunction}}
@@ -1836,6 +1871,7 @@ fn var_op_val_echo -- var_val op val {
 .var_add B B
 .scope [undefined] {.var_add undefined 1}
 var_op_val_echo A .var_add 42C
+var_op_val_echo NaN .var_add nan
 var_op_val_echo 3000000000 .var_add 2
 var_op_val_echo 3000000000 .var_add 0
 var_op_val_echo 1e309 .var_add -1e309
@@ -1852,6 +1888,7 @@ var_op_val_echo 0 .var_add \
 .var_divide B B
 .scope [undefined] {.var_divide undefined 1}
 var_op_val_echo A .var_divide 42C
+var_op_val_echo NaN .var_divide nan
 var_op_val_echo 1e3000000000 .var_divide 2e3000000000
 var_op_val_echo 1e3000000000 .var_divide 0
 var_op_val_echo 16.8 .var_divide 4.2
@@ -1860,12 +1897,30 @@ var_op_val_echo 0 .var_divide 3
 var_op_val_echo 3 .var_divide 1
 var_op_val_echo 9.9999995e-1 .var_divide 1.0000001
 
+# .var_modulo
+.var_modulo A
+.var_modulo A 1 2 {excess argfunc}
+.var_modulo B B
+.scope [undefined] {.var_modulo undefined 1}
+var_op_val_echo A .var_modulo 42C
+var_op_val_echo NaN .var_modulo nan
+var_op_val_echo 1e15 .var_modulo 0
+var_op_val_echo 16.8 .var_modulo 4.2
+var_op_val_echo 1.8e30 .var_modulo 1.000000001
+var_op_val_echo 0 .var_modulo 3
+var_op_val_echo 3 .var_modulo 1
+var_op_val_echo 257 .var_modulo 8
+var_op_val_echo 2.55e2 .var_modulo 8.000
+var_op_val_echo -5 .var_modulo 3
+var_op_val_echo 6 .var_modulo -4
+
 # .var_multiply
 .var_multiply A
 .var_multiply A 1 2 {excess argfunc}
 .var_multiply B B
 .scope [undefined] {.var_multiply undefined 1}
 var_op_val_echo A .var_multiply 42C
+var_op_val_echo NaN .var_multiply nan
 var_op_val_echo 1e3000000000 .var_multiply 2e3000000000
 var_op_val_echo 1.6 .var_multiply 1.6
 var_op_val_echo 1.8e-20 .var_multiply 1e308
@@ -1882,6 +1937,7 @@ var_op_val_echo 9.9999995e-1 .var_multiply 9.9999995e-1
 .var_subtract B B
 .scope [undefined] {.var_subtract undefined 1}
 var_op_val_echo A .var_subtract 42C
+var_op_val_echo NaN .var_subtract nan
 var_op_val_echo 3000000000 .var_subtract 2
 var_op_val_echo 3000000000 .var_subtract 0
 var_op_val_echo 1e308 .var_subtract -1e308
@@ -2105,6 +2161,8 @@ if_only_not test -z z {echo test throwing a .false exception}
 .scope -v -a n o p -b -c -d q ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {echo $-?}
 .scope -v -a n o p -b -c -d q ([-?] [-a a1 a2 a3] [-b] [-c] [-d d1]) {echo $-*}
 .scope -a n o p ([-a a1 a2 a3]) {echo $a1 $a3}
+.scope x y z (x y z) {.reinterpret $x (x [y] z)}
+.scope w x (w x) {.local y y; .reinterpret $w $x (w [x y])}
 
 # .excessive_nesting Base_executable::exception_handler
 fn g {h}
@@ -2134,6 +2192,32 @@ e_after {.try_catch_recursive .undeclared_variable .else_without_if {
 fn .failed_substitution args ... {.nop $args; .test_less 0 Z}
 e_after {.try_catch_recursive .not_a_number .failed_substitution {
   e ${.throw .nop}}}
+
+# .getpid .getppid .sighup
+.getpid excess
+.getpid {excess argfunc}
+.getppid excess
+.getppid {excess argfunc}
+se {.fork se {
+      /bin/kill -HUP ${.getppid}
+      echo after the signal in subshell}
+    echo after the signal in parent}
+se {.fork se {
+      /bin/kill -HUP ${.getpid}
+      echo after the signal in subshell}
+    echo after the signal in parent}
+.while .nop {
+  echo before signals
+  /bin/kill -PIPE ${.getpid}
+  echo after sigpipe
+  /bin/kill ${.getpid}
+  echo should not continue beyond SIGTERM}
+.while .nop {
+  echo before signals
+  /bin/kill -USR1 ${.getpid}
+  echo after sigusr1
+  /bin/kill -INT ${.getpid}
+  echo should not continue beyond SIGINT}
 
 # exiting
 # .shutdown .exit

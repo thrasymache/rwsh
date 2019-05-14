@@ -117,8 +117,8 @@ call stack .source .try_catch_recursive(body)
 .function .fixed_argument -- arg stack ... {
   echo $arg : fixed arguments are not supported at this time
   echo call stack $stack}
-.function .flag_in_elipsis -- flag stack ... {
-  echo found flag $flag while collecting arguments for elipsis
+.function .flag_in_elipsis -- flag group stack ... {
+  echo found flag $flag while collecting arguments for elipsis in $group
   echo call stack $stack$}
 .function .function_not_found -- cmd [stack ...] {
   echo $cmd : command not found \( $cmd $stack$ \)}
@@ -185,6 +185,9 @@ call stack .source .try_catch_recursive(body)
 .function .not_soon_enough too_late [stack ...] {
   echo $too_late attempts to substitute after the command has been run
   if_only .var_exists stack {echo call stack $stack}}
+.function .number_not_an_integer -- nan stack ... {
+  echo $nan is a number but not an integer
+  echo call stack: $stack$}
 .function .post_elipsis_option -- flag stack ... {
   echo option $flag coming after an elipsis has no meaning
   echo call stack: $stack$}
@@ -252,9 +255,9 @@ call stack .source .try_catch_recursive(body)
 .function .unreadable_dir dir errno [stack ...] {
   .combine (cannot read directory ) $dir \ \(errno\  $errno \) $nl
   echo call stack: $stack$}
-.function .unrecognized_flag -- flag cmd [add_stack ...] {
-  echo $flag flag is unrecognized for $cmd
-  echo call stack: $cmd $add_stack$}
+.function .unrecognized_flag -- flag proto [stack ...] {
+  echo $flag flag is unrecognized for $proto
+  echo call stack: $stack$}
 .function .unused_before_set -- var [stack ...] {
   echo attempt to set $var before making use of its initial value
   echo call stack $stack$}
@@ -268,7 +271,7 @@ call stack .source .try_catch_recursive(body)
   echo call stack: $stack$}
 
 # ability of functions to act as builtin wrappers
-fn ! args ... {
+fn ! -- args ... {
   .if $args$ {.throw .false ${.echo ! $args}}
   .else {.nop}}
 fn af -- [argv ...] .{argfunction} {.argfunction}
@@ -337,23 +340,24 @@ fn paren_if_words -- value {
   .if .test_number_equal ${.argc $value$} 1 {.combine $value}
   .else {.combine \( $value \)}}
 fn polish -- operator builtin {
-  fn &&operator -- lhs rhs ... {
+  fn &&operator -- lhs rhs [extra ...] {
     if_only .test_in $lhs + - / * {
-      .scope ${$lhs $rhs$}$ (-- l r ...) {
-        .set lhs $l
-        .set rhs $r}}
-    .scope $rhs$ (rhs [extra ...]) {
-      .if .test_in $rhs + - / * {
-        .scope ${$rhs $extra$}$ (rhs [extra ...]) {
-          &&builtin lhs $rhs
-          echo $lhs $extra$}}
-      .else {
-        &&builtin lhs $rhs
-        echo $lhs $extra$}}}}
+      .reinterpret ${$lhs $rhs $extra$}$ (-- lhs rhs [extra ...])}
+    if_only .test_in $rhs + - / * {
+      .reinterpret ${$rhs $extra$}$ (-- rhs [extra ...])}
+    &&builtin lhs $rhs
+    echo $lhs $extra$}}
 polish + .var_add
 polish / .var_divide
+polish % .var_modulo
 polish * .var_multiply
 polish - .var_subtract
+fn rpn -- [extra ...] lhs rhs operator {
+  if_only .test_in $rhs + - / * % {
+    .reinterpret ${rpn $extra$ $lhs $rhs}$ (-- [extra ...] lhs rhs)}
+  if_only .test_in $lhs + - / * % {
+    .reinterpret ${rpn $extra$ $lhs}$ (-- [extra ...] lhs)}
+  echo $extra$ ${$operator $lhs $rhs}$}
 
 # external commands tested in the test suite
 fn false {.try_catch_recursive .return_code {${whichp false}}}
@@ -362,7 +366,7 @@ fn ln [-?] [-t directory] target ... {
   .fork .mapped_argfunction {
     if_only .var_exists -t {.cd $directory}
     .for $target$ (-- j ...) {.test_file_exists $j}
-    &{.which_path ln /bin:/usr/bin} $-? -t . $target$}}
+    .exec &{.which_path ln /bin:/usr/bin} $-? -t . $target$}}
 fn test -- args ... {.try_catch_recursive .return_code {${whichp test} $args$}}
 if_only .var_exists argv {.error ignored excess arguments $argv $nl}
 .function .shutdown -- args ... {
@@ -743,6 +747,7 @@ $./rwsh --init-file /non-existent/file/to/test/failure <test_files/pause_hello.r
 .not_catching_exception not defined 
 .not_executable not defined 
 .not_soon_enough not defined 
+.number_not_an_integer not defined 
 .return_code not defined 
 .result_range not defined 
 .post_elipsis_option not defined 
@@ -907,6 +912,7 @@ hello world
 .not_catching_exception not defined 
 .not_executable not defined 
 .not_soon_enough not defined 
+.number_not_an_integer not defined 
 .return_code not defined 
 .result_range not defined 
 .post_elipsis_option not defined 
@@ -1873,6 +1879,7 @@ $fn g {echoe hi $nl; fn g {echoe there $nl}; fn h {echoe nothing here}; g}
 $g
 hi 
 there 
+$fn ll {.list_locals; .combine $nl}
 $.function .exit {echoe cannot redefine a builtin as a function}
 $.exit cannot be a function
 call stack .function
@@ -1953,13 +1960,13 @@ $.function a [-?] -- foo {.list_locals}
 [-?] -- is an ambiguous location for a prototype -- (it requests reading the user's mind) (stack:.function)
 $.function a [-x] -- {.list_locals}
 [-x] -- is an ambiguous location for a prototype -- (it requests reading the user's mind) (stack:.function)
-$.function a [--] {.list_locals; .echo $nl}
+$.function a [--] {if_only .var_exists -- {.echo $--}; ll}
 $whence a
-.function a [--] {.list_locals; .echo $nl}
+.function a [--] {if_only .var_exists -- {.echo $--}; ll}
 $a
 
 $a --
---
+----
 $a foo
 unacceptable arguments: for prototype [--],
  found (foo) excess
@@ -1988,10 +1995,10 @@ unacceptable arguments: for prototype [--long-opt y] [-x] second,
 $a --long-opt first -x --long-opt second single
 -*(--long-opt first -x --long-opt second) --long-opt(--long-opt first --long-opt second) -x(-x) second(single) y(first second) 
 $.function a [-q option1 option2] [-x o1 o2 o3 o4] required {
-  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
+  forj ${ll}$ {.combine $j \( $$j \) \ }; .echo $nl}
 $whence a
 .function a [-q option1 option2] [-x o1 o2 o3 o4] required {
-  forj ${.list_locals}$ {.combine $j \( $$j \) ( )}; .echo $nl}
+  forj ${ll}$ {.combine $j \( $$j \) ( )}; .echo $nl}
 $a
 unacceptable arguments: for prototype [-q option1 option2] [-x o1 o2 o3 o4] required,
  assigned -*=() ,
@@ -2070,20 +2077,20 @@ $whence a
 .function a [--long-opt] [-x] -y second [--] [-] {
   forj ${.list_locals}$ {.combine $j \( $$j \) ( )}; .echo $nl}
 $a --long-opt -xx over-long flag
--xx flag is unrecognized for a
+-xx flag is unrecognized for ([--long-opt] [-x] -y second [--] [-])
 call stack: a
 $a -xx --long-opt over-long flag extra excess
--xx flag is unrecognized for a
+-xx flag is unrecognized for ([--long-opt] [-x] -y second [--] [-])
 call stack: a
 unacceptable arguments: for prototype [--long-opt] [-x] -y second [--] [-],
  assigned -=extra -*=(-xx --long-opt) --long-opt=--long-opt -y=over-long second=flag ,
  but found (excess) excess
 ( call) stack: a
 $a --long-op short flag
---long-op flag is unrecognized for a
+--long-op flag is unrecognized for ([--long-opt] [-x] -y second [--] [-])
 call stack: a
 $a - --long-op short flag
---long-op flag is unrecognized for a
+--long-op flag is unrecognized for ([--long-opt] [-x] -y second [--] [-])
 call stack: a
 $a no flags
 -*() -y(no) second(flags) 
@@ -2211,7 +2218,7 @@ unacceptable arguments: for prototype [-?] [-first],
 $a -to
 -*(-to) -?(-to) nothing_required
 $a -first --
--*(-first --) --(--) -?() -first(-first) nothing_required
+-*(-first --) --(--) -?(--) -first(-first) nothing_required
 $a -first excess
 unacceptable arguments: for prototype [-?] [-first],
  assigned -*=-first -?=() -first=-first ,
@@ -2219,7 +2226,7 @@ unacceptable arguments: for prototype [-?] [-first],
 ( call) stack: a
 $a -to -- -first
 unacceptable arguments: for prototype [-?] [-first],
- assigned -*=(-to --) --=-- -?=-to ,
+ assigned -*=(-to --) --=-- -?=(-to --) ,
  but found (-first) excess
 ( call) stack: a
 $a -to -first
@@ -2235,7 +2242,7 @@ $a
 -*() -?() nothing_required
 $a -to -- -first
 unacceptable arguments: for prototype [-?] [-first],
- assigned -*=(-to --) --=-- -?=-to ,
+ assigned -*=(-to --) --=-- -?=(-to --) ,
  but found (-first) excess
 ( call) stack: a
 $a -to -first
@@ -2315,9 +2322,9 @@ $whence a
 $a -c -a -b first second third
 -*(-c -a -b) -?(-c -a -b) x(first second) y(third) 
 $a -c first -a second -b third
-found flag -a while collecting arguments for elipsis
+found flag -a while collecting arguments for elipsis in (x ...)
 call stack a
-found flag -b while collecting arguments for elipsis
+found flag -b while collecting arguments for elipsis in (x ...)
 call stack a
 $a 
 unacceptable arguments: for prototype [-?] x ... y,
@@ -2423,10 +2430,10 @@ $a -x (fi rst) second
 $a -x first (sec ond) third
 -*(-x first (sec ond)) -x(-x first (sec ond)) b(first (sec ond)) c(third) 
 $a -x first -x (sec ond) third
-found flag -x while collecting arguments for elipsis
+found flag -x while collecting arguments for elipsis in ([-x b ...])
 call stack a
 $a -x first -y (sec ond) third
-found flag -y while collecting arguments for elipsis
+found flag -y while collecting arguments for elipsis in ([-x b ...])
 call stack a
 $a -x (fi rst) (sec ond) third fourth
 -*(-x (fi rst) (sec ond) third) -x(-x (fi rst) (sec ond) third) b((fi rst) (sec ond) third) c(fourth) 
@@ -2693,11 +2700,11 @@ inside 5
 inside 10
 inside 15
 inside 20
+inside 21
 inside 5 .throw .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except
 inside 10 .throw .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except
 inside 15 .throw .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except
 inside 20 .throw .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except
-function exceeded max nesting ( 20 ). call stack: (echo .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except .collect_errors_except)
 $.set_max_collectible_exceptions 1
 $.function collecting_handler args ... {
   echo $args$
@@ -2744,59 +2751,6 @@ $.set_max_extra_exceptions 1
 $.set_max_collectible_exceptions 7
 $.scope () {.get_max_collectible_exceptions; .echo $nl}
 7
-$
-$# .getpid .getppid .sighup
-$.getpid excess
-unacceptable arguments: for prototype ,
- found (excess) excess
-( call) stack: .getpid
-$.getpid {excess argfunc}
-.getpid does not accept an argfunction with call stack: .getpid
-$.getppid excess
-unacceptable arguments: for prototype ,
- found (excess) excess
-( call) stack: .getppid
-$.getppid {excess argfunc}
-.getppid does not accept an argfunction with call stack: .getppid
-$se {.fork se {
-      /bin/kill -HUP ${.getppid}
-      echo after the signal in subshell}
-    echo after the signal in parent}
-added /bin/kill to executable map in test suite
-after the signal in subshell
-received SIGHUP
-after the signal in parent
-$se {.fork se {
-      /bin/kill -HUP ${.getpid}
-      echo after the signal in subshell}
-    echo after the signal in parent}
-added /bin/kill to executable map in test suite
-received SIGHUP
-after the signal in subshell
-after the signal in parent
-$.while .nop {
-  echo before signals
-  /bin/kill -PIPE ${.getpid}
-  echo after sigpipe
-  /bin/kill ${.getpid}
-  echo should not continue beyond SIGTERM}
-before signals
-added /bin/kill to executable map in test suite
-received SIGPIPE
-after sigpipe
-(
-) received SIGTERM .throw .sigterm /bin/kill .mapped_argfunction .while
-$.while .nop {
-  echo before signals
-  /bin/kill -USR1 ${.getpid}
-  echo after sigusr1
-  /bin/kill -INT ${.getpid}
-  echo should not continue beyond SIGINT}
-before signals
-received SIGUSR1
-after sigusr1
-(
-) received SIGINT .throw .sigint /bin/kill .mapped_argfunction .while
 $
 $# .global .local .local_declare .unset .var_exists
 $.global
@@ -2896,6 +2850,9 @@ $.unset x
 x was not declared
 call stack: .unset
 $.global x nihilism
+$.local_declare x
+variable x already exists
+call stack .local_declare
 $.var_exists x
 $.var_exists x y
 $echo $x
@@ -2905,34 +2862,31 @@ $.global x ubernihilism
 variable x already exists
 call stack .global
 $.global i nihilism
+$.unset i
+attempt to set i before making use of its initial value
+call stack .unset
 $.global j nihilism
-$fn a {if_only .var_exists x {echo in a x $x}
-      if_only .var_exists y {echo in a y $y}
-      if_only .var_exists i {echo in a i $i}
-      if_only .var_exists j {echo in a j $j}
-      if_only .var_exists k {echo in a k $k}
-      if_only .var_exists m {echo in a m $m}
+$fn echo-i-y in-out func {
+  if_only .var_exists i {echo $in-out $func i $i}
+  if_only .var_exists j {echo $in-out $func j $j}
+  if_only .var_exists k {echo $in-out $func k $k}
+  if_only .var_exists m {echo $in-out $func m $m}
+  if_only .var_exists n {echo $in-out $func n $n}
+  if_only .var_exists x {echo $in-out $func x $x}
+  if_only .var_exists y {echo $in-out $func y $y}}
+$fn a {echo-i-y in a
       .local x (first level not global)
       .local y (level one not global)
       .local z (will be unused)
-      .local_declare i j k l m
+      .local_declare i j k l m n
       .set i (declared first level not global)
       .set j (declared first level not global)
       .set k (declared level one not global)
       .set l (will be unused)
+      .set n (will be used)
       b
-      if_only .var_exists i {echo out a i $i}
-      if_only .var_exists j {echo out a j $j}
-      if_only .var_exists k {echo out a k $k}
-      if_only .var_exists m {echo out a m $m}
-      if_only .var_exists x {echo out a x $x}
-      if_only .var_exists y {echo out a y $y}}
-$fn b {if_only .var_exists i {echo in b i $i}
-      if_only .var_exists j {echo in b j $j}
-      if_only .var_exists k {echo in b k $k}
-      if_only .var_exists m {echo in a m $m}
-      if_only .var_exists x {echo in b x $x}
-      if_only .var_exists y {echo in b y $y}
+      echo-i-y out a}
+$fn b {echo-i-y in b
       .local x (second level masks first)
       .set y   (level two overwrites one)
       .local_declare i j m
@@ -2940,24 +2894,14 @@ $fn b {if_only .var_exists i {echo in b i $i}
       .set j (declared second level masks first)
       .set k (declared level two overwrites one)
       c
-      if_only .var_exists i {echo out b i $i}
-      if_only .var_exists j {echo out b j $j}
-      if_only .var_exists k {echo out b k $k}
-      if_only .var_exists m {echo out b m $m}
-      if_only .var_exists x {echo out b x $x}
-      if_only .var_exists y {echo out b y $y}}
-$fn c {if_only .var_exists i {echo in c i $i}
-      if_only .var_exists j {echo in c j $j}
-      if_only .var_exists k {echo in c k $k}
-      if_only .var_exists m {echo in c m $m}
-      if_only .var_exists x {echo in c x $x}
-      if_only .var_exists y {echo in c y $y}
-      # can unset a local, but only one at a time
+      echo-i-y out b}
+$fn c {echo-i-y in c
+      .reinterpret .reinterpreted .reinterpreted (n [j] y)
+      echo-i-y middle c
+      # can unset a local, but won't remove everything named x
       .unset x
-      .try_catch_recursive .undefined_variable {
-        .unset i}
       .unset j
-      .unset l
+      .unset n
       .try_catch_recursive .global_would_be_masked {
         .global y (attempting to create global masked by local)}
       .set x (third level overwrites first)
@@ -2969,28 +2913,27 @@ $fn c {if_only .var_exists i {echo in c i $i}
       .set j (declared third level masks first)
       .set y (level three overwrites one)
       .set k (declared level three overwrites one)
-      if_only .var_exists i {echo out c i $i}
-      if_only .var_exists j {echo out c j $j}
-      if_only .var_exists k {echo out c k $k}
-      if_only .var_exists m {echo out c m $m}
-      if_only .var_exists x {echo out c x $x}
-      if_only .var_exists y {echo out c y $y}}
+      echo-i-y out c}
 $a
-in a x nihilism
 in a i nihilism
 in a j nihilism
+in a x nihilism
 in b i (declared first level not global)
 in b j (declared first level not global)
 in b k (declared level one not global)
+in b n (will be used)
 in b x (first level not global)
 in b y (level one not global)
 undefined i will hide the first level local
 in c j (declared second level masks first)
 in c k (declared level two overwrites one)
+in c n (will be used)
 in c x (second level masks first)
 in c y (level two overwrites one)
-optional variable i was not defined
-call stack: .unset .try_catch_recursive(body)
+middle c k (declared level two overwrites one)
+middle c n .reinterpreted
+middle c x (second level masks first)
+middle c y .reinterpreted
 requested global y already exists as a local. It would be masked by the local and inaccessible from here
 call stack .global .try_catch_recursive(body)
 out c i (declared third level masks first)
@@ -3012,21 +2955,25 @@ l was unused with call stack a
 z was unused with call stack a
 $# demonstrating that final values are not retained
 $a
-in a x nihilism
 in a i nihilism
 in a j nihilism
+in a x nihilism
 in b i (declared first level not global)
 in b j (declared first level not global)
 in b k (declared level one not global)
+in b n (will be used)
 in b x (first level not global)
 in b y (level one not global)
 undefined i will hide the first level local
 in c j (declared second level masks first)
 in c k (declared level two overwrites one)
+in c n (will be used)
 in c x (second level masks first)
 in c y (level two overwrites one)
-optional variable i was not defined
-call stack: .unset .try_catch_recursive(body)
+middle c k (declared level two overwrites one)
+middle c n .reinterpreted
+middle c x (second level masks first)
+middle c y .reinterpreted
 requested global y already exists as a local. It would be masked by the local and inaccessible from here
 call stack .global .try_catch_recursive(body)
 out c i (declared third level masks first)
@@ -3046,6 +2993,20 @@ out a x (third level overwrites first)
 out a y (level three overwrites one)
 l was unused with call stack a
 z was unused with call stack a
+$ntimes 2 {
+  echo before $x$ , $j$
+  .local_declare x
+  .local_declare x
+  .local j (locally defined)
+  echo between $x$ , $j$
+  .set x locally set
+  echo after $x$ , $j$}
+before nihilism , nihilism
+between , locally defined
+after locally set , locally defined
+before nihilism , nihilism
+between , locally defined
+after locally set , locally defined
 $echo $x
 nihilism
 $.var_exists y
@@ -3140,29 +3101,84 @@ $.function !x args ... {
   .if .throw .false anyway {}
   .else_if_not $args$ {.nop}
   .else {.throw .false ${.echo ! $args}}}
+$.function !! args ... {
+  .if $args$ {}
+  .else {.throw .false ${.echo !! $args}}}
 $.test_string_equal 42 420e-1
 assertion (42 == 420e-1) failed
 call stack .test_string_equal
 $.test_number_equal 42 420e-1
 $!  .test_greater 50 230
 $!x .test_greater 50 230
+$!! !  .test_greater 50 230
+$!  !! .test_greater 50 230
+$!! .test_greater 50 230
+assertion (!! .test_greater 50 230) failed
+call stack .throw .mapped_argfunction .else !!
+$!! !! .test_greater 50 230
+assertion (!! !! .test_greater 50 230) failed
+call stack .throw .mapped_argfunction .else !!
 $!  .test_less 5 2.3e1
 assertion (! .test_less 5 2.3e1) failed
 call stack .throw .mapped_argfunction .if !
 $!x .test_less 5 2.3e1
 assertion (! .test_less 5 2.3e1) failed
 call stack .throw .mapped_argfunction .else !x
+$!! !x .test_less 5 2.3e1
+assertion (!! !x .test_less 5 2.3e1) failed
+call stack .throw .mapped_argfunction .else !!
+$!x !! .test_less 5 2.3e1
+assertion (! !! .test_less 5 2.3e1) failed
+call stack .throw .mapped_argfunction .else !x
+$!! .test_less 5 2.3e1
+$!! !! .test_less 5 2.3e1
 $!  !  .test_executable_exists !!!
 assertion (! ! .test_executable_exists !!!) failed
+call stack .throw .mapped_argfunction .if !
+$!! !  !  .test_executable_exists !!!
+assertion (!! ! ! .test_executable_exists !!!) failed
+call stack .throw .mapped_argfunction .else !!
+$!  !! !  .test_executable_exists !!!
+assertion (! !! ! .test_executable_exists !!!) failed
+call stack .throw .mapped_argfunction .if !
+$!  !  !! .test_executable_exists !!!
+assertion (! ! !! .test_executable_exists !!!) failed
 call stack .throw .mapped_argfunction .if !
 $!  !x .test_executable_exists !!!
 assertion (! !x .test_executable_exists !!!) failed
 call stack .throw .mapped_argfunction .if !
+$!! !  !x .test_executable_exists !!!
+assertion (!! ! !x .test_executable_exists !!!) failed
+call stack .throw .mapped_argfunction .else !!
+$!  !! !x .test_executable_exists !!!
+assertion (! !! !x .test_executable_exists !!!) failed
+call stack .throw .mapped_argfunction .if !
+$!  !x !! .test_executable_exists !!!
+assertion (! !x !! .test_executable_exists !!!) failed
+call stack .throw .mapped_argfunction .if !
 $!x !  .test_executable_exists !!!
 assertion (! ! .test_executable_exists !!!) failed
 call stack .throw .mapped_argfunction .else !x
+$!! !x !  .test_executable_exists !!!
+assertion (!! !x ! .test_executable_exists !!!) failed
+call stack .throw .mapped_argfunction .else !!
+$!x !! !  .test_executable_exists !!!
+assertion (! !! ! .test_executable_exists !!!) failed
+call stack .throw .mapped_argfunction .else !x
+$!x !  !! .test_executable_exists !!!
+assertion (! ! !! .test_executable_exists !!!) failed
+call stack .throw .mapped_argfunction .else !x
 $!x !x .test_executable_exists !!!
 assertion (! !x .test_executable_exists !!!) failed
+call stack .throw .mapped_argfunction .else !x
+$!! !x !x .test_executable_exists !!!
+assertion (!! !x !x .test_executable_exists !!!) failed
+call stack .throw .mapped_argfunction .else !!
+$!x !! !x .test_executable_exists !!!
+assertion (! !! !x .test_executable_exists !!!) failed
+call stack .throw .mapped_argfunction .else !x
+$!x !x !! .test_executable_exists !!!
+assertion (! !x !! .test_executable_exists !!!) failed
 call stack .throw .mapped_argfunction .else !x
 $!  !  .whence_function !!!
 !!! : command not found ( !!! .whence_function .if ! .if ! )
@@ -3208,6 +3224,86 @@ $!x !  !  !  .test_in 0 0
 $!x !  !x !  .test_in 0 0
 $!x !x !  !  .test_in 0 0
 $!x !x !x !  .test_in 0 0
+$se {.if .test_string_equal 42 420e-1 {echo if}; .else {echo else}}
+else
+$se {.if .test_number_equal 42 420e-1 {echo if}; .else {echo else}}
+if
+$se {.if !  .test_greater 50 230 {echo if}; .else {echo else}}
+if
+$se {.if !x .test_greater 50 230 {echo if}; .else {echo else}}
+if
+$se {.if !! !  .test_greater 50 230 {echo if}; .else {echo else}}
+if
+$se {.if !  !! .test_greater 50 230 {echo if}; .else {echo else}}
+if
+$se {.if !! .test_greater 50 230 {echo if}; .else {echo else}}
+else
+$se {.if !  .test_less 5 2.3e1 {echo if}; .else {echo else}}
+else
+$se {.if !x .test_less 5 2.3e1 {echo if}; .else {echo else}}
+else
+$se {.if !! !x .test_less 5 2.3e1 {echo if}; .else {echo else}}
+else
+$se {.if !x !! .test_less 5 2.3e1 {echo if}; .else {echo else}}
+else
+$se {.if !! .test_less 5 2.3e1 {echo if}; .else {echo else}}
+if
+$se {.if !  !  .test_executable_exists !!! {echo if}; .else {echo else}}
+else
+$se {.if !  !x .test_executable_exists !!! {echo if}; .else {echo else}}
+else
+$se {.if !x !  .test_executable_exists !!! {echo if}; .else {echo else}}
+else
+$se {.if !x !x .test_executable_exists !!! {echo if}; .else {echo else}}
+else
+$se {.if !  !  .whence_function !!! {echo if}; .else {echo else}}
+!!! : command not found ( !!! .whence_function .if ! .if ! .if .scope se )
+$se {.if !x !x .whence_function !!! {echo if}; .else {echo else}}
+!!! : command not found ( !!! .whence_function .else_if_not !x .else_if_not !x .if .scope se )
+$se {.if !  !  .test_not_empty 0 {echo if}; .else {echo else}}
+if
+$se {.if !  !x .test_not_empty 0 {echo if}; .else {echo else}}
+if
+$se {.if !x !  .test_not_empty 0 {echo if}; .else {echo else}}
+if
+$se {.if !x !x .test_not_empty 0 {echo if}; .else {echo else}}
+if
+$se {.if !  !  !  .test_in 0 0 {echo if}; .else {echo else}}
+else
+$se {.if !  !  !  .test_in 0 {echo if}; .else {echo else}}
+if
+$se {.if !  !  !  !  .test_in 0 {echo if}; .else {echo else}}
+else
+$se {.if !  !  !x !  .test_in 0 {echo if}; .else {echo else}}
+else
+$se {.if !  !x !  !  .test_in 0 {echo if}; .else {echo else}}
+else
+$se {.if !  !x !x !  .test_in 0 {echo if}; .else {echo else}}
+else
+$se {.if !x !  !  !  .test_in 0 {echo if}; .else {echo else}}
+else
+$se {.if !x !  !x !  .test_in 0 {echo if}; .else {echo else}}
+else
+$se {.if !x !x !  !  .test_in 0 {echo if}; .else {echo else}}
+else
+$se {.if !x !x !x !  .test_in 0 {echo if}; .else {echo else}}
+else
+$se {.if !  !  !  !  .test_in 0 0 {echo if}; .else {echo else}}
+if
+$se {.if !  !  !x !  .test_in 0 0 {echo if}; .else {echo else}}
+if
+$se {.if !  !x !  !  .test_in 0 0 {echo if}; .else {echo else}}
+if
+$se {.if !  !x !x !  .test_in 0 0 {echo if}; .else {echo else}}
+if
+$se {.if !x !  !  !  .test_in 0 0 {echo if}; .else {echo else}}
+if
+$se {.if !x !  !x !  .test_in 0 0 {echo if}; .else {echo else}}
+if
+$se {.if !x !x !  !  .test_in 0 0 {echo if}; .else {echo else}}
+if
+$se {.if !x !x !x !  .test_in 0 0 {echo if}; .else {echo else}}
+if
 $
 $# properly sequenced un-nested conditionals where everything succeeds
 $se {
@@ -3413,6 +3509,7 @@ unfindable : command not found ( unfindable anywhere .interpret )
 substitution (&{unfindable anywhere}) failed
 $.else {echo else throws an exception because we never got into the if}
 else without if with call stack: .else
+$if_only .nop {.for .break ex {if_only .nop {.throw $ex properly nested}}}
 $
 $# .if .else_if .else_if_not .else
 $.collect_errors_except .nop {
@@ -3547,6 +3644,7 @@ $.internal_functions
 .not_catching_exception
 .not_executable
 .not_soon_enough
+.number_not_an_integer
 .raw_command
 .return_code
 .result_range
@@ -3624,10 +3722,12 @@ $.list_executables {excess argfunc}
 .list_executables does not accept an argfunction with call stack: .list_executables
 $forj ${.list_executables}$ {.combine $j $nl}
 !
+!!
 !x
 #
 #!
 ##
+%
 *
 +
 -
@@ -3734,10 +3834,12 @@ $forj ${.list_executables}$ {.combine $j $nl}
 .not_catching_exception
 .not_executable
 .not_soon_enough
+.number_not_an_integer
 .post_dash_dash_flag
 .post_elipsis_option
 .prompt
 .raw_command
+.reinterpret
 .replace_exception
 .result_range
 .return_code
@@ -3798,6 +3900,7 @@ $forj ${.list_executables}$ {.combine $j $nl}
 .var_add
 .var_divide
 .var_exists
+.var_modulo
 .var_multiply
 .var_subtract
 .variable_already_exists
@@ -3815,7 +3918,6 @@ $forj ${.list_executables}$ {.combine $j $nl}
 /bin/cat
 /bin/echo
 /bin/false
-/bin/kill
 /bin/rm
 /bin/true
 /usr/bin/env
@@ -3833,6 +3935,7 @@ double_if_with_body
 e
 echo
 echo-comments
+echo-i-y
 echoe
 echow
 elif
@@ -3859,6 +3962,7 @@ if_only
 if_only_not
 if_true
 if_with_body
+ll
 ln
 ntimes
 obscured_else
@@ -3868,6 +3972,7 @@ outer_for
 outer_while
 paren_if_words
 polish
+rpn
 sa
 se
 setf
@@ -3929,11 +4034,17 @@ $.try_catch_recursive .replace_exception {
 .replace_exception is on the call stack
 .try_catch_recursive is on the call stack
 $
-$# .scope prototype.cc
-$.scope {e $foo}
+$# .scope .reinterpret prototype.cc
+$.scope
 unacceptable arguments: for prototype -- [list ...] prototype .{argfunction},
  needed (prototype),
 ( call) stack: .scope
+.scope requires an argfunction
+$.reinterpret {e $foo}
+unacceptable arguments: for prototype -- [list ...] prototype,
+ needed (prototype),
+( call) stack: .reinterpret
+.reinterpret does not accept an argfunction with call stack: .reinterpret
 $.scope () {.scope foo}
 .scope requires an argfunction
 stack .scope
@@ -4005,6 +4116,23 @@ aa baz bb bar cc
 $.scope single ([-x] [--long-opt y] second) {
   var_val ${.list_locals}$; .echo $nl}
 -*() second(single) 
+$.reinterpret [jj]
+jj was not declared
+call stack: .reinterpret
+$.scope [-x] {.reinterpret -x bar ([-x kk])}
+kk was not declared
+call stack: .reinterpret .scope
+-x was not checked with call stack .scope
+$.scope ([n y]) {.scope local_val x {.reinterpret insufficient (n y)}}
+unacceptable arguments: for prototype n y,
+ assigned n=insufficient ,
+ but needed (y),
+( call) stack: (.reinterpret .scope .scope)
+$.scope one two (a b [c]) {
+  .reinterpret $a $b (c [b] a)
+  echo $a$ $c$}
+two one
+b was not checked with call stack .scope
 $fn arg_req .{argfunction} {
   echo before argfunction
   .scope () {.argfunction}}
@@ -4136,9 +4264,9 @@ $a -to
 $pts -to
 -*(-to) -?(-to) nothing_required
 $a -first --
--*(-first --) --(--) -?() -first(-first) nothing_required
+-*(-first --) --(--) -?(--) -first(-first) nothing_required
 $pts -first --
--*(-first --) --(--) -?() -first(-first) nothing_required
+-*(-first --) --(--) -?(--) -first(-first) nothing_required
 $a -first excess
 unacceptable arguments: for prototype [-?] [-first],
  assigned -*=-first -?=() -first=-first ,
@@ -4151,12 +4279,12 @@ unacceptable arguments: for prototype [-?] [-first],
 ( call) stack: (.scope .mapped_argfunction .if pts)
 $a -to -- -first
 unacceptable arguments: for prototype [-?] [-first],
- assigned -*=(-to --) --=-- -?=-to ,
+ assigned -*=(-to --) --=-- -?=(-to --) ,
  but found (-first) excess
 ( call) stack: a
 $pts -to -- -first
 unacceptable arguments: for prototype [-?] [-first],
- assigned -*=(-to --) --=-- -?=-to ,
+ assigned -*=(-to --) --=-- -?=(-to --) ,
  but found (-first) excess
 ( call) stack: (.scope .mapped_argfunction .if pts)
 $a -to -first
@@ -4331,7 +4459,7 @@ $.stepwise stepwise (cmd ...) {echo $cmd}
 stepwise : command not found ( stepwise .stepwise )
 $.stepwise .stepwise (cmd ...) {echo $cmd}
 $.stepwise ! (cmd ...) {echo $cmd}
-unacceptable arguments: for prototype args ...,
+unacceptable arguments: for prototype -- args ...,
  needed (args),
 ( call) stack: .stepwise
 $.stepwise wrapper 1 2 (cmd ...) {echo $cmd$}
@@ -4408,7 +4536,7 @@ $.function a {echo -x allowed; echo -y allowed; echo -z rejected}
 $.stepwise a (cmd [-x] [-y] comment) {$cmd $-* $comment}
 -x allowed
 -y allowed
--z flag is unrecognized for .stepwise(body)
+-z flag is unrecognized for ([-x] [-y] cmd comment)
 call stack: .stepwise(body) .stepwise
 $
 $# .test_file_exists
@@ -5111,6 +5239,12 @@ A is not a number
 call stack: .var_add .collect_errors_except .scope var_op_val_echo
 42C is not a number
 call stack: .var_add .collect_errors_except .scope var_op_val_echo
+$var_op_val_echo NaN .var_add nan
+NaN
+NaN is not a number
+call stack: .var_add .collect_errors_except .scope var_op_val_echo
+nan is not a number
+call stack: .var_add .collect_errors_except .scope var_op_val_echo
 $var_op_val_echo 3000000000 .var_add 2
 3000000000
 2 is too small relative to 3000000000 to modify its value
@@ -5167,6 +5301,12 @@ A is not a number
 call stack: .var_divide .collect_errors_except .scope var_op_val_echo
 42C is not a number
 call stack: .var_divide .collect_errors_except .scope var_op_val_echo
+$var_op_val_echo NaN .var_divide nan
+NaN
+NaN is not a number
+call stack: .var_divide .collect_errors_except .scope var_op_val_echo
+nan is not a number
+call stack: .var_divide .collect_errors_except .scope var_op_val_echo
 $var_op_val_echo 1e3000000000 .var_divide 2e3000000000
 1e3000000000
 value 1e3000000000 is out of usable numeric range
@@ -5193,6 +5333,67 @@ $var_op_val_echo 9.9999995e-1 .var_divide 1.0000001
 1.0000001 is too small relative to 9.9999995e-1 to modify its value
 call stack: .var_divide .collect_errors_except .scope var_op_val_echo
 $
+$# .var_modulo
+$.var_modulo A
+unacceptable arguments: for prototype -- var value,
+ assigned var=A ,
+ but needed (value),
+( call) stack: .var_modulo
+$.var_modulo A 1 2 {excess argfunc}
+unacceptable arguments: for prototype -- var value,
+ assigned value=1 var=A ,
+ but found (2) excess
+( call) stack: .var_modulo
+.var_modulo does not accept an argfunction with call stack: .var_modulo
+$.var_modulo B B
+B was not declared
+call stack: .var_modulo
+$.scope [undefined] {.var_modulo undefined 1}
+optional variable undefined was not defined
+call stack: .var_modulo .scope
+undefined was not checked with call stack .scope
+$var_op_val_echo A .var_modulo 42C
+A
+A is not a number
+call stack: .var_modulo .collect_errors_except .scope var_op_val_echo
+42C is not a number
+call stack: .var_modulo .collect_errors_except .scope var_op_val_echo
+$var_op_val_echo NaN .var_modulo nan
+NaN
+NaN is not a number
+call stack: .var_modulo .collect_errors_except .scope var_op_val_echo
+nan is not a number
+call stack: .var_modulo .collect_errors_except .scope var_op_val_echo
+$var_op_val_echo 1e15 .var_modulo 0
+1e15
+value 1e15 is out of usable numeric range
+call stack .var_modulo .collect_errors_except .scope var_op_val_echo
+attempt to divide 1e15 by 0 with call stack: .var_modulo .collect_errors_except .scope var_op_val_echo
+$var_op_val_echo 16.8 .var_modulo 4.2
+16.8
+16.8 is a number but not an integer
+call stack: .var_modulo .collect_errors_except .scope var_op_val_echo
+4.2 is a number but not an integer
+call stack: .var_modulo .collect_errors_except .scope var_op_val_echo
+$var_op_val_echo 1.8e30 .var_modulo 1.000000001
+1.8e30
+1.8e30 is a number but not an integer
+call stack: .var_modulo .collect_errors_except .scope var_op_val_echo
+1.000000001 is a number but not an integer
+call stack: .var_modulo .collect_errors_except .scope var_op_val_echo
+$var_op_val_echo 0 .var_modulo 3
+0
+$var_op_val_echo 3 .var_modulo 1
+0
+$var_op_val_echo 257 .var_modulo 8
+1
+$var_op_val_echo 2.55e2 .var_modulo 8.000
+7
+$var_op_val_echo -5 .var_modulo 3
+-2
+$var_op_val_echo 6 .var_modulo -4
+2
+$
 $# .var_multiply
 $.var_multiply A
 unacceptable arguments: for prototype -- var value,
@@ -5217,6 +5418,12 @@ A
 A is not a number
 call stack: .var_multiply .collect_errors_except .scope var_op_val_echo
 42C is not a number
+call stack: .var_multiply .collect_errors_except .scope var_op_val_echo
+$var_op_val_echo NaN .var_multiply nan
+NaN
+NaN is not a number
+call stack: .var_multiply .collect_errors_except .scope var_op_val_echo
+nan is not a number
 call stack: .var_multiply .collect_errors_except .scope var_op_val_echo
 $var_op_val_echo 1e3000000000 .var_multiply 2e3000000000
 1e3000000000
@@ -5270,6 +5477,12 @@ A
 A is not a number
 call stack: .var_subtract .collect_errors_except .scope var_op_val_echo
 42C is not a number
+call stack: .var_subtract .collect_errors_except .scope var_op_val_echo
+$var_op_val_echo NaN .var_subtract nan
+NaN
+NaN is not a number
+call stack: .var_subtract .collect_errors_except .scope var_op_val_echo
+nan is not a number
 call stack: .var_subtract .collect_errors_except .scope var_op_val_echo
 $var_op_val_echo 3000000000 .var_subtract 2
 3000000000
@@ -5585,7 +5798,6 @@ $readlink ixxx
 added readlink to executable map in test suite
 /bin/readlink returned 1 : call stack /bin/readlink readlink
 $ln -s test_files/ixxx
-added /bin/ln to executable map in test suite
 $readlink ixxx
 test_files/ixxx
 this readlink function has been brought to you by .autofunction
@@ -5597,7 +5809,6 @@ call stack .test_file_exists .for(body) .for .mapped_argfunction
 $readlink test_files/rwshlib.h test_files/plumber.h test_files/builtin.h
 /bin/readlink returned 1 : call stack /bin/readlink readlink
 $ln -s -t test_files/ ../rwshlib.h ../plumber.h ../builtin.h
-added /bin/ln to executable map in test suite
 $readlink test_files/rwshlib.h test_files/plumber.h test_files/builtin.h
 ../rwshlib.h
 ../plumber.h
@@ -5901,6 +6112,16 @@ n p
 a2 was unused with call stack .scope
 -a was unused with call stack .scope
 -* was unused with call stack .scope
+$.scope x y z (x y z) {.reinterpret $x (x [y] z)}
+unacceptable arguments: for prototype x [y] z,
+ assigned x=x ,
+ but needed (z),
+( call) stack: (.reinterpret .scope)
+$.scope w x (w x) {.local y y; .reinterpret $w $x (w [x y])}
+unacceptable arguments: for prototype w [x y],
+ assigned w=w x=x ,
+ but needed (y),
+( call) stack: (.reinterpret .scope)
 $
 $# .excessive_nesting Base_executable::exception_handler
 $fn g {h}
@@ -6003,6 +6224,59 @@ Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.throw .nop} .try_catch_recursive(body) .try_catch_recursive .scope se e_after
 Z is not a number
 call stack: .test_less .failed_substitution
+$
+$# .getpid .getppid .sighup
+$.getpid excess
+unacceptable arguments: for prototype ,
+ found (excess) excess
+( call) stack: .getpid
+$.getpid {excess argfunc}
+.getpid does not accept an argfunction with call stack: .getpid
+$.getppid excess
+unacceptable arguments: for prototype ,
+ found (excess) excess
+( call) stack: .getppid
+$.getppid {excess argfunc}
+.getppid does not accept an argfunction with call stack: .getppid
+$se {.fork se {
+      /bin/kill -HUP ${.getppid}
+      echo after the signal in subshell}
+    echo after the signal in parent}
+added /bin/kill to executable map in test suite
+after the signal in subshell
+received SIGHUP
+after the signal in parent
+$se {.fork se {
+      /bin/kill -HUP ${.getpid}
+      echo after the signal in subshell}
+    echo after the signal in parent}
+added /bin/kill to executable map in test suite
+received SIGHUP
+after the signal in subshell
+after the signal in parent
+$.while .nop {
+  echo before signals
+  /bin/kill -PIPE ${.getpid}
+  echo after sigpipe
+  /bin/kill ${.getpid}
+  echo should not continue beyond SIGTERM}
+before signals
+added /bin/kill to executable map in test suite
+received SIGPIPE
+after sigpipe
+(
+) received SIGTERM .throw .sigterm /bin/kill .mapped_argfunction .while
+$.while .nop {
+  echo before signals
+  /bin/kill -USR1 ${.getpid}
+  echo after sigusr1
+  /bin/kill -INT ${.getpid}
+  echo should not continue beyond SIGINT}
+before signals
+received SIGUSR1
+after sigusr1
+(
+) received SIGINT .throw .sigint /bin/kill .mapped_argfunction .while
 $
 $# exiting
 $# .shutdown .exit

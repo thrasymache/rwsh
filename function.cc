@@ -64,7 +64,20 @@ Command_block* Command_block::apply(const Argm& argm, unsigned nesting,
     result->trailing = trailing;
     return result;}}
 
-void Command_block::execute(const Argm& src_argm, Error_list& exceptions) {
+void Command_block::execute(const Argm& argm, Error_list& exceptions) {
+  Prototype prototype(Argv{});
+  Variable_map locals(argm.parent_map());
+  try {
+    Argm params(argm.argv(), argm.argfunction(), &locals,
+                argm.input, argm.output, argm.error);
+    statements_execute(params, exceptions);
+    prototype.unused_var_check(&locals, exceptions);}
+  catch (Exception error) {
+    prototype.unused_var_check(&locals, exceptions);
+    throw error;}}
+
+void Command_block::statements_execute(const Argm& src_argm,
+                                       Error_list& exceptions) {
   for (auto j: *this) {
     Argm statement_argm = j.interpret(src_argm, exceptions);
     if (global_stack.unwind_stack()) break;
@@ -84,7 +97,7 @@ void Command_block::prototype_execute(const Argm& argm,
     if (!global_stack.unwind_stack()) {
       Argm params(argm.argv(), argm.argfunction(), &locals,
                   argm.input, argm.output, argm.error);
-      execute(params, exceptions);}
+      statements_execute(params, exceptions);}
     prototype.unused_var_check(&locals, exceptions);}
   catch (Exception error) {
     prototype.unused_var_check(&locals, exceptions);

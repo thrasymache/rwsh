@@ -72,6 +72,8 @@ int my_strtoi(const std::string& val, int min, int max, Error_list& errors) {
   try {return my_strtoi(val, min, max);}
   catch (E_generic) {errors.add_error(Exception(Argm::Not_a_number, val));}
   catch (E_nan) {errors.add_error(Exception(Argm::Not_a_number, val));}
+  catch (E_not_an_integer) {
+    errors.add_error(Exception(Argm::Number_not_an_integer, val));}
   catch (E_range) {errors.add_error(Exception(Argm::Input_range, val));}
   return dummy_int;} // any use of this value is a failure to stop on error
 
@@ -193,15 +195,14 @@ void b_for(const Argm& argm, Error_list& exceptions) {
   Argv prototype_argv;
   tokenize_words(argm[argm.argc()-1], std::back_inserter(prototype_argv));
   Function temp_func(".for(body)", prototype_argv, *argm.argfunction());
-  for (auto i: argm.subrange(1,1))
-    if (argm.argfunction()) {
-      Argm body(argm.parent_map(), argm.input, argm.output, argm.error);
-      body.push_back(".for(body)");
-      tokenize_words(i, std::back_inserter(body));
-      temp_func(body, exceptions);
-      (void) global_stack.remove_exceptions(".continue", exceptions);
-      if (global_stack.remove_exceptions(".break", exceptions) ||
-          global_stack.unwind_stack()) return;}}
+  for (auto i: argm.subrange(1,1)) {
+    Argm body(argm.parent_map(), argm.input, argm.output, argm.error);
+    body.push_back(".for(body)");
+    tokenize_words(i, std::back_inserter(body));
+    temp_func(body, exceptions);
+    (void) global_stack.remove_exceptions(".continue", exceptions);
+    if (global_stack.remove_exceptions(".break", exceptions) ||
+        global_stack.unwind_stack()) return;}}
 
 // run the argfunction for line of input, passing that line as the argm
 void b_for_each_line(const Argm& argm, Error_list& exceptions) {
@@ -287,7 +288,7 @@ void if_core(const Argm& argm, Error_list& exceptions,
       if (global_stack.unwind_stack())
         run = false, state.exception_thrown = true;
       else if (state.in_if_block) {
-        state.in_if_block = false;
+        state.in_if_block = state.exception_thrown = false;
         // if only .false was thrown, then ignore any .if without .else
         if (logic == run) throw Exception(Argm::Bad_if_nest);}}
     if (run) {
@@ -296,12 +297,10 @@ void if_core(const Argm& argm, Error_list& exceptions,
                          argm.input, argm.output.child_stream(), argm.error);
         mapped_argm.push_back(".mapped_argfunction");
         (*argm.argfunction())(mapped_argm, exceptions);}
-      if (global_stack.unwind_stack())
-        state.exception_thrown = ! is_else;
-      else if (state.in_if_block) {
-        state.in_if_block = false;
-        throw Exception(Argm::Bad_if_nest);}
-      else state.in_if_block = state.successful_condition = true;}
+      if (global_stack.unwind_stack()) state.exception_thrown = ! is_else;
+      else if (state.in_if_block && !state.exception_thrown)
+        throw Exception(Argm::Bad_if_nest);
+      else state.successful_condition = true, state.exception_thrown = false;}
     state.in_if_block = true;}}
 }
 
@@ -400,10 +399,10 @@ void b_list_executables(const Argm& argm, Error_list& exceptions) {
 
 // prints all variables in the local variable map
 void b_list_locals(const Argm& argm, Error_list& exceptions) {
-  for (auto i: *argm.parent_map())
-    argm.output <<(i.first == argm.parent_map()->begin()->first? "": " ")
-                <<i.first;
-  argm.locals_listed();}
+  Variable_map* nonempty = argm.nonempty_parent_map();
+  for (auto j: *nonempty)
+    argm.output <<(j.first == nonempty->begin()->first? "": " ") <<j.first;
+  nonempty->locals_listed = true;}
 
 // add a variable to the variable map until the enclosing function terminates
 void b_local(const Argm& argm, Error_list& exceptions) {
@@ -437,6 +436,14 @@ void b_getpid(const Argm& argm, Error_list& exceptions) {
 // print the parent process id of the shell
 void b_getppid(const Argm& argm, Error_list& exceptions) {
   argm.output <<(unsigned) getppid();}
+
+// reassign the variables in the prototype according to the arguments
+// this will not permit you to declare variables that don't already exist
+void b_reinterpret(const Argm& argm, Error_list& exceptions) {
+  Argv prototype_argv;
+  tokenize_words(argm[argm.argc()-1], std::back_inserter(prototype_argv));
+  Prototype prototype(prototype_argv);
+  prototype.reassign(argm.subrange(0, 1), *argm.parent_map(), exceptions);}
 
 // add the given exception as a replacement for the current one (if nothing
 // afterwards fails)
@@ -756,7 +763,19 @@ void b_var_divide(const Argm& argm, Error_list& exceptions) {
     return exceptions.add_error(Exception(Argm::Epsilon, var_str, argm[2]));
   argm.set_var(argm[1], result);}
 
-// divide the specified variable by the specified value
+// set the specified variable to its remainder modulo the specified value
+void b_var_modulo(const Argm& argm, Error_list& exceptions) {
+  const std::string& var_str = argm.get_var(argm[1]);
+  int var_term = my_strtoi(var_str, INT_MIN, INT_MAX, exceptions);
+  int const_term = my_strtoi(argm[2], INT_MIN, INT_MAX, exceptions);
+  if (const_term == 0)
+    exceptions.add_error(Exception(Argm::Divide_by_zero, var_str));
+  if (global_stack.unwind_stack()) return;
+  double remainder = var_term % const_term;
+  std::string result = my_dtostr(remainder);
+  argm.set_var(argm[1], result);}
+
+// multiply the specified variable by the specified value
 void b_var_multiply(const Argm& argm, Error_list& exceptions) {
   const std::string& var_str = argm.get_var(argm[1]);
   double var_term = my_strtod(var_str, exceptions);

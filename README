@@ -14,8 +14,6 @@ this version of the shell, including the following.
      *  .while will respond to the .retest_condition exception by testing the
         condition, and ending the loop if it fails, but (unlike .continue)
         continuing with the following statement if it succeeds.
-     *  Control flow statements such as .for will also use a prototype for
-        the values passed to the argfunction rather than $1.
      *  Functions will be able to take more than one argfunction with string
         arguments being associated with each argfunction. For instance this
         will permit .scope to take several prototypes with an argfunction for
@@ -59,6 +57,11 @@ this version of the shell, including the following.
      *  When handling a set of arguments as a whole, rather than as a set of
 	words, any excess space that was included when specifying them will be
 	included.
+     *  .for and .for_each_line will merge taking a separator and prototype(s)
+        as an argument and receiving the list to be iterated through on stdin.
+        Similarly, .scope and .reinterpret will take a separator with which to
+        split stdin, and then apply the prototype (each of which will no longer
+        need to be a single argument).
      *  .stepwise will step through the argument specifications as well as
         through the statements of a function, permitting one, for example, to
         identify the arguments that make use of a particular variable.

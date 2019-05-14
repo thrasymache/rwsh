@@ -118,7 +118,7 @@ bool Argm::var_exists(const std::string& key) const {
               case '7': case '8': case '9': case '0': {
       int n = std::atoi(key.c_str());
       return (int)argv_v.size() > n;}
-    default: return parent_map()->exists(key, true);}}
+    default: return parent_map()->exists_with_check(key);}}
 
 void Argm::global(const std::string& key, const std::string& value) const {
   switch (key[0]) {
@@ -141,9 +141,6 @@ void Argm::local_declare(const std::string& key, Error_list& exceptions) const{
       exceptions.add_error(Exception(Argm::Illegal_variable_name, key));
       break;
     default: parent_map()->local_declare(key);}}
-
-void Argm::locals_listed(void) const {
-  parent_map()->locals_listed = true;}
 
 void Argm::unset_var(const std::string& key) const {
   switch (key[0]) {

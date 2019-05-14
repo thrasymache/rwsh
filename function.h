@@ -41,6 +41,7 @@ class Command_block : public Base_executable, public std::vector<Arg_script> {
   void promote_soons(unsigned nesting);
   void prototype_execute(const Argm& argm, const Prototype& prototype,
                         Error_list& exceptions);
+  void statements_execute(const Argm& src_argm, Error_list& exceptions);
   std::string str() const; };
 
 class Function : public Named_executable {

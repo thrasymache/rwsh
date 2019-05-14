@@ -1,6 +1,6 @@
 .echo $*0 >/tmp/lcl (
 )
-.set_max_nesting 20
+.set_max_nesting 50
 .for ${.list_environment}$ (-- var val) {.nop
     .if .var_exists $var {.nop $val}
     .else {.nop
@@ -22,7 +22,7 @@
                [-rwsh] [rwsh_binary] [script-args ...]) {.nop
   .nop $rwsh_binary$ $-to$ $-c$ $script-args$ $-rwsh$
   .if .var_exists --init-file {.source $init-file}
-  .else_if .var_exists -to {
+  .else_if .var_exists -to {.nop $PATH $?
     .unset PATH
     .unset ?
     .global TESTABILITY (an=external var(iable))

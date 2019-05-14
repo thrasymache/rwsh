@@ -21,6 +21,8 @@ class Argm {
   Argm& operator=(const Argm& src);
   std::string str(void) const;
   Variable_map* parent_map(void) const {return parent_map_v;};
+  Variable_map* nonempty_parent_map(void) const {
+    return parent_map_v->nonempty_parent();};
   Command_block* argfunction(void) const {return argfunction_v;};
   void set_argfunction(Command_block* val);
 
@@ -82,6 +84,7 @@ class Argm {
     Not_catching_exception,
     Not_executable,
     Not_soon_enough,
+    Number_not_an_integer,
     Raw_command,
     Return_code,
     Result_range,
@@ -126,7 +129,6 @@ class Argm {
   void global(const std::string& key, const std::string& value) const;
   void local(const std::string& key, const std::string& value) const;
   void local_declare(const std::string& key, Error_list& exceptions) const;
-  void locals_listed(void) const;
   void set_var(const std::string& key, const std::string& value) const;
   template<class Out>
   Out star_var(const std::string& key, unsigned reference_level, Out res) const;
