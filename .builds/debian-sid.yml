@@ -1,0 +1,11 @@
+image: debian/sid
+packages:
+  - libreadline-dev
+sources:
+  - https://git.sr.ht/~thrasymache/rwsh
+tasks:
+  - build: |
+        cd rwsh
+        c++ --version
+        # cc (Debian 8.3.0-7) 8.3.0  (FSF)
+        make

@@ -1,0 +1,10 @@
+image: ubuntu/bionic
+packages:
+  - libreadline-dev
+sources:
+  - https://git.sr.ht/~thrasymache/rwsh
+tasks:
+  - build: |
+        cd rwsh
+        c++ --version
+        make

@@ -1,0 +1,9 @@
+image: archlinux
+sources:
+  - https://git.sr.ht/~thrasymache/rwsh
+tasks:
+  - build: |
+        cd rwsh
+        c++ --version
+        # c++ (GCC) 9.1.0
+        make
