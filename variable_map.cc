@@ -1,7 +1,7 @@
 // Functions to implement a variable map, and permit it to be exported as the
 // environment for child processes.
 //
-// Copyright (C) 2006-2019 Samuel Newbold
+// Copyright (C) 2006-2023 Samuel Newbold
 
 #include <cstdlib>
 #include <cstring>
@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <sstream>
 #include <string>
+#include <sys/time.h>
 #include <vector>
 
 #include "rwsh_stream.h"

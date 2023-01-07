@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2019 Samuel Newbold
+// Copyright (C) 2005-2023 Samuel Newbold
 
 class Builtin : public Named_executable {
   void (*implementation)(const Argm& argm, Error_list& exceptions);

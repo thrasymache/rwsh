@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2017 Samuel Newbold
+// Copyright (C) 2007-2023 Samuel Newbold
 
 #include <errno.h>
 #include <stdio.h>
@@ -9,6 +9,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <sys/time.h>
 #include <vector>
 
 #include "rwsh_stream.h"

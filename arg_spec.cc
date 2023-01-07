@@ -1,7 +1,7 @@
 // The definition of the Arg_spec class which contains a single argument
 // specifier (e.g. a fixed string, a variable read, a selection read or $*).
 //
-// Copyright (C) 2006-2018 Samuel Newbold
+// Copyright (C) 2006-2023 Samuel Newbold
 
 #include <cstdlib>
 #include <dirent.h>
@@ -13,6 +13,7 @@
 #include <sstream>
 #include <string>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <vector>
 
 #include "arg_spec.h"

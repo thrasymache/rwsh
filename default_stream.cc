@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2018 Samuel Newbold
+// Copyright (C) 2008-2023 Samuel Newbold
 
 #include <stdio.h>
 #include <cstdlib>
@@ -7,6 +7,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <string>
+#include <sys/time.h>
 #include <vector>
 
 #include "rwsh_stream.h"

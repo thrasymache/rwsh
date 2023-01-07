@@ -1,6 +1,6 @@
 // The functions that implement each of the builtin executables
 //
-// Copyright (C) 2006-2019 Samuel Newbold
+// Copyright (C) 2006-2023 Samuel Newbold
 
 #include <algorithm>
 #include <climits>
@@ -20,6 +20,7 @@
 #include <sstream>
 #include <sys/stat.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <vector>

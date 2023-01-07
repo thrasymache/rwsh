@@ -3,7 +3,7 @@
 // between the Argm that was passed to the function and the Argm that will
 // be used to run a given executable.
 //
-// Copyright (C) 2006-2017 Samuel Newbold
+// Copyright (C) 2006-2023 Samuel Newbold
 
 #include <cstdlib>
 #include <exception>
@@ -13,6 +13,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <sys/time.h>
 #include <vector>
 
 #include "arg_spec.h"

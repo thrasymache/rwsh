@@ -1,11 +1,12 @@
 // the registering of builtins
-// Copyright Samuel Newbold 2005-2019
+// Copyright Samuel Newbold 2005-2023
 
 #include <list>
 #include <map>
 #include <set>
 #include <signal.h>
 #include <string>
+#include <sys/time.h>
 #include <vector>
 
 #include "arg_spec.h"

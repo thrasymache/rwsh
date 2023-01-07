@@ -3,12 +3,13 @@
 // its key so that it can return argument functions which are part of the Argm
 // object.
 //
-// Copyright (C) 2005-2019 Samuel Newbold
+// Copyright (C) 2005-2023 Samuel Newbold
 
 #include <list>
 #include <map>
 #include <set>
 #include <string>
+#include <sys/time.h>
 #include <vector>
 
 #include "arg_spec.h"

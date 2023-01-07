@@ -1,4 +1,6 @@
 image: alpine/latest
+packages:
+  - readline-dev
 sources:
   - https://git.sr.ht/~thrasymache/rwsh
 tasks:

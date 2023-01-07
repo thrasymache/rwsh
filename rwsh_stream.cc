@@ -1,9 +1,10 @@
-// Copyright (C) 2007-2018 Samuel Newbold
+// Copyright (C) 2007-2023 Samuel Newbold
 
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
+#include <sys/time.h>
 #include <unistd.h>
 
 #include "rwsh_stream.h"

@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Samuel Newbold
+// Copyright (C) 2018-2023 Samuel Newbold
 
 #include <cstdlib>
 #include <list>
@@ -6,6 +6,7 @@
 #include <set>
 #include <stdio.h>
 #include <string>
+#include <sys/time.h>
 #include <vector>
 
 #include "rwsh_stream.h"

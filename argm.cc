@@ -1,7 +1,7 @@
 // The definition of the Argm class, which contains the arguments that may
 // be passed to an executable.
 //
-// Copyright (C) 2005-2019 Samuel Newbold
+// Copyright (C) 2005-2023 Samuel Newbold
 
 #include <cstring>
 #include <cstdlib>
@@ -9,6 +9,7 @@
 #include <map>
 #include <set>
 #include <sstream>
+#include <sys/time.h>
 #include <vector>
 
 #include "arg_spec.h"

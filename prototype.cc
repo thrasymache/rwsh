@@ -2,12 +2,13 @@
 // between the arguments passed to and the parameters received by a function
 // or the argument function of .scope
 //
-// Copyright (C) 2015-2019 Samuel Newbold
+// Copyright (C) 2015-2023 Samuel Newbold
 #include <set>
 #include <string>
 #include <vector>
 #include <list>
 #include <map>
+#include <sys/time.h>
 
 #include "arg_spec.h"
 #include "rwsh_stream.h"

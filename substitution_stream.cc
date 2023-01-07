@@ -1,10 +1,11 @@
-// Copyright (C) 2007-2018 Samuel Newbold
+// Copyright (C) 2007-2023 Samuel Newbold
 
 #include <cstdlib>
 #include <errno.h>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include <sys/time.h>
 #include <unistd.h>
 #include <vector>
 

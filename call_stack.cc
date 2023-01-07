@@ -2,13 +2,14 @@
 // encapsulates the variables that had been static within Executable classes,
 // and the latter encapsulates the state used by if_core
 //
-// Copyright (C) 2019 Samuel Newbold
+// Copyright (C) 2019-2023 Samuel Newbold
 
 #include <algorithm>
 #include <list>
 #include <map>
 #include <set>
 #include <string>
+#include <sys/time.h>
 #include <vector>
 
 #include "arg_spec.h"
