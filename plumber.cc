@@ -21,7 +21,7 @@
 #include "plumber.h"
 
 class read_handler :
-      public std::unary_function<std::pair<Rwsh_istream*, Rwsh_ostream*>, bool> {
+      public std::function<bool (std::pair<Rwsh_istream*, Rwsh_ostream*>)> {
   char* buffer;
   size_t buffer_size;
 

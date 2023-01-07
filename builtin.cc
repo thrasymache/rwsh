@@ -217,8 +217,7 @@ void b_for_each_line(const Argm& argm, Error_list& exceptions) {
               default_input, argm.output, argm.error);
     argm.input.getline(line);
     if (argm.input.fail() && !line.size()) break;
-    tokenize(line, std::back_inserter(body),
-             std::bind2nd(std::equal_to<char>(), ' '));
+    tokenize(line, std::back_inserter(body), [](char a) {return a == ' ';});
     temp_func(body, exceptions);
     (void) global_stack.remove_exceptions(".continue", exceptions);
     if (global_stack.remove_exceptions(".break", exceptions) ||
@@ -858,8 +857,7 @@ void b_whence_function(const Argm& argm, Error_list& exceptions) {
 // otherwise find the binary in $2 with filename $1
 void b_which_path(const Argm& argm, Error_list& exceptions) {
   std::vector<std::string> path;
-  tokenize(argm[2], std::back_inserter(path),
-           std::bind2nd(std::equal_to<char>(), ':'));
+  tokenize(argm[2], std::back_inserter(path), [](char a) {return a == ':';});
   for (auto j: path) {
     std::string test;
     if (argm[1].substr(0,1) == "/" || argm[1].substr(0,2) == "./" ||

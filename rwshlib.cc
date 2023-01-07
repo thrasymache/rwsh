@@ -5,7 +5,7 @@
 #include <limits>
 #include <math.h>
 #include <string>
-#include <sys/errno.h>
+#include <errno.h>
 
 #include "rwshlib.h"
 

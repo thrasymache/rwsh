@@ -5,7 +5,6 @@
 
 #include <dirent.h>
 #include <fcntl.h>
-#include <functional>
 #include <iterator>
 #include <list>
 #include <map>
@@ -69,8 +68,7 @@ std::string Simple_pattern::str(void) const {
 
 Entry_pattern::Entry_pattern(const std::string& src) {
   std::vector<std::string> temp;
-  tokenize_strict(src, std::back_inserter(temp),
-                  std::bind2nd(std::equal_to<char>(), ' '));
+  tokenize_strict(src, std::back_inserter(temp), [](char a) {return a == ' ';});
   for (auto j: temp) options.push_back(Simple_pattern(j));
   only_text = options.size() == 1 && options[0].is_only_text();}
 
@@ -98,8 +96,7 @@ void str_to_entry_pattern_list(const std::string& src,
                                std::list<Entry_pattern>& res) {
   unsigned updir = 0;
   std::vector<std::string> temp;
-  tokenize_strict(src, std::back_inserter(temp),
-                  std::bind2nd(std::equal_to<char>(), '/'));
+  tokenize_strict(src, std::back_inserter(temp), [](char a) {return a == '/';});
   auto i = temp.begin();
   if (src.empty());
   else if (*i == "") {
