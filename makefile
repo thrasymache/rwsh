@@ -13,8 +13,8 @@ documentation = docs/argument_functions.html docs/builtins.html \
 	
 CXX = c++
 #CXX = g++
-CXXFLAGS += -g -std=c++11
-#CXXFLAGS += -g -std=c++17
+#CXXFLAGS += -g -std=c++11
+CXXFLAGS += -g -std=c++17
 LDLIBS = -lreadline
 
 rwsh: $(objects) $(local_objects)

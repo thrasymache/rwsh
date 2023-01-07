@@ -1,5 +1,8 @@
 rwsh is a shell for Unix-like systems.  
 
+The current build requirements are a `c++`, a `make` and libreadline-dev (the
+development headers in addition to the runtime library).
+
 Documentation can be found in the docs directory.  As it is still very much of 
 a proof-of-concept, there is no install or configure script.  
 

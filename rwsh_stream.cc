@@ -68,7 +68,8 @@ Rwsh_istream_p& Rwsh_istream_p::operator=(const Rwsh_istream_p& src) {
   else {
     implementation = src.implementation->copy_pointer();
     inherited = false;
-    is_default_v = src.is_default_v;}} // guaranteed to be false
+    is_default_v = src.is_default_v;} // guaranteed to be false
+  return *this;}
 
 Rwsh_istream_p::~Rwsh_istream_p(void) {
   if (!inherited) delete implementation;}
@@ -94,7 +95,8 @@ Rwsh_ostream_p& Rwsh_ostream_p::operator=(const Rwsh_ostream_p& src) {
   if (src.inherited) implementation = src.implementation;
   else implementation = src.implementation->copy_pointer();
   inherited = src.inherited;
-  is_default_v = src.is_default_v;}
+  is_default_v = src.is_default_v;
+  return *this;}
 
 Rwsh_ostream_p::~Rwsh_ostream_p(void) {
   if (!inherited) delete implementation;}

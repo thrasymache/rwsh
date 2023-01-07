@@ -23,7 +23,8 @@ class Command_block : public Base_executable, public std::vector<Arg_script> {
   Command_block& operator=(const Command_block& src) {
     Base::clear();
     std::copy(src.begin(), src.end(), std::back_inserter(*this));
-    trailing = src.trailing;};
+    trailing = src.trailing;
+    return *this;};
   Command_block(const std::string& src, std::string::size_type& point,
                 unsigned max_soon, Error_list& errors);
   Command_block* copy_pointer(void) const {
