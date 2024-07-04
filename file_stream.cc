@@ -9,6 +9,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <sys/stat.h>
 #include <sys/time.h>
 #include <vector>
 

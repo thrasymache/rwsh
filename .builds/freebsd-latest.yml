@@ -1,0 +1,11 @@
+image: freebsd/latest
+packages:
+  - devel/readline
+sources:
+  - https://git.sr.ht/~thrasymache/rwsh
+tasks:
+  - build: |
+        cd rwsh
+        c++ --version
+        # cc (Debian 6.3.0-18+deb9u1) 6.3.0 20170516
+        make

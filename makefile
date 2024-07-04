@@ -1,8 +1,8 @@
 # makefile for rwsh
 
-objects = argm.o arg_script.o arg_spec.o builtin.o call_stack.o clock.o \
+objects = rwsh.o argm.o arg_script.o arg_spec.o builtin.o call_stack.o clock.o \
 	command_stream.o default_stream.o executable.o executable_map.o \
-	file_stream.o function.o plumber.o rwsh.o rwsh_stream.o rwshlib.o \
+	file_stream.o function.o plumber.o rwsh_stream.o rwshlib.o \
 	pipe_stream.o prototype.o selection.o substitution_stream.o \
 	variable_map.o
 local_objects = rwsh_init.o 
@@ -13,12 +13,12 @@ documentation = docs/argument_functions.html docs/builtins.html \
 	
 CXX = c++
 #CXX = g++
-#CXXFLAGS += -g -std=c++11
-CXXFLAGS += -g -std=c++17
+CXXFLAGS += -g -std=c++17 -I /usr/local/include
+LDFLAGS += -L /usr/local/lib
 LDLIBS = -lreadline
 
 rwsh: $(objects) $(local_objects)
-	$(CXX) $^ $(CXXFLAGS) $(LDLIBS) -o $@
+	$(CXX) $(LDFLAGS) $(objects) $(local_objects) $(LDLIBS) -o $@
 librwsh.a: $(objects)
 	ar -rv $@ $(objects)
 %.html: %.md

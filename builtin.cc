@@ -22,6 +22,7 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <vector>
 extern char** environ;
@@ -521,11 +522,12 @@ void b_set_max_nesting(const Argm& argm, Error_list& exceptions) {
 // run the first argument as if it was a script, passing additional arguments
 // to that script
 void b_source(const Argm& argm, Error_list& exceptions) {
+  const std::string& script = argm[1];
   struct stat sb;
-  if (stat(argm[1].c_str(), &sb))
-    throw Exception(Argm::File_open_failure, argm[1]);
-  if (!(sb.st_mode & S_IXUSR)) throw Exception(Argm::Not_executable, argm[1]);
-  Rwsh_istream_p src(new File_istream(argm[1]), false, false);
+  if (stat(script.c_str(), &sb))
+    throw Exception(Argm::File_open_failure, script);
+  if (!(sb.st_mode & S_IXUSR)) throw Exception(Argm::Not_executable, script);
+  Rwsh_istream_p src(new File_istream(script), false, false);
   Command_stream command_stream(src, false);
   Command_block block;
   Prototype prototype(Argv{"--", "[argv", "...]"});

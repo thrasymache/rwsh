@@ -8,6 +8,6 @@ template<class Out> int read_dir(const std::string& filename, Out dest) {
   DIR *src = opendir(file.c_str());
   if (!src) throw Exception(Argm::Unreadable_dir, file, errno);
   struct dirent *result = nullptr;
-  while (result = readdir(src)) *dest++ = result->d_name;
+  while ((result = readdir(src))) *dest++ = result->d_name;
   return closedir(src);}
 
