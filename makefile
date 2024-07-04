@@ -29,7 +29,7 @@ librwsh.a: $(objects)
 
 include deps.mk
 
-.PHONY: all clean dist
+.PHONY: all clean dist test
 all: rwsh librwsh.a deps.mk
 clean:
 	rm *.o
@@ -40,6 +40,8 @@ dist:
 		rwsh-0.3
 	tar -czf rwsh-0.3.tar.gz rwsh-0.3
 	rm -r rwsh-0.3
+test:
+	./rwsh -to <test_main.sh
 install: rwsh
 	install rwshrc-basic /etc/
 	install rwshrc-default /etc/

@@ -8,3 +8,6 @@ tasks:
         cd rwsh
         c++ --version
         make
+  - test: |
+        cd rwsh
+        make test

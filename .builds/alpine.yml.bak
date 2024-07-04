@@ -9,3 +9,6 @@ tasks:
         c++ --version
         # c++ (Alpine 8.3.0) 8.3.0 (FSF)
         make
+  - test: |
+        cd rwsh
+        make test

@@ -7,3 +7,6 @@ tasks:
         c++ --version
         # c++ (GCC) 9.1.0
         make
+  - test: |
+        cd rwsh
+        make test

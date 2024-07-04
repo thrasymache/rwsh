@@ -9,3 +9,6 @@ tasks:
         c++ --version
         # cc (Debian 6.3.0-18+deb9u1) 6.3.0 20170516
         make
+  - test: |
+        cd rwsh
+        make test

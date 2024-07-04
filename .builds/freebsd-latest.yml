@@ -7,5 +7,8 @@ tasks:
   - build: |
         cd rwsh
         c++ --version
-        # cc (Debian 6.3.0-18+deb9u1) 6.3.0 20170516
+        # FreeBSD clang version 16.0.6 (https://github.com/llvm/llvm-project.git llvmorg-16.0.6-0-g7cbf1a259152)
         make
+  - test: |
+        cd rwsh
+        make test

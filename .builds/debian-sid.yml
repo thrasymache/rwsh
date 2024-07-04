@@ -9,3 +9,6 @@ tasks:
         c++ --version
         # cc (Debian 8.3.0-7) 8.3.0  (FSF)
         make
+  - test: |
+        cd rwsh
+        make test
