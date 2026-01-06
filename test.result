@@ -199,7 +199,7 @@ call stack .source .try_catch_recursive(body)
   echo result of $op with arguments $lhs and $rhs is out of range
   echo call stack: $op $stack$}
 .function .return_code code cmd [add_stack ...] {
-  .if .test_in $cmd /usr/bin/test /bin/false {
+  .if .test_in $cmd /bin/test /usr/bin/test /bin/false {
     .replace_exception .false $cmd
     .nop $code $add_stack$}
   .else {
@@ -635,22 +635,22 @@ $.binary /bin/cat
 /bin/cat is already an executable in the hash table (
 )
 call stack .binary
-$.global PATH /usr/bin
+$.global PATH /usr/games
 $/bin/true
-/bin/true : binary not found in /usr/bin
+/bin/true : binary not found in /usr/games
 call stack: .which_path .autofunction .autofunction
 substitution (${.which_path $cmd $PATH}) failed
 call stack: .autofunction
 /bin/true : command not found ( /bin/true )
 $true
-true : binary not found in /usr/bin
+true : binary not found in /usr/games
 call stack: .which_path .autofunction .autofunction
 substitution (${.which_path $cmd $PATH}) failed
 call stack: .autofunction
 true : command not found ( true )
 $.binary /bin/true
 $true
-true : binary not found in /usr/bin
+true : binary not found in /usr/games
 call stack: .which_path .autofunction .autofunction
 substitution (${.which_path $cmd $PATH}) failed
 call stack: .autofunction
@@ -668,7 +668,7 @@ $true add the function using existing binary
 $.whence_function /usr/bin/env
 /usr/bin/env : command not found ( /usr/bin/env .whence_function )
 $env false add the function and the binary at once
-/usr/bin/env returned 1 : call stack /usr/bin/env env
+/bin/env returned 1 : call stack /bin/env env
 $.whence_function true
 .function true -- [args ...] {/bin/true $args$}
 $/bin/echo this will add /bin/echo to the hash table
@@ -688,7 +688,7 @@ call stack .replace_exception .mapped_argfunction .if .return_code .try_catch_re
 $if_only_not false {echo false throwing a .false exception}
 false throwing a .false exception
 $./rwsh -c (env false)
-/usr/bin/env returned 1 : call stack /usr/bin/env env .mapped_argfunction .collect_errors_except .mapped_argfunction .if .scope .source .collect_errors_except .init
+/bin/env returned 1 : call stack /bin/env env .mapped_argfunction .collect_errors_except .mapped_argfunction .if .scope .source .collect_errors_except .init
 ./rwsh returned 1 : call stack ./rwsh
 $./rwsh -c (.get_pid)
 .get_pid : binary not found in /bin:/usr/bin:.
@@ -1575,7 +1575,7 @@ $.fork .mapped_argfunction {
   .combine $nl}
 ../bin/rwsh : binary not found in /bin:.
 call stack: .which_path .try_catch_recursive(body)
-directory is now /bin in subshell
+directory is now /usr/bin in subshell
 ../bin/rwsh : binary not found in /bin
 call stack: .which_path .try_catch_recursive(body)
 ../bin/rwsh
@@ -3917,10 +3917,10 @@ $forj ${.list_executables}$ {.combine $j $nl}
 /
 /bin/cat
 /bin/echo
+/bin/env
 /bin/false
 /bin/rm
 /bin/true
-/usr/bin/env
 a
 af
 b
@@ -5011,17 +5011,17 @@ $echo ${.which_path does<not>exist /bin:/usr/bin}
 does<not>exist : binary not found in /bin:/usr/bin
 call stack: .which_path .interpret
 substitution (${.which_path does<not>exist /bin:/usr/bin}) failed
-$echo ${.which_path cat :/bin:/usr/bin}
+$echo ${.which_path cat :/bin:/usr/games}
 /bin/cat
-$echo ${.which_path cat /usr/bin/:/bin/:}
+$echo ${.which_path cat /usr/games/:/bin/:}
 /bin/cat
 $echo ${.which_path /bin/cat /usr/bin/:/bin/:}
 /bin/cat
-$echo ${.which_path rwsh /usr/bin:/bin}
+$echo ${.which_path rwsh /usr/games:/bin}
 /bin/rwsh
-$echo ${.which_path rwsh .:/usr/bin:/bin}
+$echo ${.which_path rwsh .:/usr/games:/bin}
 ./rwsh
-$echo ${.which_path rwsh /usr/bin:/bin:.}
+$echo ${.which_path rwsh /usr/games:/bin:.}
 /bin/rwsh
 $echo ${.which_path ./rwsh /usr/bin:/bin}
 ./rwsh : binary not found in /usr/bin:/bin
@@ -5033,11 +5033,11 @@ $echo ${.which_path ../bin/rwsh /usr/bin:/bin}
 ../bin/rwsh : binary not found in /usr/bin:/bin
 call stack: .which_path .interpret
 substitution (${.which_path ../bin/rwsh /usr/bin:/bin}) failed
-$echo ${.which_path rwsh :/usr/bin::/usr/bin:}
-rwsh : binary not found in :/usr/bin::/usr/bin:
+$echo ${.which_path rwsh :/usr/games::/opt:}
+rwsh : binary not found in :/usr/games::/opt:
 call stack: .which_path .interpret
-substitution (${.which_path rwsh :/usr/bin::/usr/bin:}) failed
-$echo ${.which_path rwsh /usr/bin:.}
+substitution (${.which_path rwsh :/usr/games::/opt:}) failed
+$echo ${.which_path rwsh /usr/games:.}
 ./rwsh
 $
 $# .while
@@ -5878,11 +5878,11 @@ extra_close) (extra_open
 this printenv function has been brought to you by .autofunction
 $whence printenv
 .function printenv -- [args ...] {
-      /usr/bin/printenv $args$
+      /bin/printenv $args$
       echo this printenv function has been brought to you by .autofunction}
 $
 $if_only_not test -z z {echo test throwing a .false exception}
-added /usr/bin/test to executable map in test suite
+added /bin/test to executable map in test suite
 test throwing a .false exception
 $
 $## unused variables

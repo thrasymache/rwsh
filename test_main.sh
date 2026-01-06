@@ -100,7 +100,7 @@ whence .binary
 .binary {echo excess argfunction}
 .binary /bin/rzwsh
 .binary /bin/cat
-.global PATH /usr/bin
+.global PATH /usr/games
 /bin/true
 true
 .binary /bin/true
@@ -1780,17 +1780,17 @@ echo ${.which_path cat}
 echo ${.which_path cat /bin {excess argfunc}}
 echo ${.which_path cat \ }
 echo ${.which_path does<not>exist /bin:/usr/bin}
-echo ${.which_path cat :/bin:/usr/bin}
-echo ${.which_path cat /usr/bin/:/bin/:}
+echo ${.which_path cat :/bin:/usr/games}
+echo ${.which_path cat /usr/games/:/bin/:}
 echo ${.which_path /bin/cat /usr/bin/:/bin/:}
-echo ${.which_path rwsh /usr/bin:/bin}
-echo ${.which_path rwsh .:/usr/bin:/bin}
-echo ${.which_path rwsh /usr/bin:/bin:.}
+echo ${.which_path rwsh /usr/games:/bin}
+echo ${.which_path rwsh .:/usr/games:/bin}
+echo ${.which_path rwsh /usr/games:/bin:.}
 echo ${.which_path ./rwsh /usr/bin:/bin}
 echo ${.which_path ./rwsh /bin:.}
 echo ${.which_path ../bin/rwsh /usr/bin:/bin}
-echo ${.which_path rwsh :/usr/bin::/usr/bin:}
-echo ${.which_path rwsh /usr/bin:.}
+echo ${.which_path rwsh :/usr/games::/opt:}
+echo ${.which_path rwsh /usr/games:.}
 
 # .while
 .while {e ARGS}

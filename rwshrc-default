@@ -173,6 +173,7 @@ fn last_time cmd {.last_execution_time $cmd; c $nl}
 fn local {. &{c $HOME /.rwshrc}}
 fn mark {ntimes 4 {.echo ####################}; c $nl}
 fn timings cmd {
+  .echo last exception (); .last_exception $cmd
   .echo last time (); .last_execution_time $cmd; c $nl
   .echo total time (); .total_execution_time $cmd; c $nl
   .echo execution count (); .execution_count $cmd; c $nl}
