@@ -9,6 +9,12 @@ tasks:
         c++ --version
         # c++ (Alpine 8.3.0) 8.3.0 (FSF)
         make
+  - install: |
+        cd rwsh
+        sudo make install
+  - rwshrc-basic-devnull: |
+        cd rwsh
+        make rwshrc-basic-devnull
   - test: |
         cd rwsh
         make test

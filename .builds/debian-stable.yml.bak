@@ -9,6 +9,12 @@ tasks:
         c++ --version
         # cc (Debian 6.3.0-18+deb9u1) 6.3.0 20170516
         make
+  - install: |
+        cd rwsh
+        sudo make install
+  - rwshrc-basic-devnull: |
+        cd rwsh
+        make rwshrc-basic-devnull
   - test: |
         cd rwsh
         make test

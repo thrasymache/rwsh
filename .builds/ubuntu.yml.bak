@@ -8,6 +8,12 @@ tasks:
         cd rwsh
         c++ --version
         make
+  - install: |
+        cd rwsh
+        sudo make install
+  - rwshrc-basic-devnull: |
+        cd rwsh
+        make rwshrc-basic-devnull
   - test: |
         cd rwsh
         make test

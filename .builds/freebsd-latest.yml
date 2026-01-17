@@ -9,6 +9,12 @@ tasks:
         c++ --version
         # FreeBSD clang version 16.0.6 (https://github.com/llvm/llvm-project.git llvmorg-16.0.6-0-g7cbf1a259152)
         make
+  - install: |
+        cd rwsh
+        sudo make install
+  - rwshrc-basic-devnull: |
+        cd rwsh
+        make rwshrc-basic-devnull
   - test: |
         cd rwsh
         make test

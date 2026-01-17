@@ -40,6 +40,8 @@ dist:
 		rwsh-0.3
 	tar -czf rwsh-0.3.tar.gz rwsh-0.3
 	rm -r rwsh-0.3
+rwshrc-basic-devnull:
+	./rwsh --init-file ./rwshrc-basic </dev/null
 test:
 	./rwsh -to <test_main.sh
 install: rwsh
