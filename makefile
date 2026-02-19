@@ -40,10 +40,12 @@ dist:
 		rwsh-0.3
 	tar -czf rwsh-0.3.tar.gz rwsh-0.3
 	rm -r rwsh-0.3
-rwshrc-basic-devnull:
+rwshrc-basic-devnull: rwsh
 	./rwsh --init-file ./rwshrc-basic </dev/null
-test:
-	./rwsh -to <test_main.sh
+rwshrc-default-devnull: rwsh
+	./rwsh --init-file ./rwshrc-default </dev/null
+test: rwsh
+	./rwsh -to <test_main.sh | diff test.result -
 install: rwsh
 	install rwshrc-basic /etc/
 	install rwshrc-default /etc/

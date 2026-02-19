@@ -15,6 +15,9 @@ tasks:
   - rwshrc-basic-devnull: |
         cd rwsh
         make rwshrc-basic-devnull
+  - rwshrc-default-devnull: |
+        cd rwsh
+        make rwshrc-default-devnull
   - test: |
         cd rwsh
         make test

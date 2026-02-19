@@ -1,12 +1,13 @@
-image: ubuntu/next
+image: freebsd/latest
 packages:
-  - libreadline-dev
+  - devel/readline
 sources:
   - https://git.sr.ht/~thrasymache/rwsh
 tasks:
   - build: |
         cd rwsh
         c++ --version
+        # FreeBSD clang version 16.0.6 (https://github.com/llvm/llvm-project.git llvmorg-16.0.6-0-g7cbf1a259152)
         make
   - install: |
         cd rwsh
@@ -14,6 +15,9 @@ tasks:
   - rwshrc-basic-devnull: |
         cd rwsh
         make rwshrc-basic-devnull
+  - rwshrc-default-devnull: |
+        cd rwsh
+        make rwshrc-default-devnull
   - test: |
         cd rwsh
         make test

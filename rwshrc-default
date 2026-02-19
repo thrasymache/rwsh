@@ -19,7 +19,6 @@
   set_if_undefined s ()
   set_if_undefined s2 ()
   set_if_undefined FIGNORE .*
-}}
 
 # selection commands
 fn sfn command {
@@ -233,3 +232,4 @@ fn counter {&{whichp rwsh} --init-file counter.rwsh}
   .combine rwsh\ v &{.version} $nl
   .global already-initialized true}
 if_only .var_exists argv {.error ignored excess arguments $argv $nl}
+}}

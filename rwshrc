@@ -22,9 +22,10 @@
                [-rwsh] [rwsh_binary] [script-args ...]) {.nop
   .nop $rwsh_binary$ $-to$ $-c$ $script-args$ $-rwsh$
   .if .var_exists --init-file {.source $init-file}
-  .else_if .var_exists -to {.nop $PATH $?
+  .else_if .var_exists -to {.nop $PATH ?
     .unset PATH
-    .unset ?
+    .nop .unset ?
+    .set SHELL /bin/rwsh
     .global TESTABILITY (an=external var(iable))
     .exec ./rwsh --init-file test_init.rwsh}
   .else_if .var_exists -rwsh {.source /etc/rwshrc-default}
