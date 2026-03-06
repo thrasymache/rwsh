@@ -1,4 +1,4 @@
-image: ubuntu/next
+image: ubuntu/25.04
 packages:
   - libreadline-dev
 sources:
