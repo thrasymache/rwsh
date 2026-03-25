@@ -1,7 +1,7 @@
 // The definition of the Arg_spec class which contains a single argument
 // specifier (e.g. a fixed string, a variable read, a selection read or $*).
 //
-// Copyright (C) 2006-2023 Samuel Newbold
+// Copyright (C) 2006-2026 Samuel Newbold
 
 #include <cstdlib>
 #include <dirent.h>
@@ -233,11 +233,9 @@ Out Arg_spec::evaluate_substitution(const Argm& src, Out res,
   Substitution_stream override_stream;
   Argm temp_argm(src);
   temp_argm.output = override_stream.child_stream();
-  (*substitution)(temp_argm, exceptions);
-  if (global_stack.unwind_stack())
-      exceptions.add_error(Exception(Argm::Failed_substitution, str()));
-  else return evaluate_expansion(override_stream.value(), res);
-  return res;}
+  if (global_stack.evaluate_substitution_core(substitution, temp_argm, exceptions, *this))
+    return evaluate_expansion(override_stream.value(), res);
+  else return res;}
 
 template<class Out> Out Arg_spec::evaluate_var(const Argm& src, Out res) const {
   std::string focus = text;

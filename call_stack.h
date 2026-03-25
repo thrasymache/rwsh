@@ -1,4 +1,6 @@
-// Copyright (C) 2019 Samuel Newbold
+// Copyright (C) 2019-2026 Samuel Newbold
+
+class Arg_spec;
 
 class Call_stack {
   bool collect_excess_thrown;
@@ -25,6 +27,7 @@ class Call_stack {
   void catch_blocks(const Argm& argm, Error_list& exceptions);
   void catch_one(Argm& argm, Error_list& exceptions);
   void collect_errors_core(const Argm& argm, bool logic, Error_list& parent);
+  bool evaluate_substitution_core(Command_block* substitution, const Argm& argm, Error_list& exceptions, const Arg_spec& spec);
   void exception_handler(Error_list& exceptions);
   int exit_value(void) {return exit_v;}
   bool in_exception_handler(void) {return in_exception_handler_v;}

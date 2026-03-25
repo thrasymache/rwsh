@@ -253,6 +253,8 @@ sa ${.throw .nop} {}
 se {e &{.throw .nop}}
 se {e &&{.throw .nop}; e after}
 se {e &&{.throw .nop}; e after}
+echo substitution ${true} before a ${false} failing one
+echo ${false} two substitutions ${true} after ${.nop} a failing one
 .collect_errors_except .nop {
   ${.throw echo exception from inside substitution}
   echo after failed substitution}

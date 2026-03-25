@@ -2,7 +2,7 @@
 // encapsulates the variables that had been static within Executable classes,
 // and the latter encapsulates the state used by if_core
 //
-// Copyright (C) 2019-2023 Samuel Newbold
+// Copyright (C) 2019-2026 Samuel Newbold
 
 #include <algorithm>
 #include <list>
@@ -88,6 +88,17 @@ void Call_stack::collect_errors_core(const Argm& argm, bool logic,
         if (logic == (find(other.begin(), other.end(), k[0]) != other.end()))
           unwind_stack_v = true;}}} // will cause subsequent j to not run
   if (parent.size()) unwind_stack_v = true;}
+
+bool Call_stack::evaluate_substitution_core(Command_block* substitution,
+              const Argm& argm, Error_list& exceptions, const Arg_spec& spec) {
+  bool unwind_stack_prev = unwind_stack_v;
+  unwind_stack_v = false;
+  (*substitution)(argm, exceptions);
+  if (unwind_stack_v)
+    exceptions.add_error(Exception(Argm::Failed_substitution, spec.str()));
+  bool result = !unwind_stack_v;
+  unwind_stack_v = unwind_stack_prev || unwind_stack_v;
+  return result;}
 
 /* code to call exception handlers, separated out of operator() for clarity.
    The requirements for stack unwinding to work properly are as

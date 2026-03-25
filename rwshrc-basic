@@ -186,7 +186,7 @@
   echo result of $op with arguments $lhs and $rhs is out of range
   echo call stack: $op $stack$}
 .function .return_code code cmd [add_stack ...] {
-  .if .test_in $cmd /bin/test /usr/bin/test /bin/false {
+  .if .test_in $cmd /bin/test /usr/bin/test /bin/false /usr/bin/false {
     .replace_exception .false $cmd
     .nop $code $add_stack$}
   .else {

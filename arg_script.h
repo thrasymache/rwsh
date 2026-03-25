@@ -1,5 +1,6 @@
 // Copyright (C) 2006-2018 Samuel Newbold
 
+class Arg_spec;
 class Command_block;
 
 class Arg_script {
