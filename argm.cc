@@ -89,7 +89,13 @@ std::string Argm::str(void) const {
   if (argfunction()) result += " " + argfunction()->str();
   return result;}
 
+Variable_map* Argm::nonempty_parent_map(void) const {
+    return parent_map_v->nonempty_parent();};
+
 void Argm::set_argfunction(Command_block* val) {argfunction_v = val;};
+
+void Argm::export_env(std::vector<char*>& env) const {
+    parent_map()->export_env(env);}
 
 // returns variables that are defined in the current argument map other than $*
 // (e.g. positional parameters and $#)

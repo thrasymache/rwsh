@@ -1,6 +1,8 @@
 // Copyright (C) 2006-2018 Samuel Newbold
 
 class Arg_spec;
+class Argm;
+struct Error_list;
 class Command_block;
 
 class Arg_script {

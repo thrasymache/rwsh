@@ -14,7 +14,6 @@
 #include <vector>
 
 #include "rwsh_stream.h"
-#include "variable_map.h"
 
 #include "argm.h"
 #include "call_stack.h"

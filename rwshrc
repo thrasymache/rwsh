@@ -7,6 +7,8 @@
       .global $var $val
       .nop $$var}}
 .function #! -- ignored ... {.nop $ignored}
+.function #!/bin/rwsh -- ignored ... {.nop $ignored}
+.function #!/usr/bin/rwsh -- ignored ... {.nop $ignored}
 .function .autofunction -- cmd [args ...] [.{argfunction}] {.nop
   .if .var_exists args {.nop $args}
   .else {.nop}
@@ -17,6 +19,7 @@
   .if .test_string_equal $cmd $full_path {.nop}
   .else {.function $cmd -- [args ...] {&&full_path $args$}}
   .error added $cmd to executable map $nl}
+.function .prompt {.echo rwsh>}
 .function () {.nop}
 .scope $argv$ ([--init-file init-file] [-to] [-c command]
                [-rwsh] [rwsh_binary] [script-args ...]) {.nop

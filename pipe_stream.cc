@@ -10,7 +10,6 @@
 #include <vector>
 
 #include "rwsh_stream.h"
-#include "variable_map.h"
 
 #include "argm.h"
 #include "pipe_stream.h"

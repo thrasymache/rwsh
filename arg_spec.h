@@ -2,7 +2,7 @@
 
 class Argm;
 class Command_block;
-class Error_list;
+struct Error_list;
 
 enum Arg_type {FIXED, REFERENCE, SOON, STAR_REF, STAR_SOON, SELECTION,
                  SELECT_VAR, SELECT_STAR_VAR, SOON_SUBSTITUTION, SUBSTITUTION};

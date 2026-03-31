@@ -752,7 +752,6 @@ $./rwsh --init-file /non-existent/file/to/test/failure <test_files/pause_hello.r
 .result_range not defined 
 .post_elipsis_option not defined 
 .post_dash_dash_flag not defined 
-.prompt not defined 
 .selection_not_found not defined 
 .sighup not defined 
 .sigint not defined 
@@ -781,68 +780,8 @@ $./rwsh --init-file /non-existent/file/to/test/failure <test_files/pause_hello.r
 .help not defined 
 init file /non-existent/file/to/test/failure does not exist
 call stack .source .mapped_argfunction .if .scope .source .collect_errors_except .init
-Exception for failed handler. Original exception with call stack:
-.binary_not_found .prompt /bin:/usr/bin:. .which_path .autofunction .autofunction
-.binary_not_found : command not found ( .binary_not_found .prompt /bin:/usr/bin:. .which_path .autofunction .autofunction )
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-.failed_substitution : command not found ( .failed_substitution ${.which_path $cmd $PATH} .autofunction )
-.prompt : command not found ( .prompt )
-Exception for failed handler. Original exception with call stack:
-.binary_not_found .binary_not_found /bin:/usr/bin:. .which_path .autofunction .autofunction
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-Exception for failed handler. Original exception with call stack:
-.binary_not_found .failed_substitution /bin:/usr/bin:. .which_path .autofunction .autofunction
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-Exception for failed handler. Original exception with call stack:
-.binary_not_found .prompt /bin:/usr/bin:. .which_path .autofunction .autofunction
-.binary_not_found : command not found ( .binary_not_found .prompt /bin:/usr/bin:. .which_path .autofunction .autofunction )
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-.failed_substitution : command not found ( .failed_substitution ${.which_path $cmd $PATH} .autofunction )
-.prompt : command not found ( .prompt )
-Exception for failed handler. Original exception with call stack:
-.binary_not_found .binary_not_found /bin:/usr/bin:. .which_path .autofunction .autofunction
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-Exception for failed handler. Original exception with call stack:
-.binary_not_found .failed_substitution /bin:/usr/bin:. .which_path .autofunction .autofunction
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-Exception for failed handler. Original exception with call stack:
-.binary_not_found .prompt /bin:/usr/bin:. .which_path .autofunction .autofunction
-.binary_not_found : command not found ( .binary_not_found .prompt /bin:/usr/bin:. .which_path .autofunction .autofunction )
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-.failed_substitution : command not found ( .failed_substitution ${.which_path $cmd $PATH} .autofunction )
-.prompt : command not found ( .prompt )
-Exception for failed handler. Original exception with call stack:
-.binary_not_found .binary_not_found /bin:/usr/bin:. .which_path .autofunction .autofunction
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-Exception for failed handler. Original exception with call stack:
-.binary_not_found .failed_substitution /bin:/usr/bin:. .which_path .autofunction .autofunction
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-hello world 
-Exception for failed handler. Original exception with call stack:
-.binary_not_found .prompt /bin:/usr/bin:. .which_path .autofunction .autofunction
-.binary_not_found : command not found ( .binary_not_found .prompt /bin:/usr/bin:. .which_path .autofunction .autofunction )
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-.failed_substitution : command not found ( .failed_substitution ${.which_path $cmd $PATH} .autofunction )
-.prompt : command not found ( .prompt )
-Exception for failed handler. Original exception with call stack:
-.binary_not_found .binary_not_found /bin:/usr/bin:. .which_path .autofunction .autofunction
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-Exception for failed handler. Original exception with call stack:
-.binary_not_found .failed_substitution /bin:/usr/bin:. .which_path .autofunction .autofunction
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-Exception for failed handler. Original exception with call stack:
+rwsh>rwsh>rwsh>hello world 
+rwsh>Exception for failed handler. Original exception with call stack:
 .unused_variable FIGNORE
 .unused_variable : command not found ( .unused_variable FIGNORE )
 Exception for failed handler. Original exception with call stack:
@@ -917,7 +856,6 @@ hello world
 .result_range not defined 
 .post_elipsis_option not defined 
 .post_dash_dash_flag not defined 
-.prompt not defined 
 .selection_not_found not defined 
 .sighup not defined 
 .sigint not defined 
@@ -961,68 +899,8 @@ Exception for failed handler. Original exception with call stack:
 .binary_not_found .failed_substitution /bin:/usr/bin:. .which_path .autofunction .autofunction
 Exception for failed handler. Original exception with call stack:
 .failed_substitution ${.which_path $cmd $PATH} .autofunction
-Exception for failed handler. Original exception with call stack:
-.binary_not_found .prompt /bin:/usr/bin:. .which_path .autofunction .autofunction
-.binary_not_found : command not found ( .binary_not_found .prompt /bin:/usr/bin:. .which_path .autofunction .autofunction )
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-.failed_substitution : command not found ( .failed_substitution ${.which_path $cmd $PATH} .autofunction )
-.prompt : command not found ( .prompt )
-Exception for failed handler. Original exception with call stack:
-.binary_not_found .binary_not_found /bin:/usr/bin:. .which_path .autofunction .autofunction
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-Exception for failed handler. Original exception with call stack:
-.binary_not_found .failed_substitution /bin:/usr/bin:. .which_path .autofunction .autofunction
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-Exception for failed handler. Original exception with call stack:
-.binary_not_found .prompt /bin:/usr/bin:. .which_path .autofunction .autofunction
-.binary_not_found : command not found ( .binary_not_found .prompt /bin:/usr/bin:. .which_path .autofunction .autofunction )
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-.failed_substitution : command not found ( .failed_substitution ${.which_path $cmd $PATH} .autofunction )
-.prompt : command not found ( .prompt )
-Exception for failed handler. Original exception with call stack:
-.binary_not_found .binary_not_found /bin:/usr/bin:. .which_path .autofunction .autofunction
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-Exception for failed handler. Original exception with call stack:
-.binary_not_found .failed_substitution /bin:/usr/bin:. .which_path .autofunction .autofunction
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-Exception for failed handler. Original exception with call stack:
-.binary_not_found .prompt /bin:/usr/bin:. .which_path .autofunction .autofunction
-.binary_not_found : command not found ( .binary_not_found .prompt /bin:/usr/bin:. .which_path .autofunction .autofunction )
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-.failed_substitution : command not found ( .failed_substitution ${.which_path $cmd $PATH} .autofunction )
-.prompt : command not found ( .prompt )
-Exception for failed handler. Original exception with call stack:
-.binary_not_found .binary_not_found /bin:/usr/bin:. .which_path .autofunction .autofunction
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-Exception for failed handler. Original exception with call stack:
-.binary_not_found .failed_substitution /bin:/usr/bin:. .which_path .autofunction .autofunction
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-hello world 
-Exception for failed handler. Original exception with call stack:
-.binary_not_found .prompt /bin:/usr/bin:. .which_path .autofunction .autofunction
-.binary_not_found : command not found ( .binary_not_found .prompt /bin:/usr/bin:. .which_path .autofunction .autofunction )
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-.failed_substitution : command not found ( .failed_substitution ${.which_path $cmd $PATH} .autofunction )
-.prompt : command not found ( .prompt )
-Exception for failed handler. Original exception with call stack:
-.binary_not_found .binary_not_found /bin:/usr/bin:. .which_path .autofunction .autofunction
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-Exception for failed handler. Original exception with call stack:
-.binary_not_found .failed_substitution /bin:/usr/bin:. .which_path .autofunction .autofunction
-Exception for failed handler. Original exception with call stack:
-.failed_substitution ${.which_path $cmd $PATH} .autofunction
-Exception for failed handler. Original exception with call stack:
+rwsh>rwsh>rwsh>hello world 
+rwsh>Exception for failed handler. Original exception with call stack:
 .unused_variable FIGNORE
 .unused_variable : command not found ( .unused_variable FIGNORE )
 Exception for failed handler. Original exception with call stack:
@@ -3734,6 +3612,8 @@ $forj ${.list_executables}$ {.combine $j $nl}
 !x
 #
 #!
+#!/bin/rwsh
+#!/usr/bin/rwsh
 ##
 %
 *

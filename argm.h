@@ -1,5 +1,6 @@
 // Copyright (C) 2005-2019 Samuel Newbold
 
+class Variable_map;
 class Command_block;
 struct Error_list;
 typedef std::vector<std::string> Argv;
@@ -21,8 +22,7 @@ class Argm {
   Argm& operator=(const Argm& src);
   std::string str(void) const;
   Variable_map* parent_map(void) const {return parent_map_v;};
-  Variable_map* nonempty_parent_map(void) const {
-    return parent_map_v->nonempty_parent();};
+  Variable_map* nonempty_parent_map(void) const;
   Command_block* argfunction(void) const {return argfunction_v;};
   void set_argfunction(Command_block* val);
 
@@ -122,8 +122,7 @@ class Argm {
   static std::string exception_names[Exception_count];
 
 // variables
-  void export_env(std::vector<char*>& env) const {
-    parent_map()->export_env(env);}
+  void export_env(std::vector<char*>& env) const;
 
   std::string get_var(const std::string& key) const;
   void global(const std::string& key, const std::string& value) const;
