@@ -46,6 +46,8 @@ rwshrc-default-devnull: rwsh
 	./rwsh --init-file ./rwshrc-default </dev/null
 test: rwsh
 	./rwsh -to <test_main.sh | diff test.result -
+teststat: rwsh
+	./rwsh -to <test_main.sh | diff test.result - | diffstat
 install: rwsh
 	install rwshrc-basic /etc/
 	install rwshrc-default /etc/

@@ -123,9 +123,13 @@ false
 if_only_not false {echo false throwing a .false exception}
 ./rwsh -c (env false)
 ./rwsh -c (.get_pid)
+./rwsh --posix  </dev/null
 ./rwsh --init-file /non-existent/file/to/test/failure <test_files/pause_hello.rwsh
 ./rwsh --init-file test_files/pause_hello.rwsh <test_files/pause_hello.rwsh
 ./rwsh --init-file test_files/signal_triggered.rwsh <test_files/pause_hello.rwsh
+
+.fork .init -/usr/bin/rwsh -c (/usr/bin/echo --silly-flag)
+
 ./rwsh test_files/hello_argv.rwsh
 ./rwsh test_files/hello_argv.rwsh world
 .autofunction test_files/../rwsh

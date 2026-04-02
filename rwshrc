@@ -21,31 +21,33 @@
   .error added $cmd to executable map $nl}
 .function .prompt {.echo rwsh>}
 .function () {.nop}
-.scope $argv$ ([--init-file init-file] [-to] [-c command]
-               [-rwsh] [rwsh_binary] [script-args ...]) {.nop
-  .nop $rwsh_binary$ $-to$ $-c$ $script-args$ $-rwsh$
-  .if .var_exists --init-file {.source $init-file}
-  .else_if .var_exists -to {.nop $PATH ?
-    .unset PATH
-    .nop .unset ?
-    .set SHELL /bin/rwsh
-    .global TESTABILITY (an=external var(iable))
-    .exec ./rwsh --init-file test_init.rwsh}
-  .else_if .var_exists -rwsh {.source /etc/rwshrc-default}
-  .else_if .test_not_empty $-c$ $script-args$ {.source /etc/rwshrc-basic}
-  .else {.exec /etc/rwshrc-default}
-  .if .var_exists -c {
-    .function .return_code code cmd [add_stack ...] {
-      echo $cmd returned $code : call stack $cmd $add_stack$
-      .exit $code}
-    .collect_errors_except .nop {
-      .mapped_argfunction $argv$2 {$1$}
-      .exit 0}}
-  .else_if .var_exists script-args {
-    .function .return_code code cmd [add_stack ...] {
-      echo $cmd returned $code : call stack $cmd $add_stack$
-      .exit $code}
-    .collect_errors_except .nop {
-      .source $script-args$
-      .exit 0}}
-  .else {.nop}}
+.scope $argv$ (-- [rwsh_binary] [argv ...]) {
+  .nop $rwsh_binary$
+  .scope $argv$ ([--init-file init-file] [-to] [-c command]
+                 [-rwsh] [script-args ...]) {
+    .nop $-to$ $-c$ $script-args$ $-rwsh$
+    .if .var_exists --init-file {.source $init-file}
+    .else_if .var_exists -to {.nop $PATH ?
+      .unset PATH
+      .nop .unset ?
+      .set SHELL /bin/rwsh
+      .global TESTABILITY (an=external var(iable))
+      .exec ./rwsh --init-file test_init.rwsh}
+    .else_if .var_exists -rwsh {.source /etc/rwshrc-default}
+    .else_if .test_not_empty $-c$ $script-args$ {.source /etc/rwshrc-basic}
+    .else {.exec /etc/rwshrc-default}
+    .if .var_exists -c {
+      .function .return_code code cmd [add_stack ...] {
+        echo $cmd returned $code : call stack $cmd $add_stack$
+        .exit $code}
+      .collect_errors_except .nop {
+        .mapped_argfunction $argv$1 {$1$}
+        .exit 0}}
+    .else_if .var_exists script-args {
+      .function .return_code code cmd [add_stack ...] {
+        echo $cmd returned $code : call stack $cmd $add_stack$
+        .exit $code}
+      .collect_errors_except .nop {
+        .source $script-args$
+        .exit 0}}
+    .else {.nop}}}

@@ -688,14 +688,136 @@ call stack .replace_exception .mapped_argfunction .if .return_code .try_catch_re
 $if_only_not false {echo false throwing a .false exception}
 false throwing a .false exception
 $./rwsh -c (env false)
-/bin/env returned 1 : call stack /bin/env env .mapped_argfunction .collect_errors_except .mapped_argfunction .if .scope .source .collect_errors_except .init
+/bin/env returned 1 : call stack /bin/env env .mapped_argfunction .collect_errors_except .mapped_argfunction .if .scope .scope .source .collect_errors_except .init
 ./rwsh returned 1 : call stack ./rwsh
 $./rwsh -c (.get_pid)
 .get_pid : binary not found in /bin:/usr/bin:.
-call stack: .which_path .autofunction .autofunction .mapped_argfunction .collect_errors_except .mapped_argfunction .if .scope .source .collect_errors_except .init
+call stack: .which_path .autofunction .autofunction .mapped_argfunction .collect_errors_except .mapped_argfunction .if .scope .scope .source .collect_errors_except .init
 substitution (${.which_path $cmd $PATH}) failed
-call stack: .autofunction .mapped_argfunction .collect_errors_except .mapped_argfunction .if .scope .source .collect_errors_except .init
-.get_pid : command not found ( .get_pid .mapped_argfunction .collect_errors_except .mapped_argfunction .if .scope .source .collect_errors_except .init )
+call stack: .autofunction .mapped_argfunction .collect_errors_except .mapped_argfunction .if .scope .scope .source .collect_errors_except .init
+.get_pid : command not found ( .get_pid .mapped_argfunction .collect_errors_except .mapped_argfunction .if .scope .scope .source .collect_errors_except .init )
+$./rwsh --posix  </dev/null
+.ambiguous_prototype_dash_dash not defined 
+.arguments_for_argfunction not defined 
+.bad_argfunction_style not defined 
+.bad_args not defined 
+.bad_if_nest not defined 
+.binary_does_not_exist not defined 
+.binary_not_found not defined 
+.break not defined 
+.continue not defined 
+.dash_dash_argument not defined 
+.dash_star_argument not defined 
+.directory_not_found not defined 
+.divide_by_zero not defined 
+.double_redirection not defined 
+.duplicate_parameter not defined 
+.elipsis_first_arg not defined 
+.elipsis_out_of_option_group not defined 
+.else_without_if not defined 
+.epsilon not defined 
+.excess_argfunction not defined 
+.excessive_exceptions_collected not defined 
+.excessive_exceptions_in_catch not defined 
+.excessive_nesting not defined 
+.exec_failed not defined 
+.executable_already_exists not defined 
+.failed_substitution not defined 
+.false not defined 
+.file_not_found not defined 
+.fixed_argument not defined 
+.flag_in_elipsis not defined 
+.function_not_found not defined 
+.global_would_be_masked not defined 
+.if_before_else not defined 
+.illegal_function_name not defined 
+.illegal_variable_name not defined 
+.input_range not defined 
+.internal_error not defined 
+.interrupted_sleep not defined 
+.invalid_word_selection not defined 
+.mismatched_brace not defined 
+.mismatched_bracket not defined 
+.mismatched_parenthesis not defined 
+.missing_argfunction not defined 
+.multiple_argfunctions not defined 
+.not_a_directory not defined 
+.not_a_function not defined 
+.not_a_number not defined 
+.not_catching_exception not defined 
+.not_executable not defined 
+.not_soon_enough not defined 
+.number_not_an_integer not defined 
+.return_code not defined 
+.result_range not defined 
+.post_elipsis_option not defined 
+.post_dash_dash_flag not defined 
+.selection_not_found not defined 
+.sighup not defined 
+.sigint not defined 
+.sigquit not defined 
+.sigpipe not defined 
+.sigterm not defined 
+.sigtstp not defined 
+.sigcont not defined 
+.sigchld not defined 
+.sigusr1 not defined 
+.sigusr2 not defined 
+.sigunknown not defined 
+.tardy_flag not defined 
+.unchecked_variable not defined 
+.unclosed_brace not defined 
+.unclosed_parenthesis not defined 
+.undeclared_variable not defined 
+.undefined_variable not defined 
+.unfinished_if_block not defined 
+.unreadable_dir not defined 
+.unrecognized_flag not defined 
+.unused_before_set not defined 
+.unused_variable not defined 
+.variable_already_exists not defined 
+.version_incompatible not defined 
+.help not defined 
+Exception for failed handler. Original exception with call stack:
+.unrecognized_flag --posix [--init-file init-file] [-c command] [-rwsh] [-to] [script-args ...] .scope .scope .source .collect_errors_except .init
+Exception for failed handler. Original exception with call stack:
+.function_not_found .unrecognized_flag --posix [--init-file init-file] [-c command] [-rwsh] [-to] [script-args ...] .scope .scope .source .collect_errors_except .init
+Exception for failed handler. Original exception with call stack:
+.unrecognized_flag --posix cmd [args ...] .function_not_found
+Exception for failed handler. Original exception with call stack:
+.binary_not_found .unrecognized_flag /bin:/usr/bin:. .which_path .autofunction .autofunction
+Exception for failed handler. Original exception with call stack:
+.function_not_found .binary_not_found .unrecognized_flag /bin:/usr/bin:. .which_path .autofunction .autofunction
+Exception for failed handler. Original exception with call stack:
+.failed_substitution ${.which_path $cmd $PATH} .autofunction
+Exception for failed handler. Original exception with call stack:
+.function_not_found .failed_substitution ${.which_path $cmd $PATH} .autofunction
+Exception for failed handler. Original exception with call stack:
+.binary_not_found .binary_not_found /bin:/usr/bin:. .which_path .autofunction .autofunction
+Exception for failed handler. Original exception with call stack:
+.failed_substitution ${.which_path $cmd $PATH} .autofunction
+Exception for failed handler. Original exception with call stack:
+.binary_not_found .failed_substitution /bin:/usr/bin:. .which_path .autofunction .autofunction
+Exception for failed handler. Original exception with call stack:
+.failed_substitution ${.which_path $cmd $PATH} .autofunction
+rwsh>Exception for failed handler. Original exception with call stack:
+.unused_variable FIGNORE
+.unused_variable : command not found ( .unused_variable FIGNORE )
+Exception for failed handler. Original exception with call stack:
+.binary_not_found .unused_variable /bin:/usr/bin:. .which_path .autofunction .autofunction
+.binary_not_found : command not found ( .binary_not_found .unused_variable /bin:/usr/bin:. .which_path .autofunction .autofunction )
+Exception for failed handler. Original exception with call stack:
+.failed_substitution ${.which_path $cmd $PATH} .autofunction
+.failed_substitution : command not found ( .failed_substitution ${.which_path $cmd $PATH} .autofunction )
+Exception for failed handler. Original exception with call stack:
+.binary_not_found .binary_not_found /bin:/usr/bin:. .which_path .autofunction .autofunction
+Exception for failed handler. Original exception with call stack:
+.failed_substitution ${.which_path $cmd $PATH} .autofunction
+Exception for failed handler. Original exception with call stack:
+.binary_not_found .failed_substitution /bin:/usr/bin:. .which_path .autofunction .autofunction
+Exception for failed handler. Original exception with call stack:
+.failed_substitution ${.which_path $cmd $PATH} .autofunction
+./rwsh returned 10 : call stack ./rwsh
 $./rwsh --init-file /non-existent/file/to/test/failure <test_files/pause_hello.rwsh
 .ambiguous_prototype_dash_dash not defined 
 .arguments_for_argfunction not defined 
@@ -779,7 +901,7 @@ $./rwsh --init-file /non-existent/file/to/test/failure <test_files/pause_hello.r
 .version_incompatible not defined 
 .help not defined 
 init file /non-existent/file/to/test/failure does not exist
-call stack .source .mapped_argfunction .if .scope .source .collect_errors_except .init
+call stack .source .mapped_argfunction .if .scope .scope .source .collect_errors_except .init
 rwsh>rwsh>rwsh>hello world 
 rwsh>Exception for failed handler. Original exception with call stack:
 .unused_variable FIGNORE
@@ -883,8 +1005,8 @@ hello world
 .version_incompatible not defined 
 .help not defined 
 Exception for failed handler. Original exception with call stack:
-.unchecked_variable argv .source .mapped_argfunction .if .scope .source .collect_errors_except .init
-.unchecked_variable : command not found ( .unchecked_variable argv .source .mapped_argfunction .if .scope .source .collect_errors_except .init )
+.unchecked_variable argv .source .mapped_argfunction .if .scope .scope .source .collect_errors_except .init
+.unchecked_variable : command not found ( .unchecked_variable argv .source .mapped_argfunction .if .scope .scope .source .collect_errors_except .init )
 Exception for failed handler. Original exception with call stack:
 .binary_not_found .unchecked_variable /bin:/usr/bin:. .which_path .autofunction .autofunction
 .binary_not_found : command not found ( .binary_not_found .unchecked_variable /bin:/usr/bin:. .which_path .autofunction .autofunction )
@@ -932,6 +1054,12 @@ hello world
 signal triggered: .prompt ( )
 signal triggered: .unused_variable ( FIGNORE )
 ./rwsh returned 255 : call stack ./rwsh
+$
+$.fork .init -/usr/bin/rwsh -c (/usr/bin/echo --silly-flag)
+--silly-flag
+A was unused with call stack
+.fork returned 255 : call stack .fork
+$
 $./rwsh test_files/hello_argv.rwsh
 hello 
 $./rwsh test_files/hello_argv.rwsh world
@@ -5759,7 +5887,7 @@ x
 /bin/rwsh
 an=external var(iable)
 -- -* .var_exists ? A C PATH SHELL TESTABILITY args argv broken nl
-./rwsh -to
+-to
 extra_close) (extra_open
 
 
