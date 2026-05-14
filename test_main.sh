@@ -35,6 +35,7 @@ line continuation (or it was supposed to be)
 .source test_files/unclosed_parenthesis_without_newline.rwsh
 .source test_files/multiple_errors.rwsh
 .source test_files/bad_substitution.rwsh
+.source test_files/script_variables.rwsh binary script arguments
 .nop multiple statements \; on a line
 .whence_function .argfunction {.multiple_argfunctions} {}
 .whence_function .argfunction {.argfunction with text args}
@@ -985,12 +986,11 @@ a
 a
 ntimes 2 {
   echo before $x$ , $j$
-  .local_declare x
-  .local_declare x
-  .local j (locally defined)
-  echo between $x$ , $j$
-  .set x locally set
-  echo after $x$ , $j$}
+  .scope () x {
+    .local j (locally defined)
+    echo between $x$ , $j$
+    .set x locally set
+    echo after $x$ , $j$}}
 echo $x
 .var_exists y
 .unset x

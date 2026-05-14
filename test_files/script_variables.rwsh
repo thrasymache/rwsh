@@ -1,0 +1,6 @@
+.list_locals; echo ()
+echo $argv$
+.local l_var local
+.rescope $argv$ (-- [rwsh_binary] [shift_argv ...])
+.list_locals; echo ()
+echo rescoped: $shift_argv$ $l_var $rwsh_binary$

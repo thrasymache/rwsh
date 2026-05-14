@@ -486,6 +486,19 @@ nonexistent .throw test_files/bad_substitution.rwsh .source
 substitution (${.throw echo nonexistent}) failed
 call stack: .source
 argv was not checked with call stack .source
+$.source test_files/script_variables.rwsh binary script arguments
+.list_locals; echo ()
+argv()
+echo $argv$
+binary script arguments
+.local l_var local
+.rescope $argv$ (-- [rwsh_binary] [shift_argv ...])
+PATH was not declared
+call stack: .autofunction .autofunction .source
+substitution (${.which_path $cmd $PATH}) failed
+call stack: .autofunction .source
+.rescope : command not found ( .rescope binary script arguments (-- [rwsh_binary] [shift_argv ...]) .source )
+l_var was unused with call stack .source
 $.nop multiple statements \; on a line
 $.whence_function .argfunction {.multiple_argfunctions} {}
 multiple argfunctions not supported at this time
@@ -3009,12 +3022,11 @@ l was unused with call stack a
 z was unused with call stack a
 $ntimes 2 {
   echo before $x$ , $j$
-  .local_declare x
-  .local_declare x
-  .local j (locally defined)
-  echo between $x$ , $j$
-  .set x locally set
-  echo after $x$ , $j$}
+  .scope () x {
+    .local j (locally defined)
+    echo between $x$ , $j$
+    .set x locally set
+    echo after $x$ , $j$}}
 before nihilism , nihilism
 between , locally defined
 after locally set , locally defined
