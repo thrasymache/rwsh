@@ -47,7 +47,9 @@ Rwsh_istream& Rwsh_istream::read_getline(std::string& dest) {
       if (*pos == '\n') {++pos; return *this;}
       else dest.push_back(*pos);
     pos = unread_end = read_buffer;
-    unread_end += ::read(fd(), read_buffer, sizeof(read_buffer));}
+    int ret = ::read(fd(), read_buffer, sizeof(read_buffer));
+    if (ret < 0) break;
+    else unread_end += ret;}
   while (unread_end != read_buffer);
   if (dest.empty()) fail_v = true;
   return *this;}
