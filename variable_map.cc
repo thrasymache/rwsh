@@ -14,11 +14,8 @@
 #include <sys/time.h>
 #include <vector>
 
-#include "rwsh_stream.h"
+#include "argv.h"
 #include "variable_map.h"
-
-#include "argm.h"
-#include "executable.h"
 
 std::string escape(const std::string& src) {
   if (!src.length()) return "()";
@@ -37,7 +34,7 @@ Variable_map::Variable_map(Variable_map* parent_i) :
 
 void Variable_map::bless_unused_vars() {
   if (!usage_checked) usage_checked = true;
-  else throw Exception(Argm::Internal_error,
+  else throw Exception(E::Internal_error,
                        "variable map usage checked multiple times");
   bless_unused_vars_without_usage();}
 
@@ -64,7 +61,7 @@ void Variable_map::add_undefined(const std::string& key, bool is_reassign) {
   if (undefined_vars.find(key) != undefined_vars.end());
   else if (erase(key) || !is_reassign) undefined_vars.insert(key);
   else if (parent) parent->add_undefined(key, is_reassign);
-  else throw Exception(Argm::Undeclared_variable, key);}
+  else throw Exception(E::Undeclared_variable, key);}
 
 void Variable_map::param_or_append_word(const std::string& key,
                                         const std::string& value,
@@ -98,13 +95,13 @@ const std::string& Variable_map::get(const std::string& key) {
   else if (undefined_vars.find(key) != undefined_vars.end())
     throw Undefined_variable(key);
   else if (parent) return parent->get(key);
-  else throw Exception(Argm::Undeclared_variable, key);}
+  else throw Exception(E::Undeclared_variable, key);}
 
 void Variable_map::global(const std::string& key, const std::string& value) {
   if (parent)
-    if (find(key) != end()) throw Exception(Argm::Global_would_be_masked, key);
+    if (find(key) != end()) throw Exception(E::Global_would_be_masked, key);
     else if (usage_checked)
-      throw Exception(Argm::Internal_error,
+      throw Exception(E::Internal_error,
                       "variable map added to after usage checked");
     else parent->global(key, value);
   else local(key, value);}
@@ -120,12 +117,12 @@ void Variable_map::define(const std::string& key, const std::string& value) {
   std::pair<std::string, std::string> entry(key, value);
   std::pair<iterator, bool> ret = insert(entry);
   if (!ret.second && value != ret.first->second)
-    throw Exception(Argm::Variable_already_exists, key);}
+    throw Exception(E::Variable_already_exists, key);}
 
 // locals have their usage checked directly
 void Variable_map::local(const std::string& key, const std::string& value) {
   if (usage_checked)
-    throw Exception(Argm::Internal_error,
+    throw Exception(E::Internal_error,
                     "variable map added to after usage checked");
   local_vars.insert(key);
   define(key, value);}
@@ -133,35 +130,35 @@ void Variable_map::local(const std::string& key, const std::string& value) {
 // locals have their usage checked directly
 void Variable_map::local_declare(const std::string& key) {
   if (usage_checked)
-    throw Exception(Argm::Internal_error,
+    throw Exception(E::Internal_error,
                     "variable map added to after usage checked");
   auto ret = local_vars.insert(key);
   if (ret.second) undefined_vars.insert(key);
   else if (undefined_vars.find(key) == undefined_vars.end())
-    throw Exception(Argm::Variable_already_exists, key);}
+    throw Exception(E::Variable_already_exists, key);}
 
 void Variable_map::set(const std::string& key, const std::string& value) {
   auto i = find(key);
   if (i != end())
     if (used_vars.find(key) == used_vars.end() && i->second != value) {
       used_vars.insert(key);  // we're about to throw a more specific error
-      throw Exception(Argm::Unused_before_set, key);}
+      throw Exception(E::Unused_before_set, key);}
     else i->second = value;
   else if (undefined_vars.erase(key)) define(key, value);
   else if (parent) parent->set(key, value);
-  else throw Exception(Argm::Undeclared_variable, key);}
+  else throw Exception(E::Undeclared_variable, key);}
 
 void Variable_map::unset(const std::string& key) {
   if (key == "FIGNORE")
-    throw Exception(Argm::Illegal_variable_name, key);
+    throw Exception(E::Illegal_variable_name, key);
   auto i = find(key);
   if (i != end())
     if (used_vars.find(key) != used_vars.end()) erase(i);
-    else throw Exception(Argm::Unused_before_set, key);
+    else throw Exception(E::Unused_before_set, key);
   else if (undefined_vars.find(key) != undefined_vars.end())
     undefined_vars.erase(key);
   else if (parent) parent->unset(key);
-  else throw Exception(Argm::Undeclared_variable, key);}
+  else throw Exception(E::Undeclared_variable, key);}
 
 Variable_map* Variable_map::nonempty_parent(void) {
   auto result=this;

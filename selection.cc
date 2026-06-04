@@ -16,12 +16,11 @@
 #include <sys/types.h>
 #include <vector>
 
+#include "argv.h"
 #include "rwsh_stream.h"
-#include "variable_map.h"
-
-#include "argm.h"
 #include "selection.h"
 #include "tokenize.cc"
+#include "variable_map.h"
 
 Simple_pattern::Simple_pattern(const std::string& src) {
   std::string::size_type j = src.find_first_of('*');

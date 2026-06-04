@@ -12,18 +12,18 @@
 #include <sys/time.h>
 #include <vector>
 
+#include "argv.h"
 #include "arg_spec.h"
 #include "rwsh_stream.h"
+#include "builtin.h"
+#include "call_stack.h"
+#include "prototype.h"
 #include "variable_map.h"
 
 #include "argm.h"
 #include "arg_script.h"
-#include "builtin.h"
-#include "call_stack.h"
 #include "executable.h"
 #include "executable_map.h"
-#include "prototype.h"
-
 #include "function.h"
 
 void Call_stack::add_error(void) {
@@ -37,7 +37,7 @@ void Call_stack::catch_blocks(const Argm& argm, Error_list& exceptions) {
     if (find(argm.begin() + 1, argm.end(), (*focus)[0]) != argm.end()) {
       if (dropped_catches >= max_extra) {
         if (!execution_handler_excess_thrown)
-          exceptions.add_error(Exception(Argm::Excessive_exceptions_in_catch,
+          exceptions.add_error(Exception(E::Excessive_exceptions_in_catch,
                                          max_extra));
          execution_handler_excess_thrown = true;
          return;}
@@ -73,7 +73,7 @@ void Call_stack::collect_errors_core(const Argm& argm, bool logic,
   for (auto j: *argm.argfunction()) {
     if (current_exception_count > max_collect) {
       if (!collect_excess_thrown)
-        parent.add_error(Exception(Argm::Excessive_exceptions_collected,
+        parent.add_error(Exception(E::Excessive_exceptions_collected,
                                    max_collect));
       unwind_stack_v = collect_excess_thrown = true;
       return;}
@@ -95,7 +95,7 @@ bool Call_stack::evaluate_substitution_core(Command_block* substitution,
   unwind_stack_v = false;
   (*substitution)(argm, exceptions);
   if (unwind_stack_v)
-    exceptions.add_error(Exception(Argm::Failed_substitution, spec.str()));
+    exceptions.add_error(Exception(E::Failed_substitution, spec.str()));
   bool result = !unwind_stack_v;
   unwind_stack_v = unwind_stack_prev || unwind_stack_v;
   return result;}

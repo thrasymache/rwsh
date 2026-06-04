@@ -1,5 +1,7 @@
 // Copyright (C) 2006-2019 Samuel Newbold
 
+class Argm;
+
 void b_argc(const Argm& argm, Error_list& exceptions);
 void b_binary(const Argm& argm, Error_list& exceptions);
 void b_cd(const Argm& argm, Error_list& exceptions);

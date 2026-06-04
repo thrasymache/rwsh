@@ -9,17 +9,16 @@
 #include <sys/time.h>
 #include <vector>
 
+#include "argv.h"
 #include "rwsh_stream.h"
-
-#include "arg_script.h"
-#include "argm.h"
-#include "rwsh_init.h"
 #include "builtin.h"
 #include "call_stack.h"
-#include "executable.h"
-#include "executable_map.h"
 #include "prototype.h"
 
+#include "arg_script.h"
+#include "rwsh_init.h"
+#include "executable.h"
+#include "executable_map.h"
 #include "function.h"
 
 void bi(const std::string& name,
@@ -165,19 +164,19 @@ void internal_init(Error_list& exceptions) {
   bi(".version_compatible", b_version_compatible,
      Argv {"--", "candidate_version"});}
 
-inline Argm::Exception_t unix2rwsh(int sig) {
+inline E::Exception_t unix2rwsh(int sig) {
   switch (sig) {
-    case SIGHUP: return Argm::Sighup;
-    case SIGINT: return Argm::Sigint;
-    case SIGQUIT: return Argm::Sigquit;
-    case SIGPIPE: return Argm::Sigpipe;
-    case SIGTERM: return Argm::Sigterm;
-    case SIGTSTP: return Argm::Sigtstp;
-    case SIGCONT: return Argm::Sigcont;
-    case SIGCHLD: return Argm::Sigchld;
-    case SIGUSR1: return Argm::Sigusr1;
-    case SIGUSR2: return Argm::Sigusr2;
-    default: return Argm::Sigunknown;}}
+    case SIGHUP: return E::Sighup;
+    case SIGINT: return E::Sigint;
+    case SIGQUIT: return E::Sigquit;
+    case SIGPIPE: return E::Sigpipe;
+    case SIGTERM: return E::Sigterm;
+    case SIGTSTP: return E::Sigtstp;
+    case SIGCONT: return E::Sigcont;
+    case SIGCHLD: return E::Sigchld;
+    case SIGUSR1: return E::Sigusr1;
+    case SIGUSR2: return E::Sigusr2;
+    default: return E::Sigunknown;}}
 
 void unix_signal_handler(int sig) {
   global_stack.caught_signal = unix2rwsh(sig);}

@@ -11,28 +11,29 @@
 #include <sys/time.h>
 #include <vector>
 
+#include "argv.h"
 #include "rwsh_stream.h"
-#include "variable_map.h"
-
-#include "argm.h"
-#include "arg_script.h"
 #include "call_stack.h"
 #include "clock.h"
 #include "command_stream.h"
 #include "default_stream.h"
-#include "executable.h"
-#include "executable_map.h"
-#include "plumber.h"
 #include "prototype.h"
 #include "rwsh_init.h"
 #include "selection.h"
+#include "variable_map.h"
+
+#include "argm.h"
+#include "arg_script.h"
+#include "executable.h"
+#include "executable_map.h"
+#include "plumber.h"
 
 #include "function.h"
 
 // static initializers of basic types
 const char* WSPACE = " \t";
 struct timezone Clock::no_timezone_v = {0, 0};
-std::string Argm::exception_names[Argm::Exception_count] = {
+std::string exception_names[E::Exception_count] = {
   ".nop",
   ".ambiguous_prototype_dash_dash",
   ".arguments_for_argfunction",
@@ -151,7 +152,7 @@ int main(int argc, char *argv[]) {
   executable_map.base_run(init_command, exceptions);
   register_signals();
   Command_block block;
-  Exception prompt(Argm::Prompt);
+  Exception prompt(E::Prompt);
   while (!command_stream.fail()) {
     executable_map.base_run(prompt, exceptions);
     Argm command(Variable_map::global_map,
@@ -163,13 +164,13 @@ int main(int argc, char *argv[]) {
     else if (command_stream.fail()) break;
     else for (auto j: block) {
       try {command = j.interpret(interpret, exceptions);}
-      catch (Exception exception) {command = exception;}
+      catch (Exception exception) { command = exception;}
       executable_map.run_if_exists(".before_command", command);
       if (exceptions.size()) global_stack.exception_handler(exceptions);
       else if (!executable_map.run_if_exists(".run_logic", command))
          executable_map.base_run(command, exceptions);
       executable_map.run_if_exists(".after_command", command);}}
-  Argm shutdown_command(Argm::exception_names[Argm::Shutdown],
+  Argm shutdown_command(exception_names[E::Shutdown],
                         std_argv, nullptr, Variable_map::global_map,
                         default_input, default_output, default_error);
   executable_map.base_run(shutdown_command, exceptions);

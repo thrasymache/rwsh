@@ -7,7 +7,7 @@
 class Executable_map : private std::map<std::string, Base_executable*> {
   typedef std::map<std::string, Base_executable*> Base;
   bool in_autofunction;
-  void not_found(Argm& argm, Error_list& exceptions);  // doesn't catch unwind
+  void not_found(const Argm& argm, Error_list& exceptions);
  public:
   typedef Base::const_iterator const_iterator;
   typedef Base::iterator iterator;
@@ -17,12 +17,12 @@ class Executable_map : private std::map<std::string, Base_executable*> {
   const_iterator end(void) const {return Base::end();};
   size_type erase (const std::string& key);
   Base_executable* find_second(const Argm& key);
-  void run(Argm& argm, Error_list& exceptions);        // doesn't catch unwind
+  void run(const Argm& argm, Error_list& exceptions);        // doesn't catch unwind
   bool run_condition(Argm& argm, Error_list& exceptions);    // only .false
-  void base_run(Argm& argm, Error_list& exceptions);         // catches unwind
-  void run_handling_exceptions(Argm& argm, Error_list& exceptions);   // ditto
-  void unused_var_check_at_exit(void);                       // catches unwind
-  bool run_if_exists(const std::string& key, Argm& argm);    // catches unwind
+  void base_run(const Argm& argm, Error_list& exceptions);   // catches unwind
+  void run_handling_exceptions(const Argm& argm, Error_list& exceptions); // "
+  void unused_var_check_at_exit(void);                       // ditto (")
+  bool run_if_exists(const std::string& key, Argm& argm);    // ditto (")
 
   // insert executable if not present, replace if executable already exists
   void set(Named_executable* target); };

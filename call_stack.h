@@ -1,6 +1,8 @@
 // Copyright (C) 2019-2026 Samuel Newbold
 
 class Arg_spec;
+class Argm;
+class Command_block;
 
 class Call_stack {
   bool collect_excess_thrown;
@@ -10,7 +12,7 @@ class Call_stack {
   int exit_v;
 
  public:
-  Argm::Exception_t caught_signal;
+  E::Exception_t caught_signal;
   unsigned current_exception_count;
   bool exit_requested;
   int global_nesting;
@@ -18,7 +20,7 @@ class Call_stack {
   unsigned max_extra;
   int max_nesting;
 
-  Call_stack(void) : caught_signal(Argm::No_exception),
+  Call_stack(void) : caught_signal(E::No_exception),
     collect_excess_thrown(false), current_exception_count(0),
     execution_handler_excess_thrown(false), exit_requested(false),
     global_nesting(0), in_exception_handler_v(false), exit_v(0),

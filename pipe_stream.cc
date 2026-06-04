@@ -9,23 +9,22 @@
 #include <sys/time.h>
 #include <vector>
 
+#include "argv.h"
 #include "rwsh_stream.h"
-
-#include "argm.h"
 #include "pipe_stream.h"
 
 Pipe_istream::Pipe_istream(int fd_i) : Rwsh_istream(fd_i) {
   if(fd_v < 3) c_style = nullptr;
   else {
     c_style = fdopen(fd_v, "r");
-    if (!c_style) throw Exception(Argm::File_open_failure, fd_v);}} // untested
+    if (!c_style) throw Exception(E::File_open_failure, fd_v);}} // untested
 
 void Pipe_istream::late_init(int fd_i) {
   if(fd_v < 3) {
     fd_v = fd_i;
     c_style = fdopen(fd_v, "r");
-    if (!c_style) throw Exception(Argm::File_open_failure, fd_v);}
-  else throw Exception(Argm::Internal_error, fd_v, fd_i);}
+    if (!c_style) throw Exception(E::File_open_failure, fd_v);}
+  else throw Exception(E::Internal_error, fd_v, fd_i);}
 
 Rwsh_istream* Pipe_istream::copy_pointer(void) {std::abort();}; // not needed
 

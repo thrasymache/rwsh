@@ -13,17 +13,17 @@
 #include <sys/time.h>
 #include <vector>
 
+#include "argv.h"
 #include "rwsh_stream.h"
-
-#include "argm.h"
-#include "arg_script.h"
 #include "call_stack.h"
 #include "clock.h"
 #include "command_stream.h"
-#include "executable.h"
-#include "executable_map.h"
 #include "prototype.h"
 
+#include "argm.h"
+#include "arg_script.h"
+#include "executable.h"
+#include "executable_map.h"
 #include "function.h"
 
 Command_stream::Command_stream(Rwsh_istream_p& s, bool subprompt_i) :
@@ -48,7 +48,7 @@ Command_stream& Command_stream::getline(Command_block& dest,
     std::string::size_type point = 0;
     if (fail()) {
       if (cmd.size())  {                 // EOF without a complete command
-        Exception raw_command(Argm::Raw_command, cmd);
+        Argm raw_command(Exception(E::Raw_command, cmd));
         executable_map.run_handling_exceptions(raw_command, errors);
         Command_block(cmd, point, 0, errors);} // will throw the right exception
       return *this;}
@@ -58,11 +58,11 @@ Command_stream& Command_stream::getline(Command_block& dest,
         global_stack.remove_exceptions(".unclosed_parenthesis", errors))
       cmd += '\n';
     else if (global_stack.unwind_stack()) {
-      Exception raw_command(Argm::Raw_command, cmd);
+      Argm raw_command(Exception(E::Raw_command, cmd));
       global_stack.catch_one(raw_command, errors);
       return *this;}
     else cmd_is_incomplete = false;}
-  Exception raw_command(Argm::Raw_command, cmd);
+  Argm raw_command(Exception(E::Raw_command, cmd));
   executable_map.run_handling_exceptions(raw_command, errors);
   return *this;}
 

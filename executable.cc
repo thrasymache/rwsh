@@ -13,11 +13,12 @@
 #include <unistd.h>
 #include <vector>
 
+#include "argv.h"
 #include "rwsh_stream.h"
-
-#include "argm.h"
 #include "call_stack.h"
 #include "clock.h"
+
+#include "argm.h"
 #include "executable.h"
 #include "executable_map.h"
 #include "plumber.h"
@@ -25,7 +26,7 @@
 void Base_executable::operator() (const Argm& argm,
                                  Error_list& parent_exceptions) {
   if (global_stack.global_nesting > global_stack.max_nesting+1)
-    parent_exceptions.add_error(Exception(Argm::Excessive_nesting));
+    parent_exceptions.add_error(Exception(E::Excessive_nesting));
   if (global_stack.unwind_stack()) return;
   else ++executable_nesting, ++global_stack.global_nesting;
   Error_list children;
@@ -40,8 +41,8 @@ void Base_executable::operator() (const Argm& argm,
   ++execution_count_v;
   --global_stack.global_nesting;
   if (global_stack.caught_signal) {
-    Exception focus(global_stack.caught_signal);
-    global_stack.caught_signal = Argm::No_exception;
+    Argm focus(Exception(global_stack.caught_signal));
+    global_stack.caught_signal = E::No_exception;
     executable_map.run(focus, children);}
   if (children.size()) {
     last_exception_v = "";
@@ -71,10 +72,10 @@ void Binary::execute(const Argm& argm_i, Error_list& exceptions) {
     std::vector<char *>env;
     argm_i.export_env(env);
     ret = execve(implementation.c_str(), argv.argv(), &env[0]);
-    exceptions.add_error(Exception(Argm::Binary_does_not_exist, argm_i[0]));
+    exceptions.add_error(Exception(E::Binary_does_not_exist, argm_i[0]));
     global_stack.exception_handler(exceptions);
     executable_map.unused_var_check_at_exit();
     exit(ret);}
   else plumber.wait(&ret);
   if (WIFEXITED(ret) && WEXITSTATUS(ret))
-    exceptions.add_error(Exception(Argm::Return_code, WEXITSTATUS(ret)));}
+    exceptions.add_error(Exception(E::Return_code, WEXITSTATUS(ret)));}

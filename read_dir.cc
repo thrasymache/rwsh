@@ -6,7 +6,7 @@
 template<class Out> int read_dir(const std::string& filename, Out dest) {
   std::string file = filename + '/';
   DIR *src = opendir(file.c_str());
-  if (!src) throw Exception(Argm::Unreadable_dir, file, errno);
+  if (!src) throw Exception(E::Unreadable_dir, file, errno);
   struct dirent *result = nullptr;
   while ((result = readdir(src))) *dest++ = result->d_name;
   return closedir(src);}

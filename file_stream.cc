@@ -13,9 +13,8 @@
 #include <sys/time.h>
 #include <vector>
 
+#include "argv.h"
 #include "rwsh_stream.h"
-
-#include "argm.h"
 #include "file_stream.h"
 
 File_istream::File_istream(const std::string& name_i) : name(name_i),
@@ -25,7 +24,7 @@ void File_istream::open(void) {
   fd_v = ::open(name.c_str(), O_RDONLY, S_IWUSR|S_IRUSR);
   c_style = fdopen(fd_v, "r");
   if (fd_v == -1 || !c_style)
-    throw Exception(Argm::File_open_failure, name);}
+    throw Exception(E::File_open_failure, name);}
 
 File_istream::~File_istream() {
   if(c_style && fclose(c_style))
@@ -50,7 +49,7 @@ void File_ostream::open(void) {
                          S_IWUSR|S_IRUSR);
   c_style = fdopen(fd_v, "w");
   if (fd_v == -1 || !c_style)
-    throw Exception(Argm::File_open_failure, name);}
+    throw Exception(E::File_open_failure, name);}
 
 File_ostream::~File_ostream() {
   if(c_style && fclose(c_style))

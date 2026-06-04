@@ -38,7 +38,7 @@ void selection_read(const std::string& src, Out res) {
       current = next;}
     else current = partial_match_children(current, *q, ignore, more);
     if (!current->size())
-      throw Exception(Argm::Selection_not_found,
+      throw Exception(E::Selection_not_found,
                       entry_pattern_list_to_str(focus.begin(), ++q), src);}
   copy(current->begin(), current->end(), res);
   delete current;}

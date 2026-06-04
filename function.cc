@@ -14,17 +14,16 @@
 #include <sys/time.h>
 #include <vector>
 
+#include "argv.h"
 #include "rwsh_stream.h"
+#include "call_stack.h"
+#include "prototype.h"
 #include "variable_map.h"
 
 #include "argm.h"
 #include "arg_script.h"
-#include "call_stack.h"
-#include "clock.h"
 #include "executable.h"
 #include "executable_map.h"
-#include "prototype.h"
-
 #include "function.h"
 
 Builtin::Builtin(const std::string& name_i,
@@ -38,9 +37,9 @@ void Builtin::execute(const Argm& argm, Error_list& exceptions) {
   prototype.arg_to_param(argm.argv(), locals, exceptions);
   locals.bless_unused_vars();
   if (argm.argfunction() && prototype.exclude_argfunction)
-    exceptions.add_error(Exception(Argm::Excess_argfunction));
+    exceptions.add_error(Exception(E::Excess_argfunction));
   else if (!argm.argfunction() && prototype.required_argfunction)
-    exceptions.add_error(Exception(Argm::Missing_argfunction));
+    exceptions.add_error(Exception(E::Missing_argfunction));
   if (!global_stack.unwind_stack())
     (*implementation)(argm, exceptions);}
 
@@ -76,9 +75,9 @@ void Command_block::prototype_execute(const Argm& argm,
   Variable_map locals(argm.parent_map());
   prototype.arg_to_param(argm.argv(), locals, exceptions);
   if (argm.argfunction() && prototype.exclude_argfunction)
-    exceptions.add_error(Exception(Argm::Excess_argfunction));
+    exceptions.add_error(Exception(E::Excess_argfunction));
   else if (!argm.argfunction() && prototype.required_argfunction)
-    exceptions.add_error(Exception(Argm::Missing_argfunction));
+    exceptions.add_error(Exception(E::Missing_argfunction));
   try {
     if (!global_stack.unwind_stack()) {
       Argm params(argm.argv(), argm.argfunction(), &locals,
@@ -106,7 +105,7 @@ Command_block::Command_block(const std::string& src,
   while (tpoint != std::string::npos) {
     if (src[tpoint] == '}')
       if (src[point] == '{') break;
-      else errors.add_error(Exception(Argm::Mismatched_brace,
+      else errors.add_error(Exception(E::Mismatched_brace,
                                       src.substr(0, tpoint+1)));
     else;
     if (src[tpoint] == '{' || src[tpoint] == '}' ||
@@ -116,7 +115,7 @@ Command_block::Command_block(const std::string& src,
       default_output <<".argfunction cannot occur as one of several "
                   "commands\n";}
   if (tpoint == std::string::npos) {
-    if (src[point] == '{') errors.add_error(Exception(Argm::Unclosed_brace,
+    if (src[point] == '{') errors.add_error(Exception(E::Unclosed_brace,
                                                       src.substr(0, point-1)));
     point = std::string::npos;}
   else point = tpoint + 1;}

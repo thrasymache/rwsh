@@ -12,17 +12,17 @@
 #include <sys/time.h>
 #include <vector>
 
+#include "argv.h"
 #include "rwsh_stream.h"
+#include "call_stack.h"
+#include "prototype.h"
+#include "tokenize.cc"
 #include "variable_map.h"
 
 #include "argm.h"
 #include "arg_script.h"
-#include "call_stack.h"
 #include "executable.h"
 #include "executable_map.h"
-#include "prototype.h"
-#include "tokenize.cc"
-
 #include "function.h"
 
 Executable_map::Executable_map(void) : in_autofunction(false) {}
@@ -66,15 +66,15 @@ bool Executable_map::run_if_exists(const std::string& key, Argm& argm_i) {
   else {
     return false;}}
 
-void Executable_map::base_run(Argm& argm, Error_list& exceptions) {
+void Executable_map::base_run(const Argm& argm, Error_list& exceptions) {
   run(argm, exceptions);
   if (gc_state.in_if_block && !gc_state.exception_thrown) {
     gc_state.in_if_block = false;
-    exceptions.add_error(Exception(Argm::Unfinished_if_block));}
+    exceptions.add_error(Exception(E::Unfinished_if_block));}
   if (global_stack.unwind_stack())
     global_stack.exception_handler(exceptions);}
 
-void Executable_map::run_handling_exceptions(Argm& argm,
+void Executable_map::run_handling_exceptions(const Argm& argm,
                                              Error_list& exceptions) {
   run(argm, exceptions);
   if (global_stack.unwind_stack())
@@ -86,7 +86,7 @@ void Executable_map::unused_var_check_at_exit(void) {
   shell_invocation.unused_var_check(Variable_map::global_map, exceptions);
   if (exceptions.size()) global_stack.exception_handler(exceptions);}
 
-void Executable_map::run(Argm& argm, Error_list& exceptions) {
+void Executable_map::run(const Argm& argm, Error_list& exceptions) {
   try {
     Base_executable* i = find_second(argm);             // first check for key
     if (i) (*i)(argm, exceptions);
@@ -94,7 +94,7 @@ void Executable_map::run(Argm& argm, Error_list& exceptions) {
       not_found(argm, exceptions);
     else {
       in_autofunction = true;
-      Argm auto_argm(Argm::exception_names[Argm::Autofunction], argm.argv(),
+      Argm auto_argm(exception_names[E::Autofunction], argm.argv(),
                      argm.argfunction(), argm.parent_map(),
                      argm.input, argm.output, argm.error);
       run(auto_argm, exceptions);
@@ -102,7 +102,7 @@ void Executable_map::run(Argm& argm, Error_list& exceptions) {
       i = find_second(argm);                            // second check for key
       if (i) (*i)(argm, exceptions);
       else not_found(argm, exceptions);}}
-  catch (Exception error) {
+  catch (Argm error) {
     exceptions.add_error(error);}}
 
 bool Executable_map::run_condition(Argm& argm, Error_list& exceptions) {
@@ -110,8 +110,9 @@ bool Executable_map::run_condition(Argm& argm, Error_list& exceptions) {
   return !global_stack.remove_exceptions(".false", exceptions) &&
          !exceptions.size();}  // optional
 
-void Executable_map::not_found(Argm& argm_i, Error_list& exceptions) {
-  if (Base::find(Argm::exception_names[Argm::Function_not_found]) == end()) {
+// doesn't catch unwind
+void Executable_map::not_found(const Argm& argm_i, Error_list& exceptions) {
+  if (Base::find(exception_names[E::Function_not_found]) == end()) {
     Argm prototype_argm(argm_i.parent_map(), argm_i.input, argm_i.output,
                         argm_i.error);
     tokenize_words("cmd [args ...]", std::back_inserter(prototype_argm));
@@ -119,7 +120,7 @@ void Executable_map::not_found(Argm& argm_i, Error_list& exceptions) {
     Command_block body("{.echo $cmd (: command not found) "
                        "\\( $cmd $args$ \\); .echo (\n)}",
                        point, 0, exceptions);
-    set(new Function(Argm::exception_names[Argm::Function_not_found],
+    set(new Function(exception_names[E::Function_not_found],
                      prototype_argm.argv(), body));}
-  throw Exception(Argm::Function_not_found, argm_i);}
+  throw Argm(E::Function_not_found, argm_i);}
 

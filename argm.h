@@ -1,9 +1,7 @@
-// Copyright (C) 2005-2019 Samuel Newbold
+// Copyright (C) 2005-2026 Samuel Newbold
 
 class Variable_map;
 class Command_block;
-struct Error_list;
-typedef std::vector<std::string> Argv;
 
 class Argm {
  public:
@@ -14,6 +12,8 @@ class Argm {
        Rwsh_istream_p input_i, Rwsh_ostream_p output_i, Rwsh_ostream_p error_i);
   Argm(const Argv& args, Command_block* argfunction_i,
        Variable_map* parent_map_i);
+  Argm(E::Exception_t exception, const Argm& src);
+  Argm(const Exception& args);
   Argm(const std::string& first_string, const Argv& subsequent_args,
        Command_block* argfunction_i, Variable_map* parent_map_i,
        Rwsh_istream_p input_i, Rwsh_ostream_p output_i, Rwsh_ostream_p error_i);
@@ -28,98 +28,6 @@ class Argm {
 
   mutable Rwsh_istream_p input;
   mutable Rwsh_ostream_p output, error;
-
-  enum Exception_t {
-    No_exception,
-    Ambiguous_prototype_dash_dash,
-    Arguments_for_argfunction,
-    Autofunction,
-    Bad_argfunction_style,
-    Bad_args,
-    Bad_if_nest,
-    Binary_does_not_exist,
-    Binary_not_found,
-    Break,
-    Continue,
-    Dash_dash_argument,
-    Dash_star_argument,
-    Directory_not_found,
-    Divide_by_zero,
-    Double_redirection,
-    Duplicate_parameter,
-    Elipsis_first_arg,
-    Elipsis_out_of_option_group,
-    Else_without_if,
-    Epsilon,
-    Excess_argfunction,
-    Excessive_exceptions_collected,
-    Excessive_exceptions_in_catch,
-    Excessive_nesting,
-    Exec_failed,
-    Executable_already_exists,
-    Failed_substitution,
-    False,
-    File_open_failure,
-    File_not_found,
-    Fixed_argument,
-    Flag_in_elipsis,
-    Function_not_found,
-    Global_would_be_masked,
-    If_before_else,
-    Illegal_function_name,
-    Illegal_variable_name,
-    Input_range,
-    Internal_error,
-    Interrupted_sleep,
-    Invalid_word_selection,
-    // Line_continuation,
-    Mismatched_brace,
-    Mismatched_bracket,
-    Mismatched_parenthesis,
-    Missing_argfunction,
-    Multiple_argfunctions,
-    Not_a_directory,
-    Not_a_function,
-    Not_a_number,
-    Not_catching_exception,
-    Not_executable,
-    Not_soon_enough,
-    Number_not_an_integer,
-    Raw_command,
-    Return_code,
-    Result_range,
-    Post_elipsis_option,
-    Post_dash_dash_flag,
-    Prompt,
-    Selection_not_found,
-    Shutdown,
-    Sighup,
-    Sigint,
-    Sigquit,
-    Sigpipe,
-    Sigterm,
-    Sigtstp,
-    Sigcont,
-    Sigchld,
-    Sigusr1,
-    Sigusr2,
-    Sigunknown,
-    Tardy_flag,
-    Unchecked_variable,
-    Unclosed_brace,
-    Unclosed_parenthesis,
-    Undeclared_variable,
-    Undefined_variable,
-    Unfinished_if_block,
-    Unreadable_dir,
-    Unrecognized_flag,
-    Unused_before_set,
-    Unused_variable,
-    Variable_already_exists,
-    Version_incompatible,
-    Exception_count};
-
-  static std::string exception_names[Exception_count];
 
 // variables
   void export_env(std::vector<char*>& env) const;
@@ -168,34 +76,7 @@ class Argm {
   Variable_map* parent_map_v; };
 
 struct Error_list : public std::list<Argm> {
+  void add_error(const Exception& error);
   void add_error(const Argm& error);
   void replace_error(const Argm& error);
   void reset(void); };
-
-struct Exception : public Argm {
-  Argm::Exception_t exception;
-  Exception(Exception_t exception);
-  Exception(Exception_t exception, const std::string& value);
-  Exception(Exception_t exception, const std::string& value, int errno_v);
-  Exception(Exception_t exception, const std::string& x, const std::string& y);
-  Exception(Exception_t exception, const std::string& w, const std::string& x,
-              const std::string& y, const std::string& z);
-  Exception(Exception_t exception, int x);
-  Exception(Exception_t exception, int x, int y);
-  Exception(Exception_t exception, int x, int y, int z);
-  Exception(Exception_t exception, const Argm& src);};
-
-struct Undefined_variable : public Exception {
-  Undefined_variable(const std::string& name_i) :
-    Exception(Argm::Undefined_variable, name_i) {}};
-
-class Old_argv {
-  char** focus;
-  int argc_v;
-
- public:
-  Old_argv(const Argv& src);
-  ~Old_argv(void);
-  char** const argv(void) const {return focus;};
-  int argc(void) {return argc_v;}; };
-

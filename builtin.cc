@@ -27,26 +27,27 @@
 #include <vector>
 extern char** environ;
 
+#include "argv.h"
 #include "rwsh_stream.h"
-#include "variable_map.h"
-
-#include "argm.h"
-#include "arg_script.h"
 #include "builtin.h"
 #include "call_stack.h"
 #include "clock.h"
 #include "command_stream.h"
-#include "executable.h"
-#include "executable_map.h"
 #include "file_stream.h"
 #include "pipe_stream.h"
-#include "plumber.h"
 #include "prototype.h"
 #include "read_dir.cc"
 #include "rwshlib.h"
-#include "selection.h"
 #include "substitution_stream.h"
 #include "tokenize.cc"
+#include "variable_map.h"
+
+#include "argm.h"
+#include "arg_script.h"
+#include "executable.h"
+#include "executable_map.h"
+#include "plumber.h"
+#include "selection.h"
 
 #include "function.h"
 
@@ -64,18 +65,18 @@ std::string my_dtostr(double in) {
 
 double my_strtod(const std::string& val,  Error_list& errors) {
   try {return my_strtod(val);}
-  catch (E_generic) {errors.add_error(Exception(Argm::Not_a_number, val));}
-  catch (E_nan) {errors.add_error(Exception(Argm::Not_a_number, val));}
-  catch (E_range) {errors.add_error(Exception(Argm::Input_range, val));}
+  catch (E_generic) {errors.add_error(Exception(E::Not_a_number, val));}
+  catch (E_nan) {errors.add_error(Exception(E::Not_a_number, val));}
+  catch (E_range) {errors.add_error(Exception(E::Input_range, val));}
   return dummy_double;} // any use of this value is a failure to stop on error
 
 int my_strtoi(const std::string& val, int min, int max, Error_list& errors) {
   try {return my_strtoi(val, min, max);}
-  catch (E_generic) {errors.add_error(Exception(Argm::Not_a_number, val));}
-  catch (E_nan) {errors.add_error(Exception(Argm::Not_a_number, val));}
+  catch (E_generic) {errors.add_error(Exception(E::Not_a_number, val));}
+  catch (E_nan) {errors.add_error(Exception(E::Not_a_number, val));}
   catch (E_not_an_integer) {
-    errors.add_error(Exception(Argm::Number_not_an_integer, val));}
-  catch (E_range) {errors.add_error(Exception(Argm::Input_range, val));}
+    errors.add_error(Exception(E::Number_not_an_integer, val));}
+  catch (E_range) {errors.add_error(Exception(E::Input_range, val));}
   return dummy_int;} // any use of this value is a failure to stop on error
 
 // print the number of arguments passed
@@ -87,9 +88,9 @@ void b_binary(const Argm& argm, Error_list& exceptions) {
   Argm lookup(argm.subrange(1), nullptr, argm.parent_map());
   struct stat sb;
   if (stat(lookup[0].c_str(), &sb))
-    exceptions.add_error(Exception(Argm::Binary_does_not_exist, lookup[0]));
+    exceptions.add_error(Exception(E::Binary_does_not_exist, lookup[0]));
   else if (executable_map.find_second(lookup))
-    exceptions.add_error(Exception(Argm::Executable_already_exists, lookup[0]));
+    exceptions.add_error(Exception(E::Executable_already_exists, lookup[0]));
   else executable_map.set(new Binary(lookup[0]));}
 
 // change the current directory to the one given
@@ -97,11 +98,11 @@ void b_cd(const Argm& argm, Error_list& exceptions) {
   errno = 0;
   if (!chdir(argm[1].c_str()));
   else if (errno == ENOENT)
-    exceptions.add_error(Exception(Argm::Directory_not_found, argm[1]));
+    exceptions.add_error(Exception(E::Directory_not_found, argm[1]));
   else if (errno == ENOTDIR)
-    exceptions.add_error(Exception(Argm::Not_a_directory, argm[1]));
+    exceptions.add_error(Exception(E::Not_a_directory, argm[1]));
   // not tested. time for additional errors to be differentiated
-  else exceptions.add_error(Exception(Argm::Internal_error, errno));
+  else exceptions.add_error(Exception(E::Internal_error, errno));
   errno = 0;}
 
 // run the argument function, collecting exceptions to be thrown as a group
@@ -155,10 +156,10 @@ void b_exec(const Argm& argm, Error_list& exceptions) {
   execve(*old_argv.argv(), old_argv.argv(), &env[0]);
   // execve does not return on success, so what's the error?
   if (errno == ENOENT)   // depends on the error handlers to indicate failure
-    exceptions.add_error(Exception(Argm::Binary_does_not_exist, argm[1]));
+    exceptions.add_error(Exception(E::Binary_does_not_exist, argm[1]));
   else if (errno == EACCES || errno == ENOEXEC)
-    exceptions.add_error(Exception(Argm::Not_executable, argm[1]));
-  else exceptions.add_error(Exception(Argm::Exec_failed, argm[1], errno));}
+    exceptions.add_error(Exception(E::Not_executable, argm[1]));
+  else exceptions.add_error(Exception(E::Exec_failed, argm[1], errno));}
 
 // print the number of times that the executable in the executable map with
 // key $1 has been run
@@ -168,7 +169,7 @@ void b_execution_count(const Argm& argm, Error_list& exceptions) {
   if (focus) {
     argm.output <<focus->execution_count();
     argm.output.flush();}
-  else throw Exception(Argm::Function_not_found, argm[1]);}
+  else throw Exception(E::Function_not_found, argm[1]);}
 
 // exit the shell with the specified exit value
 void b_exit(const Argm& argm, Error_list& exceptions) {
@@ -238,7 +239,7 @@ void b_fork(const Argm& argm, Error_list& exceptions) {
     std::exit(global_stack.exit_value());}
   else plumber.wait(&status);
   if (WIFEXITED(status) && WEXITSTATUS(status))
-    exceptions.add_error(Exception(Argm::Return_code, WEXITSTATUS(status)));}
+    exceptions.add_error(Exception(E::Return_code, WEXITSTATUS(status)));}
 
 // add argfunction to executable map with name $1 and arguments $*2
 // the arguments must include all flags that can be passed to this function
@@ -246,7 +247,7 @@ void b_function(const Argm& argm, Error_list& exceptions) {
   Argm lookup(argm.subrange(1, argm.argc()-2), nullptr, argm.parent_map());
   Base_executable *e = executable_map.find_second(lookup);
   if (is_argfunction_name(argm[1]) || dynamic_cast<Builtin*>(e))
-    exceptions.add_error(Exception(Argm::Illegal_function_name, argm[1]));
+    exceptions.add_error(Exception(E::Illegal_function_name, argm[1]));
   else executable_map.set(new Function(argm[1], argm.subrange(2),
                           *argm.argfunction()));}
 
@@ -277,7 +278,7 @@ void b_global(const Argm& argm, Error_list& exceptions) {
 namespace {
 void if_core(const Argm& argm, Error_list& exceptions,
             Conditional_state& state, bool logic, bool is_else) {
-  if (!state.in_if_block) throw Exception(Argm::Else_without_if);
+  if (!state.in_if_block) throw Exception(E::Else_without_if);
   else if (!state.successful_condition) {
     Argm lookup(argm.subrange(1), nullptr, argm.parent_map(),
                   argm.input, argm.output.child_stream(), argm.error);
@@ -290,7 +291,7 @@ void if_core(const Argm& argm, Error_list& exceptions,
       else if (state.in_if_block) {
         state.in_if_block = state.exception_thrown = false;
         // if only .false was thrown, then ignore any .if without .else
-        if (logic == run) throw Exception(Argm::Bad_if_nest);}}
+        if (logic == run) throw Exception(E::Bad_if_nest);}}
     if (run) {
       if (argm.argfunction()) {
         Argm mapped_argm(argm.parent_map(),
@@ -299,7 +300,7 @@ void if_core(const Argm& argm, Error_list& exceptions,
         (*argm.argfunction())(mapped_argm, exceptions);}
       if (global_stack.unwind_stack()) state.exception_thrown = ! is_else;
       else if (state.in_if_block && !state.exception_thrown)
-        throw Exception(Argm::Bad_if_nest);
+        throw Exception(E::Bad_if_nest);
       else state.successful_condition = true, state.exception_thrown = false;}
     state.in_if_block = true;}}
 }
@@ -309,7 +310,7 @@ void b_if(const Argm& argm, Error_list& exceptions) {
   try {
     if (gc_state.exception_thrown)
       gc_state.successful_condition = gc_state.exception_thrown = false;
-    else if (gc_state.in_if_block) throw Exception(Argm::If_before_else);
+    else if (gc_state.in_if_block) throw Exception(E::If_before_else);
     gc_state.in_if_block = true;
     if_core(argm, exceptions, gc_state, true, false);}
   catch (Exception exception) {
@@ -344,23 +345,23 @@ void b_else(const Argm& argm, Error_list& exceptions) {
 
 // prints a list of all internal functions
 void b_internal_functions(const Argm& argm, Error_list& exceptions) {
-  for (int i = 1; i < Argm::Exception_count; ++i)
-    argm.output <<Argm::exception_names[i] <<"\n";}
+  for (int i = 1; i < E::Exception_count; ++i)
+    argm.output <<exception_names[i] <<"\n";}
 
 // throws .false if the input stream is not the default_stream
 void b_is_default_input(const Argm& argm, Error_list& exceptions) {
   if (!argm.input.is_default())
-    exceptions.add_error(Exception(Argm::False, "is_default_input"));}
+    exceptions.add_error(Exception(E::False, "is_default_input"));}
 
 // throws .false if the output stream is not the default_stream
 void b_is_default_output(const Argm& argm, Error_list& exceptions) {
   if (!argm.output.is_default())
-    exceptions.add_error(Exception(Argm::False, "is_default_output"));}
+    exceptions.add_error(Exception(E::False, "is_default_output"));}
 
 // throws .false if the error stream is not the default_stream
 void b_is_default_error(const Argm& argm, Error_list& exceptions) {
   if (!argm.error.is_default())
-    exceptions.add_error(Exception(Argm::False, "is_default_error"));}
+    exceptions.add_error(Exception(E::False, "is_default_error"));}
 
 // print the last exception that was thrown by this function
 void b_last_exception(const Argm& argm, Error_list& exceptions) {
@@ -369,7 +370,7 @@ void b_last_exception(const Argm& argm, Error_list& exceptions) {
   if (focus) {
     argm.output <<focus->last_exception() <<"\n";
     argm.output.flush();}
-  else throw Exception(Argm::Function_not_found, argm[1]);}
+  else throw Exception(E::Function_not_found, argm[1]);}
 
 // print the number of times that the executable in the executable map with
 // key $1 has been run
@@ -379,7 +380,7 @@ void b_last_execution_time(const Argm& argm, Error_list& exceptions) {
   if (focus) {
     argm.output <<focus->last_execution_time();
     argm.output.flush();}
-  else throw Exception(Argm::Function_not_found, argm[1]);}
+  else throw Exception(E::Function_not_found, argm[1]);}
 
 // print the environment that the shell started in
 void b_list_environment(const Argm& argm, Error_list& exceptions) {
@@ -424,7 +425,7 @@ void b_ls(const Argm& argm, Error_list& exceptions) {
   if (!found) {
     std::string tried(argm[1]);
     for (auto i: argm.subrange(2)) tried += " " + i;
-    exceptions.add_error(Exception(Argm::File_not_found, tried));}}
+    exceptions.add_error(Exception(E::File_not_found, tried));}}
 
 // ignore arguments, argfunctions, and then do nothing
 void b_nop(const Argm& argm, Error_list& exceptions) {}
@@ -449,7 +450,7 @@ void b_reinterpret(const Argm& argm, Error_list& exceptions) {
 // afterwards fails)
 void b_replace_exception(const Argm& argm, Error_list& exceptions) {
   if (!global_stack.in_exception_handler())
-    throw Exception(Argm::Not_catching_exception);
+    throw Exception(E::Not_catching_exception);
   Argm new_exception(argm.subrange(1), argm.argfunction(),
                      Variable_map::global_map,
                      argm.input, argm.output.child_stream(), argm.error);
@@ -460,9 +461,9 @@ void b_rm_executable(const Argm& argm, Error_list& exceptions) {
   Argm lookup(argm.subrange(1), nullptr, argm.parent_map());
   Base_executable *e = executable_map.find_second(lookup);
   if (dynamic_cast<Builtin*>(e))
-    exceptions.add_error(Exception(Argm::Illegal_function_name, argm[1]));
+    exceptions.add_error(Exception(E::Illegal_function_name, argm[1]));
   else if (!executable_map.erase(*(argm.begin()+1)))
-    exceptions.add_error(Exception(Argm::Function_not_found, argm[1]));
+    exceptions.add_error(Exception(E::Function_not_found, argm[1]));
   else;} // successfully removed executable
 
 // run the argfunction having set local variables according to the given
@@ -487,7 +488,7 @@ void b_selection_set(const Argm& argm, Error_list& exceptions) {
 // set variable $1 to $*2
 // throws exception if the variable does not exist
 void b_set(const Argm& argm, Error_list& exceptions) {
-  if (isargvar(argm[1])) throw Exception(Argm::Illegal_variable_name, argm[1]);
+  if (isargvar(argm[1])) throw Exception(E::Illegal_variable_name, argm[1]);
   std::string dest("");
   for (auto i: argm.subrange(2, 1)) dest += i + ' ';
   dest += argm.back();
@@ -524,8 +525,8 @@ void b_source(const Argm& argm, Error_list& exceptions) {
   const std::string& script = argm[1];
   struct stat sb;
   if (stat(script.c_str(), &sb))
-    throw Exception(Argm::File_open_failure, script);
-  if (!(sb.st_mode & S_IXUSR)) throw Exception(Argm::Not_executable, script);
+    throw Exception(E::File_open_failure, script);
+  if (!(sb.st_mode & S_IXUSR)) throw Exception(E::Not_executable, script);
   Rwsh_istream_p src(new File_istream(script), false, false);
   Command_stream command_stream(src, false);
   Command_block block;
@@ -550,9 +551,9 @@ void b_stepwise(const Argm& argm, Error_list& exceptions) {
   Argm lookup(argm.subrange(1,1), nullptr, argm.parent_map(),
                 argm.input, argm.output.child_stream(), argm.error);
   Base_executable* e = executable_map.find_second(lookup);
-  if (!e) throw Exception(Argm::Function_not_found, argm[1]);
+  if (!e) throw Exception(E::Function_not_found, argm[1]);
   Function* f = dynamic_cast<Function*>(e);
-  if (!f) return; //throw Exception(Argm::Not_a_function, argm[1]);
+  if (!f) return; //throw Exception(Not_a_function, argm[1]);
   Variable_map locals(argm.parent_map());
   f->arg_to_param(argm.subrange(1,1), locals, exceptions);
   if (global_stack.unwind_stack())
@@ -577,7 +578,7 @@ void b_stepwise(const Argm& argm, Error_list& exceptions) {
 
 // run the argfunction and store its output in the variable $1
 void b_store_output(const Argm& argm, Error_list& exceptions) {
-  if (isargvar(argm[1])) throw Exception(Argm::Illegal_variable_name, argm[1]);
+  if (isargvar(argm[1])) throw Exception(E::Illegal_variable_name, argm[1]);
   Substitution_stream text;
   Argm mapped_argm(argm.parent_map(),
                    argm.input, text.child_stream(), argm.error);
@@ -590,8 +591,7 @@ void b_test_executable_exists(const Argm& argm, Error_list& exceptions) {
   Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
   if (lookup[0] == ".argfunction") lookup[0] = ".mapped_argfunction";
   if (!executable_map.find_second(lookup))
-    exceptions.add_error(Exception(Argm::False,
-                                   "executable exists: " + argm[1]));}
+    exceptions.add_error(Exception(E::False, "executable exists: " + argm[1]));}
 
 // throws .false if none of the files specified by the arguments exist
 void b_test_file_exists(const Argm& argm, Error_list& exceptions) {
@@ -599,7 +599,7 @@ void b_test_file_exists(const Argm& argm, Error_list& exceptions) {
   for (auto i: argm.subrange(1)) if (!stat(i.c_str(), &sb)) return;
   std::string err_val;
   for (auto i: argm.subrange(1)) err_val += " -e " + i;
-  exceptions.add_error(Exception(Argm::False, err_val));}
+  exceptions.add_error(Exception(E::False, err_val));}
 
 // throws .false  if two strings convert to a doubles and first is not greater
 void b_test_greater(const Argm& argm, Error_list& exceptions) {
@@ -607,23 +607,23 @@ void b_test_greater(const Argm& argm, Error_list& exceptions) {
          rhs = my_strtod(argm[2], exceptions);
   if (global_stack.unwind_stack()) return;
   if (lhs <= rhs)
-    exceptions.add_error(Exception(Argm::False, argm[1] +" -gt "+ argm[2]));}
+    exceptions.add_error(Exception(E::False, argm[1] +" -gt "+ argm[2]));}
 
 // throws .false  if the first string isn't repeated in subsequent arguments
 void b_test_in(const Argm& argm, Error_list& exceptions) {
   for (auto j: argm.subrange(2)) if (argm[1] == j) return;
   auto err_val = argm[1] + " in";
   for (auto j: argm.subrange(2)) err_val += " " + j;
-  exceptions.add_error(Exception(Argm::False, err_val));}
+  exceptions.add_error(Exception(E::False, err_val));}
 
 // throws .false if the string doesn't convert to a number
 void b_test_is_number(const Argm& argm, Error_list& exceptions) {
   try {(void) my_strtod(argm[1]);}
-  catch (E_generic) {exceptions.add_error(Exception(Argm::False,
+  catch (E_generic) {exceptions.add_error(Exception(E::False,
                         "is_number " + argm[1] + " - generic"));}
-  catch (E_nan) {exceptions.add_error(Exception(Argm::False,
+  catch (E_nan) {exceptions.add_error(Exception(E::False,
                         "is_number " + argm[1] + " - NaN"));}
-  catch (E_range) {exceptions.add_error(Exception(Argm::False,
+  catch (E_range) {exceptions.add_error(Exception(E::False,
                         "is_number " + argm[1] + " - range"));}}
 
 // throws .false if two strings convert to doubles and first isn't less
@@ -632,12 +632,12 @@ void b_test_less(const Argm& argm, Error_list& exceptions) {
          rhs = my_strtod(argm[2], exceptions);
   if (global_stack.unwind_stack()) return;
   if (lhs >= rhs)
-    exceptions.add_error(Exception(Argm::False, argm[1] +" -lt "+ argm[2]));}
+    exceptions.add_error(Exception(E::False, argm[1] +" -lt "+ argm[2]));}
 
 // throws .false if the string is empty
 void b_test_not_empty(const Argm& argm, Error_list& exceptions) {
   for (unsigned j = 1; j < argm.argc(); ++j) if (argm[j].length()) return;
-  exceptions.add_error(Exception(Argm::False, " -n "));}
+  exceptions.add_error(Exception(E::False, " -n "));}
 
 // throw .false if the two strings convert to doubles and are not equal
 void b_test_number_equal(const Argm& argm, Error_list& exceptions) {
@@ -645,17 +645,17 @@ void b_test_number_equal(const Argm& argm, Error_list& exceptions) {
          rhs = my_strtod(argm[2], exceptions);
   if (global_stack.unwind_stack()) return;
   if (lhs != rhs)
-    exceptions.add_error(Exception(Argm::False, argm[1] +" -eq "+ argm[2]));}
+    exceptions.add_error(Exception(E::False, argm[1] +" -eq "+ argm[2]));}
 
 // throws .false if the two strings aren't the same
 void b_test_string_equal(const Argm& argm, Error_list& exceptions) {
   if (argm[1] != argm[2])
-    exceptions.add_error(Exception(Argm::False, argm[1] + " == " + argm[2]));}
+    exceptions.add_error(Exception(E::False, argm[1] + " == " + argm[2]));}
 
 // throws .false if the two strings are the same
 void b_test_string_unequal(const Argm& argm, Error_list& exceptions) {
   if (argm[1] == argm[2])
-    exceptions.add_error(Exception(Argm::False, argm[1] + " != " + argm[2]));}
+    exceptions.add_error(Exception(E::False, argm[1] + " != " + argm[2]));}
 
 // throw the remaining arguments as an exception
 void b_throw(const Argm& argm, Error_list& exceptions) {
@@ -677,7 +677,7 @@ void b_total_execution_time(const Argm& argm, Error_list& exceptions) {
     struct timeval val = focus->total_execution_time();
     argm.output <<val;
     argm.output.flush();}
-  else throw Exception(Argm::Function_not_found, argm[1]);}
+  else throw Exception(E::Function_not_found, argm[1]);}
 
 // run the handler for specified exceptions
 void b_try_catch_recursive(const Argm& argm, Error_list& exceptions) {
@@ -692,7 +692,7 @@ void b_type(const Argm& argm, Error_list& exceptions) {
   Argm lookup(argm.subrange(1), argm.argfunction(), argm.parent_map());
   if (lookup[0] == ".argfunction") lookup[0] = ".mapped_argfunction";
   Base_executable *e = executable_map.find_second(lookup);
-  if (!e) exceptions.add_error(Exception(Argm::Function_not_found, argm[1]));
+  if (!e) exceptions.add_error(Exception(E::Function_not_found, argm[1]));
   else if (dynamic_cast<Function*>(e)) argm.output <<"function\n";
   else if (dynamic_cast<Binary*>(e))   argm.output <<"file\n";
   else if (dynamic_cast<Builtin*>(e))  argm.output <<"builtin\n";
@@ -717,8 +717,8 @@ void b_usleep(const Argm& argm, Error_list& exceptions) {
   struct timespec delay = {usec / mega, (usec % mega) * 1000};
   if (!nanosleep(&delay, nullptr)) return;
   else if (errno == EINTR)                                      //not tested
-    throw Exception(Argm::Interrupted_sleep);
-  else throw Exception(Argm::Internal_error,                    //not tested
+    throw Exception(E::Interrupted_sleep);
+  else throw Exception(E::Internal_error,                          //not tested
                        "nanosleep failed with code", errno);}
 
 // print the average number of microseconds longer that .usleep takes than it
@@ -728,7 +728,7 @@ void b_usleep_overhead(const Argm& argm, Error_list& exceptions) {
                    default_input, default_output, default_error);
   Base_executable* focus = executable_map.find_second(Argm(usleep_argm));
   unsigned count = focus->execution_count();
-  if (!count) throw Exception(Argm::Not_a_number, "");
+  if (!count) throw Exception(E::Not_a_number, "");
   struct timeval slept = focus->total_execution_time();
   double total = slept.tv_sec + slept.tv_usec/1000000.0 - sleep_requested;
   argm.output <<(total/count);}
@@ -742,10 +742,10 @@ void b_var_add(const Argm& argm, Error_list& exceptions) {
   double sum = var_term + const_term;
   if (sum == std::numeric_limits<double>::infinity() ||
       sum == -std::numeric_limits<double>::infinity())
-    return exceptions.add_error(Exception(Argm::Result_range,var_str,argm[2]));
+    return exceptions.add_error(Exception(E::Result_range,var_str,argm[2]));
   std::string result = my_dtostr(sum);
   if (result == my_dtostr(var_term) && const_term != 0.0)
-    return exceptions.add_error(Exception(Argm::Epsilon, var_str, argm[2]));
+    return exceptions.add_error(Exception(E::Epsilon, var_str, argm[2]));
   argm.set_var(argm[1], result);}
 
 // divide the specified variable by the specified value
@@ -754,14 +754,14 @@ void b_var_divide(const Argm& argm, Error_list& exceptions) {
   double var_term = my_strtod(var_str, exceptions);
   double const_term = my_strtod(argm[2], exceptions);
   if (const_term == 0)
-    exceptions.add_error(Exception(Argm::Divide_by_zero, var_str));
+    exceptions.add_error(Exception(E::Divide_by_zero, var_str));
   if (global_stack.unwind_stack()) return;
   double quotient = var_term / const_term;
   if (quotient == 0 && var_term != 0)
-    return exceptions.add_error(Exception(Argm::Result_range,var_str,argm[2]));
+    return exceptions.add_error(Exception(E::Result_range,var_str,argm[2]));
   std::string result = my_dtostr(quotient);
   if (result == my_dtostr(var_term) && var_term != 0.0 && const_term != 1.0)
-    return exceptions.add_error(Exception(Argm::Epsilon, var_str, argm[2]));
+    return exceptions.add_error(Exception(E::Epsilon, var_str, argm[2]));
   argm.set_var(argm[1], result);}
 
 // set the specified variable to its remainder modulo the specified value
@@ -770,7 +770,7 @@ void b_var_modulo(const Argm& argm, Error_list& exceptions) {
   int var_term = my_strtoi(var_str, INT_MIN, INT_MAX, exceptions);
   int const_term = my_strtoi(argm[2], INT_MIN, INT_MAX, exceptions);
   if (const_term == 0)
-    exceptions.add_error(Exception(Argm::Divide_by_zero, var_str));
+    exceptions.add_error(Exception(E::Divide_by_zero, var_str));
   if (global_stack.unwind_stack()) return;
   double remainder = var_term % const_term;
   std::string result = my_dtostr(remainder);
@@ -785,10 +785,10 @@ void b_var_multiply(const Argm& argm, Error_list& exceptions) {
   double product = var_term * const_term;
   if (product == std::numeric_limits<double>::infinity() ||
       product == -std::numeric_limits<double>::infinity())
-    return exceptions.add_error(Exception(Argm::Result_range,var_str,argm[2]));
+    return exceptions.add_error(Exception(E::Result_range,var_str,argm[2]));
   std::string result = my_dtostr(product);
   if (result == my_dtostr(var_term) && var_term != 0.0 && const_term != 1.0)
-    return exceptions.add_error(Exception(Argm::Epsilon, var_str, argm[2]));
+    return exceptions.add_error(Exception(E::Epsilon, var_str, argm[2]));
   argm.set_var(argm[1], result);}
 
 // subtract the specified value from the specified variable
@@ -799,10 +799,10 @@ void b_var_subtract(const Argm& argm, Error_list& exceptions) {
   if (global_stack.unwind_stack()) return;
   double difference = var_term - const_term;
   if (difference >= DBL_MAX || difference <= -DBL_MAX)
-    return exceptions.add_error(Exception(Argm::Result_range,var_str,argm[2]));
+    return exceptions.add_error(Exception(E::Result_range,var_str,argm[2]));
   std::string result = my_dtostr(difference);
   if (result == my_dtostr(var_term) && const_term != 0.0)
-    return exceptions.add_error(Exception(Argm::Epsilon, var_str, argm[2]));
+    return exceptions.add_error(Exception(E::Epsilon, var_str, argm[2]));
   argm.set_var(argm[1], result);}
 
 // throw .false if none of the specified variables exist
@@ -813,7 +813,7 @@ void b_var_exists(const Argm& argm, Error_list& exceptions) {
   if (any_exist) return;
   std::string err_val ("var exists:");
   for (auto i: argm.subrange(1)) err_val += " " + i;
-  exceptions.add_error(Exception(Argm::False, err_val));}
+  exceptions.add_error(Exception(E::False, err_val));}
 
 static const std::string version_str("0.3+");
 
@@ -825,7 +825,7 @@ void b_version(const Argm& argm, Error_list& exceptions) {
 // with the version of this shell
 void b_version_compatible(const Argm& argm, Error_list& exceptions) {
   if (argm[1] != version_str)
-    throw Exception(Argm::Version_incompatible, argm[1]);}
+    throw Exception(E::Version_incompatible, argm[1]);}
 
 // prints the total amount of time the shell has spent in wait() syscall
 void b_waiting_for_binary(const Argm& argm, Error_list& exceptions) {
@@ -852,7 +852,7 @@ void b_whence_function(const Argm& argm, Error_list& exceptions) {
   if (focus) {
     argm.output <<focus->str() <<"\n";
     argm.output.flush();}
-  else exceptions.add_error(Exception(Argm::Function_not_found, argm[1]));}
+  else exceptions.add_error(Exception(E::Function_not_found, argm[1]));}
 
 // if the filename has a leading dot, then check in current directory
 // otherwise find the binary in $2 with filename $1
@@ -872,7 +872,7 @@ void b_which_path(const Argm& argm, Error_list& exceptions) {
       argm.output <<test;
       return;}}
   exceptions.add_error(                          // executable does not exist
-                       Exception(Argm::Binary_not_found, argm[1], argm[2]));}
+                       Exception(E::Binary_not_found, argm[1], argm[2]));}
 
 // run the argfunction each time that the arguments don't throw an exception
 void b_while(const Argm& argm, Error_list& exceptions) {

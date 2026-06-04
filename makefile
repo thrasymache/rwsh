@@ -1,9 +1,9 @@
 # makefile for rwsh
 
-objects = rwsh.o argm.o arg_script.o arg_spec.o builtin.o call_stack.o clock.o \
-	command_stream.o default_stream.o executable.o executable_map.o \
-	file_stream.o function.o plumber.o rwsh_stream.o rwshlib.o \
-	pipe_stream.o prototype.o selection.o substitution_stream.o \
+objects = rwsh.o argm.o argv.o arg_script.o arg_spec.o builtin.o call_stack.o \
+	clock.o command_stream.o default_stream.o executable.o \
+	executable_map.o file_stream.o function.o plumber.o rwsh_stream.o \
+	rwshlib.o pipe_stream.o prototype.o selection.o substitution_stream.o \
 	variable_map.o
 local_objects = rwsh_init.o 
 documentation = docs/argument_functions.html docs/builtins.html \

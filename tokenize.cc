@@ -54,12 +54,12 @@ Out tokenize_words(const std::string& in, Out res) {
       while (j < in.length() && isspace(in[j])) ++j;
       token_start = j--;}                                // drop leading space
     else if (in[j] == ')')
-      throw Exception(Argm::Mismatched_parenthesis, in.substr(0, j+1));
+      throw Exception(E::Mismatched_parenthesis, in.substr(0, j+1));
     else if (in[j] == '(') for (nesting++; nesting && ++j<in.length();)
       if (in[j] == '(') nesting++;
       else if (in[j] == ')') nesting--;
       else; // step through nested non-parentheses
     else;   // step through non-nested printing non-parentheses
-  if (nesting) throw Exception(Argm::Mismatched_parenthesis, in);
+  if (nesting) throw Exception(E::Mismatched_parenthesis, in);
   if (token_start != j) *res++ = substr_word(in, token_start, j);
   return res;}

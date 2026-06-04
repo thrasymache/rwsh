@@ -16,17 +16,17 @@
 #include <sys/time.h>
 #include <vector>
 
-#include "arg_spec.h"
+#include "argv.h"
 #include "rwsh_stream.h"
+#include "arg_spec.h"
+#include "call_stack.h"
+#include "file_stream.h"
+#include "prototype.h"
 #include "variable_map.h"
 
 #include "argm.h"
 #include "arg_script.h"
-#include "call_stack.h"
 #include "executable.h"
-#include "file_stream.h"
-#include "prototype.h"
-
 #include "function.h"
 
 namespace {
@@ -50,7 +50,7 @@ std::string::size_type Arg_script::add_quote(const std::string& src,
       break;
     default: std::abort();}
   if (split == std::string::npos) {
-    errors.add_error(Exception(Argm::Unclosed_parenthesis,
+    errors.add_error(Exception(E::Unclosed_parenthesis,
                                src.substr(0, point+1)));
     return std::string::npos;}
   else {
@@ -65,7 +65,7 @@ std::string::size_type Arg_script::parse_token(const std::string& src,
   if (src[token_start] == '(')
     return add_quote(src, token_start, max_soon, errors);
   else if (src[token_start] == ')')
-    errors.add_error(Exception(Argm::Mismatched_parenthesis,
+    errors.add_error(Exception(E::Mismatched_parenthesis,
                       src.substr(0, token_start+1)));
   auto split = src.find_first_of(all_separators, token_start),
        point = token_start;
@@ -118,7 +118,7 @@ std::string::size_type Arg_script::constructor(const std::string& src,
   if (is_argfunction_name(args.front().str()) &&  // argfunction_level handling
       args.front().str() != ".mapped_argfunction")
     if (args.size() != 1 || argfunction)
-      errors.add_error(Exception(Argm::Arguments_for_argfunction, str()));
+      errors.add_error(Exception(E::Arguments_for_argfunction, str()));
     else if (args.front().str() == ".unescaped_argfunction")
       argfunction_level = 1;
     else if (args.front().str() == ".argfunction") argfunction_level = 2;
@@ -138,13 +138,13 @@ void Arg_script::add_token(const std::string& src, unsigned max_soon,
   switch (src[0]) {
     case '<':
       if (!input.is_default())
-        errors.add_error(Exception(Argm::Double_redirection, input.str(), src));
+        errors.add_error(Exception(E::Double_redirection, input.str(), src));
       else input = Rwsh_istream_p(new File_istream(src.substr(1)),
                                   false, false);
       break;
     case '>':
       if (!output.is_default())
-        errors.add_error(Exception(Argm::Double_redirection, output.str(),src));
+        errors.add_error(Exception(E::Double_redirection, output.str(),src));
       else output = Rwsh_ostream_p(new File_ostream(src.substr(1)),
                                    false, false);
       break;
@@ -157,7 +157,7 @@ std::string::size_type Arg_script::add_braced_token(const std::string& src,
   if (style_start != point)
     args.push_back(Arg_spec(src, style_start, point, max_soon, errors));
   else if (argfunction) {
-    errors.add_error(Exception(Argm::Multiple_argfunctions));
+    errors.add_error(Exception(E::Multiple_argfunctions));
     delete argfunction;
     argfunction = new Command_block(src, point, max_soon+1, errors);}
   else argfunction = new Command_block(src, point, max_soon+1, errors);

@@ -2,7 +2,7 @@
 // between the arguments passed to and the parameters received by a function
 // or the argument function of .scope
 //
-// Copyright (C) 2015-2023 Samuel Newbold
+// Copyright (C) 2015-2026 Samuel Newbold
 #include <set>
 #include <string>
 #include <vector>
@@ -10,16 +10,15 @@
 #include <map>
 #include <sys/time.h>
 
+#include "argv.h"
 #include "rwsh_stream.h"
+#include "prototype.h"
 #include "variable_map.h"
 
 #include "argm.h"
-#include "arg_script.h"
-#include "executable.h"
-#include "prototype.h"
 
 void Parameter_group::p_elipsis(Variable_map& locals,
-        Argm::const_iterator& f_arg, int& available, const std::string& name,
+        Argv::const_iterator& f_arg, int& available, const std::string& name,
         const std::string* flag, int needed, enum Dash_dash_type dash_dash,
         bool is_reassign, Error_list& exceptions) const {
   if (flag) {
@@ -27,14 +26,14 @@ void Parameter_group::p_elipsis(Variable_map& locals,
     if (*flag != name) locals.append_word(*flag, *f_arg, is_reassign);}
   for (f_arg++; available > needed; --available, f_arg++) {
     if ((*f_arg)[0] == '-' && !dash_dash && f_arg->length() > 1)
-      exceptions.add_error(Exception(Argm::Flag_in_elipsis, *f_arg, str()));
+      exceptions.add_error(Exception(E::Flag_in_elipsis, *f_arg, str()));
     locals.append_word(name, *f_arg, is_reassign);
     if (flag) {
       locals.append_word("-*", *f_arg, is_reassign);
       if (*flag != name) locals.append_word(*flag, *f_arg, is_reassign);}}}
 
-Parameter_group::Parameter_group(Argm::const_iterator& focus,
-                                 Argm::const_iterator end,
+Parameter_group::Parameter_group(Argv::const_iterator& focus,
+                                 Argv::const_iterator end,
                                  std::set<std::string>& parameter_names) :
     elipsis(-2), has_argfunction(false), names(), required((*focus)[0] != '[') {
   bool group_end;
@@ -46,30 +45,30 @@ Parameter_group::Parameter_group(Argm::const_iterator& focus,
     if (name[0] != '.') names.push_back(name);
     else if (name == "...")
       if (!parameter_names.insert(name).second)
-        throw Exception(Argm::Duplicate_parameter, name);
+        throw Exception(E::Duplicate_parameter, name);
       else elipsis = names.size()-1;
     else if (name == ".{argfunction}") {
       has_argfunction = true;
       names.push_back(name);}
-    else throw Exception(Argm::Fixed_argument, name);}
+    else throw Exception(E::Fixed_argument, name);}
   while (!required && !group_end && ++focus != end);
   if (!required && !group_end) {
     std::string gs(str());
-    throw Exception(Argm::Mismatched_bracket, gs.substr(0, gs.length()-1));}
+    throw Exception(E::Mismatched_bracket, gs.substr(0, gs.length()-1));}
   for (auto i: names)
     if (!parameter_names.insert(i).second && i != "--")
-      throw Exception(Argm::Duplicate_parameter, i);
+      throw Exception(E::Duplicate_parameter, i);
     else if (names.size() > 1)
       if (i == "-*" || i == "-?")
-        throw Exception(Argm::Dash_star_argument, str());
-      else if (i == "--") throw Exception(Argm::Dash_dash_argument, str());
+        throw Exception(E::Dash_star_argument, str());
+      else if (i == "--") throw Exception(E::Dash_dash_argument, str());
       else;
     else;}
 
 void Parameter_group::arg_to_param(int& available, int& needed,
                                    std::string& missing,
-                                   Argm::const_iterator& f_arg,
-                                   const Argm::const_iterator end,
+                                   Argv::const_iterator& f_arg,
+                                   const Argv::const_iterator end,
                                    const std::string* flag,
                                    const std::string& elipsis_var,
                                    enum Dash_dash_type dash_dash,
@@ -131,24 +130,24 @@ Prototype::Prototype(const Argv& parameters) :
   for (auto fp = parameters.begin(); fp != parameters.end(); ++fp) {
     Parameter_group group(fp, parameters.end(), parameter_names);
     if (has_elipsis && !group.required && !group.has_argfunction)
-      throw Exception(Argm::Post_elipsis_option, group.str());
+      throw Exception(E::Post_elipsis_option, group.str());
     else if (group.elipsis == -1) {
       if (!positional.size())
-        throw Exception(Argm::Elipsis_first_arg, group.str());
+        throw Exception(E::Elipsis_first_arg, group.str());
       has_elipsis = true;
       elipsis_var = positional.back().names.back();
       if (group.names.size()) positional.push_back(group);
       else if (positional.back().names.size() != 1)
-        throw Exception(Argm::Elipsis_out_of_option_group,
+        throw Exception(E::Elipsis_out_of_option_group,
                         positional.back().str());
       else positional.back().elipsis = 0;}
     else if (group.names[0] == "--") {
       if (dash_dash_position != -1)
-        throw Exception(Argm::Duplicate_parameter, "--");
+        throw Exception(E::Duplicate_parameter, "--");
       dash_dash_position = positional.size();
       bare_dash_dash = group.required;
       if (!dash_dash_position && (flag_options.size() || flags == SOME))
-        throw Exception(Argm::Ambiguous_prototype_dash_dash, str());}
+        throw Exception(E::Ambiguous_prototype_dash_dash, str());}
     else if (group.names[0] == ".{argfunction}") {
       if (group.required) required_argfunction = true;
       exclude_argfunction = false;}
@@ -160,7 +159,7 @@ Prototype::Prototype(const Argv& parameters) :
       required_argc += group.required;
       positional.push_back(group);}
     else if (dash_dash_position != -1)
-      throw Exception(Argm::Post_dash_dash_flag, group.str());
+      throw Exception(E::Post_dash_dash_flag, group.str());
     else {
       flag_options[group.names[0]] = group;
       parameter_names.insert("-*");}
@@ -191,7 +190,7 @@ void Prototype::arg_to_param_internal(const Argv& argv, bool is_reassign,
       auto h = flag_options.find(*f_arg);
       if (dash_dash == BRACKET && *f_arg != "--") {
         --available;
-        exceptions.add_error(Exception(Argm::Tardy_flag, *f_arg++));}
+        exceptions.add_error(Exception(E::Tardy_flag, *f_arg++));}
       else if (h != flag_options.end())
         h->second.arg_to_param(available, needed, missing, f_arg, argv.end(),
                                &h->second.names[0], elipsis_var, dash_dash,
@@ -201,7 +200,7 @@ void Prototype::arg_to_param_internal(const Argv& argv, bool is_reassign,
           locals.param("--", "--", is_reassign);
           dash_dash = BARE;}
         else if (flags == ALL)
-          exceptions.add_error(Exception(Argm::Unrecognized_flag, *f_arg, str()));
+          exceptions.add_error(Exception(E::Unrecognized_flag, *f_arg, str()));
         if (flags == SOME) locals.append_word("-?", *f_arg, is_reassign);
         if (flag_options.size() || flags == SOME)
           locals.append_word("-*", *f_arg, is_reassign);
@@ -229,7 +228,7 @@ void Prototype::arg_to_param_internal(const Argv& argv, bool is_reassign,
   if (exceptions.size()) locals.bless_unused_vars_without_usage();}
 
 void Prototype::bad_args(std::string& missing, Variable_map& locals,
-                    Argm::const_iterator f_arg, Argm::const_iterator end,
+                    Argv::const_iterator f_arg, Argv::const_iterator end,
                     Error_list& exceptions) const {
   std::string assigned;
   for (auto k: parameter_names) if (locals.exists_without_check(k))
@@ -237,7 +236,7 @@ void Prototype::bad_args(std::string& missing, Variable_map& locals,
                  word_from_value(locals.get(k)) + ")";
   std::string unassigned;
   while (f_arg != end) unassigned += (unassigned.length()?" ":"") + *f_arg++;
-  exceptions.add_error(Exception(Argm::Bad_args, str(), assigned, missing,
+  exceptions.add_error(Exception(E::Bad_args, str(), assigned, missing,
                                  unassigned));}
 
 void Prototype::reassign(const Argv& argv,
@@ -272,22 +271,22 @@ char Parameter_group::unused_flag_var_check(Variable_map* vars,
     else {
       unused_flag = vars->exists_without_check(names[0]);
       errors.add_error(Exception(
-                unused_flag? Argm::Unused_variable: Argm::Unchecked_variable,
+                unused_flag? E::Unused_variable: E::Unchecked_variable,
                 names[0]));}
   else if (vars->exists_without_check(names[0])) {
     for (auto j=names.begin()+1; j != names.end(); ++j)
       if (!vars->used_vars_contains(*j)) {
         unused_flag = true;
-        errors.add_error(Exception(Argm::Unused_variable, *j));
+        errors.add_error(Exception(E::Unused_variable, *j));
         vars->used_vars_insert(*j);}
     if (unused_flag)
-      errors.add_error(Exception(Argm::Unused_variable, names[0]));}
+      errors.add_error(Exception(E::Unused_variable, names[0]));}
   else if (!vars->locals_listed) {
     bool checked = false;
     for (auto j: names) if (vars->checked_vars_contains(j)) checked = true;
     if (!checked) {
       for (auto j: names)
-        errors.add_error(Exception(Argm::Unchecked_variable, j));
+        errors.add_error(Exception(E::Unchecked_variable, j));
       return true;}}
   vars->used_vars_insert(names[0]);
   return unused_flag;}
@@ -297,18 +296,18 @@ void Parameter_group::unused_pos_var_check(Variable_map* vars,
   if (vars->exists_without_check(names[0]))
     for (auto j: names)
       if (vars->exists_without_check(j) && !vars->used_vars_contains(j)) {
-        errors.add_error(Exception(Argm::Unused_variable, j));
+        errors.add_error(Exception(E::Unused_variable, j));
         vars->used_vars_insert(j);}
       else;
   else if (!vars->locals_listed) {
     bool checked = false;
     for (auto j: names) if (vars->checked_vars_contains(j)) checked = true;
     if (!checked) for (auto j: names)
-      errors.add_error(Exception(Argm::Unchecked_variable, j));}}
+      errors.add_error(Exception(E::Unchecked_variable, j));}}
 
 void Prototype::unused_var_check(Variable_map* vars, Error_list& errors) const {
   if (!vars->usage_checked) vars->usage_checked = true;
-  else errors.add_error(Exception(Argm::Internal_error,
+  else errors.add_error(Exception(E::Internal_error,
                         "variable map usage checked multiple times"));
   bool unused_flag = false;
   if (vars->used_vars_contains("-*")) for (auto i: flag_options)
@@ -318,12 +317,12 @@ void Prototype::unused_var_check(Variable_map* vars, Error_list& errors) const {
       unused_flag |= i.second.unused_flag_var_check(vars, errors);
     if (flags == SOME && !vars->used_vars_contains("-?")) {
       unused_flag = true;
-      errors.add_error(Exception(Argm::Unused_variable, "-?"));}}
-  if (unused_flag) errors.add_error(Exception(Argm::Unused_variable, "-*"));
+      errors.add_error(Exception(E::Unused_variable, "-?"));}}
+  if (unused_flag) errors.add_error(Exception(E::Unused_variable, "-*"));
   vars->used_vars_insert("-*");  // in the absent else case $-* is not defined
   vars->used_vars_insert("-?");  // in the absent else case $-? is not defined
   for (auto i: positional) i.unused_pos_var_check(vars, errors);
   for (auto j: vars->locals())
     if (!vars->used_vars_contains(j) && !vars->undefined_vars_contains(j)) {
-      errors.add_error(Exception(Argm::Unused_variable, j));
+      errors.add_error(Exception(E::Unused_variable, j));
       vars->used_vars_insert(j);}}

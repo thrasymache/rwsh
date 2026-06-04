@@ -16,15 +16,10 @@
 #include <sys/time.h>
 #include <vector>
 
+#include "argv.h"
 #include "arg_spec.h"
 #include "rwsh_stream.h"
-#include "variable_map.h"
-
-#include "argm.h"
-#include "arg_script.h"
 #include "call_stack.h"
-#include "executable.h"
-#include "executable_map.h"
 #include "pipe_stream.h"
 #include "prototype.h"
 #include "read_dir.cc"
@@ -32,10 +27,16 @@
 #include "selection.h"
 #include "substitution_stream.h"
 #include "tokenize.cc"
+#include "variable_map.h"
+
+#include "argm.h"
+#include "argm_star_var.cc"
+#include "arg_script.h"
+#include "executable.h"
+#include "executable_map.h"
+#include "selection_read.cc"
 
 #include "function.h"
-#include "argm_star_var.cc"
-#include "selection_read.cc"
 
 namespace {
 bool sub_term_char(char focus) {
@@ -60,7 +61,7 @@ Arg_spec::Arg_spec(const std::string& script, unsigned max_soon,
     if (i < script.length())
       try {word_selection = my_strtoi(script.substr(i));}
       catch(...) {
-        errors.add_error(Exception(Argm::Invalid_word_selection,
+        errors.add_error(Exception(E::Invalid_word_selection,
                                    script.substr(key_end)));}}
   if (!script.length()) type=FIXED;
   else if (script[0] == '$')
@@ -76,7 +77,7 @@ Arg_spec::Arg_spec(const std::string& script, unsigned max_soon,
     type=SOON;
     if (script.length() >= 2)
       if (soon_level > max_soon)
-        errors.add_error(Exception(Argm::Not_soon_enough, script));
+        errors.add_error(Exception(E::Not_soon_enough, script));
       else if (script[key_start] == '*') {
         type=STAR_SOON;
         if (script.length() - key_start > 1)
@@ -116,7 +117,7 @@ void Arg_spec::parse_brace_type(const std::string& src, unsigned max_soon,
   else type = FIXED; // This is a Bad_argfunction_style, but since we're going
   // to continue processing, we need to properly initialize the structure
   if (focus != end)
-    errors.add_error(Exception(Argm::Bad_argfunction_style,
+    errors.add_error(Exception(E::Bad_argfunction_style,
                       src.substr(style, end-style)));}
 
 // Substitutions, soon substitutions, and literal brace strings
@@ -128,12 +129,12 @@ Arg_spec::Arg_spec(const std::string& src, std::string::size_type style,
   if (type == FIXED) {
     auto split = src.find_first_of('}', point);
     if (split == std::string::npos) {
-      errors.add_error(Exception(Argm::Unclosed_brace, src.substr(0, point+1)));
+      errors.add_error(Exception(E::Unclosed_brace, src.substr(0, point+1)));
       point = std::string::npos;}
     else {
       if (src[style] == '[')
         if (src[split+1] == ']') ++split;
-        else errors.add_error(Exception(Argm::Mismatched_bracket,
+        else errors.add_error(Exception(E::Mismatched_bracket,
                         src.substr(style, split-style+1)));
       else;
       text = src.substr(style, split-style+1);
@@ -143,7 +144,7 @@ Arg_spec::Arg_spec(const std::string& src, std::string::size_type style,
     if (point < src.length() && !sub_term_char(src[point]))
       parse_word_selection(src, point, errors);
     if (soon_level > max_soon)
-      errors.add_error(Exception(Argm::Not_soon_enough,
+      errors.add_error(Exception(E::Not_soon_enough,
                                  src.substr(style, point-style)));}}
 
 void Arg_spec::parse_word_selection(const std::string& src,
@@ -156,9 +157,9 @@ void Arg_spec::parse_word_selection(const std::string& src,
     else
       try {word_selection = my_strtoi(src.substr(point, token_end-point));}
       catch(...) {
-        errors.add_error(Exception(Argm::Invalid_word_selection,
+        errors.add_error(Exception(E::Invalid_word_selection,
                                    src.substr(point, token_end-point)));}}
-  else errors.add_error(Exception(Argm::Invalid_word_selection,
+  else errors.add_error(Exception(E::Invalid_word_selection,
                                   src.substr(point, token_end-point)));
   point = token_end;}
 
@@ -223,7 +224,7 @@ Out Arg_spec::evaluate_expansion(const std::string& value, Out res)
        for (unsigned j=0; j<intermediate.size(); ++j)
          tokenize_words(intermediate[j], res);
      else if (word_selection >= (int)intermediate.size())
-       throw Exception(Argm::Undefined_variable, str());
+       throw Exception(E::Undefined_variable, str());
      else *res++ = intermediate[word_selection];}
   return res;}
 
