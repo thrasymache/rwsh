@@ -2,5 +2,7 @@
 echo $argv$
 .local l_var local
 .rescope $argv$ (-- [rwsh_binary] [shift_argv ...])
+.rescope $shift_argv$ $rwsh_binary (first second third)
 .list_locals; echo ()
 echo rescoped: $shift_argv$ $l_var $rwsh_binary$
+echo also rescoped: $second $first

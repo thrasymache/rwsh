@@ -1,5 +1,6 @@
-// Copyright (C) 2006-2019 Samuel Newbold
+// Copyright (C) 2006-2026 Samuel Newbold
 
+class Prototype;
 extern const char* WSPACE;
 std::string escape(const std::string& src);
 std::string word_from_value(const std::string& value);
@@ -20,8 +21,10 @@ public:
   static Variable_map *global_map;
   bool locals_listed;
   bool usage_checked;
+  const Prototype& prototype;
+  std::vector<Prototype> extra_prototypes;
 
-  Variable_map(Variable_map* parent);
+  Variable_map(Variable_map* parent, const Prototype& prototype);
   void bless_unused_vars();
   void bless_unused_vars_without_usage();
   ~Variable_map();
@@ -32,7 +35,8 @@ public:
   iterator end(void) {return Base::end();};
   unsigned size(void) const {return Base::size();};
 
-  void add_undefined(const std::string& key, bool is_reassign);
+  void add_undefined(const std::string& key, bool is_reinterpret,
+                     bool is_extra_round);
   void append_word(const std::string& key, const std::string& value,
                    bool parent_ok);
   template <class In, class Out>
@@ -48,15 +52,16 @@ public:
   void local_declare(const std::string& key);
   const std::set<std::string>& locals(void) const {return local_vars;};
   void param(const std::string& key, const std::string& value,
-             bool is_reassign);
+             bool is_reinterpret);
   void param_or_append_word(const std::string& key, const std::string& value,
-                            bool is_reassign);
+                            bool is_reinterpret);
   Variable_map* nonempty_parent(void);
   void set(const std::string& key, const std::string& value);
   bool simple_exists(const std::string& key) const {return find(key) != end();}
   void unset(const std::string& key);
   bool undefined_vars_contains(const std::string& key) const {
     return undefined_vars.find(key) !=  undefined_vars.end();};
+  void unused_var_check(Error_list& exceptions);
   bool used_vars_contains(const std::string& key) const {
     return used_vars.find(key) !=  used_vars.end();};
   bool checked_vars_contains(const std::string& key) const {

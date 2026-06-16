@@ -1374,9 +1374,10 @@ whence .nop
 .try_catch_recursive .replace_exception {
   .throw .replace_exception forj {echo $j is on the call stack}}
 
-# .scope .reinterpret prototype.cc
+# .scope .reinterpret .rescope prototype.cc
 .scope
 .reinterpret {e $foo}
+.rescope {e $foo}
 .scope () {.scope foo}
 .scope a (y y) {echo illegal duplicate required parameter}
 .scope a ([-x] [-x]) {echo illegal duplicate flag parameter}
@@ -1409,11 +1410,31 @@ whence .nop
 .scope single ([-x] [--long-opt y] second) {
   var_val ${.list_locals}$; .echo $nl}
 .reinterpret [jj]
-.scope [-x] {.reinterpret -x bar ([-x kk])}
+.scope () {.rescope [jj]; .nop $jj$}
+.scope [B] {.rescope [A]}
+.scope --init-file doesn (-- argv ...) {
+  .rescope $argv$ ([--init-file init-file])
+  echo $init-file}
+.scope [-x] {.reinterpret $-x$ bar ([-x kk])}
+.scope [-x] {.rescope -x bar ([-x kk])}
+.scope -x [-x] {.rescope $-x$ bar ([-x kk])}
+.scope -y ([-x] [-?]) {
+  echo $-* , $-?
+  .reinterpret $-*$ -x ([-x] [-?])
+  echo $-* , $-?
+  .local_declare -y
+  .reinterpret $-*$ ([-y] [-?])
+  echo $-* , $-?}
 .scope ([n y]) {.scope local_val x {.reinterpret insufficient (n y)}}
 .scope one two (a b [c]) {
   .reinterpret $a $b (c [b] a)
   echo $a$ $c$}
+.scope one two three four five six (b [c] additional ...) {
+  .rescope $additional$ (d e f g)
+  echo b: $b c: $c d: $d e: $e f: $f g: $g
+  .rescope $additional$ ([h] [i] [j k] [l m])
+  echo b: $b c: $c h: $h i: $i j: $j k: $k l: $l$ m: $m$
+}
 fn arg_req .{argfunction} {
   echo before argfunction
   .scope () {.argfunction}}

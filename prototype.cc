@@ -20,17 +20,17 @@
 void Parameter_group::p_elipsis(Variable_map& locals,
         Argv::const_iterator& f_arg, int& available, const std::string& name,
         const std::string* flag, int needed, enum Dash_dash_type dash_dash,
-        bool is_reassign, Error_list& exceptions) const {
+        bool is_reinterpret, Error_list& exceptions) const {
   if (flag) {
-    locals.append_word("-*", *f_arg, is_reassign);
-    if (*flag != name) locals.append_word(*flag, *f_arg, is_reassign);}
+    locals.append_word("-*", *f_arg, is_reinterpret);
+    if (*flag != name) locals.append_word(*flag, *f_arg, is_reinterpret);}
   for (f_arg++; available > needed; --available, f_arg++) {
     if ((*f_arg)[0] == '-' && !dash_dash && f_arg->length() > 1)
       exceptions.add_error(Exception(E::Flag_in_elipsis, *f_arg, str()));
-    locals.append_word(name, *f_arg, is_reassign);
+    locals.append_word(name, *f_arg, is_reinterpret);
     if (flag) {
-      locals.append_word("-*", *f_arg, is_reassign);
-      if (*flag != name) locals.append_word(*flag, *f_arg, is_reassign);}}}
+      locals.append_word("-*", *f_arg, is_reinterpret);
+      if (*flag != name) locals.append_word(*flag, *f_arg, is_reinterpret);}}}
 
 Parameter_group::Parameter_group(Argv::const_iterator& focus,
                                  Argv::const_iterator end,
@@ -72,7 +72,8 @@ void Parameter_group::arg_to_param(int& available, int& needed,
                                    const std::string* flag,
                                    const std::string& elipsis_var,
                                    enum Dash_dash_type dash_dash,
-                                   bool is_reassign,
+                                   bool is_reinterpret,
+                                   bool is_extra_round,
                                    Variable_map& locals,
                                    Error_list& exceptions) const {
   available -= names.size();
@@ -80,27 +81,27 @@ void Parameter_group::arg_to_param(int& available, int& needed,
   if (elipsis == -1) {
     locals.set(elipsis_var, word_from_value(locals.get(elipsis_var)));
     p_elipsis(locals, --f_arg, available, elipsis_var, flag, needed,
-              dash_dash, is_reassign, exceptions);}
+              dash_dash, is_reinterpret, exceptions);}
   std::vector<std::string>::difference_type k = 0;
   for (; f_arg != end &&
       k < (std::vector<std::string>::difference_type) names.size(); k++)
     if (elipsis == k) {
-      locals.param(elipsis_var, word_from_value(*f_arg), is_reassign);
+      locals.param(elipsis_var, word_from_value(*f_arg), is_reinterpret);
       p_elipsis(locals, f_arg, available, elipsis_var, flag, needed, dash_dash,
-                is_reassign, exceptions);}
+                is_reinterpret, exceptions);}
     else if (flag) {
-        locals.append_word("-*", *f_arg, is_reassign);
-        if (*flag != names[k]) locals.append_word(*flag, *f_arg, is_reassign);
-        locals.param_or_append_word(names[k], *f_arg++, is_reassign);}
-    else locals.param(names[k], *f_arg++, is_reassign);
+        locals.append_word("-*", *f_arg, is_reinterpret);
+        if (*flag!=names[k]) locals.append_word(*flag, *f_arg, is_reinterpret);
+        locals.param_or_append_word(names[k], *f_arg++, is_reinterpret);}
+    else locals.param(names[k], *f_arg++, is_reinterpret);
   if (f_arg == end)
     while(k < (std::vector<std::string>::difference_type) names.size()) {
       missing += (missing.length()?" ":"") + names[k];
-      locals.add_undefined(names[k++], is_reassign);}}
+      locals.add_undefined(names[k++], is_reinterpret, is_extra_round);}}
 
 void Parameter_group::add_undefined_params(Variable_map& locals,
-                                           bool is_reassign) const {
-  for (auto j: names) locals.add_undefined(j, is_reassign);}
+                               bool is_reinterpret, bool is_extra_round) const {
+  for (auto j: names) locals.add_undefined(j, is_reinterpret, is_extra_round);}
 
 std::string Parameter_group::str() const {
   if (!names.size())
@@ -169,18 +170,21 @@ Prototype::Prototype(const Argv& parameters) :
 
 void Prototype::arg_to_param(const Argv& argv, Variable_map& locals,
                              Error_list& exceptions) const {
-  arg_to_param_internal(argv, false, locals, exceptions);}
+  arg_to_param_internal(argv, false, false, locals, exceptions);}
 
-void Prototype::arg_to_param_internal(const Argv& argv, bool is_reassign,
-                        Variable_map& locals, Error_list& exceptions) const {
+void Prototype::arg_to_param_internal(const Argv& argv, bool is_reinterpret,
+                               bool is_extra_round, Variable_map& locals,
+                               Error_list& exceptions) const {
   enum Dash_dash_type dash_dash = dash_dash_position? UNSEEN:
                                   bare_dash_dash? BARE: BRACKET;
-  if (dash_dash == BRACKET) locals.add_undefined("--", is_reassign);
-  if (flags == SOME)
-    locals.param("-*","", is_reassign), locals.param("-?","", is_reassign);
-  else if (flag_options.size()) locals.param("-*", "", is_reassign);
+  if (dash_dash == BRACKET)
+    locals.add_undefined("--", is_reinterpret, is_extra_round);
+  if (!is_extra_round || !locals.simple_exists("-*"))
+    if (flags == SOME)
+      locals.param("-*","",is_reinterpret),locals.param("-?","",is_reinterpret);
+    else if (flag_options.size()) locals.param("-*", "", is_reinterpret);
   for (auto j: flag_options)
-    j.second.add_undefined_params(locals, is_reassign);
+    j.second.add_undefined_params(locals, is_reinterpret, is_extra_round);
   int needed = required_argc;
   std::string missing;
   auto f_arg = argv.begin()+1;
@@ -194,35 +198,37 @@ void Prototype::arg_to_param_internal(const Argv& argv, bool is_reassign,
       else if (h != flag_options.end())
         h->second.arg_to_param(available, needed, missing, f_arg, argv.end(),
                                &h->second.names[0], elipsis_var, dash_dash,
-                               is_reassign, locals, exceptions);
+                               is_reinterpret, is_extra_round, locals,
+			       exceptions);
       else {
         if (*f_arg == "--") {
-          locals.param("--", "--", is_reassign);
+          locals.param("--", "--", is_reinterpret);
           dash_dash = BARE;}
         else if (flags == ALL)
           exceptions.add_error(Exception(E::Unrecognized_flag, *f_arg, str()));
-        if (flags == SOME) locals.append_word("-?", *f_arg, is_reassign);
+        if (flags == SOME) locals.append_word("-?", *f_arg, is_reinterpret);
         if (flag_options.size() || flags == SOME)
-          locals.append_word("-*", *f_arg, is_reassign);
+          locals.append_word("-*", *f_arg, is_reinterpret);
         ++f_arg, --available;}}
     else if (param == positional.end()) break;
     else {
       if (param->required || available > needed)
         param->arg_to_param(available, needed, missing, f_arg, argv.end(),
-                            nullptr, elipsis_var, dash_dash, is_reassign,
-                            locals, exceptions);
-      else param->add_undefined_params(locals, is_reassign);
+                            nullptr, elipsis_var, dash_dash, is_reinterpret,
+                            is_extra_round, locals, exceptions);
+      else param->add_undefined_params(locals, is_reinterpret, is_extra_round);
       if (++param - positional.begin() == dash_dash_position)
         dash_dash = bare_dash_dash? BARE: BRACKET;}
   if (param != positional.end()) {
     if (param->elipsis == -1) {
       const std::string& var((param-1)->names.back());
-      if (!locals.simple_exists(var)) locals.add_undefined(var, is_reassign);
+      if (!locals.simple_exists(var))
+	locals.add_undefined(var, is_reinterpret, is_extra_round);
       else locals.set(var, word_from_value(locals.get(var)));}
     while (param != positional.end()) {
       if (param->required)
         missing += (missing.length()?" ":"") + param->names[0];
-      param++->add_undefined_params(locals, is_reassign);}}
+      param++->add_undefined_params(locals, is_reinterpret, is_extra_round);}}
   if (f_arg != argv.end() || needed || missing.length())
     bad_args(missing, locals, f_arg, argv.end(), exceptions);
   if (exceptions.size()) locals.bless_unused_vars_without_usage();}
@@ -239,9 +245,13 @@ void Prototype::bad_args(std::string& missing, Variable_map& locals,
   exceptions.add_error(Exception(E::Bad_args, str(), assigned, missing,
                                  unassigned));}
 
-void Prototype::reassign(const Argv& argv,
-                        Variable_map& locals, Error_list& exceptions) const {
-  arg_to_param_internal(argv, true, locals, exceptions);}
+void Prototype::reinterpret(const Argv& argv,
+                          Variable_map& locals, Error_list& exceptions) const {
+  arg_to_param_internal(argv, true, false, locals, exceptions);}
+
+void Prototype::extra_round(const Argv& argv,
+                          Variable_map& locals, Error_list& exceptions) const {
+  arg_to_param_internal(argv, false, true, locals, exceptions);}
 
 std::string Prototype::str() const {
   std::string result;
@@ -306,9 +316,6 @@ void Parameter_group::unused_pos_var_check(Variable_map* vars,
       errors.add_error(Exception(E::Unchecked_variable, j));}}
 
 void Prototype::unused_var_check(Variable_map* vars, Error_list& errors) const {
-  if (!vars->usage_checked) vars->usage_checked = true;
-  else errors.add_error(Exception(E::Internal_error,
-                        "variable map usage checked multiple times"));
   bool unused_flag = false;
   if (vars->used_vars_contains("-*")) for (auto i: flag_options)
     i.second.bless_unused_vars(vars);

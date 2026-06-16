@@ -1,5 +1,5 @@
 // the registering of builtins
-// Copyright Samuel Newbold 2005-2023
+// Copyright Samuel Newbold 2005-2026
 
 #include <list>
 #include <map>
@@ -108,6 +108,7 @@ void internal_init(Error_list& exceptions) {
      Argv {"--", "[list", "...]", "prototype"});
   bi(".replace_exception", b_replace_exception,
      Argv {"--", "args", "...", "[.{argfunction}]"});
+  bi(".rescope", b_rescope, Argv {"--", "[list", "...]", "prototype"});
   bi(".rm_executable", b_rm_executable, Argv {"--", "command"});
   bi(".scope", b_scope,
      Argv {"--", "[list", "...]", "prototype", ".{argfunction}"});

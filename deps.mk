@@ -44,7 +44,8 @@ selection.o: selection.cc argv.h rwsh_stream.h selection.h tokenize.cc \
  variable_map.h
 substitution_stream.o: substitution_stream.cc rwsh_stream.h plumber.h \
  pipe_stream.h substitution_stream.h
-variable_map.o: variable_map.cc argv.h variable_map.h
+variable_map.o: variable_map.cc argv.h rwsh_stream.h prototype.h \
+ variable_map.h argm.h
 rwsh_init.o: rwsh_init.cc argv.h rwsh_stream.h builtin.h call_stack.h \
  prototype.h arg_script.h rwsh_init.h executable.h executable_map.h \
  function.h

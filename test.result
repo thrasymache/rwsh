@@ -263,7 +263,7 @@ call stack .source .try_catch_recursive(body)
   echo call stack $stack$}
 .function .unused_variable -- var [stack ...] {
   echo $var was unused with call stack $stack$}
-.function .variable_already_exists name stack ... {
+.function .variable_already_exists -- name stack ... {
   echo variable $name already exists
   echo call stack $stack$}
 .function .version_incompatible version stack ... {
@@ -372,6 +372,30 @@ if_only .var_exists argv {.error ignored excess arguments $argv $nl}
 .function .shutdown -- args ... {
   .nop $args
   .combine $nl (now terminating normally) $nl}
+.else_if .var_exists -to {.nop $PATH ?
+  .unset PATH
+  .nop .unset ?
+  .set SHELL /bin/rwsh
+  .global TESTABILITY (an=external var(iable))
+  .exec ./rwsh --init-file test_init.rwsh}
+.else_if .test_string_equal $rwsh_binary$ -rwsh {.source /etc/rwshrc-default}
+.else_if .test_not_empty $-c$ $script-args$ {.source /etc/rwshrc-basic}
+.else {.exec /etc/rwshrc-default}
+.if .var_exists -c {
+  .function .return_code code cmd [add_stack ...] {
+    echo $cmd returned $code : call stack $cmd $add_stack$
+    .exit $code}
+  .collect_errors_except .nop {
+    .mapped_argfunction $shift_argv$1 {$1$}
+    .exit 0}}
+.else_if .var_exists script-args {
+  .function .return_code code cmd [add_stack ...] {
+    echo $cmd returned $code : call stack $cmd $add_stack$
+    .exit $code}
+  .collect_errors_except .nop {
+    .source $script-args$
+    .exit 0}}
+.else {.nop}
 $.binary /bin/cat
 $/bin/cat /tmp/lcl
 /etc/rwshrc ./rwsh --init-file test_init.rwsh 
@@ -493,12 +517,14 @@ echo $argv$
 binary script arguments
 .local l_var local
 .rescope $argv$ (-- [rwsh_binary] [shift_argv ...])
-PATH was not declared
-call stack: .autofunction .autofunction .source
-substitution (${.which_path $cmd $PATH}) failed
-call stack: .autofunction .source
-.rescope : command not found ( .rescope binary script arguments (-- [rwsh_binary] [shift_argv ...]) .source )
-l_var was unused with call stack .source
+.rescope $shift_argv$ $rwsh_binary (first second third)
+.list_locals; echo ()
+argv first l_var rwsh_binary second shift_argv third()
+echo rescoped: $shift_argv$ $l_var $rwsh_binary$
+rescoped: script arguments local binary
+echo also rescoped: $second $first
+also rescoped: arguments script
+third was unused with call stack .source
 $.nop multiple statements \; on a line
 $.whence_function .argfunction {.multiple_argfunctions} {}
 multiple argfunctions not supported at this time
@@ -701,14 +727,14 @@ call stack .replace_exception .mapped_argfunction .if .return_code .try_catch_re
 $if_only_not false {echo false throwing a .false exception}
 false throwing a .false exception
 $./rwsh -c (env false)
-/bin/env returned 1 : call stack /bin/env env .mapped_argfunction .collect_errors_except .mapped_argfunction .if .scope .scope .source .collect_errors_except .init
+/bin/env returned 1 : call stack /bin/env env .mapped_argfunction .collect_errors_except .mapped_argfunction .if .source .collect_errors_except .init
 ./rwsh returned 1 : call stack ./rwsh
 $./rwsh -c (.get_pid)
 .get_pid : binary not found in /bin:/usr/bin:.
-call stack: .which_path .autofunction .autofunction .mapped_argfunction .collect_errors_except .mapped_argfunction .if .scope .scope .source .collect_errors_except .init
+call stack: .which_path .autofunction .autofunction .mapped_argfunction .collect_errors_except .mapped_argfunction .if .source .collect_errors_except .init
 substitution (${.which_path $cmd $PATH}) failed
-call stack: .autofunction .mapped_argfunction .collect_errors_except .mapped_argfunction .if .scope .scope .source .collect_errors_except .init
-.get_pid : command not found ( .get_pid .mapped_argfunction .collect_errors_except .mapped_argfunction .if .scope .scope .source .collect_errors_except .init )
+call stack: .autofunction .mapped_argfunction .collect_errors_except .mapped_argfunction .if .source .collect_errors_except .init
+.get_pid : command not found ( .get_pid .mapped_argfunction .collect_errors_except .mapped_argfunction .if .source .collect_errors_except .init )
 $./rwsh --posix  </dev/null
 .ambiguous_prototype_dash_dash not defined 
 .arguments_for_argfunction not defined 
@@ -792,9 +818,9 @@ $./rwsh --posix  </dev/null
 .version_incompatible not defined 
 .help not defined 
 Exception for failed handler. Original exception with call stack:
-.unrecognized_flag --posix [--init-file init-file] [-c command] [-rwsh] [-to] [script-args ...] .scope .scope .source .collect_errors_except .init
+.unrecognized_flag --posix [--init-file rcfile] [-c cmd] [-to] [script-args ...] .rescope .source .collect_errors_except .init
 Exception for failed handler. Original exception with call stack:
-.function_not_found .unrecognized_flag --posix [--init-file init-file] [-c command] [-rwsh] [-to] [script-args ...] .scope .scope .source .collect_errors_except .init
+.function_not_found .unrecognized_flag --posix [--init-file rcfile] [-c cmd] [-to] [script-args ...] .rescope .source .collect_errors_except .init
 Exception for failed handler. Original exception with call stack:
 .unrecognized_flag --posix cmd [args ...] .function_not_found
 Exception for failed handler. Original exception with call stack:
@@ -914,7 +940,7 @@ $./rwsh --init-file /non-existent/file/to/test/failure <test_files/pause_hello.r
 .version_incompatible not defined 
 .help not defined 
 init file /non-existent/file/to/test/failure does not exist
-call stack .source .mapped_argfunction .if .scope .scope .source .collect_errors_except .init
+call stack .source .mapped_argfunction .if .source .collect_errors_except .init
 rwsh>rwsh>rwsh>hello world 
 rwsh>Exception for failed handler. Original exception with call stack:
 .unused_variable FIGNORE
@@ -1018,8 +1044,8 @@ hello world
 .version_incompatible not defined 
 .help not defined 
 Exception for failed handler. Original exception with call stack:
-.unchecked_variable argv .source .mapped_argfunction .if .scope .scope .source .collect_errors_except .init
-.unchecked_variable : command not found ( .unchecked_variable argv .source .mapped_argfunction .if .scope .scope .source .collect_errors_except .init )
+.unchecked_variable argv .source .mapped_argfunction .if .source .collect_errors_except .init
+.unchecked_variable : command not found ( .unchecked_variable argv .source .mapped_argfunction .if .source .collect_errors_except .init )
 Exception for failed handler. Original exception with call stack:
 .binary_not_found .unchecked_variable /bin:/usr/bin:. .which_path .autofunction .autofunction
 .binary_not_found : command not found ( .binary_not_found .unchecked_variable /bin:/usr/bin:. .which_path .autofunction .autofunction )
@@ -1055,6 +1081,30 @@ Exception for failed handler. Original exception with call stack:
 ./rwsh returned 10 : call stack ./rwsh
 $./rwsh --init-file test_files/signal_triggered.rwsh <test_files/pause_hello.rwsh
 signal triggered: .raw_command ( .function .shutdown -- [args ...] {.nop $args; .exit 255} )
+signal triggered: .raw_command ( .else_if .var_exists -to {.nop $PATH ?
+  .unset PATH
+  .nop .unset ?
+  .set SHELL /bin/rwsh
+  .global TESTABILITY (an=external var(iable))
+  .exec ./rwsh --init-file test_init.rwsh} )
+signal triggered: .raw_command ( .else_if .test_string_equal $rwsh_binary$ -rwsh {.source /etc/rwshrc-default} )
+signal triggered: .raw_command ( .else_if .test_not_empty $-c$ $script-args$ {.source /etc/rwshrc-basic} )
+signal triggered: .raw_command ( .else {.exec /etc/rwshrc-default} )
+signal triggered: .raw_command ( .if .var_exists -c {
+  .function .return_code code cmd [add_stack ...] {
+    echo $cmd returned $code : call stack $cmd $add_stack$
+    .exit $code}
+  .collect_errors_except .nop {
+    .mapped_argfunction $shift_argv$1 {$1$}
+    .exit 0}} )
+signal triggered: .raw_command ( .else_if .var_exists script-args {
+  .function .return_code code cmd [add_stack ...] {
+    echo $cmd returned $code : call stack $cmd $add_stack$
+    .exit $code}
+  .collect_errors_except .nop {
+    .source $script-args$
+    .exit 0}} )
+signal triggered: .raw_command ( .else {.nop} )
 .help not defined 
 signal triggered: .prompt ( )
 signal triggered: .raw_command ( #! /bin/rwsh )
@@ -3869,6 +3919,7 @@ $forj ${.list_executables}$ {.combine $j $nl}
 .raw_command
 .reinterpret
 .replace_exception
+.rescope
 .result_range
 .return_code
 .rm_executable
@@ -4062,7 +4113,7 @@ $.try_catch_recursive .replace_exception {
 .replace_exception is on the call stack
 .try_catch_recursive is on the call stack
 $
-$# .scope .reinterpret prototype.cc
+$# .scope .reinterpret .rescope prototype.cc
 $.scope
 unacceptable arguments: for prototype -- [list ...] prototype .{argfunction},
  needed (prototype),
@@ -4073,6 +4124,11 @@ unacceptable arguments: for prototype -- [list ...] prototype,
  needed (prototype),
 ( call) stack: .reinterpret
 .reinterpret does not accept an argfunction with call stack: .reinterpret
+$.rescope {e $foo}
+unacceptable arguments: for prototype -- [list ...] prototype,
+ needed (prototype),
+( call) stack: .rescope
+.rescope does not accept an argfunction with call stack: .rescope
 $.scope () {.scope foo}
 .scope requires an argfunction
 stack .scope
@@ -4147,10 +4203,37 @@ $.scope single ([-x] [--long-opt y] second) {
 $.reinterpret [jj]
 jj was not declared
 call stack: .reinterpret
-$.scope [-x] {.reinterpret -x bar ([-x kk])}
+$.scope () {.rescope [jj]; .nop $jj$}
+$.scope [B] {.rescope [A]}
+A was not checked with call stack .scope
+B was not checked with call stack .scope
+$.scope --init-file doesn (-- argv ...) {
+  .rescope $argv$ ([--init-file init-file])
+  echo $init-file}
+doesn
+$.scope [-x] {.reinterpret $-x$ bar ([-x kk])}
 kk was not declared
 call stack: .reinterpret .scope
+$.scope [-x] {.rescope -x bar ([-x kk])}
+variable -x already exists
+call stack .rescope .scope
 -x was not checked with call stack .scope
+kk was not checked with call stack .scope
+-* was unused with call stack .scope
+$.scope -x [-x] {.rescope $-x$ bar ([-x kk])}
+variable -x already exists
+call stack .rescope .scope
+$.scope -y ([-x] [-?]) {
+  echo $-* , $-?
+  .reinterpret $-*$ -x ([-x] [-?])
+  echo $-* , $-?
+  .local_declare -y
+  .reinterpret $-*$ ([-y] [-?])
+  echo $-* , $-?}
+-y , -y
+(-y -x) , -y
+(-y -x) , -x
+-y was unused with call stack .scope
 $.scope ([n y]) {.scope local_val x {.reinterpret insufficient (n y)}}
 unacceptable arguments: for prototype n y,
  assigned n=insufficient ,
@@ -4161,6 +4244,14 @@ $.scope one two (a b [c]) {
   echo $a$ $c$}
 two one
 b was not checked with call stack .scope
+$.scope one two three four five six (b [c] additional ...) {
+  .rescope $additional$ (d e f g)
+  echo b: $b c: $c d: $d e: $e f: $f g: $g
+  .rescope $additional$ ([h] [i] [j k] [l m])
+  echo b: $b c: $c h: $h i: $i j: $j k: $k l: $l$ m: $m$
+}
+b: one c: two d: three e: four f: five g: six
+b: one c: two h: three i: four j: five k: six l: m:
 $fn arg_req .{argfunction} {
   echo before argfunction
   .scope () {.argfunction}}
@@ -5899,7 +5990,7 @@ x
 /bin/rwsh
 an=external var(iable)
 -- -* .var_exists ? A C PATH SHELL TESTABILITY args argv broken nl
--to
+./rwsh -to
 extra_close) (extra_open
 
 

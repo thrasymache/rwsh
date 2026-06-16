@@ -1,6 +1,6 @@
 // The functions that implement each of the builtin executables
 //
-// Copyright (C) 2006-2023 Samuel Newbold
+// Copyright (C) 2006-2026 Samuel Newbold
 
 #include <algorithm>
 #include <climits>
@@ -438,13 +438,13 @@ void b_getpid(const Argm& argm, Error_list& exceptions) {
 void b_getppid(const Argm& argm, Error_list& exceptions) {
   argm.output <<(unsigned) getppid();}
 
-// reassign the variables in the prototype according to the arguments
+// reinterpret the variables in the prototype according to the arguments
 // this will not permit you to declare variables that don't already exist
 void b_reinterpret(const Argm& argm, Error_list& exceptions) {
   Argv prototype_argv;
   tokenize_words(argm[argm.argc()-1], std::back_inserter(prototype_argv));
   Prototype prototype(prototype_argv);
-  prototype.reassign(argm.subrange(0, 1), *argm.parent_map(), exceptions);}
+  prototype.reinterpret(argm.subrange(0, 1), *argm.parent_map(), exceptions);}
 
 // add the given exception as a replacement for the current one (if nothing
 // afterwards fails)
@@ -455,6 +455,16 @@ void b_replace_exception(const Argm& argm, Error_list& exceptions) {
                      Variable_map::global_map,
                      argm.input, argm.output.child_stream(), argm.error);
   exceptions.replace_error(new_exception);}
+
+// define the variables in the prototype according to the arguments
+// this will not permit you to change values of existing variables
+void b_rescope(const Argm& argm, Error_list& exceptions) {
+  Argv prototype_argv;
+  tokenize_words(argm[argm.argc()-1], std::back_inserter(prototype_argv));
+  Prototype prototype(prototype_argv);
+  argm.parent_map()->extra_prototypes.push_back(Prototype(prototype));
+  prototype.extra_round(argm.subrange(0, 1), *argm.parent_map(),
+		                exceptions);}
 
 // remove executable with name $1 from executable map
 void b_rm_executable(const Argm& argm, Error_list& exceptions) {
@@ -531,7 +541,7 @@ void b_source(const Argm& argm, Error_list& exceptions) {
   Command_stream command_stream(src, false);
   Command_block block;
   Prototype prototype(Argv{"--", "[argv", "...]"});
-  Variable_map locals(argm.parent_map());
+  Variable_map locals(argm.parent_map(), prototype);
   prototype.arg_to_param(argm.subrange(1), locals, exceptions);
   Argm script_arg(argm.subrange(1), nullptr, &locals,
                   argm.input, argm.output.child_stream(), argm.error);
@@ -540,9 +550,9 @@ void b_source(const Argm& argm, Error_list& exceptions) {
       command_stream.getline(block, exceptions);
       if (command_stream.fail()) break;
       block.execute(script_arg, exceptions);}
-    prototype.unused_var_check(&locals, exceptions);}
+    locals.unused_var_check(exceptions);}
   catch (Exception error) {
-    prototype.unused_var_check(&locals, exceptions);
+    locals.unused_var_check(exceptions);
     throw error;}}
 
 // run the argument function once with each command in the specified function
@@ -553,11 +563,11 @@ void b_stepwise(const Argm& argm, Error_list& exceptions) {
   Base_executable* e = executable_map.find_second(lookup);
   if (!e) throw Exception(E::Function_not_found, argm[1]);
   Function* f = dynamic_cast<Function*>(e);
-  if (!f) return; //throw Exception(Not_a_function, argm[1]);
-  Variable_map locals(argm.parent_map());
+  if (!f) return; //throw Exception(E::Not_a_function, argm[1]);
+  Variable_map locals(argm.parent_map(), f->prototype_accessor());
   f->arg_to_param(argm.subrange(1,1), locals, exceptions);
   if (global_stack.unwind_stack())
-    return f->unused_var_check(&locals, exceptions);
+    return locals.unused_var_check(exceptions);
   // this must be caught and handled to use .stepwise recursively
   Argm params(argm.subrange(1,1), nullptr, &locals,
               argm.input, argm.output.child_stream(), argm.error);
@@ -574,7 +584,7 @@ void b_stepwise(const Argm& argm, Error_list& exceptions) {
     (void) global_stack.remove_exceptions(".continue", exceptions);
     if (global_stack.remove_exceptions(".break", exceptions) ||
         global_stack.unwind_stack()) break;}
-  f->unused_var_check(&locals, exceptions);}
+  locals.unused_var_check(exceptions);}
 
 // run the argfunction and store its output in the variable $1
 void b_store_output(const Argm& argm, Error_list& exceptions) {

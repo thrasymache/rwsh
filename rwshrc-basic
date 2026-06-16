@@ -250,7 +250,7 @@
   echo call stack $stack$}
 .function .unused_variable -- var [stack ...] {
   echo $var was unused with call stack $stack$}
-.function .variable_already_exists name stack ... {
+.function .variable_already_exists -- name stack ... {
   echo variable $name already exists
   echo call stack $stack$}
 .function .version_incompatible version stack ... {

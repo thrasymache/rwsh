@@ -132,7 +132,8 @@ Plumber plumber;
 Rwsh_istream_p default_input(new Default_istream(0), true, true);
 Rwsh_ostream_p default_output(new Default_ostream(1), true, true),
   default_error(new Default_ostream(2), true, true);
-Variable_map root_variable_map(nullptr);
+Prototype shell_invocation;
+Variable_map root_variable_map(nullptr, shell_invocation);
 Variable_map* Variable_map::global_map = &root_variable_map;
 
 int main(int argc, char *argv[]) {

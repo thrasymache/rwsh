@@ -45,7 +45,7 @@ rwshrc-basic-devnull: rwsh
 rwshrc-default-devnull: rwsh
 	./rwsh --init-file ./rwshrc-default </dev/null
 test: rwsh
-	./rwsh -to <test_main.sh | diff test.result -
+	./rwsh -to <test_main.sh | diff -u test.result -
 teststat: rwsh
 	./rwsh -to <test_main.sh | diff test.result - | diffstat
 install: rwsh

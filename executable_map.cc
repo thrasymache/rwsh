@@ -82,8 +82,7 @@ void Executable_map::run_handling_exceptions(const Argm& argm,
 
 void Executable_map::unused_var_check_at_exit(void) {
   Error_list exceptions;
-  Prototype shell_invocation;
-  shell_invocation.unused_var_check(Variable_map::global_map, exceptions);
+  Variable_map::global_map->unused_var_check(exceptions);
   if (exceptions.size()) global_stack.exception_handler(exceptions);}
 
 void Executable_map::run(const Argm& argm, Error_list& exceptions) {

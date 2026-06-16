@@ -33,7 +33,7 @@ Builtin::Builtin(const std::string& name_i,
 
 // run the given builtin
 void Builtin::execute(const Argm& argm, Error_list& exceptions) {
-  Variable_map locals(argm.parent_map());
+  Variable_map locals(argm.parent_map(), prototype);
   prototype.arg_to_param(argm.argv(), locals, exceptions);
   locals.bless_unused_vars();
   if (argm.argfunction() && prototype.exclude_argfunction)
@@ -72,7 +72,7 @@ void Command_block::execute(const Argm& src_argm, Error_list& exceptions) {
 void Command_block::prototype_execute(const Argm& argm,
                                      const Prototype& prototype,
                                      Error_list& exceptions) {
-  Variable_map locals(argm.parent_map());
+  Variable_map locals(argm.parent_map(), prototype);
   prototype.arg_to_param(argm.argv(), locals, exceptions);
   if (argm.argfunction() && prototype.exclude_argfunction)
     exceptions.add_error(Exception(E::Excess_argfunction));
@@ -83,9 +83,9 @@ void Command_block::prototype_execute(const Argm& argm,
       Argm params(argm.argv(), argm.argfunction(), &locals,
                   argm.input, argm.output, argm.error);
       execute(params, exceptions);}
-    prototype.unused_var_check(&locals, exceptions);}
+    locals.unused_var_check(exceptions);}
   catch (Exception error) {
-    prototype.unused_var_check(&locals, exceptions);
+    locals.unused_var_check(exceptions);
     throw error;}}
 
 void Command_block::promote_soons(unsigned nesting) {

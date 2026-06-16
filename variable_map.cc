@@ -1,7 +1,7 @@
 // Functions to implement a variable map, and permit it to be exported as the
 // environment for child processes.
 //
-// Copyright (C) 2006-2023 Samuel Newbold
+// Copyright (C) 2006-2026 Samuel Newbold
 
 #include <cstdlib>
 #include <cstring>
@@ -15,7 +15,11 @@
 #include <vector>
 
 #include "argv.h"
+#include "rwsh_stream.h"
+#include "prototype.h"
 #include "variable_map.h"
+
+#include "argm.h"
 
 std::string escape(const std::string& src) {
   if (!src.length()) return "()";
@@ -27,8 +31,9 @@ std::string word_from_value(const std::string& value) {
     return "(" + escape(value) + ")";
   else return escape(value);}
 
-Variable_map::Variable_map(Variable_map* parent_i) :
-    parent(parent_i), locals_listed(false), usage_checked(false) {
+Variable_map::Variable_map(Variable_map* parent_i, const Prototype& prototype_i) :
+    prototype(prototype_i), parent(parent_i), locals_listed(false),
+    usage_checked(false) {
   if (parent_i == nullptr) {
     local("FIGNORE", "");}}
 
@@ -57,21 +62,26 @@ void Variable_map::append_word(const std::string& key,
   else if (i->second == "") i->second = word_from_value(value);
   else i->second += " " + word_from_value(value);}
 
-void Variable_map::add_undefined(const std::string& key, bool is_reassign) {
-  if (undefined_vars.find(key) != undefined_vars.end());
-  else if (erase(key) || !is_reassign) undefined_vars.insert(key);
-  else if (parent) parent->add_undefined(key, is_reassign);
+void Variable_map::add_undefined(const std::string& key, bool is_reinterpret,
+		                 bool is_extra_round) {
+  if (is_extra_round)
+    if (find(key)==end() && undefined_vars.find(key)==undefined_vars.end())
+      undefined_vars.insert(key);
+    else throw Exception(E::Variable_already_exists, key);
+  else if (undefined_vars.find(key) != undefined_vars.end());
+  else if (!is_reinterpret || erase(key)) undefined_vars.insert(key);
+  else if (parent) parent->add_undefined(key, is_reinterpret, is_extra_round);
   else throw Exception(E::Undeclared_variable, key);}
 
 void Variable_map::param_or_append_word(const std::string& key,
                                         const std::string& value,
-                                        bool is_reassign) {
+                                        bool is_reinterpret) {
   auto i = find(key);
   if (i != end()) i->second += " " + word_from_value(value);
   else if (undefined_vars.erase(key))
     param(key, word_from_value(value), false);
-  else if (is_reassign && parent)
-    parent->param_or_append_word(key, value, is_reassign);
+  else if (is_reinterpret && parent)
+    parent->param_or_append_word(key, value, is_reinterpret);
   else std::abort();}
 
 bool Variable_map::exists_with_check(const std::string& key) {
@@ -108,9 +118,10 @@ void Variable_map::global(const std::string& key, const std::string& value) {
 
 // params have their usage checked by the prototype (to properly handle -* etc)
 void Variable_map::param(const std::string& key, const std::string& value,
-                         bool is_reassign) {
-  if (is_reassign) set(key, value);
-  else if (simple_exists(key)) std::abort();
+                         bool is_reinterpret) {
+  if (is_reinterpret) set(key, value);
+  else if (simple_exists(key))
+    throw Exception(E::Variable_already_exists, key);
   else define(key, value);}
 
 void Variable_map::define(const std::string& key, const std::string& value) {
@@ -196,3 +207,10 @@ void Variable_map::export_env(
         std::vector<char*>& env, const Variable_map* descendant) {
   if (parent) parent->export_env(env, descendant);
   copy_to_char_star_star(begin(), end(), std::back_inserter(env), descendant);}
+
+void Variable_map::unused_var_check(Error_list& errors) {
+  for (auto j: extra_prototypes) j.unused_var_check(this, errors);
+  if (!usage_checked) usage_checked = true;
+  else errors.add_error(Exception(E::Internal_error,
+                        "variable map usage checked multiple times"));
+  prototype.unused_var_check(this, errors);}

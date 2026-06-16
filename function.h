@@ -68,5 +68,4 @@ class Function : public Named_executable {
   const std::string& name(void) const {return name_v;};
   void promote_soons(unsigned nesting);
   std::string str() const;
-  void unused_var_check(Variable_map* vars, Error_list& exceptions) const {
-    prototype.unused_var_check(vars, exceptions);} };
+  const Prototype &prototype_accessor(void) const {return prototype;} };

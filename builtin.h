@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2019 Samuel Newbold
+// Copyright (C) 2006-2026 Samuel Newbold
 
 class Argm;
 
@@ -46,6 +46,7 @@ void b_ls(const Argm& argm, Error_list& exceptions);
 void b_nop(const Argm& argm, Error_list& exceptions);
 void b_reinterpret(const Argm& argm, Error_list& exceptions);
 void b_replace_exception(const Argm& argm, Error_list& exceptions);
+void b_rescope(const Argm& argm, Error_list& exceptions);
 void b_rm_executable(const Argm& argm, Error_list& exceptions);
 void b_scope(const Argm& argm, Error_list& exceptions);
 void b_selection_set(const Argm& argm, Error_list& exceptions);
