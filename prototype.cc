@@ -19,12 +19,12 @@
 
 void Parameter_group::p_elipsis(Variable_map& locals,
         Argv::const_iterator& f_arg, int& available, const std::string& name,
-        const std::string* flag, int needed, enum Dash_dash_type dash_dash,
+        const std::string* flag, int pos_c, enum Dash_dash_type dash_dash,
         bool is_reinterpret, Error_list& exceptions) const {
   if (flag) {
     locals.append_word("-*", *f_arg, is_reinterpret);
     if (*flag != name) locals.append_word(*flag, *f_arg, is_reinterpret);}
-  for (f_arg++; available > needed; --available, f_arg++) {
+  for (f_arg++; available > pos_c; --available, f_arg++) {
     if ((*f_arg)[0] == '-' && !dash_dash && f_arg->length() > 1)
       exceptions.add_error(Exception(E::Flag_in_elipsis, *f_arg, str()));
     locals.append_word(name, *f_arg, is_reinterpret);
@@ -65,7 +65,7 @@ Parameter_group::Parameter_group(Argv::const_iterator& focus,
       else;
     else;}
 
-void Parameter_group::arg_to_param(int& available, int& needed,
+void Parameter_group::arg_to_param(int& available, int& needed, int& pos_c,
                                    std::string& missing,
                                    Argv::const_iterator& f_arg,
                                    const Argv::const_iterator end,
@@ -77,17 +77,17 @@ void Parameter_group::arg_to_param(int& available, int& needed,
                                    Variable_map& locals,
                                    Error_list& exceptions) const {
   available -= names.size();
+  if (!flag) pos_c -= names.size();
   if (required) --needed;
   if (elipsis == -1) {
     locals.set(elipsis_var, word_from_value(locals.get(elipsis_var)));
-    p_elipsis(locals, --f_arg, available, elipsis_var, flag, needed,
+    p_elipsis(locals, --f_arg, available, elipsis_var, flag, pos_c,
               dash_dash, is_reinterpret, exceptions);}
   std::vector<std::string>::difference_type k = 0;
-  for (; f_arg != end &&
-      k < (std::vector<std::string>::difference_type) names.size(); k++)
+  for (; f_arg != end && k < names.size(); k++)
     if (elipsis == k) {
       locals.param(elipsis_var, word_from_value(*f_arg), is_reinterpret);
-      p_elipsis(locals, f_arg, available, elipsis_var, flag, needed, dash_dash,
+      p_elipsis(locals, f_arg, available, elipsis_var, flag, pos_c, dash_dash,
                 is_reinterpret, exceptions);}
     else if (flag) {
         locals.append_word("-*", *f_arg, is_reinterpret);
@@ -119,24 +119,23 @@ std::string Parameter_group::str() const {
 Prototype::Prototype(void) :
     bare_dash_dash(false), dash_dash_position(-1), elipsis_var(""),
     flag_options(), flags(ALL), parameter_names{"--"},
-    positional(), required_argc(),
+    positional(), required_argc(), pos_argc(),
     exclude_argfunction(true), required_argfunction(false) {}
 
 Prototype::Prototype(const Argv& parameters) :
     bare_dash_dash(false), dash_dash_position(-1), elipsis_var(""),
     flag_options(), flags(ALL), parameter_names{"--"},
-    positional(), required_argc(),
+    positional(), required_argc(), pos_argc(),
     exclude_argfunction(true), required_argfunction(false) {
   bool has_elipsis = false;
   for (auto fp = parameters.begin(); fp != parameters.end(); ++fp) {
     Parameter_group group(fp, parameters.end(), parameter_names);
-    if (has_elipsis && !group.required && !group.has_argfunction)
-      throw Exception(E::Post_elipsis_option, group.str());
-    else if (group.elipsis == -1) {
+    if (group.elipsis == -1) {
       if (!positional.size())
         throw Exception(E::Elipsis_first_arg, group.str());
       has_elipsis = true;
       elipsis_var = positional.back().names.back();
+      pos_argc += group.names.size();
       if (group.names.size()) positional.push_back(group);
       else if (positional.back().names.size() != 1)
         throw Exception(E::Elipsis_out_of_option_group,
@@ -158,6 +157,7 @@ Prototype::Prototype(const Argv& parameters) :
     else if (group.required || group.names[0][0] != '-' ||
              group.names[0].length() == 1) {
       required_argc += group.required;
+      pos_argc += group.names.size();
       positional.push_back(group);}
     else if (dash_dash_position != -1)
       throw Exception(E::Post_dash_dash_flag, group.str());
@@ -171,6 +171,14 @@ Prototype::Prototype(const Argv& parameters) :
 void Prototype::arg_to_param(const Argv& argv, Variable_map& locals,
                              Error_list& exceptions) const {
   arg_to_param_internal(argv, false, false, locals, exceptions);}
+
+void Prototype::reinterpret(const Argv& argv,
+                          Variable_map& locals, Error_list& exceptions) const {
+  arg_to_param_internal(argv, true, false, locals, exceptions);}
+
+void Prototype::extra_round(const Argv& argv,
+                          Variable_map& locals, Error_list& exceptions) const {
+  arg_to_param_internal(argv, false, true, locals, exceptions);}
 
 void Prototype::arg_to_param_internal(const Argv& argv, bool is_reinterpret,
                                bool is_extra_round, Variable_map& locals,
@@ -186,6 +194,7 @@ void Prototype::arg_to_param_internal(const Argv& argv, bool is_reinterpret,
   for (auto j: flag_options)
     j.second.add_undefined_params(locals, is_reinterpret, is_extra_round);
   int needed = required_argc;
+  int pos_c = pos_argc;
   std::string missing;
   auto f_arg = argv.begin()+1;
   auto param = positional.begin();
@@ -196,7 +205,7 @@ void Prototype::arg_to_param_internal(const Argv& argv, bool is_reinterpret,
         --available;
         exceptions.add_error(Exception(E::Tardy_flag, *f_arg++));}
       else if (h != flag_options.end())
-        h->second.arg_to_param(available, needed, missing, f_arg, argv.end(),
+        h->second.arg_to_param(available, needed, pos_c, missing, f_arg, argv.end(),
                                &h->second.names[0], elipsis_var, dash_dash,
                                is_reinterpret, is_extra_round, locals,
 			       exceptions);
@@ -213,7 +222,7 @@ void Prototype::arg_to_param_internal(const Argv& argv, bool is_reinterpret,
     else if (param == positional.end()) break;
     else {
       if (param->required || available > needed)
-        param->arg_to_param(available, needed, missing, f_arg, argv.end(),
+        param->arg_to_param(available, needed, pos_c, missing, f_arg, argv.end(),
                             nullptr, elipsis_var, dash_dash, is_reinterpret,
                             is_extra_round, locals, exceptions);
       else param->add_undefined_params(locals, is_reinterpret, is_extra_round);
@@ -244,14 +253,6 @@ void Prototype::bad_args(std::string& missing, Variable_map& locals,
   while (f_arg != end) unassigned += (unassigned.length()?" ":"") + *f_arg++;
   exceptions.add_error(Exception(E::Bad_args, str(), assigned, missing,
                                  unassigned));}
-
-void Prototype::reinterpret(const Argv& argv,
-                          Variable_map& locals, Error_list& exceptions) const {
-  arg_to_param_internal(argv, true, false, locals, exceptions);}
-
-void Prototype::extra_round(const Argv& argv,
-                          Variable_map& locals, Error_list& exceptions) const {
-  arg_to_param_internal(argv, false, true, locals, exceptions);}
 
 std::string Prototype::str() const {
   std::string result;

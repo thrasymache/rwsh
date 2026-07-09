@@ -18,8 +18,8 @@ struct Parameter_group {
                       required(required_i), elipsis(-2), names() {};
   Parameter_group(Argv::const_iterator& fp, Argv::const_iterator end,
                   std::set<std::string>& parameter_names);
-  void arg_to_param(int& available, int& needed, std::string& missing,
-                    Argv::const_iterator& f_arg,
+  void arg_to_param(int& available, int& needed, int& pos_c,
+		    std::string& missing, Argv::const_iterator& f_arg,
                     const Argv::const_iterator end,
                     const std::string* flag, const std::string& elipsis_var,
                     enum Dash_dash_type dash_dash, bool is_reinterpret, bool is_extra_round,
@@ -29,7 +29,7 @@ struct Parameter_group {
   void bless_unused_vars(Variable_map* vars) const;
   void p_elipsis(Variable_map& locals, Argv::const_iterator& f_arg,
                  int& available, const std::string& name,
-                 const std::string* flag, int needed,
+                 const std::string* flag, int pos_c,
                  enum Dash_dash_type dash_dash, bool is_reinterpret,
                  Error_list& exceptions) const;
   char unused_flag_var_check(Variable_map* vars, Error_list& exceptions) const;
@@ -45,6 +45,7 @@ class Prototype {
   std::set<std::string> parameter_names;
   std::vector<Parameter_group> positional;
   unsigned required_argc;
+  int pos_argc;
 
   void arg_to_param_internal(const Argv& invoking_argm, bool is_reinterpret,
                              bool is_extra_round, Variable_map& locals,

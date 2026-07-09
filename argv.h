@@ -63,7 +63,6 @@ namespace E {
     Raw_command,
     Return_code,
     Result_range,
-    Post_elipsis_option,
     Post_dash_dash_flag,
     Prompt,
     Selection_not_found,

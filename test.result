@@ -188,9 +188,6 @@ call stack .source .try_catch_recursive(body)
 .function .number_not_an_integer -- nan stack ... {
   echo $nan is a number but not an integer
   echo call stack: $stack$}
-.function .post_elipsis_option -- flag stack ... {
-  echo option $flag coming after an elipsis has no meaning
-  echo call stack: $stack$}
 .function .post_dash_dash_flag -- flag stack ... {
   echo flag option $flag occurs after -- in the prototype
   echo call stack: $stack$}
@@ -789,7 +786,6 @@ $./rwsh --posix  </dev/null
 .number_not_an_integer not defined 
 .return_code not defined 
 .result_range not defined 
-.post_elipsis_option not defined 
 .post_dash_dash_flag not defined 
 .selection_not_found not defined 
 .sighup not defined 
@@ -911,7 +907,6 @@ $./rwsh --init-file /non-existent/file/to/test/failure <test_files/pause_hello.r
 .number_not_an_integer not defined 
 .return_code not defined 
 .result_range not defined 
-.post_elipsis_option not defined 
 .post_dash_dash_flag not defined 
 .selection_not_found not defined 
 .sighup not defined 
@@ -1015,7 +1010,6 @@ hello world
 .number_not_an_integer not defined 
 .return_code not defined 
 .result_range not defined 
-.post_elipsis_option not defined 
 .post_dash_dash_flag not defined 
 .selection_not_found not defined 
 .sighup not defined 
@@ -2346,8 +2340,6 @@ $.function a [... y] x {}
 ([... y]) elipsis cannot be the first argument in a prototype
 call stack: .function
 $.function a x ... [y z] {}
-option ([y z]) coming after an elipsis has no meaning
-call stack: .function
 $.function a x [... y] z ... {}
 duplicated parameter in function definition: ...
 call stack: .function
@@ -2361,14 +2353,11 @@ $.function a x ... y ... {}
 duplicated parameter in function definition: ...
 call stack: .function
 $.function a [x ...] [y z] {}
-option ([y z]) coming after an elipsis has no meaning
-call stack: .function
 $.function a [x ...] y ... {}
 duplicated parameter in function definition: ...
 call stack: .function
+$.function a [x ... a] {}
 $.function a [x ... a] [y] {}
-option [y] coming after an elipsis has no meaning
-call stack: .function
 $.function a [x ... a] y ... {}
 duplicated parameter in function definition: ...
 call stack: .function
@@ -2379,8 +2368,6 @@ $.function a [x ... a ... b] {}
 duplicated parameter in function definition: ...
 call stack: .function
 $.function a [-x ...] b [c] {}
-option [c] coming after an elipsis has no meaning
-call stack: .function
 $.function a -? x ... y {
   forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 $whence a
@@ -2449,6 +2436,24 @@ $a first second third
 -*() -?() x(first) y(second third) 
 $a first second third fourth fifth
 -*() -?() x(first) y(second third fourth fifth) 
+$.function a [-?] x [--] [y ...] [z] {
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
+$whence a
+.function a [-?] x [--] [y ...] [z] {
+  forj ${.list_locals}$ {.combine $j \( $$j \) ( )}; .echo $nl}
+$a
+unacceptable arguments: for prototype [-?] x [--] [y ...] [z],
+ assigned -*=() -?=() ,
+ but needed (x),
+( call) stack: a
+$a first
+-*() -?() x(first) 
+$a first second
+-*() -?() x(first) y(second) 
+$a first second third
+-*() -?() x(first) y(second) z(third) 
+$a first second third fourth fifth
+-*() -?() x(first) y(second third fourth) z(fifth) 
 $.function a [-?] a [b ... c] d {
   forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 $whence a
@@ -2472,6 +2477,32 @@ $a first second third fourth fifth
 -*() -?() a(first) b(second third) c(fourth) d(fifth) 
 $a first second third fourth fifth sixth
 -*() -?() a(first) b(second third fourth) c(fifth) d(sixth) 
+$.function a [a ... b] [c] d [e] {
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
+$whence a
+.function a [a ... b] [c] d [e] {
+  forj ${.list_locals}$ {.combine $j \( $$j \) ( )}; .echo $nl}
+$a
+unacceptable arguments: for prototype [a ... b] [c] d [e],
+ needed (d),
+( call) stack: a
+$a first
+d(first) 
+$a first second
+unacceptable arguments: for prototype [a ... b] [c] d [e],
+ assigned a=first b=second ,
+ but needed (d),
+( call) stack: a
+$a first second third
+a(first) b(second) d(third) 
+$a first second third fourth
+a(first) b(second) c(third) d(fourth) 
+$a first second third fourth fifth
+a(first) b(second) c(third) d(fourth) e(fifth) 
+$a first second third fourth fifth sixth
+a(first second) b(third) c(fourth) d(fifth) e(sixth) 
+$a first second third fourth fifth sixth seventh eighth
+a(first second third fourth) b(fifth) c(sixth) d(seventh) e(eighth) 
 $.function a [-x ...] b c {
   forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 $whence a
@@ -3724,7 +3755,6 @@ $.internal_functions
 .raw_command
 .return_code
 .result_range
-.post_elipsis_option
 .post_dash_dash_flag
 .prompt
 .selection_not_found
@@ -3914,7 +3944,6 @@ $forj ${.list_executables}$ {.combine $j $nl}
 .not_soon_enough
 .number_not_an_integer
 .post_dash_dash_flag
-.post_elipsis_option
 .prompt
 .raw_command
 .reinterpret

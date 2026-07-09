@@ -677,6 +677,7 @@ whence a
 .function a x ... y ... {}
 .function a [x ...] [y z] {}
 .function a [x ...] y ... {}
+.function a [x ... a] {}
 .function a [x ... a] [y] {}
 .function a [x ... a] y ... {}
 .function a [x ... a ...] {}
@@ -711,6 +712,14 @@ a first
 a first second
 a first second third
 a first second third fourth fifth
+.function a [-?] x [--] [y ...] [z] {
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
+whence a
+a
+a first
+a first second
+a first second third
+a first second third fourth fifth
 .function a [-?] a [b ... c] d {
   forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 whence a
@@ -720,6 +729,17 @@ a first second third
 a first second third fourth
 a first second third fourth fifth
 a first second third fourth fifth sixth
+.function a [a ... b] [c] d [e] {
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
+whence a
+a
+a first
+a first second
+a first second third
+a first second third fourth
+a first second third fourth fifth
+a first second third fourth fifth sixth
+a first second third fourth fifth sixth seventh eighth
 .function a [-x ...] b c {
   forj ${.list_locals}$ {.combine $j \( $$j \) \ }; .echo $nl}
 whence a

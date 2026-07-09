@@ -92,7 +92,6 @@ std::string exception_names[E::Exception_count] = {
   ".raw_command",
   ".return_code",
   ".result_range",
-  ".post_elipsis_option",
   ".post_dash_dash_flag",
   ".prompt",
   ".selection_not_found",

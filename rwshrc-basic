@@ -175,9 +175,6 @@
 .function .number_not_an_integer -- nan stack ... {
   echo $nan is a number but not an integer
   echo call stack: $stack$}
-.function .post_elipsis_option -- flag stack ... {
-  echo option $flag coming after an elipsis has no meaning
-  echo call stack: $stack$}
 .function .post_dash_dash_flag -- flag stack ... {
   echo flag option $flag occurs after -- in the prototype
   echo call stack: $stack$}
