@@ -672,6 +672,7 @@ a
 .function a x ... [y z] {}
 .function a x [... y] z ... {}
 .function a [y z] ... x {}
+whence a
 .function a [y] ... x {}
 whence a
 .function a x ... y ... {}
@@ -793,6 +794,19 @@ a (fi rst)
 a (fi rst) second
 a first (sec ond) third
 a (fi rst) (sec ond) third fourth
+a (fi rst) (sec ond) (thi rd) (fou rth) (fi fth)
+.function a [-?] [x y] ... [z] {
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }
+  .combine $nl
+  if_only .var_exists x {c (x: ) $x $nl}
+  if_only .var_exists y {c (y: ) $y$ $nl}
+  if_only .var_exists z {c (z: ) $z$ $nl}}
+whence a
+a
+a (fi rst)
+a (fi rst) second
+a (fi rst) (sec ond) (thi rd)
+a (fi rst) (sec ond) third (fou rth)
 a (fi rst) (sec ond) (thi rd) (fou rth) (fi fth)
 .function a [-?] [x y] [... z] {
   forj ${.list_locals}$ {.combine $j \( $$j \) \ }

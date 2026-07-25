@@ -52,7 +52,6 @@ std::string exception_names[E::Exception_count] = {
   ".double_redirection",
   ".duplicate_parameter",
   ".elipsis_first_arg",
-  ".elipsis_out_of_option_group",
   ".else_without_if",
   ".epsilon",
   ".excess_argfunction",

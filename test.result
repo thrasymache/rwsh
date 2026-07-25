@@ -78,9 +78,6 @@ call stack .source .try_catch_recursive(body)
 .function .elipsis_first_arg -- elipsis stack ... {
   echo $elipsis elipsis cannot be the first argument in a prototype
   echo call stack: $stack$}
-.function .elipsis_out_of_option_group -- group stack ... {
-  echo $group for elipsis to apply to option it must occur within the brackets
-  echo call stack: $stack$}
 .function .else_without_if stack ... {
   echo else without if with call stack: $stack$}
 .function .epsilon var_val change stack ... {
@@ -749,7 +746,6 @@ $./rwsh --posix  </dev/null
 .double_redirection not defined 
 .duplicate_parameter not defined 
 .elipsis_first_arg not defined 
-.elipsis_out_of_option_group not defined 
 .else_without_if not defined 
 .epsilon not defined 
 .excess_argfunction not defined 
@@ -870,7 +866,6 @@ $./rwsh --init-file /non-existent/file/to/test/failure <test_files/pause_hello.r
 .double_redirection not defined 
 .duplicate_parameter not defined 
 .elipsis_first_arg not defined 
-.elipsis_out_of_option_group not defined 
 .else_without_if not defined 
 .epsilon not defined 
 .excess_argfunction not defined 
@@ -973,7 +968,6 @@ hello world
 .double_redirection not defined 
 .duplicate_parameter not defined 
 .elipsis_first_arg not defined 
-.elipsis_out_of_option_group not defined 
 .else_without_if not defined 
 .epsilon not defined 
 .excess_argfunction not defined 
@@ -2344,8 +2338,8 @@ $.function a x [... y] z ... {}
 duplicated parameter in function definition: ...
 call stack: .function
 $.function a [y z] ... x {}
-([y z]) for elipsis to apply to option it must occur within the brackets
-call stack: .function
+$whence a
+.function a [y z ...] x {}
 $.function a [y] ... x {}
 $whence a
 .function a [y ...] x {}
@@ -2645,6 +2639,45 @@ $a (fi rst) (sec ond) third fourth
 -*() -?() x((fi rst) (sec ond) third) y(fourth) 
 $a (fi rst) (sec ond) (thi rd) (fou rth) (fi fth)
 -*() -?() x((fi rst) (sec ond) (thi rd) (fou rth)) y(fi fth) 
+$.function a [-?] [x y] ... [z] {
+  forj ${.list_locals}$ {.combine $j \( $$j \) \ }
+  .combine $nl
+  if_only .var_exists x {c (x: ) $x $nl}
+  if_only .var_exists y {c (y: ) $y$ $nl}
+  if_only .var_exists z {c (z: ) $z$ $nl}}
+$whence a
+.function a [-?] [x y ...] [z] {
+  forj ${.list_locals}$ {.combine $j \( $$j \) ( )}
+  .combine $nl
+  if_only .var_exists x {c (x: ) $x $nl}
+  if_only .var_exists y {c (y: ) $y$ $nl}
+  if_only .var_exists z {c (z: ) $z$ $nl}}
+$a
+-*() -?() 
+$a (fi rst)
+unacceptable arguments: for prototype [-?] [x y ...] [z],
+ assigned -*=() -?=() x=(fi rst) ,
+ but needed (y),
+( call) stack: a
+$a (fi rst) second
+-*() -?() x(fi rst) y(second) 
+x: fi rst
+y: second
+$a (fi rst) (sec ond) (thi rd)
+-*() -?() x(fi rst) y((sec ond)) z(thi rd) 
+x: fi rst
+y: sec ond
+z: third
+$a (fi rst) (sec ond) third (fou rth)
+-*() -?() x(fi rst) y((sec ond) third) z(fou rth) 
+x: fi rst
+y: sec ondthird
+z: fourth
+$a (fi rst) (sec ond) (thi rd) (fou rth) (fi fth)
+-*() -?() x(fi rst) y((sec ond) (thi rd) (fou rth)) z(fi fth) 
+x: fi rst
+y: sec ondthi rdfou rth
+z: fifth
 $.function a [-?] [x y] [... z] {
   forj ${.list_locals}$ {.combine $j \( $$j \) \ }
   .combine $nl
@@ -3716,7 +3749,6 @@ $.internal_functions
 .double_redirection
 .duplicate_parameter
 .elipsis_first_arg
-.elipsis_out_of_option_group
 .else_without_if
 .epsilon
 .excess_argfunction
@@ -3869,7 +3901,6 @@ $forj ${.list_executables}$ {.combine $j $nl}
 .duplicate_parameter
 .echo
 .elipsis_first_arg
-.elipsis_out_of_option_group
 .else
 .else_if
 .else_if_not

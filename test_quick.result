@@ -78,9 +78,6 @@ call stack .source .try_catch_recursive(body)
 .function .elipsis_first_arg -- elipsis stack ... {
   echo $elipsis elipsis cannot be the first argument in a prototype
   echo call stack: $stack$}
-.function .elipsis_out_of_option_group -- group stack ... {
-  echo $group for elipsis to apply to option it must occur within the brackets
-  echo call stack: $stack$}
 .function .else_without_if stack ... {
   echo else without if with call stack: $stack$}
 .function .epsilon var_val change stack ... {

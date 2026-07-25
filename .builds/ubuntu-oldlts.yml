@@ -1,4 +1,4 @@
-image: ubuntu/25.04
+image: ubuntu/oldlts
 packages:
   - libreadline-dev
 sources:

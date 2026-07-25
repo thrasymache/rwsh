@@ -137,10 +137,7 @@ Prototype::Prototype(const Argv& parameters) :
       elipsis_var = positional.back().names.back();
       pos_argc += group.names.size();
       if (group.names.size()) positional.push_back(group);
-      else if (positional.back().names.size() != 1)
-        throw Exception(E::Elipsis_out_of_option_group,
-                        positional.back().str());
-      else positional.back().elipsis = 0;}
+      else positional.back().elipsis = positional.back().names.size()-1;}
     else if (group.names[0] == "--") {
       if (dash_dash_position != -1)
         throw Exception(E::Duplicate_parameter, "--");

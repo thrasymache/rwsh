@@ -23,7 +23,6 @@ namespace E {
     Double_redirection,
     Duplicate_parameter,
     Elipsis_first_arg,
-    Elipsis_out_of_option_group,
     Else_without_if,
     Epsilon,
     Excess_argfunction,
