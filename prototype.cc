@@ -17,25 +17,28 @@
 
 #include "argm.h"
 
-void Parameter_group::p_elipsis(Variable_map& locals,
-        Argv::const_iterator& f_arg, int& available, const std::string& name,
-        const std::string* flag, int pos_c, enum Dash_dash_type dash_dash,
-        bool is_reinterpret, Error_list& exceptions) const {
+void Parameter_group::p_elipsis(Parsing_state& state, const std::string* flag)
+        const {
   if (flag) {
-    locals.append_word("-*", *f_arg, is_reinterpret);
-    if (*flag != name) locals.append_word(*flag, *f_arg, is_reinterpret);}
-  for (f_arg++; available > pos_c; --available, f_arg++) {
-    if ((*f_arg)[0] == '-' && !dash_dash && f_arg->length() > 1)
-      exceptions.add_error(Exception(E::Flag_in_elipsis, *f_arg, str()));
-    locals.append_word(name, *f_arg, is_reinterpret);
+    state.append_cur_arg("-*", parent.is_reinterpret);
+    if (*flag != parent.elipsis_var)
+      state.append_cur_arg(*flag, parent.is_reinterpret);}
+  for (state.cur_arg++; state.available > state.pos_c;
+       --state.available, state.cur_arg++) {
+    if (state.is_flag_arg())
+      state.add_error(Exception(E::Flag_in_elipsis, *state.cur_arg, str()));
+    state.append_cur_arg(parent.elipsis_var, parent.is_reinterpret);
     if (flag) {
-      locals.append_word("-*", *f_arg, is_reinterpret);
-      if (*flag != name) locals.append_word(*flag, *f_arg, is_reinterpret);}}}
+      state.append_cur_arg("-*", parent.is_reinterpret);
+      if (*flag != parent.elipsis_var)
+        state.append_cur_arg(*flag, parent.is_reinterpret);}}}
 
 Parameter_group::Parameter_group(Argv::const_iterator& focus,
                                  Argv::const_iterator end,
-                                 std::set<std::string>& parameter_names) :
-    elipsis(-2), has_argfunction(false), names(), required((*focus)[0] != '[') {
+                                 std::set<std::string>& parameter_names,
+                                 const Prototype& parent_i) :
+    elipsis(-2), has_argfunction(false), names(), required((*focus)[0] != '['),
+    parent(parent_i) {
   bool group_end;
   do {
     group_end = (*focus)[focus->length()-1] == ']';
@@ -65,43 +68,36 @@ Parameter_group::Parameter_group(Argv::const_iterator& focus,
       else;
     else;}
 
-void Parameter_group::arg_to_param(int& available, int& needed, int& pos_c,
-                                   std::string& missing,
-                                   Argv::const_iterator& f_arg,
-                                   const Argv::const_iterator end,
-                                   const std::string* flag,
-                                   const std::string& elipsis_var,
-                                   enum Dash_dash_type dash_dash,
-                                   bool is_reinterpret,
-                                   bool is_extra_round,
-                                   Variable_map& locals,
-                                   Error_list& exceptions) const {
-  available -= names.size();
-  if (!flag) pos_c -= names.size();
-  if (required) --needed;
+void Parameter_group::arg_to_param(Parsing_state& state,
+                                   const std::string* flag) const {
+  state.available -= names.size();
+  if (!flag) state.pos_c -= names.size();
+  if (required) --state.needed;
   if (elipsis == -1) {
-    locals.set(elipsis_var, word_from_value(locals.get(elipsis_var)));
-    p_elipsis(locals, --f_arg, available, elipsis_var, flag, pos_c,
-              dash_dash, is_reinterpret, exceptions);}
+    state.set_get_word_from_value(parent.elipsis_var);
+    --state.cur_arg;
+    p_elipsis(state, flag);}
   std::vector<std::string>::difference_type k = 0;
-  for (; f_arg != end && k < names.size(); k++)
+  for (; !state.cur_is_end() && k < names.size(); k++)
     if (elipsis == k) {
-      locals.param(elipsis_var, word_from_value(*f_arg), is_reinterpret);
-      p_elipsis(locals, f_arg, available, elipsis_var, flag, pos_c, dash_dash,
-                is_reinterpret, exceptions);}
+      state.locals.param(parent.elipsis_var, word_from_value(*state.cur_arg),
+                         parent.is_reinterpret);
+      p_elipsis(state, flag);}
     else if (flag) {
-        locals.append_word("-*", *f_arg, is_reinterpret);
-        if (*flag!=names[k]) locals.append_word(*flag, *f_arg, is_reinterpret);
-        locals.param_or_append_word(names[k], *f_arg++, is_reinterpret);}
-    else locals.param(names[k], *f_arg++, is_reinterpret);
-  if (f_arg == end)
-    while(k < (std::vector<std::string>::difference_type) names.size()) {
-      missing += (missing.length()?" ":"") + names[k];
-      locals.add_undefined(names[k++], is_reinterpret, is_extra_round);}}
+        state.append_cur_arg("-*", parent.is_reinterpret);
+        if (*flag!=names[k]) state.append_cur_arg(*flag, parent.is_reinterpret);
+        state.locals.param_or_append_word(names[k], *state.cur_arg++,
+                                          parent.is_reinterpret);}
+    else state.locals.param(names[k], *state.cur_arg++, parent.is_reinterpret);
+  if (state.cur_is_end())
+    while(k < names.size()) {
+      state.missing += (state.missing.length()?" ":"") + names[k];
+      state.locals.add_undefined(names[k++], parent.is_reinterpret,
+                                 parent.is_extra_round);}}
 
-void Parameter_group::add_undefined_params(Variable_map& locals,
-                               bool is_reinterpret, bool is_extra_round) const {
-  for (auto j: names) locals.add_undefined(j, is_reinterpret, is_extra_round);}
+void Parameter_group::add_undefined_params(Variable_map& locals) const {
+  for (auto j: names)
+    locals.add_undefined(j, parent.is_reinterpret, parent.is_extra_round);}
 
 std::string Parameter_group::str() const {
   if (!names.size())
@@ -120,16 +116,19 @@ Prototype::Prototype(void) :
     bare_dash_dash(false), dash_dash_position(-1), elipsis_var(""),
     flag_options(), flags(ALL), parameter_names{"--"},
     positional(), required_argc(), pos_argc(),
-    exclude_argfunction(true), required_argfunction(false) {}
+    exclude_argfunction(true), required_argfunction(false),
+    is_reinterpret(false), is_extra_round(false) {}
 
-Prototype::Prototype(const Argv& parameters) :
+Prototype::Prototype(const Argv& parameters, bool is_reinterpret_i,
+                     bool is_extra_round_i) :
     bare_dash_dash(false), dash_dash_position(-1), elipsis_var(""),
     flag_options(), flags(ALL), parameter_names{"--"},
     positional(), required_argc(), pos_argc(),
-    exclude_argfunction(true), required_argfunction(false) {
+    exclude_argfunction(true), required_argfunction(false),
+    is_reinterpret(is_reinterpret_i), is_extra_round(is_extra_round_i) {
   bool has_elipsis = false;
   for (auto fp = parameters.begin(); fp != parameters.end(); ++fp) {
-    Parameter_group group(fp, parameters.end(), parameter_names);
+    Parameter_group group(fp, parameters.end(), parameter_names, *this);
     if (group.elipsis == -1) {
       if (!positional.size())
         throw Exception(E::Elipsis_first_arg, group.str());
@@ -159,97 +158,90 @@ Prototype::Prototype(const Argv& parameters) :
     else if (dash_dash_position != -1)
       throw Exception(E::Post_dash_dash_flag, group.str());
     else {
-      flag_options[group.names[0]] = group;
+      flag_options.emplace(std::make_pair(group.names[0], group));
       parameter_names.insert("-*");}
     if (group.elipsis >= 0) {
       has_elipsis = true;
       elipsis_var = group.names[group.elipsis];}}}
 
+Parsing_state::Parsing_state(const Argv& argv, int needed_i, int pos_c_i,
+		             enum Dash_dash_type dash_dash_i,
+		             Variable_map& locals_i, Error_list& exceptions_i) :
+    available(argv.size()-1), cur_arg(argv.begin()+1), end(argv.end()),
+    needed(needed_i), pos_c(pos_c_i), dash_dash(dash_dash_i), locals(locals_i),
+    missing(), exceptions(exceptions_i) {};
+
+void Parsing_state::append_cur_arg(const std::string& key, bool is_reinterpret){
+    locals.append_word(key, *cur_arg, is_reinterpret);};
+
+void Parsing_state::add_error(Exception focus) {exceptions.add_error(focus);}
+
+void Parsing_state::set_get_word_from_value(const std::string& key) {
+  locals.set(key, word_from_value(locals.get(key)));}
+
 void Prototype::arg_to_param(const Argv& argv, Variable_map& locals,
                              Error_list& exceptions) const {
-  arg_to_param_internal(argv, false, false, locals, exceptions);}
-
-void Prototype::reinterpret(const Argv& argv,
-                          Variable_map& locals, Error_list& exceptions) const {
-  arg_to_param_internal(argv, true, false, locals, exceptions);}
-
-void Prototype::extra_round(const Argv& argv,
-                          Variable_map& locals, Error_list& exceptions) const {
-  arg_to_param_internal(argv, false, true, locals, exceptions);}
-
-void Prototype::arg_to_param_internal(const Argv& argv, bool is_reinterpret,
-                               bool is_extra_round, Variable_map& locals,
-                               Error_list& exceptions) const {
   enum Dash_dash_type dash_dash = dash_dash_position? UNSEEN:
                                   bare_dash_dash? BARE: BRACKET;
-  if (dash_dash == BRACKET)
+  Parsing_state state(argv, required_argc, pos_argc, dash_dash,
+		      locals, exceptions);
+  if (state.dash_dash == BRACKET)
     locals.add_undefined("--", is_reinterpret, is_extra_round);
   if (!is_extra_round || !locals.simple_exists("-*"))
     if (flags == SOME)
       locals.param("-*","",is_reinterpret),locals.param("-?","",is_reinterpret);
     else if (flag_options.size()) locals.param("-*", "", is_reinterpret);
   for (auto j: flag_options)
-    j.second.add_undefined_params(locals, is_reinterpret, is_extra_round);
-  int needed = required_argc;
-  int pos_c = pos_argc;
-  std::string missing;
-  auto f_arg = argv.begin()+1;
+    j.second.add_undefined_params(locals);
   auto param = positional.begin();
-  for (int available = argv.size()-1; f_arg != argv.end();)
-    if ((*f_arg)[0] == '-' && f_arg->length() > 1 && dash_dash != BARE) {
-      auto h = flag_options.find(*f_arg);
-      if (dash_dash == BRACKET && *f_arg != "--") {
-        --available;
-        exceptions.add_error(Exception(E::Tardy_flag, *f_arg++));}
+  while (!state.cur_is_end())
+    if (state.is_flag_arg()) {
+      auto h = flag_options.find(*state.cur_arg);
+      if (state.dash_dash == BRACKET && *state.cur_arg != "--") {
+        --state.available;
+        state.add_error(Exception(E::Tardy_flag, *state.cur_arg++));}
       else if (h != flag_options.end())
-        h->second.arg_to_param(available, needed, pos_c, missing, f_arg, argv.end(),
-                               &h->second.names[0], elipsis_var, dash_dash,
-                               is_reinterpret, is_extra_round, locals,
-			       exceptions);
+        h->second.arg_to_param(state, &h->second.names[0]);
       else {
-        if (*f_arg == "--") {
-          locals.param("--", "--", is_reinterpret);
-          dash_dash = BARE;}
+        if (*state.cur_arg == "--") {
+          state.locals.param("--", "--", is_reinterpret);
+          state.dash_dash = BARE;}
         else if (flags == ALL)
-          exceptions.add_error(Exception(E::Unrecognized_flag, *f_arg, str()));
-        if (flags == SOME) locals.append_word("-?", *f_arg, is_reinterpret);
+          state.add_error(Exception(E::Unrecognized_flag,*state.cur_arg,str()));
+        if (flags == SOME) state.append_cur_arg("-?", is_reinterpret);
         if (flag_options.size() || flags == SOME)
-          locals.append_word("-*", *f_arg, is_reinterpret);
-        ++f_arg, --available;}}
+          state.append_cur_arg("-*", is_reinterpret);
+        ++state.cur_arg, --state.available;}}
     else if (param == positional.end()) break;
     else {
-      if (param->required || available > needed)
-        param->arg_to_param(available, needed, pos_c, missing, f_arg, argv.end(),
-                            nullptr, elipsis_var, dash_dash, is_reinterpret,
-                            is_extra_round, locals, exceptions);
-      else param->add_undefined_params(locals, is_reinterpret, is_extra_round);
+      if (param->required || state.available > state.needed)
+        param->arg_to_param(state, nullptr);
+      else param->add_undefined_params(state.locals);
       if (++param - positional.begin() == dash_dash_position)
-        dash_dash = bare_dash_dash? BARE: BRACKET;}
+        state.dash_dash = bare_dash_dash? BARE: BRACKET;}
   if (param != positional.end()) {
     if (param->elipsis == -1) {
       const std::string& var((param-1)->names.back());
-      if (!locals.simple_exists(var))
-	locals.add_undefined(var, is_reinterpret, is_extra_round);
-      else locals.set(var, word_from_value(locals.get(var)));}
+      if (!state.locals.simple_exists(var))
+	state.locals.add_undefined(var, is_reinterpret, is_extra_round);
+      else state.set_get_word_from_value(var);}
     while (param != positional.end()) {
       if (param->required)
-        missing += (missing.length()?" ":"") + param->names[0];
-      param++->add_undefined_params(locals, is_reinterpret, is_extra_round);}}
-  if (f_arg != argv.end() || needed || missing.length())
-    bad_args(missing, locals, f_arg, argv.end(), exceptions);
-  if (exceptions.size()) locals.bless_unused_vars_without_usage();}
+        state.missing += (state.missing.length()?" ":"") + param->names[0];
+      param++->add_undefined_params(state.locals);}}
+  if (state.excess_or_missing_args()) bad_args(state);
+  if (state.exceptions.size()) state.locals.bless_unused_vars_without_usage();}
 
-void Prototype::bad_args(std::string& missing, Variable_map& locals,
-                    Argv::const_iterator f_arg, Argv::const_iterator end,
-                    Error_list& exceptions) const {
+void Prototype::bad_args(Parsing_state& state) const {
   std::string assigned;
-  for (auto k: parameter_names) if (locals.exists_without_check(k))
+  for (auto k: parameter_names) if (state.locals.exists_without_check(k))
     assigned += (assigned.length()? " (": "(") + k + " " +
-                 word_from_value(locals.get(k)) + ")";
+                 word_from_value(state.locals.get(k)) + ")";
   std::string unassigned;
-  while (f_arg != end) unassigned += (unassigned.length()?" ":"") + *f_arg++;
-  exceptions.add_error(Exception(E::Bad_args, str(), assigned, missing,
-                                 unassigned));}
+  while (!state.cur_is_end())
+    unassigned += (unassigned.length()?" ":"") + *state.cur_arg++;
+  state.add_error(Exception(E::Bad_args, str(), assigned, state.missing,
+                            unassigned));}
 
 std::string Prototype::str() const {
   std::string result;

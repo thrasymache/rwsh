@@ -443,8 +443,8 @@ void b_getppid(const Argm& argm, Error_list& exceptions) {
 void b_reinterpret(const Argm& argm, Error_list& exceptions) {
   Argv prototype_argv;
   tokenize_words(argm[argm.argc()-1], std::back_inserter(prototype_argv));
-  Prototype prototype(prototype_argv);
-  prototype.reinterpret(argm.subrange(0, 1), *argm.parent_map(), exceptions);}
+  Prototype prototype(prototype_argv, true, false);
+  prototype.arg_to_param(argm.subrange(0, 1), *argm.parent_map(), exceptions);}
 
 // add the given exception as a replacement for the current one (if nothing
 // afterwards fails)
@@ -461,9 +461,9 @@ void b_replace_exception(const Argm& argm, Error_list& exceptions) {
 void b_rescope(const Argm& argm, Error_list& exceptions) {
   Argv prototype_argv;
   tokenize_words(argm[argm.argc()-1], std::back_inserter(prototype_argv));
-  Prototype prototype(prototype_argv);
+  Prototype prototype(prototype_argv, false, true);
   argm.parent_map()->extra_prototypes.push_back(Prototype(prototype));
-  prototype.extra_round(argm.subrange(0, 1), *argm.parent_map(),
+  prototype.arg_to_param(argm.subrange(0, 1), *argm.parent_map(),
 		                exceptions);}
 
 // remove executable with name $1 from executable map
@@ -483,8 +483,8 @@ void b_scope(const Argm& argm, Error_list& exceptions) {
   tokenize_words(argm[argm.argc()-1], std::back_inserter(prototype_argv));
   Argm invoking_argm(argm.subrange(0, 1), nullptr, argm.parent_map(),
                      argm.input, argm.output, argm.error);
-  (*argm.argfunction()).prototype_execute(invoking_argm, prototype_argv,
-                                                    exceptions);}
+  Prototype proto(prototype_argv, false, false);
+  (*argm.argfunction()).prototype_execute(invoking_argm, proto, exceptions);}
 
 // modify variable $1 as a selection according to $2
 void b_selection_set(const Argm& argm, Error_list& exceptions) {
@@ -540,7 +540,7 @@ void b_source(const Argm& argm, Error_list& exceptions) {
   Rwsh_istream_p src(new File_istream(script), false, false);
   Command_stream command_stream(src, false);
   Command_block block;
-  Prototype prototype(Argv{"--", "[argv", "...]"});
+  Prototype prototype(Argv{"--", "[argv", "...]"}, false, false);
   Variable_map locals(argm.parent_map(), prototype);
   prototype.arg_to_param(argm.subrange(1), locals, exceptions);
   Argm script_arg(argm.subrange(1), nullptr, &locals,

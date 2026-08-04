@@ -29,7 +29,7 @@
 Builtin::Builtin(const std::string& name_i,
                  void (*impl)(const Argm& argm, Error_list& exceptions),
                  const Argv& prototype_i) :
-  implementation(impl), name_v(name_i), prototype(prototype_i) {}
+  implementation(impl), name_v(name_i), prototype(prototype_i, false, false) {}
 
 // run the given builtin
 void Builtin::execute(const Argm& argm, Error_list& exceptions) {
@@ -122,7 +122,7 @@ Command_block::Command_block(const std::string& src,
 
 Function::Function(const std::string& name_i, const Argv& parameters,
                    const Command_block& src) :
-     name_v(name_i), prototype(parameters), body(src) {}
+     name_v(name_i), prototype(parameters, false, false), body(src) {}
 
 // run the given function
 void Function::execute(const Argm& argm, Error_list& exceptions) {
